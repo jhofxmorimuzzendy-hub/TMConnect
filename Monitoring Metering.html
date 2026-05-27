@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>TVRI - TX Tanah Merah | Monitoring PLN & UPS + Multi Foto + Spreadsheet</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    body {
+      background: #eef2f7;
+      padding: 20px 16px;
+    }
+
+    .container {
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+
+    /* CARD */
+    .card {
+      background: white;
+      border-radius: 32px;
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+      padding: 1.5rem 1.2rem;
+      margin-bottom: 2rem;
+      transition: all 0.2s;
+    }
+
+    h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #1e2a3e;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 0.5rem;
+    }
+
+    h1 small {
+      font-size: 0.7rem;
+      background: #d9f0ec;
+      color: #0f5b4b;
+      padding: 4px 12px;
+      border-radius: 40px;
+    }
+
+    h2 {
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: #0f3b2c;
+      border-left: 5px solid #2b7a62;
+      padding-left: 16px;
+      margin: 1rem 0 1rem 0;
+    }
+
+    h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #f1f5f9;
+      padding: 8px 16px;
+      border-radius: 60px;
+    }
+
+    .form-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 24px;
+      align-items: flex-end;
+    }
+
+    .field-group {
+      flex: 1 1 160px;
+      min-width: 140px;
+    }
+
+    .field-group label {
+      font-weight: 600;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      color: #4a627a;
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    input,
+    textarea,
+    select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      transition: 0.2s;
+      background: white;
+    }
+
+    .double-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+      margin-top: 12px;
+    }
+
+    .meas-panel {
+      background: #f9fafc;
+      border-radius: 24px;
+      padding: 1rem 1.2rem;
+      border: 1px solid #eef2f8;
+    }
+
+    .param-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 12px 14px;
+      margin: 12px 0 18px 0;
+    }
+
+    .param-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .param-item label {
+      font-size: 0.65rem;
+      font-weight: 600;
+      color: #4b6b8f;
+      text-transform: uppercase;
+    }
+
+    .param-item input {
+      padding: 6px 8px;
+      font-size: 0.8rem;
+      border-radius: 14px;
+      margin-top: 4px;
+    }
+
+    .subtitle {
+      font-weight: 700;
+      margin-top: 8px;
+      margin-bottom: 6px;
+      color: #0b3b2f;
+      border-bottom: 2px dashed #cbd5e1;
+      display: inline-block;
+      font-size: 0.85rem;
+    }
+
+    /* MULTI FOTO GALLERY */
+    .camera-zone {
+      background: linear-gradient(135deg, #f5f9ff 0%, #eef2fa 100%);
+      border-radius: 32px;
+      padding: 18px;
+      margin: 20px 0 20px 0;
+      border: 1px solid #cbdff2;
+    }
+
+    .single-camera-area {
+      background: #0a0a0a;
+      border-radius: 28px;
+      overflow: hidden;
+      margin-bottom: 18px;
+      text-align: center;
+    }
+
+    #video {
+      width: 100%;
+      max-width: 100%;
+      max-height: 380px;
+      object-fit: cover;
+      background: #111;
+      border-radius: 24px;
+      display: block;
+      margin: 0 auto;
+    }
+
+    .cam-buttons {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .gallery-area {
+      margin-top: 24px;
+      background: white;
+      border-radius: 28px;
+      padding: 16px;
+      border: 1px solid #e2edf2;
+    }
+
+    .gallery-title {
+      font-weight: 700;
+      margin-bottom: 12px;
+      font-size: 0.9rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .photo-thumbnails {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-top: 12px;
+    }
+
+    .thumb-item {
+      position: relative;
+      width: 90px;
+      height: 90px;
+      border-radius: 20px;
+      overflow: hidden;
+      border: 2px solid #e2e8f0;
+      background: #f1f5f9;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+
+    .thumb-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .remove-photo {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      background: #dc2626;
+      color: white;
+      border-radius: 30px;
+      width: 24px;
+      height: 24px;
+      font-size: 14px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border: 2px solid white;
+      transition: 0.1s;
+    }
+
+    .btn-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-top: 28px;
+      justify-content: flex-start;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border-radius: 40px;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.2s;
+      font-size: 0.85rem;
+    }
+
+    .btn-primary {
+      background: #1f6e5a;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #0f5544;
+      transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+      background: #e9ecef;
+      color: #2c3e50;
+    }
+
+    .btn-camera {
+      background: #2c5282;
+      color: white;
+    }
+
+    .btn-danger {
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+
+    .btn-excel {
+      background: #1e6f3f;
+      color: white;
+    }
+
+    /* riwayat */
+    .entries-container {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .entry-card {
+      background: white;
+      border-radius: 28px;
+      padding: 1.2rem;
+      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.05);
+      border: 1px solid #eef2f0;
+    }
+
+    .entry-header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 10px;
+      border-bottom: 1px solid #e2edf2;
+      padding-bottom: 10px;
+      margin-bottom: 14px;
+    }
+
+    .multi-photos {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .evidence-img {
+      width: 70px;
+      height: 70px;
+      border-radius: 16px;
+      object-fit: cover;
+      border: 1px solid #cbd5e6;
+    }
+
+    /* modal & table */
+    .modal-table {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 1000;
+      overflow: auto;
+      padding: 16px;
+    }
+
+    .modal-content {
+      background: white;
+      margin: 20px auto;
+      max-width: 98%;
+      width: fit-content;
+      border-radius: 32px;
+      padding: 16px;
+      max-height: 90vh;
+      overflow: auto;
+    }
+
+    .modal-content table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 0.7rem;
+      min-width: 1100px;
+    }
+
+    .thumb-spreadsheet {
+      max-width: 55px;
+      max-height: 55px;
+      border-radius: 8px;
+      margin: 2px;
+    }
+
+    /* responsive */
+    @media (max-width: 640px) {
+      body {
+        padding: 12px;
+      }
+
+      .card {
+        padding: 1rem;
+      }
+
+      h1 {
+        font-size: 1.3rem;
+      }
+
+      .param-grid {
+        grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
+      }
+
+      .btn-group {
+        justify-content: center;
+      }
+
+      .thumb-item {
+        width: 75px;
+        height: 75px;
+      }
+
+      .double-grid {
+        gap: 16px;
+      }
+
+      .meas-panel {
+        padding: 0.8rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .param-item label {
+        font-size: 0.6rem;
+      }
+
+      .btn {
+        padding: 8px 14px;
+        font-size: 0.75rem;
+      }
+    }
+
+    footer {
+      text-align: center;
+      font-size: 0.65rem;
+      margin-top: 1.5rem;
+      color: #5b7c8c;
+    }
+
+    .report-btn {
+      background: #4a627a;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="card">
+    <h1>📡 TVRI - TX Tanah Merah <small>PLN & UPS + MultiFoto Watermark</small></h1>
+    <p style="margin-bottom: 12px; font-size: 0.85rem;">✅ Ambil banyak foto (kamera / upload) + watermark GPS & petugas. Setiap foto punya watermark sendiri.</p>
+
+    <div class="form-row">
+      <div class="field-group"><label>No. Entry</label><input type="text" id="entryNo" readonly style="background:#f9f9f9;"></div>
+      <div class="field-group"><label>Tanggal</label><input type="date" id="entryDate"></div>
+      <div class="field-group"><label>Petugas</label><input type="text" id="petugas" placeholder="Nama"></div>
+      <div class="field-group"><label>Keterangan</label><input type="text" id="keterangan" placeholder="Lokasi / kondisi"></div>
+    </div>
+
+    <!-- MULTI FOTO ZONE -->
+    <div class="camera-zone">
+      <h3 style="margin:0 0 12px 0;">📸 MULTI FOTO BUKTI (Bisa banyak)</h3>
+      <div class="single-camera-area">
+        <video id="video" autoplay playsinline muted style="width:100%; max-width:100%;"></video>
+      </div>
+      <div class="cam-buttons">
+        <button class="btn btn-camera" id="startCameraBtn">🎥 BUKA KAMERA</button>
+        <button class="btn btn-primary" id="captureAddBtn" disabled>📸 AMBIL & TAMBAHKAN FOTO</button>
+        <button class="btn btn-secondary" id="resetCameraBtn">⟳ RESET KAMERA</button>
+      </div>
+      <div style="margin-top: 15px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+        <label style="background:#f1f5f9; padding: 6px 16px; border-radius: 30px; font-weight:500;">📂 Upload gambar (multiple):</label>
+        <input type="file" id="uploadPhotosInput" accept="image/jpeg, image/png" multiple style="flex:1; min-width:180px;">
+        <button class="btn btn-secondary" id="processUploadBtn">✨ Proses & Tambahkan Foto</button>
+      </div>
+
+      <!-- Gallery foto sementara sebelum simpan -->
+      <div class="gallery-area">
+        <div class="gallery-title">
+          <span>🖼️ Daftar Foto (akan disimpan ke entry ini)</span>
+          <button class="btn btn-danger" id="clearAllPhotosBtn" style="padding:4px 12px;">🗑 Hapus Semua Foto</button>
+        </div>
+        <div id="photoGalleryContainer" class="photo-thumbnails">
+          <span style="color:#94a3b8;">Belum ada foto. Ambil atau upload foto.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- PARAMETER PLN & UPS -->
+    <div class="double-grid">
+      <div class="meas-panel"><h3>🏭 SUMBER PLN</h3>
+        <div><strong class="subtitle">⚡ Tegangan (Volt)</strong></div>
+        <div class="param-grid">
+          <div class="param-item"><label>RS (V)</label><input type="number" step="any" id="vPLN_rs"></div>
+          <div class="param-item"><label>ST (V)</label><input type="number" step="any" id="vPLN_st"></div>
+          <div class="param-item"><label>TR (V)</label><input type="number" step="any" id="vPLN_tr"></div>
+          <div class="param-item"><label>RN (V)</label><input type="number" step="any" id="vPLN_rn"></div>
+          <div class="param-item"><label>SN (V)</label><input type="number" step="any" id="vPLN_sn"></div>
+          <div class="param-item"><label>TN (V)</label><input type="number" step="any" id="vPLN_tn"></div>
+        </div>
+        <div><strong class="subtitle">🔁 Arus (Ampere)</strong></div>
+        <div class="param-grid"><div class="param-item"><label>R (A)</label><input type="number" step="any" id="iPLN_r"></div>
+          <div class="param-item"><label>S (A)</label><input type="number" step="any" id="iPLN_s"></div>
+          <div class="param-item"><label>T (A)</label><input type="number" step="any" id="iPLN_t"></div></div>
+      </div>
+      <div class="meas-panel"><h3>🔋 SUMBER UPS</h3>
+        <div><strong class="subtitle">⚡ Tegangan (Volt)</strong></div>
+        <div class="param-grid">
+          <div class="param-item"><label>RS (V)</label><input type="number" step="any" id="vUPS_rs"></div>
+          <div class="param-item"><label>ST (V)</label><input type="number" step="any" id="vUPS_st"></div>
+          <div class="param-item"><label>TR (V)</label><input type="number" step="any" id="vUPS_tr"></div>
+          <div class="param-item"><label>RN (V)</label><input type="number" step="any" id="vUPS_rn"></div>
+          <div class="param-item"><label>SN (V)</label><input type="number" step="any" id="vUPS_sn"></div>
+          <div class="param-item"><label>TN (V)</label><input type="number" step="any" id="vUPS_tn"></div>
+        </div>
+        <div><strong class="subtitle">🔁 Arus (Ampere)</strong></div>
+        <div class="param-grid"><div class="param-item"><label>R (A)</label><input type="number" step="any" id="iUPS_r"></div>
+          <div class="param-item"><label>S (A)</label><input type="number" step="any" id="iUPS_s"></div>
+          <div class="param-item"><label>T (A)</label><input type="number" step="any" id="iUPS_t"></div></div>
+      </div>
+    </div>
+
+    <div class="btn-group">
+      <button class="btn btn-primary" id="saveWithPhotoBtn">💾 SIMPAN ENTRY (dengan semua foto)</button>
+      <button class="btn btn-info" id="loadLastEntryBtn" style="background:#e0f2fe;">📂 AMBIL DATA DARI ENTRY TERAKHIR</button>
+      <button class="btn btn-secondary" id="resetFormBtn">⟳ Reset Form + Hapus Foto</button>
+      <button class="btn btn-excel" id="exportTableBtn">📊 LIHAT / SALIN TABEL</button>
+      <button class="btn btn-danger" id="clearAllBtn">🗑 Hapus Semua Data</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>📋 RIWAYAT PENCATATAN + MULTI FOTO</h2>
+    <div id="entriesList" class="entries-container">📭 Belum ada data.</div>
+  </div>
+  <footer>© TVRI - TX Tanah Merah | Watermark per foto: logo TVRI + petugas, waktu, GPS, ketinggian | Multi foto per entri</footer>
+</div>
+
+<!-- Modal Spreadsheet -->
+<div id="spreadsheetModal" class="modal-table"><div class="modal-content"><span class="close-modal" style="float:right;font-size:26px;cursor:pointer;">&times;</span>
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap;"><h3 style="margin:0;">📑 DATA LENGKAP + THUMBNAIL</h3>
+    <div><button id="copyTableBtn" class="copy-btn" style="background:#2b7a62;color:white;border:none;padding:6px 16px;border-radius:30px;">📋 Salin Tabel</button>
+    <button id="openFullReportBtn" class="report-btn" style="background:#4a627a;color:white;border:none;padding:6px 16px;border-radius:30px;">📄 Buka Laporan Lengkap</button></div></div>
+  <div id="tableContainer" style="overflow-x: auto;"></div></div></div>
+
+<script>
+  // STORAGE
+  const STORAGE_KEY = "pln_ups_tanah_merah_v5_multi";
+  let mediaStream = null;
+  let currentPhotosArray = []; // array of base64 strings (watermarked)
+
+  // DOM elements
+  const video = document.getElementById('video');
+  const startCameraBtn = document.getElementById('startCameraBtn');
+  const captureAddBtn = document.getElementById('captureAddBtn');
+  const resetCameraBtn = document.getElementById('resetCameraBtn');
+  const uploadPhotosInput = document.getElementById('uploadPhotosInput');
+  const processUploadBtn = document.getElementById('processUploadBtn');
+  const photoGalleryContainer = document.getElementById('photoGalleryContainer');
+  const clearAllPhotosBtn = document.getElementById('clearAllPhotosBtn');
+
+  // Helper: watermark seperti desain TVRI (sama dengan sebelumnya)
+  async function applyWatermarkTanahMerah(imageDataUrl, petugasNama, lat, lng, altitude, timestampStr) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width; canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        const logoScale = Math.min(0.28, Math.max(0.18, img.width / 550));
+        const tvFontSize = Math.floor(58 * logoScale);
+        const riFontSize = Math.floor(52 * logoScale);
+        const circleRadius = Math.floor(48 * logoScale);
+        const startX = 22, startY = 22 + tvFontSize;
+        ctx.font = `800 ${tvFontSize}px "Inter", sans-serif`;
+        ctx.fillStyle = "#1E3A8F";
+        ctx.fillText("TV", startX, startY);
+        const tvWidth = ctx.measureText("TV").width;
+        const circleX = startX + tvWidth + circleRadius + 3;
+        const circleY = startY - (circleRadius * 0.65);
+        ctx.beginPath(); ctx.arc(circleX, circleY, circleRadius, 0, Math.PI*2);
+        ctx.fillStyle = "#1E3A8F"; ctx.fill();
+        ctx.font = `800 ${riFontSize}px "Inter", sans-serif`;
+        ctx.fillStyle = "#FFFFFF";
+        const riText = "RI";
+        const riWidth = ctx.measureText(riText).width;
+        ctx.fillText(riText, circleX - riWidth/2, circleY + (riFontSize*0.38));
+
+        const smallFontSize = Math.max(14, Math.floor(img.width / 32));
+        const padding = 16;
+        const dateTimeStr = timestampStr || new Date().toLocaleString('id-ID', { hour12: false });
+        let coordStr = `${Math.abs(lat).toFixed(6)}°${lat >= 0 ? 'LU' : 'LS'}, ${Math.abs(lng).toFixed(6)}°${lng >= 0 ? 'BT' : 'BB'}`;
+        let altStr = (altitude !== null && !isNaN(altitude)) ? ` ${Math.round(altitude)} mdpl` : "";
+        const lines = [`📡 TVRI - TX Tanah Merah`,`👤 Petugas: ${petugasNama || "Tidak diketahui"}`,`🕒 ${dateTimeStr}`,`📍 ${coordStr}${altStr}`];
+        ctx.font = `${smallFontSize}px "Inter", sans-serif`;
+        let maxWidth = 0;
+        lines.forEach(line => { let w = ctx.measureText(line).width; if(w>maxWidth) maxWidth=w; });
+        const bgWidth = maxWidth + padding*2;
+        const lineHeight = smallFontSize+6;
+        const bgHeight = (lines.length * lineHeight) + padding;
+        const posX = img.width - bgWidth - 16, posY = img.height - bgHeight - 16;
+        ctx.save(); ctx.globalAlpha = 0.85; ctx.fillStyle = "#0A0F1C"; ctx.shadowBlur = 8; ctx.shadowColor = "rgba(0,0,0,0.5)";
+        ctx.beginPath(); ctx.moveTo(posX+16, posY); ctx.lineTo(posX+bgWidth-16, posY); ctx.quadraticCurveTo(posX+bgWidth, posY, posX+bgWidth, posY+16);
+        ctx.lineTo(posX+bgWidth, posY+bgHeight-16); ctx.quadraticCurveTo(posX+bgWidth, posY+bgHeight, posX+bgWidth-16, posY+bgHeight);
+        ctx.lineTo(posX+16, posY+bgHeight); ctx.quadraticCurveTo(posX, posY+bgHeight, posX, posY+bgHeight-16);
+        ctx.lineTo(posX, posY+16); ctx.quadraticCurveTo(posX, posY, posX+16, posY); ctx.closePath(); ctx.fill();
+        ctx.globalAlpha=1; ctx.strokeStyle="#eab308"; ctx.lineWidth=1.8; ctx.stroke();
+        ctx.font = `${smallFontSize}px "Inter", sans-serif`; ctx.fillStyle = "#FFFFFF"; ctx.shadowBlur=2;
+        for(let i=0;i<lines.length;i++) ctx.fillText(lines[i], posX+padding, posY+padding+(i+1)*lineHeight-4);
+        ctx.restore();
+        resolve(canvas.toDataURL("image/jpeg", 0.88));
+      };
+      img.onerror = reject;
+      img.src = imageDataUrl;
+    });
+  }
+
+  async function getGPSandTime() {
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) resolve({ lat: -6.2, lng: 106.8, alt: 0, timestamp: new Date().toLocaleString('id-ID') });
+      else navigator.geolocation.getCurrentPosition(
+        (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude, alt: pos.coords.altitude ?? 0, timestamp: new Date().toLocaleString('id-ID') }),
+        () => resolve({ lat: -6.2, lng: 106.8, alt: 0, timestamp: new Date().toLocaleString('id-ID') }),
+        { timeout: 6000 }
+      );
+    });
+  }
+
+  async function watermarkSingleImage(rawDataUrl, petugasName) {
+    const gps = await getGPSandTime();
+    return await applyWatermarkTanahMerah(rawDataUrl, petugasName, gps.lat, gps.lng, gps.alt, gps.timestamp);
+  }
+
+  // Gallery render
+  function renderPhotoGallery() {
+    if(!photoGalleryContainer) return;
+    if(currentPhotosArray.length === 0) {
+      photoGalleryContainer.innerHTML = '<span style="color:#94a3b8;">📭 Belum ada foto. Ambil atau upload foto.</span>';
+      return;
+    }
+    let html = '';
+    currentPhotosArray.forEach((base64, idx) => {
+      html += `<div class="thumb-item"><img src="${base64}" alt="foto"><div class="remove-photo" data-idx="${idx}">✖</div></div>`;
+    });
+    photoGalleryContainer.innerHTML = html;
+    document.querySelectorAll('.remove-photo').forEach(el => {
+      el.addEventListener('click', (e) => {
+        const idx = parseInt(el.dataset.idx);
+        if(!isNaN(idx)) { currentPhotosArray.splice(idx,1); renderPhotoGallery(); }
+      });
+    });
+  }
+
+  function addPhotoToArray(watermarkedBase64) {
+    currentPhotosArray.push(watermarkedBase64);
+    renderPhotoGallery();
+  }
+
+  async function processAndAddImage(rawDataUrl, petugasName) {
+    if(!petugasName) { alert("Isi nama petugas terlebih dahulu sebelum menambah foto."); return false; }
+    try {
+      const watermarked = await watermarkSingleImage(rawDataUrl, petugasName);
+      addPhotoToArray(watermarked);
+      return true;
+    } catch(e) { alert("Gagal memproses foto"); return false; }
+  }
+
+  // Camera capture
+  async function captureFromCamera() {
+    if(!video.srcObject || !mediaStream) { alert("Buka kamera dulu!"); return; }
+    const petugas = document.getElementById("petugas").value.trim();
+    if(!petugas) { alert("Isi nama petugas sebelum mengambil foto."); return; }
+    if(video.videoWidth === 0) { alert("Video belum siap."); return; }
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = video.videoWidth;
+    tempCanvas.height = video.videoHeight;
+    tempCanvas.getContext('2d').drawImage(video, 0, 0);
+    const raw = tempCanvas.toDataURL('image/jpeg', 0.92);
+    await processAndAddImage(raw, petugas);
+  }
+
+  // Upload multiple files
+  async function processUploadedFiles(files, petugasName) {
+    if(!petugasName) { alert("Isi nama petugas terlebih dahulu."); return; }
+    if(!files.length) return;
+    for(let file of files) {
+      if(!file.type.match('image.*')) continue;
+      const reader = new FileReader();
+      await new Promise((resolve) => {
+        reader.onload = async (e) => {
+          await processAndAddImage(e.target.result, petugasName);
+          resolve();
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+    alert(`${files.length} foto berhasil ditambahkan.`);
+  }
+
+  startCameraBtn.onclick = async () => {
+    if(mediaStream) { mediaStream.getTracks().forEach(t=>t.stop()); mediaStream=null; video.srcObject=null; }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+      mediaStream = stream;
+      video.srcObject = stream;
+      captureAddBtn.disabled = false;
+      startCameraBtn.textContent = "✅ Kamera Aktif";
+    } catch(e) { alert("Gagal akses kamera"); captureAddBtn.disabled=true; startCameraBtn.textContent="🎥 BUKA KAMERA"; }
+  };
+  captureAddBtn.onclick = captureFromCamera;
+  resetCameraBtn.onclick = () => { if(mediaStream) { video.style.display="block"; } else startCameraBtn.click(); };
+  processUploadBtn.onclick = async () => {
+    const files = uploadPhotosInput.files;
+    const petugas = document.getElementById("petugas").value.trim();
+    if(!petugas) { alert("Isi nama petugas terlebih dahulu."); return; }
+    if(!files.length) { alert("Pilih file gambar terlebih dahulu."); return; }
+    await processUploadedFiles(files, petugas);
+    uploadPhotosInput.value = '';
+  };
+  clearAllPhotosBtn.onclick = () => { if(confirm("Hapus semua foto yang belum disimpan?")) { currentPhotosArray = []; renderPhotoGallery(); } };
+
+  // Data Storage & helpers
+  function loadEntries() { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); }
+  function saveEntries(entries) { localStorage.setItem(STORAGE_KEY, JSON.stringify(entries)); }
+
+  function getNextNumber() {
+    const entries = loadEntries();
+    if(!entries.length) return "001";
+    let max=0; entries.forEach(e=>{ let m=e.no.match(/\d+/); if(m) max=Math.max(max,parseInt(m[0],10)); });
+    return (max+1).toString().padStart(3,'0');
+  }
+  function updateEntryNoField() { document.getElementById("entryNo").value = getNextNumber(); }
+
+  function parseFloatOrNull(v) { return (v===""||v===null)?null:(isNaN(parseFloat(v))?null:parseFloat(v)); }
+  function getFormValues() {
+    return {
+      no: document.getElementById("entryNo").value.trim(),
+      tanggal: document.getElementById("entryDate").value,
+      petugas: document.getElementById("petugas").value.trim(),
+      keterangan: document.getElementById("keterangan").value.trim(),
+      pln: { v: { rs: parseFloatOrNull(vPLN_rs.value), st: parseFloatOrNull(vPLN_st.value), tr: parseFloatOrNull(vPLN_tr.value), rn: parseFloatOrNull(vPLN_rn.value), sn: parseFloatOrNull(vPLN_sn.value), tn: parseFloatOrNull(vPLN_tn.value) }, i: { r: parseFloatOrNull(iPLN_r.value), s: parseFloatOrNull(iPLN_s.value), t: parseFloatOrNull(iPLN_t.value) } },
+      ups: { v: { rs: parseFloatOrNull(vUPS_rs.value), st: parseFloatOrNull(vUPS_st.value), tr: parseFloatOrNull(vUPS_tr.value), rn: parseFloatOrNull(vUPS_rn.value), sn: parseFloatOrNull(vUPS_sn.value), tn: parseFloatOrNull(vUPS_tn.value) }, i: { r: parseFloatOrNull(iUPS_r.value), s: parseFloatOrNull(iUPS_s.value), t: parseFloatOrNull(iUPS_t.value) } }
+    };
+  }
+
+  function setFormValues(data) {
+    if(!data) return;
+    document.getElementById("entryNo").value = data.no || getNextNumber();
+    document.getElementById("entryDate").value = data.tanggal || "";
+    document.getElementById("petugas").value = data.petugas || "";
+    document.getElementById("keterangan").value = data.keterangan || "";
+    const set = (id,val) => { let el=document.getElementById(id); if(el) el.value = (val!==null&&val!==undefined)?val:""; };
+    set("vPLN_rs", data.pln?.v?.rs); set("vPLN_st", data.pln?.v?.st); set("vPLN_tr", data.pln?.v?.tr); set("vPLN_rn", data.pln?.v?.rn); set("vPLN_sn", data.pln?.v?.sn); set("vPLN_tn", data.pln?.v?.tn);
+    set("iPLN_r", data.pln?.i?.r); set("iPLN_s", data.pln?.i?.s); set("iPLN_t", data.pln?.i?.t);
+    set("vUPS_rs", data.ups?.v?.rs); set("vUPS_st", data.ups?.v?.st); set("vUPS_tr", data.ups?.v?.tr); set("vUPS_rn", data.ups?.v?.rn); set("vUPS_sn", data.ups?.v?.sn); set("vUPS_tn", data.ups?.v?.tn);
+    set("iUPS_r", data.ups?.i?.r); set("iUPS_s", data.ups?.i?.s); set("iUPS_t", data.ups?.i?.t);
+  }
+
+  function resetFormFields() {
+    document.getElementById("entryDate").value = new Date().toISOString().slice(0,10);
+    document.getElementById("petugas").value = "";
+    document.getElementById("keterangan").value = "";
+    document.querySelectorAll("input[type='number']").forEach(inp => inp.value = "");
+    currentPhotosArray = [];
+    renderPhotoGallery();
+    updateEntryNoField();
+    if(mediaStream) video.style.display = "block";
+  }
+
+  document.getElementById("saveWithPhotoBtn").onclick = () => {
+    const no = document.getElementById("entryNo").value.trim();
+    const tgl = document.getElementById("entryDate").value;
+    const petugas = document.getElementById("petugas").value.trim();
+    if(!no || !tgl || !petugas) { alert("No, Tanggal, Petugas wajib diisi."); return; }
+    const formData = getFormValues();
+    const newEntry = { id: Date.now(), ...formData, photos: [...currentPhotosArray], createdAt: new Date().toISOString() };
+    const entries = loadEntries();
+    entries.unshift(newEntry);
+    saveEntries(entries);
+    renderEntries();
+    currentPhotosArray = [];
+    renderPhotoGallery();
+    updateEntryNoField();
+    alert("Data tersimpan dengan " + newEntry.photos.length + " foto.");
+  };
+
+  document.getElementById("loadLastEntryBtn").onclick = () => {
+    const entries = loadEntries();
+    if(entries.length) setFormValues(entries[0]);
+    else alert("Belum ada entry.");
+  };
+  document.getElementById("resetFormBtn").onclick = resetFormFields;
+  document.getElementById("clearAllBtn").onclick = () => { if(confirm("Hapus semua data?")) { localStorage.removeItem(STORAGE_KEY); renderEntries(); resetFormFields(); } };
+
+  function formatVal(v) { return (v!==null && v!==undefined) ? parseFloat(v).toFixed(1) : "-"; }
+  function escapeHtml(s) { if(!s) return ""; return s.replace(/[&<>]/g, m=>m==='&'?'&amp;':m==='<'?'&lt;':'&gt;'); }
+
+  function renderEntries() {
+    const entries = loadEntries().map(e => { if(!e.photos && e.photoBase64) e.photos = [e.photoBase64]; else if(!e.photos) e.photos = []; return e; });
+    const container = document.getElementById("entriesList");
+    if(!entries.length) { container.innerHTML = `<div style="text-align:center; padding:2rem;">📭 Belum ada pencatatan.</div>`; return; }
+    container.innerHTML = "";
+    entries.forEach((e, idx) => {
+      let photosHtml = '<div class="multi-photos">';
+      (e.photos || []).forEach(ph => { photosHtml += `<img src="${ph}" class="evidence-img">`; });
+      if((e.photos||[]).length===0) photosHtml += '<span>Tidak ada foto</span>';
+      photosHtml += '</div>';
+      const card = document.createElement("div"); card.className = "entry-card";
+      card.innerHTML = `<div class="entry-header"><div class="entry-title">📄 No: ${escapeHtml(e.no)} | ${escapeHtml(e.tanggal)}</div>
+        <div class="entry-meta"><span>👤 ${escapeHtml(e.petugas)}</span><span>📝 ${escapeHtml(e.keterangan||'-')}</span><button class="delete-btn" data-idx="${idx}">✖ Hapus</button></div></div>
+        <div class="data-row"><div><strong>🏭 PLN</strong><br>Teg: RS:${formatVal(e.pln?.v?.rs)} ST:${formatVal(e.pln?.v?.st)} TR:${formatVal(e.pln?.v?.tr)} RN:${formatVal(e.pln?.v?.rn)} SN:${formatVal(e.pln?.v?.sn)} TN:${formatVal(e.pln?.v?.tn)}<br>Arus: R:${formatVal(e.pln?.i?.r)} S:${formatVal(e.pln?.i?.s)} T:${formatVal(e.pln?.i?.t)}</div>
+        <div><strong>🔋 UPS</strong><br>Teg: RS:${formatVal(e.ups?.v?.rs)} ST:${formatVal(e.ups?.v?.st)} TR:${formatVal(e.ups?.v?.tr)} RN:${formatVal(e.ups?.v?.rn)} SN:${formatVal(e.ups?.v?.sn)} TN:${formatVal(e.ups?.v?.tn)}<br>Arus: R:${formatVal(e.ups?.i?.r)} S:${formatVal(e.ups?.i?.s)} T:${formatVal(e.ups?.i?.t)}</div></div>
+        <div><strong>📸 Foto bukti (${(e.photos||[]).length}):</strong>${photosHtml}</div>`;
+      container.appendChild(card);
+    });
+    document.querySelectorAll(".delete-btn").forEach(btn => btn.onclick = () => { let arr=loadEntries(); arr.splice(parseInt(btn.dataset.idx),1); saveEntries(arr); renderEntries(); updateEntryNoField(); });
+  }
+
+  // Spreadsheet & full report (multiple photos)
+  function buildTableHTML() {
+    const entries = loadEntries().map(e=>{ if(!e.photos && e.photoBase64) e.photos=[e.photoBase64]; else if(!e.photos) e.photos=[]; return e; });
+    if(!entries.length) return "<p>Tidak ada data</p>";
+    let html = '<table border="1"><thead><tr style="background:#1f6e5a;color:white;"><th>No</th><th>Tgl</th><th>Petugas</th><th>Keterangan</th><th>PLN_V_RS</th><th>PLN_V_ST</th><th>PLN_V_TR</th><th>PLN_V_RN</th><th>PLN_V_SN</th><th>PLN_V_TN</th><th>PLN_A_R/S/T</th><th>UPS_V_RS</th><th>UPS_V_ST</th><th>UPS_V_TR</th><th>UPS_V_RN</th><th>UPS_V_SN</th><th>UPS_V_TN</th><th>UPS_A_R/S/T</th><th>Foto</th></tr></thead><tbody>';
+    for(let e of entries) {
+      let fotoThumbs = (e.photos||[]).slice(0,2).map(p => `<img src="${p}" class="thumb-spreadsheet">`).join('') + ((e.photos||[]).length > 2 ? ` +${e.photos.length-2}` : '');
+      if((e.photos||[]).length===0) fotoThumbs = '-';
+      html += `<tr><td>${escapeHtml(e.no)}</td><td>${escapeHtml(e.tanggal)}</td><td>${escapeHtml(e.petugas)}</td><td>${escapeHtml(e.keterangan||'')}</td>
+      <td>${e.pln?.v?.rs??'-'}</td><td>${e.pln?.v?.st??'-'}</td><td>${e.pln?.v?.tr??'-'}</td><td>${e.pln?.v?.rn??'-'}</td><td>${e.pln?.v?.sn??'-'}</td><td>${e.pln?.v?.tn??'-'}</td>
+      <td>R:${e.pln?.i?.r??'-'} S:${e.pln?.i?.s??'-'} T:${e.pln?.i?.t??'-'}</td>
+      <td>${e.ups?.v?.rs??'-'}</td><td>${e.ups?.v?.st??'-'}</td><td>${e.ups?.v?.tr??'-'}</td><td>${e.ups?.v?.rn??'-'}</td><td>${e.ups?.v?.sn??'-'}</td><td>${e.ups?.v?.tn??'-'}</td>
+      <td>R:${e.ups?.i?.r??'-'} S:${e.ups?.i?.s??'-'} T:${e.ups?.i?.t??'-'}</td>
+      <td>${fotoThumbs}</td></tr>`;
+    }
+    return html+'</tbody></table>';
+  }
+  const modal = document.getElementById("spreadsheetModal");
+  document.getElementById("exportTableBtn").onclick = () => { document.getElementById("tableContainer").innerHTML = buildTableHTML(); modal.style.display="block"; };
+  document.querySelector(".close-modal").onclick = () => modal.style.display="none";
+  window.onclick = (e) => { if(e.target===modal) modal.style.display="none"; };
+  document.getElementById("copyTableBtn").onclick = () => { const range=document.createRange(); const tbl=document.querySelector("#tableContainer table"); if(tbl){ range.selectNode(tbl); window.getSelection().removeAllRanges(); window.getSelection().addRange(range); document.execCommand("copy"); alert("Tabel tersalin."); } };
+  document.getElementById("openFullReportBtn").onclick = () => {
+    const entries = loadEntries().map(e=>{ if(!e.photos && e.photoBase64) e.photos=[e.photoBase64]; return e; });
+    if(!entries.length) return alert("Tidak ada data");
+    let repHtml = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Laporan TVRI Tanah Merah</title><style>body{font-family:sans-serif;padding:20px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccc;padding:8px}img{max-width:70px;border-radius:8px}</style></head><body><h1>Laporan PLN+UPS</h1>${buildTableHTML()}<p>Cetak/PDF</p></body></html>`;
+    let w=window.open(); w.document.write(repHtml); w.document.close();
+  };
+  //initial
+  resetFormFields();
+  renderEntries();
+</script>
+</body>
+</html>

@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>Monitoring Pemancar | Catat Downtime & Status ON/OFF (Lintas Hari)</title>
+  <!-- Tailwind + Font Awesome -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    body { background: #f0f4f8; font-family: 'Inter', system-ui, sans-serif; }
+    .card-hover { transition: all 0.2s ease; }
+    .card-hover:hover { transform: translateY(-2px); box-shadow: 0 12px 20px -12px rgba(0,0,0,0.15); }
+    .status-badge { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium; }
+    .ongoing-row { background-color: #fff8e7; border-left: 4px solid #f59e0b; }
+    .btn-action:active { transform: scale(0.96); }
+  </style>
+</head>
+<body class="antialiased">
+
+<div class="container mx-auto px-4 py-6 max-w-7xl">
+  <!-- Header & stats -->
+  <div class="flex flex-wrap justify-between items-center mb-6 border-b border-gray-200 pb-4">
+    <div>
+      <h1 class="text-3xl font-bold text-gray-800 flex items-center gap-2">
+        <i class="fas fa-broadcast-tower text-blue-600"></i> 
+        Monitoring Pemancar
+      </h1>
+      <p class="text-gray-500 text-sm">Catat kapan pemancar OFF → nanti update waktu ON (otomatis deteksi beda hari)</p>
+    </div>
+    <div class="flex gap-2 mt-2 sm:mt-0">
+      <button id="exportHtmlBtn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg shadow-sm text-sm font-medium flex items-center gap-1">
+        <i class="fas fa-file-code"></i> Export HTML
+      </button>
+      <button id="exportCsvBtn" class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 px-4 py-2 rounded-lg shadow-sm text-sm flex items-center gap-1">
+        <i class="fas fa-download"></i> CSV
+      </button>
+      <button id="clearAllBtn" class="bg-white border border-red-300 text-red-600 hover:bg-red-50 px-4 py-2 rounded-lg shadow-sm text-sm font-medium flex items-center gap-1">
+        <i class="fas fa-trash-alt"></i> Hapus Semua
+      </button>
+    </div>
+  </div>
+
+  <!-- Statistik ringkasan -->
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+    <div class="bg-white rounded-2xl shadow p-4 flex justify-between items-center border-l-8 border-blue-500 card-hover">
+      <div><p class="text-gray-500 text-xs uppercase font-semibold">Total Kejadian</p><p id="totalEvents" class="text-2xl font-extrabold">0</p></div>
+      <i class="fas fa-chart-line text-3xl text-blue-200"></i>
+    </div>
+    <div class="bg-white rounded-2xl shadow p-4 flex justify-between items-center border-l-8 border-amber-500 card-hover">
+      <div><p class="text-gray-500 text-xs uppercase font-semibold">Kejadian Aktif (OFF)</p><p id="ongoingCount" class="text-2xl font-extrabold text-amber-600">0</p></div>
+      <i class="fas fa-hourglass-half text-3xl text-amber-200"></i>
+    </div>
+    <div class="bg-white rounded-2xl shadow p-4 flex justify-between items-center border-l-8 border-emerald-500 card-hover">
+      <div><p class="text-gray-500 text-xs uppercase font-semibold">Total Waktu OFF Selesai</p><p id="totalDowntime" class="text-xl font-extrabold">0 jam</p></div>
+      <i class="fas fa-clock text-3xl text-emerald-200"></i>
+    </div>
+    <div class="bg-white rounded-2xl shadow p-4 flex justify-between items-center border-l-8 border-purple-500 card-hover">
+      <div><p class="text-gray-500 text-xs uppercase font-semibold">Rata-rata Durasi</p><p id="avgDowntime" class="text-xl font-extrabold">0 menit</p></div>
+      <i class="fas fa-chart-simple text-3xl text-purple-200"></i>
+    </div>
+  </div>
+
+  <!-- Form CATAT OFFLINE (tanpa waktu ON dulu) -->
+  <div class="bg-white rounded-2xl shadow-md p-5 mb-8 border border-gray-100">
+    <h2 class="text-xl font-semibold text-gray-700 mb-4 flex items-center gap-2"><i class="fas fa-power-off text-red-500"></i> Catat Pemancar OFF (Belum ON)</h2>
+    <form id="offlineForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal OFF <span class="text-red-500">*</span></label>
+        <input type="date" id="offTanggal" required class="w-full border border-gray-300 rounded-lg px-3 py-2">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Waktu OFF <span class="text-red-500">*</span></label>
+        <input type="time" id="offWaktu" required class="w-full border border-gray-300 rounded-lg px-3 py-2">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Petugas (Nama)</label>
+        <input type="text" id="offPetugas" placeholder="Contoh: Andi" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Alasan OFF (sementara)</label>
+        <input type="text" id="offAlasan" placeholder="Gangguan / maintenance" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+      </div>
+      <div class="md:col-span-2 lg:col-span-4">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Deskripsi / Catatan awal</label>
+        <input type="text" id="offDeskripsi" placeholder="Info awal penyebab..." class="w-full border border-gray-300 rounded-lg px-3 py-2">
+      </div>
+      <div class="md:col-span-2 lg:col-span-4 flex justify-end">
+        <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg shadow font-medium flex items-center gap-2 transition">
+          <i class="fas fa-save"></i> Simpan (Pemancar OFF / Belum ON)
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Form UPDATE: Untuk menyelesaikan kejadian yang masih aktif (isi waktu ON) -->
+  <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl shadow-md p-5 mb-8 border border-blue-100">
+    <h2 class="text-lg font-semibold text-blue-800 flex items-center gap-2"><i class="fas fa-check-circle"></i> Selesaikan Kejadian Aktif (Masukkan Waktu ON)</h2>
+    <p class="text-sm text-gray-600 mb-3">Pilih kejadian yang masih OFF dari tabel, lalu isi waktu ON. <strong>Jika waktu ON lebih kecil dari waktu OFF, otomatis dianggap keesokan harinya.</strong></p>
+    <div class="flex flex-wrap gap-3 items-end">
+      <div class="flex-1 min-w-[180px]">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Pilih Kejadian Belum ON</label>
+        <select id="selectOngoingEvent" class="w-full border border-gray-300 rounded-lg px-3 py-2 bg-white">
+          <option value="">-- Pilih dari daftar aktif --</option>
+        </select>
+      </div>
+      <div class="w-40">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Waktu ON <span class="text-red-500">*</span></label>
+        <input type="time" id="updateOnTime" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+      </div>
+      <div class="flex-1 min-w-[180px]">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Alasan Final OFF</label>
+        <input type="text" id="updateAlasanFinal" placeholder="Alasan lengkap" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+      </div>
+      <div class="flex-1">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Deskripsi Tambahan</label>
+        <input type="text" id="updateDeskripsi" placeholder="Keterangan perbaikan" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+      </div>
+      <div>
+        <button id="btnCompleteEvent" class="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg shadow font-medium flex items-center gap-1 mt-1">
+          <i class="fas fa-play-circle"></i> Set ON & Selesai
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabel Data Pemancar -->
+  <div class="bg-white rounded-2xl shadow-md overflow-hidden border border-gray-200">
+    <div class="px-5 py-4 bg-gray-50 border-b border-gray-200 flex flex-wrap justify-between items-center">
+      <h2 class="text-lg font-semibold text-gray-700"><i class="fas fa-table-list mr-2 text-blue-500"></i>Riwayat & Status Pemancar</h2>
+      <div class="text-xs text-gray-400"><span class="inline-block w-3 h-3 bg-amber-400 rounded-full mr-1"></span> Kuning = masih OFF (belum ON) </div>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200 text-sm">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-4 py-3 text-left font-semibold text-gray-600">NO</th>
+            <th class="px-4 py-3 text-left font-semibold text-gray-600">TANGGAL OFF</th>
+            <th class="px-4 py-3 text-left font-semibold text-gray-600">Waktu OFF</th>
+            <th class="px-4 py-3 text-left font-semibold text-gray-600">Waktu ON</th>
+            <th class="px-4 py-3 text-left font-semibold text-gray-600">TOTAL WAKTU</th>
+            <th class="px-4 py-3 text-left font-semibold text-gray-600">DESKRIPSI / KETERANGAN</th>
+            <th class="px-4 py-3 text-left font-semibold text-gray-600">PETUGAS</th>
+            <th class="px-4 py-3 text-left font-semibold text-gray-600">ALASAN OFF</th>
+            <th class="px-4 py-3 text-center font-semibold text-gray-600">STATUS</th>
+            <th class="px-4 py-3 text-center font-semibold text-gray-600">AKSI</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <tr><td colspan="10" class="text-center py-8 text-gray-400">Memuat data...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="text-xs text-gray-400 text-center mt-6">
+    <i class="fas fa-info-circle"></i> Fitur: jika waktu ON dimasukkan lebih kecil dari waktu OFF, sistem akan menganggap ON terjadi keesokan hari (durasi dihitung otomatis).
+  </div>
+</div>
+
+<script>
+  // ======================== STORAGE & GLOBAL DATA ========================
+  const STORAGE_KEY = "transmitter_advanced_logs";
+  let logs = [];       // setiap log: { id, tanggalOff, offTime, onTime (nullable), petugas, alasanOff, deskripsi, status: 'ongoing' or 'completed', totalWaktuMinutes, totalWaktuStr, alasanFinal, deskripsiFinal }
+  
+  // Helper: hitung durasi dalam menit, mendukung ON di hari berikutnya (jika onTime <= offTime)
+  function calculateDurationMinutes(offTimeStr, onTimeStr) {
+    if (!offTimeStr || !onTimeStr) return null;
+    const [offHour, offMin] = offTimeStr.split(":").map(Number);
+    const [onHour, onMin] = onTimeStr.split(":").map(Number);
+    if (isNaN(offHour) || isNaN(offMin) || isNaN(onHour) || isNaN(onMin)) return null;
+    let offTotal = offHour * 60 + offMin;
+    let onTotal = onHour * 60 + onMin;
+    
+    // Jika ON kurang dari atau sama dengan OFF, berarti ON terjadi di hari berikutnya
+    if (onTotal <= offTotal) {
+      onTotal += 24 * 60;
+    }
+    const duration = onTotal - offTotal;
+    // Durasi tidak boleh negatif, dan maksimal 24 jam (opsional)
+    return duration > 0 ? duration : null;
+  }
+  
+  function formatDuration(minutes) {
+    if (minutes === null || minutes === undefined) return "-";
+    const hrs = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    if (hrs === 0 && mins === 0) return "0 menit";
+    let str = "";
+    if (hrs > 0) str += `${hrs} jam `;
+    if (mins > 0) str += `${mins} menit`;
+    return str.trim();
+  }
+  
+  // Simpan ke localStorage dan render ulang
+  function persistAndRender() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
+    renderTable();
+    updateStatsAndDropdown();
+  }
+  
+  // Update statistik ringkasan & dropdown event ongoing
+  function updateStatsAndDropdown() {
+    const totalEvents = logs.length;
+    const ongoingEvents = logs.filter(l => l.status === 'ongoing').length;
+    const completedLogs = logs.filter(l => l.status === 'completed' && l.totalWaktuMinutes != null);
+    const totalMinutes = completedLogs.reduce((sum, l) => sum + (l.totalWaktuMinutes || 0), 0);
+    const avgMinutes = completedLogs.length > 0 ? Math.round(totalMinutes / completedLogs.length) : 0;
+    
+    document.getElementById("totalEvents").innerText = totalEvents;
+    document.getElementById("ongoingCount").innerText = ongoingEvents;
+    document.getElementById("totalDowntime").innerHTML = `${(totalMinutes / 60).toFixed(1)} jam <span class="text-xs">(${totalMinutes} menit)</span>`;
+    document.getElementById("avgDowntime").innerHTML = `${avgMinutes} menit`;
+    
+    // populate dropdown untuk kejadian aktif
+    const selectEl = document.getElementById("selectOngoingEvent");
+    if (selectEl) {
+      const ongoingList = logs.filter(l => l.status === 'ongoing');
+      selectEl.innerHTML = '<option value="">-- Pilih kejadian aktif --</option>' + 
+        ongoingList.map(log => `<option value="${log.id}">${log.tanggalOff} ${log.offTime} - ${log.alasanOff || 'Tanpa alasan'} (Petugas: ${log.petugas || '-'})</option>`).join('');
+    }
+  }
+  
+  // Render tabel
+  function renderTable() {
+    const tbody = document.getElementById("tableBody");
+    if (!logs.length) {
+      tbody.innerHTML = `<tr><td colspan="10" class="text-center py-10 text-gray-400"><i class="fas fa-database"></i> Belum ada data. Gunakan form "Catat Pemancar OFF" di atas.</td></tr>`;
+      return;
+    }
+    // Urutkan berdasarkan tanggal OFF descending, ongoing lebih dahulu
+    const sorted = [...logs].sort((a,b) => {
+      if (a.status === 'ongoing' && b.status !== 'ongoing') return -1;
+      if (a.status !== 'ongoing' && b.status === 'ongoing') return 1;
+      return new Date(b.tanggalOff) - new Date(a.tanggalOff);
+    });
+    let html = "";
+    sorted.forEach((item, idx) => {
+      const no = idx+1;
+      const isOngoing = item.status === 'ongoing';
+      const rowClass = isOngoing ? 'ongoing-row' : '';
+      const offDate = item.tanggalOff || "-";
+      const offTimeDisplay = item.offTime || "-";
+      let onTimeDisplay = item.onTime || (isOngoing ? '<span class="text-amber-600 font-medium">Belum ON</span>' : '-');
+      // Jika ON selesai dan waktu ON lebih kecil dari OFF, tambahkan indikator (+1 hari)
+      if (!isOngoing && item.onTime && item.offTime) {
+        const [offHour, offMin] = item.offTime.split(":").map(Number);
+        const [onHour, onMin] = item.onTime.split(":").map(Number);
+        const offTotal = offHour*60+offMin;
+        const onTotal = onHour*60+onMin;
+        if (onTotal <= offTotal) {
+          onTimeDisplay = `${item.onTime} <span class="text-xs text-gray-500">(+1 hari)</span>`;
+        }
+      }
+      const totalWaktuDisplay = isOngoing ? '<span class="text-gray-400 italic">Sedang OFF</span>' : (item.totalWaktuStr || '-');
+      const deskripsi = item.deskripsiFinal || item.deskripsi || "-";
+      const petugas = item.petugas || "-";
+      const alasanOff = isOngoing ? (item.alasanOff || "Belum diketahui") : (item.alasanFinal || item.alasanOff || "-");
+      const statusBadge = isOngoing ? '<span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full text-xs font-semibold"><i class="fas fa-exclamation-triangle mr-1"></i> OFF (Aktif)</span>' : '<span class="bg-green-100 text-green-800 px-2 py-0.5 rounded-full text-xs"><i class="fas fa-check-circle"></i> Selesai / ON</span>';
+      
+      html += `<tr class="${rowClass} hover:bg-gray-50 transition">
+        <td class="px-4 py-3 font-medium">${no}</td>
+        <td class="px-4 py-3 whitespace-nowrap">${offDate}</td>
+        <td class="px-4 py-3 font-mono">${offTimeDisplay}</td>
+        <td class="px-4 py-3 font-mono">${onTimeDisplay}</td>
+        <td class="px-4 py-3 font-semibold ${isOngoing ? 'text-gray-400' : 'text-emerald-700'}">${totalWaktuDisplay}</td>
+        <td class="px-4 py-3 max-w-xs truncate" title="${deskripsi.replace(/"/g, '&quot;')}">${deskripsi}</td>
+        <td class="px-4 py-3">${petugas}</td>
+        <td class="px-4 py-3 max-w-xs truncate" title="${alasanOff.replace(/"/g, '&quot;')}">${alasanOff}</td>
+        <td class="px-4 py-3 text-center">${statusBadge}</td>
+        <td class="px-4 py-3 text-center whitespace-nowrap">
+          ${isOngoing ? `<button onclick="openCompleteModal('${item.id}')" class="text-green-600 hover:text-green-800 bg-green-50 p-1.5 rounded-md mx-1 btn-action" title="Selesaikan (isi waktu ON)"><i class="fas fa-check-double"></i></button>` : ''}
+          <button onclick="deleteLog('${item.id}')" class="text-red-600 hover:text-red-800 bg-red-50 p-1.5 rounded-md mx-1 btn-action"><i class="fas fa-trash-alt"></i></button>
+        </td>
+      </tr>`;
+    });
+    tbody.innerHTML = html;
+  }
+  
+  // Membuat ID unik
+  function generateId() {
+    return Date.now() + '-' + Math.random().toString(36).substring(2, 8);
+  }
+  
+  // Tambah kejadian OFF (belum ON)
+  function addOngoingEvent(tanggal, offTime, petugas, alasanSementara, deskripsiAwal) {
+    const newId = generateId();
+    const newLog = {
+      id: newId,
+      tanggalOff: tanggal,
+      offTime: offTime,
+      onTime: null,
+      petugas: petugas || "",
+      alasanOff: alasanSementara || "",
+      deskripsi: deskripsiAwal || "",
+      status: 'ongoing',
+      totalWaktuMinutes: null,
+      totalWaktuStr: null,
+      alasanFinal: null,
+      deskripsiFinal: null,
+    };
+    logs.push(newLog);
+    persistAndRender();
+  }
+  
+  // Menyelesaikan event: mengisi waktu ON, alasan final, hitung durasi (termasuk dukungan lintas hari)
+  function completeEvent(eventId, onTime, alasanFinal, deskripsiFinal) {
+    const index = logs.findIndex(l => l.id === eventId);
+    if (index === -1) return false;
+    const log = logs[index];
+    if (log.status !== 'ongoing') {
+      alert("Kejadian sudah selesai sebelumnya!");
+      return false;
+    }
+    if (!onTime) {
+      alert("Waktu ON harus diisi!");
+      return false;
+    }
+    
+    // hitung durasi (otomatis menangani ON di hari berikutnya jika onTime <= offTime)
+    const minutesDiff = calculateDurationMinutes(log.offTime, onTime);
+    if (minutesDiff === null || minutesDiff <= 0) {
+      alert(`Gagal menghitung durasi. Pastikan waktu OFF (${log.offTime}) dan ON (${onTime}) valid.`);
+      return false;
+    }
+    
+    // Informasi jika terjadi lintas hari
+    const [offHour, offMin] = log.offTime.split(":").map(Number);
+    const [onHour, onMin] = onTime.split(":").map(Number);
+    const offTotal = offHour*60+offMin;
+    const onTotal = onHour*60+onMin;
+    let infoLintasHari = "";
+    if (onTotal <= offTotal) {
+      infoLintasHari = " (waktu ON lebih kecil, otomatis dianggap keesokan hari)";
+    }
+    
+    const durationStr = formatDuration(minutesDiff);
+    // update log
+    log.onTime = onTime;
+    log.status = 'completed';
+    log.totalWaktuMinutes = minutesDiff;
+    log.totalWaktuStr = durationStr;
+    log.alasanFinal = alasanFinal || log.alasanOff;
+    log.deskripsiFinal = deskripsiFinal || log.deskripsi;
+    persistAndRender();
+    alert(`Kejadian berhasil diselesaikan! Durasi OFF: ${durationStr}${infoLintasHari}`);
+    return true;
+  }
+  
+  // Hapus log
+  function deleteLog(id) {
+    if (confirm("Hapus data ini secara permanen?")) {
+      logs = logs.filter(l => l.id !== id);
+      persistAndRender();
+    }
+  }
+  
+  // Buka modal untuk menyelesaikan event via tombol di tabel
+  window.openCompleteModal = function(eventId) {
+    const event = logs.find(l => l.id === eventId);
+    if (!event) return;
+    document.getElementById("selectOngoingEvent").value = eventId;
+    document.getElementById("updateOnTime").focus();
+    const alasanSebelum = event.alasanOff || "";
+    document.getElementById("updateAlasanFinal").value = alasanSebelum;
+    document.getElementById("updateDeskripsi").value = event.deskripsi || "";
+    document.querySelector(".bg-gradient-to-r").scrollIntoView({ behavior: "smooth" });
+  };
+  
+  // Proses complete dari tombol "Set ON & Selesai"
+  function processCompleteFromUI() {
+    const selectEl = document.getElementById("selectOngoingEvent");
+    const selectedId = selectEl.value;
+    if (!selectedId) {
+      alert("Pilih kejadian aktif yang akan diselesaikan terlebih dahulu.");
+      return;
+    }
+    const onTime = document.getElementById("updateOnTime").value.trim();
+    if (!onTime) {
+      alert("Masukkan Waktu Pemancar ON.");
+      return;
+    }
+    const alasanFinal = document.getElementById("updateAlasanFinal").value.trim();
+    const deskripsi = document.getElementById("updateDeskripsi").value.trim();
+    const success = completeEvent(selectedId, onTime, alasanFinal, deskripsi);
+    if (success) {
+      // reset field update form
+      document.getElementById("updateOnTime").value = "";
+      document.getElementById("updateAlasanFinal").value = "";
+      document.getElementById("updateDeskripsi").value = "";
+      selectEl.value = "";
+    }
+  }
+  
+  // Hapus semua data
+  function clearAllData() {
+    if (logs.length === 0) return;
+    if (confirm("PERINGATAN: Semua data riwayat pemancar (termasuk yang aktif) akan dihapus permanen! Lanjutkan?")) {
+      logs = [];
+      persistAndRender();
+    }
+  }
+  
+  // Export ke CSV (menampilkan semua kolom penting)
+  function exportToCSV() {
+    if (logs.length === 0) {
+      alert("Tidak ada data untuk diekspor.");
+      return;
+    }
+    const sorted = [...logs].sort((a,b) => new Date(b.tanggalOff) - new Date(a.tanggalOff));
+    const headers = ["NO", "TANGGAL OFF", "WAKTU OFF", "WAKTU ON", "TOTAL DURASI", "STATUS", "PETUGAS", "ALASAN OFF (final)", "DESKRIPSI / KETERANGAN"];
+    const rows = sorted.map((log, idx) => {
+      const total = log.status === 'completed' ? (log.totalWaktuStr || '-') : 'Sedang OFF';
+      const alasanFinale = log.status === 'completed' ? (log.alasanFinal || log.alasanOff) : (log.alasanOff || '-');
+      const deskFinal = log.status === 'completed' ? (log.deskripsiFinal || log.deskripsi) : (log.deskripsi || '-');
+      let onTimeDisplay = log.onTime || 'Belum ON';
+      // tambahkan indikator lintas hari jika diperlukan
+      if (log.onTime && log.offTime && log.status === 'completed') {
+        const [offHour, offMin] = log.offTime.split(":").map(Number);
+        const [onHour, onMin] = log.onTime.split(":").map(Number);
+        if ((onHour*60+onMin) <= (offHour*60+offMin)) onTimeDisplay += " (+1 hari)";
+      }
+      return [
+        idx+1,
+        log.tanggalOff,
+        log.offTime,
+        onTimeDisplay,
+        total,
+        log.status === 'ongoing' ? 'AKTIF OFF' : 'SELESAI (ON)',
+        log.petugas || '-',
+        alasanFinale,
+        deskFinal
+      ];
+    });
+    const csvContent = [headers, ...rows].map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.href = url;
+    link.setAttribute("download", "monitoring_pemancar_status.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
+  // ========== EXPORT HTML ==========
+  function exportToHTML() {
+    if (logs.length === 0) {
+      alert("Tidak ada data untuk diekspor.");
+      return;
+    }
+    
+    const totalEvents = logs.length;
+    const ongoingEvents = logs.filter(l => l.status === 'ongoing').length;
+    const completedLogs = logs.filter(l => l.status === 'completed' && l.totalWaktuMinutes != null);
+    const totalMinutes = completedLogs.reduce((sum, l) => sum + (l.totalWaktuMinutes || 0), 0);
+    const avgMinutes = completedLogs.length > 0 ? Math.round(totalMinutes / completedLogs.length) : 0;
+    const totalDowntimeHours = (totalMinutes / 60).toFixed(1);
+    
+    const sorted = [...logs].sort((a,b) => new Date(b.tanggalOff) - new Date(a.tanggalOff));
+    let tableRows = "";
+    sorted.forEach((log, idx) => {
+      const isOngoing = log.status === 'ongoing';
+      const totalDisplay = isOngoing ? 'Sedang OFF' : (log.totalWaktuStr || '-');
+      const alasanDisplay = isOngoing ? (log.alasanOff || 'Belum diketahui') : (log.alasanFinal || log.alasanOff || '-');
+      const deskDisplay = isOngoing ? (log.deskripsi || '-') : (log.deskripsiFinal || log.deskripsi || '-');
+      const statusText = isOngoing ? 'AKTIF OFF' : 'SELESAI (ON)';
+      let onTimeDisplay = log.onTime || (isOngoing ? 'Belum ON' : '-');
+      if (!isOngoing && log.onTime && log.offTime) {
+        const [offHour, offMin] = log.offTime.split(":").map(Number);
+        const [onHour, onMin] = log.onTime.split(":").map(Number);
+        if ((onHour*60+onMin) <= (offHour*60+offMin)) onTimeDisplay += " (+1 hari)";
+      }
+      
+      tableRows += `<tr style="border-bottom:1px solid #ddd;">
+        <td style="padding:10px 6px; text-align:center;">${idx+1}</td>
+        <td style="padding:10px 6px;">${log.tanggalOff}</td>
+        <td style="padding:10px 6px;">${log.offTime}</td>
+        <td style="padding:10px 6px;">${onTimeDisplay}</td>
+        <td style="padding:10px 6px; font-weight:500;">${totalDisplay}</td>
+        <td style="padding:10px 6px;">${deskDisplay}</td>
+        <td style="padding:10px 6px;">${log.petugas || '-'}</td>
+        <td style="padding:10px 6px;">${alasanDisplay}</td>
+        <td style="padding:10px 6px; text-align:center;">${statusText}</td>
+       </tr>`;
+    });
+    
+    const exportHtml = `<!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <title>Laporan Monitoring Pemancar</title>
+      <style>
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', 'Inter', system-ui, sans-serif; margin: 30px auto; background: #eef2f5; padding: 20px; }
+        .laporan-container { max-width: 1400px; margin: 0 auto; background: white; border-radius: 28px; box-shadow: 0 20px 35px -12px rgba(0,0,0,0.15); overflow: hidden; }
+        .header { background: linear-gradient(135deg, #0f172a, #1e293b); color: white; padding: 24px 28px; }
+        .header h1 { margin: 0 0 8px 0; font-size: 26px; display: flex; align-items: center; gap: 12px; }
+        .header p { margin: 0; opacity: 0.85; font-size: 14px; }
+        .stats-grid { display: flex; flex-wrap: wrap; gap: 20px; padding: 24px 28px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
+        .stat-card { background: white; border-radius: 24px; padding: 16px 24px; flex: 1 1 180px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); border-left: 6px solid; }
+        .stat-label { font-size: 12px; text-transform: uppercase; font-weight: 600; color: #475569; letter-spacing: 0.5px; }
+        .stat-value { font-size: 28px; font-weight: 800; color: #0f172a; line-height: 1.2; margin-top: 6px; }
+        .table-wrapper { padding: 0 24px 28px 24px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; box-shadow: 0 1px 3px rgba(0,0,0,0.03); }
+        th { background: #f1f5f9; padding: 12px 8px; text-align: left; font-weight: 700; color: #1e293b; border-bottom: 2px solid #cbd5e1; }
+        td { padding: 10px 8px; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
+        .footer { background: #f1f5f9; padding: 16px 28px; text-align: center; font-size: 11px; color: #475569; border-top: 1px solid #cbd5e1; }
+        @media (max-width: 700px) {
+          th, td { font-size: 11px; padding: 6px 4px; }
+          .stat-value { font-size: 22px; }
+        }
+      </style>
+    </head>
+    <body>
+    <div class="laporan-container">
+      <div class="header">
+        <h1><i class="fas fa-broadcast-tower"></i> Laporan Monitoring Pemancar</h1>
+        <p>Dicetak pada: ${new Date().toLocaleString('id-ID')} | Catat OFF/ON dengan deteksi lintas hari</p>
+      </div>
+      
+      <div class="stats-grid">
+        <div class="stat-card" style="border-left-color: #3b82f6;"><div class="stat-label">Total Kejadian</div><div class="stat-value">${totalEvents}</div></div>
+        <div class="stat-card" style="border-left-color: #f59e0b;"><div class="stat-label">Kejadian Aktif (OFF)</div><div class="stat-value">${ongoingEvents}</div></div>
+        <div class="stat-card" style="border-left-color: #10b981;"><div class="stat-label">Total Waktu OFF Selesai</div><div class="stat-value">${totalDowntimeHours} jam <span style="font-size:12px;">(${totalMinutes} menit)</span></div></div>
+        <div class="stat-card" style="border-left-color: #8b5cf6;"><div class="stat-label">Rata-rata Durasi</div><div class="stat-value">${avgMinutes} menit</div></div>
+      </div>
+      
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr><th>No</th><th>Tanggal OFF</th><th>Waktu OFF</th><th>Waktu ON</th><th>Total Waktu</th><th>Deskripsi</th><th>Petugas</th><th>Alasan OFF</th><th>Status</th></tr>
+          </thead>
+          <tbody>
+            ${tableRows}
+          </tbody>
+        </table>
+      </div>
+      <div class="footer">
+        <i class="fas fa-chart-line"></i> Laporan otomatis dari sistem Monitoring Pemancar. Jika waktu ON lebih kecil dari OFF, dianggap keesokan hari.
+      </div>
+    </div>
+    </body>
+    </html>`;
+    
+    const blob = new Blob([exportHtml], { type: "text/html" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `laporan_pemancar_${Date.now()}.html`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(blob);
+  }
+  
+  // Inisialisasi, load data, contoh data awal dan event listener
+  function loadInitialData() {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      logs = JSON.parse(stored);
+      logs = logs.map(l => {
+        if (!l.status) l.status = l.onTime ? 'completed' : 'ongoing';
+        if (l.status === 'completed' && l.totalWaktuMinutes === undefined && l.onTime) {
+          const mins = calculateDurationMinutes(l.offTime, l.onTime);
+          if (mins) {
+            l.totalWaktuMinutes = mins;
+            l.totalWaktuStr = formatDuration(mins);
+          }
+        }
+        return l;
+      });
+    } else {
+      logs = [
+        {
+          id: "sample1",
+          tanggalOff: "2025-05-20",
+          offTime: "08:30",
+          onTime: "10:15",
+          petugas: "Budi",
+          alasanOff: "Gangguan listrik",
+          deskripsi: "Tegangan drop",
+          status: "completed",
+          totalWaktuMinutes: 105,
+          totalWaktuStr: "1 jam 45 menit",
+          alasanFinal: "Genset menyala telat",
+          deskripsiFinal: "Setelah perbaikan panel"
+        },
+        {
+          id: "sample2",
+          tanggalOff: "2025-05-22",
+          offTime: "23:00",
+          onTime: "00:30",   // contoh lintas hari
+          petugas: "Siti",
+          alasanOff: "Pemeliharaan server",
+          deskripsi: "Update sistem",
+          status: "completed",
+          totalWaktuMinutes: 90,
+          totalWaktuStr: "1 jam 30 menit",
+          alasanFinal: "Pemeliharaan selesai",
+          deskripsiFinal: "Restart berhasil"
+        },
+        {
+          id: "sample3",
+          tanggalOff: "2025-05-23",
+          offTime: "14:00",
+          onTime: null,
+          petugas: "Rudi",
+          alasanOff: "Gangguan sinyal",
+          deskripsi: "Sedang investigasi",
+          status: "ongoing"
+        }
+      ];
+    }
+    persistAndRender();
+  }
+  
+  document.addEventListener("DOMContentLoaded", () => {
+    loadInitialData();
+    const today = new Date().toISOString().split('T')[0];
+    const offTanggalInput = document.getElementById("offTanggal");
+    if (offTanggalInput) offTanggalInput.value = today;
+    
+    const offlineForm = document.getElementById("offlineForm");
+    offlineForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const tanggal = document.getElementById("offTanggal").value;
+      const offTime = document.getElementById("offWaktu").value;
+      const petugas = document.getElementById("offPetugas").value;
+      const alasan = document.getElementById("offAlasan").value;
+      const deskripsi = document.getElementById("offDeskripsi").value;
+      if (!tanggal || !offTime) {
+        alert("Tanggal dan Waktu OFF harus diisi!");
+        return;
+      }
+      addOngoingEvent(tanggal, offTime, petugas, alasan, deskripsi);
+      document.getElementById("offWaktu").value = "";
+      document.getElementById("offPetugas").value = "";
+      document.getElementById("offAlasan").value = "";
+      document.getElementById("offDeskripsi").value = "";
+      alert("Data pemancar OFF berhasil disimpan.");
+    });
+    
+    document.getElementById("btnCompleteEvent").addEventListener("click", processCompleteFromUI);
+    document.getElementById("clearAllBtn").addEventListener("click", clearAllData);
+    document.getElementById("exportCsvBtn").addEventListener("click", exportToCSV);
+    document.getElementById("exportHtmlBtn").addEventListener("click", exportToHTML);
+    
+    updateStatsAndDropdown();
+  });
+  
+  window.deleteLog = deleteLog;
+</script>
+</body>
+</html>
