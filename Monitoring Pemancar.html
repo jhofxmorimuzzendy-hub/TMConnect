@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>Monitoring Pemancar | Catat Downtime & Status ON/OFF (Lintas Hari) + Firebase</title>
+  <!-- Tailwind + Font Awesome -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+  <!-- Konfigurasi Firebase lokal (pastikan file ini ada) -->
+  <script src="firebase-config.js"></script>
+
+  <style>
+    body { background: #f0f4f8; font-family: 'Inter', system-ui, sans-serif; }
+    .card-hover { transition: all 0.2s ease; }
+    .card-hover:hover { transform: translateY(-2px); box-shadow: 0 12px 20px -12px rgba(0,0,0,0.15); }
+    .ongoing-row { background-color: #fff8e7; border-left: 4px solid #f59e0b; }
+    .btn-action:active { transform: scale(0.96); }
+    .sync-status { font-size: 0.7rem; padding: 2px 10px; border-radius: 20px; background: #e2e8f0; display: inline-block; margin-left: 12px; }
+  </style>
+</head>
+<body class="antialiased">
+
+<div class="container mx-auto px-4 py-6 max-w-7xl">
+  <!-- Header & stats -->
+  <div class="flex flex-wrap justify-between items-center mb-6 border-b border-gray-200 pb-4">
+    <div>
+      <h1 class="text-3xl font-bold text-gray-800 flex items-center gap-2">
+        <i class="fas fa-broadcast-tower text-blue-600"></i> 
+        Monitoring Pemancar
+        <span id="firebaseStatus" class="sync-status"><i class="fas fa-cloud-upload-alt"></i> Menghubungkan...</span>
+      </h1>
+      <p class="text-gray-500 text-sm">Catat kapan pemancar OFF → nanti update waktu ON (otomatis deteksi beda hari) | Data tersimpan di Firebase + lokal</p>
+    </div>
+    <div class="flex gap-2 mt-2 sm:mt-0">
+      <button id="exportHtmlBtn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg shadow-sm text-sm font-medium flex items-center gap-1">
+        <i class="fas fa-file-code"></i> Export HTML
+      </button>
+      <button id="exportCsvBtn" class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 px-4 py-2 rounded-lg shadow-sm text-sm flex items-center gap-1">
+        <i class="fas fa-download"></i> CSV
+      </button>
+      <button id="clearAllBtn" class="bg-white border border-red-300 text-red-600 hover:bg-red-50 px-4 py-2 rounded-lg shadow-sm text-sm font-medium flex items-center gap-1">
+        <i class="fas fa-trash-alt"></i> Hapus Semua
+      </button>
+    </div>
+  </div>
+
+  <!-- Statistik ringkasan -->
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+    <div class="bg-white rounded-2xl shadow p-4 flex justify-between items-center border-l-8 border-blue-500 card-hover">
+      <div><p class="text-gray-500 text-xs uppercase font-semibold">Total Kejadian</p><p id="totalEvents" class="text-2xl font-extrabold">0</p></div>
+      <i class="fas fa-chart-line text-3xl text-blue-200"></i>
+    </div>
+    <div class="bg-white rounded-2xl shadow p-4 flex justify-between items-center border-l-8 border-amber-500 card-hover">
+      <div><p class="text-gray-500 text-xs uppercase font-semibold">Kejadian Aktif (OFF)</p><p id="ongoingCount" class="text-2xl font-extrabold text-amber-600">0</p></div>
+      <i class="fas fa-hourglass-half text-3xl text-amber-200"></i>
+    </div>
+    <div class="bg-white rounded-2xl shadow p-4 flex justify-between items-center border-l-8 border-emerald-500 card-hover">
+      <div><p class="text-gray-500 text-xs uppercase font-semibold">Total Waktu OFF Selesai</p><p id="totalDowntime" class="text-xl font-extrabold">0 jam</p></div>
+      <i class="fas fa-clock text-3xl text-emerald-200"></i>
+    </div>
+    <div class="bg-white rounded-2xl shadow p-4 flex justify-between items-center border-l-8 border-purple-500 card-hover">
+      <div><p class="text-gray-500 text-xs uppercase font-semibold">Rata-rata Durasi</p><p id="avgDowntime" class="text-xl font-extrabold">0 menit</p></div>
+      <i class="fas fa-chart-simple text-3xl text-purple-200"></i>
+    </div>
+  </div>
+
+  <!-- Form CATAT OFFLINE -->
+  <div class="bg-white rounded-2xl shadow-md p-5 mb-8 border border-gray-100">
+    <h2 class="text-xl font-semibold text-gray-700 mb-4 flex items-center gap-2"><i class="fas fa-power-off text-red-500"></i> Catat Pemancar OFF (Belum ON)</h2>
+    <form id="offlineForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal OFF <span class="text-red-500">*</span></label>
+        <input type="date" id="offTanggal" required class="w-full border border-gray-300 rounded-lg px-3 py-2">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Waktu OFF <span class="text-red-500">*</span></label>
+        <input type="time" id="offWaktu" required class="w-full border border-gray-300 rounded-lg px-3 py-2">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Petugas (Nama)</label>
+        <input type="text" id="offPetugas" placeholder="Contoh: Andi" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Alasan OFF (sementara)</label>
+        <input type="text" id="offAlasan" placeholder="Gangguan / maintenance" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+      </div>
+      <div class="md:col-span-2 lg:col-span-4">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Deskripsi / Catatan awal</label>
+        <input type="text" id="offDeskripsi" placeholder="Info awal penyebab..." class="w-full border border-gray-300 rounded-lg px-3 py-2">
+      </div>
+      <div class="md:col-span-2 lg:col-span-4 flex justify-end">
+        <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg shadow font-medium flex items-center gap-2 transition">
+          <i class="fas fa-save"></i> Simpan (Pemancar OFF / Belum ON)
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Form UPDATE -->
+  <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl shadow-md p-5 mb-8 border border-blue-100">
+    <h2 class="text-lg font-semibold text-blue-800 flex items-center gap-2"><i class="fas fa-check-circle"></i> Selesaikan Kejadian Aktif (Masukkan Waktu ON)</h2>
+    <p class="text-sm text-gray-600 mb-3">Pilih kejadian yang masih OFF dari tabel, lalu isi waktu ON. <strong>Jika waktu ON lebih kecil dari waktu OFF, otomatis dianggap keesokan harinya.</strong></p>
+    <div class="flex flex-wrap gap-3 items-end">
+      <div class="flex-1 min-w-[180px]">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Pilih Kejadian Belum ON</label>
+        <select id="selectOngoingEvent" class="w-full border border-gray-300 rounded-lg px-3 py-2 bg-white">
+          <option value="">-- Pilih dari daftar aktif --</option>
+        </select>
+      </div>
+      <div class="w-40">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Waktu ON <span class="text-red-500">*</span></label>
+        <input type="time" id="updateOnTime" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+      </div>
+      <div class="flex-1 min-w-[180px]">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Alasan Final OFF</label>
+        <input type="text" id="updateAlasanFinal" placeholder="Alasan lengkap" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+      </div>
+      <div class="flex-1">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Deskripsi Tambahan</label>
+        <input type="text" id="updateDeskripsi" placeholder="Keterangan perbaikan" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+      </div>
+      <div>
+        <button id="btnCompleteEvent" class="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg shadow font-medium flex items-center gap-1 mt-1">
+          <i class="fas fa-play-circle"></i> Set ON & Selesai
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabel Data Pemancar -->
+  <div class="bg-white rounded-2xl shadow-md overflow-hidden border border-gray-200">
+    <div class="px-5 py-4 bg-gray-50 border-b border-gray-200 flex flex-wrap justify-between items-center">
+      <h2 class="text-lg font-semibold text-gray-700"><i class="fas fa-table-list mr-2 text-blue-500"></i>Riwayat & Status Pemancar</h2>
+      <div class="text-xs text-gray-400"><span class="inline-block w-3 h-3 bg-amber-400 rounded-full mr-1"></span> Kuning = masih OFF (belum ON) </div>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200 text-sm">
+        <thead class="bg-gray-50">
+          <tr><th class="px-4 py-3 text-left font-semibold text-gray-600">NO</th><th>TANGGAL OFF</th><th>Waktu OFF</th><th>Waktu ON</th><th>TOTAL WAKTU</th><th>DESKRIPSI</th><th>PETUGAS</th><th>ALASAN OFF</th><th>STATUS</th><th>AKSI</th></tr>
+        </thead>
+        <tbody id="tableBody"><tr><td colspan="10" class="text-center py-8 text-gray-400">Memuat data dari Firebase...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="text-xs text-gray-400 text-center mt-6">
+    <i class="fas fa-info-circle"></i> Fitur: jika waktu ON dimasukkan lebih kecil dari waktu OFF, sistem akan menganggap ON terjadi keesokan hari (durasi dihitung otomatis). Data tersimpan di Firebase dan lokal.
+  </div>
+</div>
+
+<script>
+  // ======================== KONFIGURASI FIREBASE ========================
+  let isFirebaseReady = false;
+  const DB_PATH = 'monitoring/pemancar/logs';   // path di Firebase Realtime Database
+
+  // ======================== FUNGSI SINKRONISASI ========================
+  async function syncToFirebase() {
+    if (!isFirebaseReady || !window.db) {
+      console.warn("Firebase belum siap, hanya ke localStorage");
+      updateFirebaseStatus(false, "Offline mode");
+      return false;
+    }
+    try {
+      // Konversi array logs menjadi object dengan key = id
+      const logsObj = {};
+      logs.forEach(log => { logsObj[log.id] = log; });
+      await window.db.ref(DB_PATH).set(logsObj);
+      updateFirebaseStatus(true, "Tersinkron");
+      return true;
+    } catch (err) {
+      console.error("Gagal sync ke Firebase:", err);
+      updateFirebaseStatus(false, "Gagal sync");
+      return false;
+    }
+  }
+
+  async function loadFromFirebase() {
+    if (!window.db) {
+      console.warn("Firebase tidak tersedia");
+      return false;
+    }
+    try {
+      const snapshot = await window.db.ref(DB_PATH).once('value');
+      const firebaseData = snapshot.val();
+      if (firebaseData && typeof firebaseData === 'object') {
+        const firebaseLogs = Object.values(firebaseData);
+        if (firebaseLogs.length > 0) {
+          // Urutkan berdasarkan id (opsional)
+          firebaseLogs.sort((a,b) => (a.id || '').localeCompare(b.id || ''));
+          logs = firebaseLogs;
+          // Simpan ke localStorage sebagai cadangan
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
+          updateFirebaseStatus(true, `Loaded ${logs.length} data`);
+          return true;
+        }
+      }
+      // Jika Firebase kosong, ambil dari localStorage
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        logs = JSON.parse(stored);
+        updateFirebaseStatus(true, "Loaded local");
+        // Sinkronkan ke Firebase
+        await syncToFirebase();
+      } else {
+        // Data awal contoh
+        logs = [];
+      }
+      return true;
+    } catch(err) {
+      console.error("Error loadFromFirebase:", err);
+      updateFirebaseStatus(false, "Offline mode");
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) logs = JSON.parse(stored);
+      else logs = [];
+      return false;
+    }
+  }
+
+  function updateFirebaseStatus(connected, message) {
+    const statusEl = document.getElementById('firebaseStatus');
+    if (statusEl) {
+      if (connected) {
+        statusEl.innerHTML = `<i class="fas fa-check-circle text-green-600"></i> ${message}`;
+        statusEl.classList.remove('bg-red-100', 'text-red-700');
+        statusEl.classList.add('bg-green-100', 'text-green-700');
+      } else {
+        statusEl.innerHTML = `<i class="fas fa-exclamation-triangle text-amber-600"></i> ${message}`;
+        statusEl.classList.remove('bg-green-100', 'text-green-700');
+        statusEl.classList.add('bg-red-100', 'text-red-700');
+      }
+    }
+  }
+
+  // ======================== DATA & STORAGE ========================
+  const STORAGE_KEY = "transmitter_advanced_logs";
+  let logs = [];
+
+  function calculateDurationMinutes(offTimeStr, onTimeStr) {
+    if (!offTimeStr || !onTimeStr) return null;
+    const [offHour, offMin] = offTimeStr.split(":").map(Number);
+    const [onHour, onMin] = onTimeStr.split(":").map(Number);
+    if (isNaN(offHour) || isNaN(offMin) || isNaN(onHour) || isNaN(onMin)) return null;
+    let offTotal = offHour * 60 + offMin;
+    let onTotal = onHour * 60 + onMin;
+    if (onTotal <= offTotal) onTotal += 24 * 60;
+    const duration = onTotal - offTotal;
+    return duration > 0 ? duration : null;
+  }
+
+  function formatDuration(minutes) {
+    if (minutes === null || minutes === undefined) return "-";
+    const hrs = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    if (hrs === 0 && mins === 0) return "0 menit";
+    let str = "";
+    if (hrs > 0) str += `${hrs} jam `;
+    if (mins > 0) str += `${mins} menit`;
+    return str.trim();
+  }
+
+  // Fungsi simpan (localStorage + Firebase)
+  async function persistAndRender() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
+    renderTable();
+    updateStatsAndDropdown();
+    // Kirim ke Firebase jika siap
+    if (isFirebaseReady) {
+      await syncToFirebase();
+    }
+  }
+
+  function updateStatsAndDropdown() {
+    const totalEvents = logs.length;
+    const ongoingEvents = logs.filter(l => l.status === 'ongoing').length;
+    const completedLogs = logs.filter(l => l.status === 'completed' && l.totalWaktuMinutes != null);
+    const totalMinutes = completedLogs.reduce((sum, l) => sum + (l.totalWaktuMinutes || 0), 0);
+    const avgMinutes = completedLogs.length > 0 ? Math.round(totalMinutes / completedLogs.length) : 0;
+    document.getElementById("totalEvents").innerText = totalEvents;
+    document.getElementById("ongoingCount").innerText = ongoingEvents;
+    document.getElementById("totalDowntime").innerHTML = `${(totalMinutes / 60).toFixed(1)} jam <span class="text-xs">(${totalMinutes} menit)</span>`;
+    document.getElementById("avgDowntime").innerHTML = `${avgMinutes} menit`;
+    const selectEl = document.getElementById("selectOngoingEvent");
+    if (selectEl) {
+      const ongoingList = logs.filter(l => l.status === 'ongoing');
+      selectEl.innerHTML = '<option value="">-- Pilih kejadian aktif --</option>' + 
+        ongoingList.map(log => `<option value="${log.id}">${log.tanggalOff} ${log.offTime} - ${log.alasanOff || 'Tanpa alasan'} (Petugas: ${log.petugas || '-'})</option>`).join('');
+    }
+  }
+
+  function renderTable() {
+    const tbody = document.getElementById("tableBody");
+    if (!logs.length) {
+      tbody.innerHTML = `<tr><td colspan="10" class="text-center py-10 text-gray-400"><i class="fas fa-database"></i> Belum ada data. Gunakan form "Catat Pemancar OFF" di atas.</td></tr>`;
+      return;
+    }
+    const sorted = [...logs].sort((a,b) => {
+      if (a.status === 'ongoing' && b.status !== 'ongoing') return -1;
+      if (a.status !== 'ongoing' && b.status === 'ongoing') return 1;
+      return new Date(b.tanggalOff) - new Date(a.tanggalOff);
+    });
+    let html = "";
+    sorted.forEach((item, idx) => {
+      const no = idx+1;
+      const isOngoing = item.status === 'ongoing';
+      const rowClass = isOngoing ? 'ongoing-row' : '';
+      const offDate = item.tanggalOff || "-";
+      const offTimeDisplay = item.offTime || "-";
+      let onTimeDisplay = item.onTime || (isOngoing ? '<span class="text-amber-600 font-medium">Belum ON</span>' : '-');
+      if (!isOngoing && item.onTime && item.offTime) {
+        const [offHour, offMin] = item.offTime.split(":").map(Number);
+        const [onHour, onMin] = item.onTime.split(":").map(Number);
+        const offTotal = offHour*60+offMin;
+        const onTotal = onHour*60+onMin;
+        if (onTotal <= offTotal) onTimeDisplay = `${item.onTime} <span class="text-xs text-gray-500">(+1 hari)</span>`;
+      }
+      const totalWaktuDisplay = isOngoing ? '<span class="text-gray-400 italic">Sedang OFF</span>' : (item.totalWaktuStr || '-');
+      const deskripsi = item.deskripsiFinal || item.deskripsi || "-";
+      const petugas = item.petugas || "-";
+      const alasanOff = isOngoing ? (item.alasanOff || "Belum diketahui") : (item.alasanFinal || item.alasanOff || "-");
+      const statusBadge = isOngoing ? '<span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full text-xs font-semibold"><i class="fas fa-exclamation-triangle mr-1"></i> OFF (Aktif)</span>' : '<span class="bg-green-100 text-green-800 px-2 py-0.5 rounded-full text-xs"><i class="fas fa-check-circle"></i> Selesai / ON</span>';
+      html += `<tr class="${rowClass} hover:bg-gray-50 transition">
+        <td class="px-4 py-3 font-medium">${no}</td>
+        <td class="px-4 py-3 whitespace-nowrap">${offDate}</td>
+        <td class="px-4 py-3 font-mono">${offTimeDisplay}</td>
+        <td class="px-4 py-3 font-mono">${onTimeDisplay}</td>
+        <td class="px-4 py-3 font-semibold ${isOngoing ? 'text-gray-400' : 'text-emerald-700'}">${totalWaktuDisplay}</td>
+        <td class="px-4 py-3 max-w-xs truncate" title="${deskripsi.replace(/"/g, '&quot;')}">${deskripsi}</td>
+        <td class="px-4 py-3">${petugas}</td>
+        <td class="px-4 py-3 max-w-xs truncate" title="${alasanOff.replace(/"/g, '&quot;')}">${alasanOff}</td>
+        <td class="px-4 py-3 text-center">${statusBadge}</td>
+        <td class="px-4 py-3 text-center whitespace-nowrap">
+          ${isOngoing ? `<button onclick="openCompleteModal('${item.id}')" class="text-green-600 hover:text-green-800 bg-green-50 p-1.5 rounded-md mx-1 btn-action" title="Selesaikan (isi waktu ON)"><i class="fas fa-check-double"></i></button>` : ''}
+          <button onclick="deleteLog('${item.id}')" class="text-red-600 hover:text-red-800 bg-red-50 p-1.5 rounded-md mx-1 btn-action"><i class="fas fa-trash-alt"></i></button>
+        </td>
+      </tr>`;
+    });
+    tbody.innerHTML = html;
+  }
+
+  function generateId() {
+    return Date.now() + '-' + Math.random().toString(36).substring(2, 8);
+  }
+
+  function addOngoingEvent(tanggal, offTime, petugas, alasanSementara, deskripsiAwal) {
+    const newId = generateId();
+    const newLog = {
+      id: newId,
+      tanggalOff: tanggal,
+      offTime: offTime,
+      onTime: null,
+      petugas: petugas || "",
+      alasanOff: alasanSementara || "",
+      deskripsi: deskripsiAwal || "",
+      status: 'ongoing',
+      totalWaktuMinutes: null,
+      totalWaktuStr: null,
+      alasanFinal: null,
+      deskripsiFinal: null,
+    };
+    logs.push(newLog);
+    persistAndRender();
+  }
+
+  function completeEvent(eventId, onTime, alasanFinal, deskripsiFinal) {
+    const index = logs.findIndex(l => l.id === eventId);
+    if (index === -1) return false;
+    const log = logs[index];
+    if (log.status !== 'ongoing') { alert("Kejadian sudah selesai!"); return false; }
+    if (!onTime) { alert("Waktu ON harus diisi!"); return false; }
+    const minutesDiff = calculateDurationMinutes(log.offTime, onTime);
+    if (minutesDiff === null || minutesDiff <= 0) {
+      alert(`Durasi tidak valid. OFF ${log.offTime} - ON ${onTime}`);
+      return false;
+    }
+    const [offHour, offMin] = log.offTime.split(":").map(Number);
+    const [onHour, onMin] = onTime.split(":").map(Number);
+    let infoLintasHari = "";
+    if ((onHour*60+onMin) <= (offHour*60+offMin)) infoLintasHari = " (waktu ON lebih kecil => keesokan hari)";
+    const durationStr = formatDuration(minutesDiff);
+    log.onTime = onTime;
+    log.status = 'completed';
+    log.totalWaktuMinutes = minutesDiff;
+    log.totalWaktuStr = durationStr;
+    log.alasanFinal = alasanFinal || log.alasanOff;
+    log.deskripsiFinal = deskripsiFinal || log.deskripsi;
+    persistAndRender();
+    alert(`Kejadian selesai! Durasi OFF: ${durationStr}${infoLintasHari}`);
+    return true;
+  }
+
+  window.deleteLog = function(id) {
+    if (confirm("Hapus data ini secara permanen?")) {
+      logs = logs.filter(l => l.id !== id);
+      persistAndRender();
+    }
+  };
+
+  window.openCompleteModal = function(eventId) {
+    const event = logs.find(l => l.id === eventId);
+    if (!event) return;
+    document.getElementById("selectOngoingEvent").value = eventId;
+    document.getElementById("updateOnTime").focus();
+    document.getElementById("updateAlasanFinal").value = event.alasanOff || "";
+    document.getElementById("updateDeskripsi").value = event.deskripsi || "";
+    document.querySelector(".bg-gradient-to-r").scrollIntoView({ behavior: "smooth" });
+  };
+
+  function processCompleteFromUI() {
+    const selectEl = document.getElementById("selectOngoingEvent");
+    const selectedId = selectEl.value;
+    if (!selectedId) { alert("Pilih kejadian aktif terlebih dahulu."); return; }
+    const onTime = document.getElementById("updateOnTime").value.trim();
+    if (!onTime) { alert("Masukkan Waktu Pemancar ON."); return; }
+    const alasanFinal = document.getElementById("updateAlasanFinal").value.trim();
+    const deskripsi = document.getElementById("updateDeskripsi").value.trim();
+    const success = completeEvent(selectedId, onTime, alasanFinal, deskripsi);
+    if (success) {
+      document.getElementById("updateOnTime").value = "";
+      document.getElementById("updateAlasanFinal").value = "";
+      document.getElementById("updateDeskripsi").value = "";
+      selectEl.value = "";
+    }
+  }
+
+  function clearAllData() {
+    if (logs.length === 0) return;
+    if (confirm("PERINGATAN: Semua data riwayat pemancar (termasuk yang aktif) akan dihapus permanen! Lanjutkan?")) {
+      logs = [];
+      persistAndRender();
+    }
+  }
+
+  function exportToCSV() {
+    if (logs.length === 0) { alert("Tidak ada data."); return; }
+    const sorted = [...logs].sort((a,b) => new Date(b.tanggalOff) - new Date(a.tanggalOff));
+    const headers = ["NO","TANGGAL OFF","WAKTU OFF","WAKTU ON","TOTAL DURASI","STATUS","PETUGAS","ALASAN OFF (final)","DESKRIPSI"];
+    const rows = sorted.map((log, idx) => {
+      const total = log.status === 'completed' ? (log.totalWaktuStr || '-') : 'Sedang OFF';
+      const alasanFinale = log.status === 'completed' ? (log.alasanFinal || log.alasanOff) : (log.alasanOff || '-');
+      const deskFinal = log.status === 'completed' ? (log.deskripsiFinal || log.deskripsi) : (log.deskripsi || '-');
+      let onTimeDisplay = log.onTime || 'Belum ON';
+      if (log.onTime && log.offTime && log.status === 'completed') {
+        const [offHour, offMin] = log.offTime.split(":").map(Number);
+        const [onHour, onMin] = log.onTime.split(":").map(Number);
+        if ((onHour*60+onMin) <= (offHour*60+offMin)) onTimeDisplay += " (+1 hari)";
+      }
+      return [idx+1, log.tanggalOff, log.offTime, onTimeDisplay, total, log.status==='ongoing'?'AKTIF OFF':'SELESAI (ON)', log.petugas||'-', alasanFinale, deskFinal];
+    });
+    const csvContent = [headers, ...rows].map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob(["\uFEFF" + csvContent], {type: "text/csv;charset=utf-8;"});
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "monitoring_pemancar_status.csv";
+    link.click();
+    URL.revokeObjectURL(link.href);
+  }
+
+  function exportToHTML() {
+    if (logs.length === 0) { alert("Tidak ada data."); return; }
+    const totalEvents = logs.length;
+    const ongoingEvents = logs.filter(l => l.status === 'ongoing').length;
+    const completedLogs = logs.filter(l => l.status === 'completed' && l.totalWaktuMinutes != null);
+    const totalMinutes = completedLogs.reduce((sum, l) => sum + (l.totalWaktuMinutes || 0), 0);
+    const avgMinutes = completedLogs.length > 0 ? Math.round(totalMinutes / completedLogs.length) : 0;
+    const totalDowntimeHours = (totalMinutes / 60).toFixed(1);
+    const sorted = [...logs].sort((a,b) => new Date(b.tanggalOff) - new Date(a.tanggalOff));
+    let tableRows = "";
+    sorted.forEach((log, idx) => {
+      const isOngoing = log.status === 'ongoing';
+      const totalDisplay = isOngoing ? 'Sedang OFF' : (log.totalWaktuStr || '-');
+      const alasanDisplay = isOngoing ? (log.alasanOff || 'Belum diketahui') : (log.alasanFinal || log.alasanOff || '-');
+      const deskDisplay = isOngoing ? (log.deskripsi || '-') : (log.deskripsiFinal || log.deskripsi || '-');
+      const statusText = isOngoing ? 'AKTIF OFF' : 'SELESAI (ON)';
+      let onTimeDisplay = log.onTime || (isOngoing ? 'Belum ON' : '-');
+      if (!isOngoing && log.onTime && log.offTime) {
+        const [offHour, offMin] = log.offTime.split(":").map(Number);
+        const [onHour, onMin] = log.onTime.split(":").map(Number);
+        if ((onHour*60+onMin) <= (offHour*60+offMin)) onTimeDisplay += " (+1 hari)";
+      }
+      tableRows += `<tr><td>${idx+1}</td><td>${log.tanggalOff}</td><td>${log.offTime}</td><td>${onTimeDisplay}</td><td>${totalDisplay}</td><td>${deskDisplay}</td><td>${log.petugas||'-'}</td><td>${alasanDisplay}</td><td>${statusText}</td></tr>`;
+    });
+    const exportHtml = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Laporan Monitoring Pemancar</title><style>body{font-family:sans-serif;margin:20px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccc;padding:8px}th{background:#f1f5f9}</style></head><body><h1>Laporan Monitoring Pemancar</h1><p>Dicetak: ${new Date().toLocaleString()}</p><div class="stats">Total Kejadian: ${totalEvents} | Aktif: ${ongoingEvents} | Total downtime: ${totalDowntimeHours} jam | Rata-rata: ${avgMinutes} menit</div><table><thead><tr><th>No</th><th>Tgl OFF</th><th>Waktu OFF</th><th>Waktu ON</th><th>Total</th><th>Deskripsi</th><th>Petugas</th><th>Alasan</th><th>Status</th></tr></thead><tbody>${tableRows}</tbody></table></body></html>`;
+    const blob = new Blob([exportHtml], {type: "text/html"});
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `laporan_pemancar_${Date.now()}.html`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+  }
+
+  // ======================== INISIALISASI ========================
+  async function init() {
+    // Tampilkan data dari localStorage dulu (cepat)
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      logs = JSON.parse(stored);
+      logs = logs.map(l => {
+        if (!l.status) l.status = l.onTime ? 'completed' : 'ongoing';
+        if (l.status === 'completed' && l.totalWaktuMinutes === undefined && l.onTime) {
+          const mins = calculateDurationMinutes(l.offTime, l.onTime);
+          if (mins) { l.totalWaktuMinutes = mins; l.totalWaktuStr = formatDuration(mins); }
+        }
+        return l;
+      });
+      renderTable();
+      updateStatsAndDropdown();
+    }
+    // Tunggu Firebase siap, lalu sync
+    if (window.db) {
+      isFirebaseReady = true;
+      await loadFromFirebase();
+      renderTable();
+      updateStatsAndDropdown();
+    } else {
+      // Firebase belum siap, tunggu sebentar
+      setTimeout(() => {
+        if (window.db) {
+          isFirebaseReady = true;
+          loadFromFirebase().then(() => { renderTable(); updateStatsAndDropdown(); });
+        } else {
+          updateFirebaseStatus(false, "Firebase tidak terdeteksi");
+        }
+      }, 500);
+    }
+    // Event listener form
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById("offTanggal").value = today;
+    document.getElementById("offlineForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const tanggal = document.getElementById("offTanggal").value;
+      const offTime = document.getElementById("offWaktu").value;
+      const petugas = document.getElementById("offPetugas").value;
+      const alasan = document.getElementById("offAlasan").value;
+      const deskripsi = document.getElementById("offDeskripsi").value;
+      if (!tanggal || !offTime) { alert("Tanggal dan Waktu OFF harus diisi!"); return; }
+      addOngoingEvent(tanggal, offTime, petugas, alasan, deskripsi);
+      document.getElementById("offWaktu").value = "";
+      document.getElementById("offPetugas").value = "";
+      document.getElementById("offAlasan").value = "";
+      document.getElementById("offDeskripsi").value = "";
+      alert("Data pemancar OFF berhasil disimpan.");
+    });
+    document.getElementById("btnCompleteEvent").addEventListener("click", processCompleteFromUI);
+    document.getElementById("clearAllBtn").addEventListener("click", clearAllData);
+    document.getElementById("exportCsvBtn").addEventListener("click", exportToCSV);
+    document.getElementById("exportHtmlBtn").addEventListener("click", exportToHTML);
+  }
+
+  init();
+</script>
+</body>
+</html>
