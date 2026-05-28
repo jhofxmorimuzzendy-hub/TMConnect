@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <title>Portal Transmisi | Manajemen Shift + Modul Responsif</title>
+    <!-- Favicon menggunakan logo Portal TM -->
+    <link rel="icon" type="image/png" href="Logo%20PortalTM-noBg.png">
     <style>
         * {
             margin: 0;
@@ -27,10 +29,10 @@
             overflow: hidden;
         }
 
-        /* Header responsif dengan logo */
+        /* Header lebih cerah (gradien biru muda) agar logo transparan terlihat jelas */
         .header {
-            background: linear-gradient(135deg, #0b2b40 0%, #1a4c66 100%);
-            color: white;
+            background: linear-gradient(135deg, #EFF6FF 0%, #DFE9F3 100%);
+            color: #1E3A4D;
             padding: 18px 20px;
             display: flex;
             flex-wrap: wrap;
@@ -43,37 +45,34 @@
         .header-left {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 16px;
             flex-wrap: wrap;
         }
 
-        /* Gaya logo - diperbaiki agar terlihat di background gelap */
+        /* Logo tanpa background, diperbesar */
         .header-logo {
-            height: 52px;
+            height: 64px;
             width: auto;
-            max-width: 180px;
+            max-width: 200px;
             object-fit: contain;
-            background: rgba(255, 255, 255, 0.15);
-            border-radius: 16px;
-            padding: 6px 12px;
-            backdrop-filter: blur(2px);
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
             transition: all 0.2s ease;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
         }
 
         .header h1 {
-            font-size: 1.3rem;
+            font-size: 1.4rem;
             display: flex;
             align-items: center;
             gap: 8px;
             word-break: break-word;
             white-space: nowrap;
-            font-weight: 600;
+            font-weight: 700;
             letter-spacing: 0.5px;
+            color: #1E3A4D;
         }
 
         .month-picker {
-            background: rgba(255, 255, 240, 0.2);
+            background: rgba(30, 58, 77, 0.1);
             padding: 6px 14px;
             border-radius: 40px;
             display: flex;
@@ -349,18 +348,16 @@
             }
 
             .header-left {
-                gap: 8px;
+                gap: 10px;
             }
 
             .header-logo {
-                height: 40px;
-                max-width: 130px;
-                padding: 4px 8px;
-                border-radius: 12px;
+                height: 48px;
+                max-width: 150px;
             }
 
             .header h1 {
-                font-size: 1rem;
+                font-size: 1.1rem;
                 white-space: normal;
             }
 
@@ -441,9 +438,8 @@
             }
             
             .header-logo {
-                height: 34px;
-                max-width: 110px;
-                padding: 3px 6px;
+                height: 40px;
+                max-width: 130px;
             }
         }
 
@@ -458,7 +454,7 @@
 <div class="app-container" id="appRoot">
     <div class="header">
         <div class="header-left">
-            <!-- Logo Portal TM dengan latar agar terlihat jelas -->
+            <!-- Logo Portal TM tanpa background (transparan), diperbesar -->
             <img src="Logo%20PortalTM-noBg.png" alt="Logo Portal Transmisi" class="header-logo" onerror="this.style.display='none'">
             <h1>Portal Transmisi</h1>
         </div>
@@ -722,7 +718,6 @@
     }
     
     // ========== DAFTAR MODUL (link ke file HTML) ==========
-    // Perbaikan: Ikon untuk Monitoring BBM diganti dengan "fas fa-gas-pump" (pompa bensin)
     const modulesList = [
         { name: "Monitoring Suhu", icon: "fas fa-temperature-high", file: "Monitoring Suhu.html", desc: "Suhu ruangan & watermark GPS" },
         { name: "Monitoring Pemancar", icon: "fas fa-broadcast-tower", file: "Monitoring Pemancar.html", desc: "Catat downtime ON/OFF" },
@@ -730,7 +725,7 @@
         { name: "Monitoring Metering", icon: "fas fa-chart-line", file: "Monitoring Metering.html", desc: "PLN & UPS + spreadsheet" },
         { name: "Monitoring Siaran", icon: "fas fa-satellite-dish", file: "Monitoring Siaran.html", desc: "Status channel & laporan" },
         { name: "Monitoring Kerusakan", icon: "fas fa-tools", file: "Monitoring Kerusakan.html", desc: "Multi foto & status alat" },
-        { name: "Monitoring BBM", icon: "fas fa-gas-pump", file: "Monitoring BBM.html", desc: "Genset & konsumsi BBM" }   // <-- Ikon diperbaiki
+        { name: "Monitoring BBM", icon: "fas fa-gas-pump", file: "Monitoring BBM.html", desc: "Genset & konsumsi BBM" }
     ];
     
     function renderModulesGrid() {
@@ -754,12 +749,10 @@
         if (dynamicDiv) dynamicDiv.style.display = 'none';
         const manageBtn = document.getElementById('btnManageShift');
         if (manageBtn) {
-            // Hapus listener lama untuk mencegah duplikasi, lalu pasang baru
             manageBtn.replaceWith(manageBtn.cloneNode(true));
             const newBtn = document.getElementById('btnManageShift');
             if (newBtn) newBtn.addEventListener('click', () => showManagePanel());
         } else {
-            // fallback
             const btn = document.getElementById('btnManageShift');
             if (btn) btn.addEventListener('click', () => showManagePanel());
         }
@@ -772,7 +765,6 @@
         const yearSelect = document.getElementById('yearSelect');
         if (!monthSelect || !yearSelect) return;
         
-        // Isi bulan
         monthSelect.innerHTML = '';
         for (let i = 1; i <= 12; i++) {
             const option = document.createElement('option');
@@ -782,7 +774,6 @@
             monthSelect.appendChild(option);
         }
         
-        // Isi tahun (rentang dinamis)
         const currentYear = new Date().getFullYear();
         yearSelect.innerHTML = '';
         for (let y = currentYear - 1; y <= currentYear + 3; y++) {
@@ -793,7 +784,6 @@
             yearSelect.appendChild(opt);
         }
         
-        // Event listener untuk perubahan bulan/tahun
         monthSelect.addEventListener('change', (e) => {
             selectedMonth = parseInt(e.target.value);
             reloadBySelection();
@@ -805,28 +795,19 @@
     }
     
     function reloadBySelection() {
-        // Tutup panel kelola jika terbuka
         closeManagePanel();
-        // Refresh kartu shift hari ini sesuai periode baru
         refreshShiftTodayDisplay();
-        // Update badge
         const statusBadge = document.getElementById('statusBadge');
         if (statusBadge) statusBadge.innerText = `📅 ${selectedYear}-${String(selectedMonth).padStart(2, '0')}`;
-        // Opsional: jika ingin membersihkan state dinamis, sudah cukup
     }
-    
-    // Jika tidak ada data sama sekali untuk bulan ini, kita bisa berikan petunjuk namun tidak mengisi otomatis agar user sadar
-    // Tidak membuat data dummy agar user mengetahui perlunya input.
     
     // ---- INITIALIZATION ----
     document.addEventListener('DOMContentLoaded', () => {
         populateMonthYearSelectors();
         initMainMenu();
-        // Set badge awal
         const statusBadge = document.getElementById('statusBadge');
         if (statusBadge) statusBadge.innerText = `📅 ${selectedYear}-${String(selectedMonth).padStart(2, '0')}`;
         
-        // Peringatan jika localStorage tidak tersedia
         if (!storageAvailable) {
             const shiftContainer = document.getElementById('shiftDetailContainer');
             if (shiftContainer) {
@@ -834,7 +815,6 @@
             }
         }
         
-        // Optional: inform jika belum ada jadwal sama sekali (tidak perlu error)
         const schedule = getCurrentSchedule();
         if (!schedule && storageAvailable) {
             console.log("Belum ada jadwal shift untuk periode ini, silakan buka Kelola Jadwal Shift.");
