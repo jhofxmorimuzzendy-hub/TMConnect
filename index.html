@@ -29,10 +29,10 @@
             overflow: hidden;
         }
 
-        /* Header lebih cerah (gradien biru muda) agar logo transparan terlihat jelas */
+        /* Header dengan warna hijau seperti tombol */
         .header {
-            background: linear-gradient(135deg, #EFF6FF 0%, #DFE9F3 100%);
-            color: #1E3A4D;
+            background: linear-gradient(135deg, #1e6f5c 0%, #0e5a48 100%);
+            color: white;
             padding: 18px 20px;
             display: flex;
             flex-wrap: wrap;
@@ -49,13 +49,13 @@
             flex-wrap: wrap;
         }
 
-        /* Logo tanpa background, diperbesar */
+        /* Logo dengan efek selimut putih (glow) agar terlihat di background hijau */
         .header-logo {
-            height: 64px;
+            height: 68px;
             width: auto;
-            max-width: 200px;
+            max-width: 220px;
             object-fit: contain;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+            filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.9)) drop-shadow(0 0 4px rgba(255, 255, 255, 0.7));
             transition: all 0.2s ease;
         }
 
@@ -68,11 +68,11 @@
             white-space: nowrap;
             font-weight: 700;
             letter-spacing: 0.5px;
-            color: #1E3A4D;
+            color: white;
         }
 
         .month-picker {
-            background: rgba(30, 58, 77, 0.1);
+            background: rgba(255, 255, 255, 0.2);
             padding: 6px 14px;
             border-radius: 40px;
             display: flex;
@@ -352,8 +352,8 @@
             }
 
             .header-logo {
-                height: 48px;
-                max-width: 150px;
+                height: 52px;
+                max-width: 160px;
             }
 
             .header h1 {
@@ -438,8 +438,8 @@
             }
             
             .header-logo {
-                height: 40px;
-                max-width: 130px;
+                height: 44px;
+                max-width: 140px;
             }
         }
 
@@ -454,7 +454,7 @@
 <div class="app-container" id="appRoot">
     <div class="header">
         <div class="header-left">
-            <!-- Logo Portal TM tanpa background (transparan), diperbesar -->
+            <!-- Logo dengan efek selimut putih (drop-shadow) -->
             <img src="Logo%20PortalTM-noBg.png" alt="Logo Portal Transmisi" class="header-logo" onerror="this.style.display='none'">
             <h1>Portal Transmisi</h1>
         </div>
