@@ -387,7 +387,7 @@
                     <div class="subtitle" style="color:#2c5a6e; margin-bottom:16px;">Edit nama petugas untuk setiap shift. Semua tanggal harus terisi agar tampil sempurna di menu utama.</div>
                     <div class="shift-table-container">
                         <table class="shift-table">
-                            <thead><tr><th>Tanggal</th><th>Hari</th><th>Shift 1 (00-08)</th><th>Shift 2 (08-16)</th><th>Shift 3 (16-00)</th></tr></thead>
+                            <thead><tr><th>Tanggal</th><th>Hari</th><th>Shift 1 (00-08)</th><th>Shift 2 (08-16)</th><th>Shift 3 (16-00)</th></thead>
                             <tbody>`;
         for (let d = 1; d <= daysCount; d++) {
             const dateKey = formatDateStr(selectedYear, selectedMonth, d);
@@ -399,7 +399,7 @@
                         <td><input type="text" class="manage-shift-inp" data-date="${dateKey}" data-shift="shift1" value="${escapeHtml(shift.shift1)}" placeholder="Nama petugas"></td>
                         <td><input type="text" class="manage-shift-inp" data-date="${dateKey}" data-shift="shift2" value="${escapeHtml(shift.shift2)}" placeholder="Nama petugas"></td>
                         <td><input type="text" class="manage-shift-inp" data-date="${dateKey}" data-shift="shift3" value="${escapeHtml(shift.shift3)}" placeholder="Nama petugas"></td>
-                     </tr>`;
+                      </tr>`;
         }
         html += `</tbody></table></div>
                 <div style="display: flex; gap: 16px; margin-top: 20px;">
@@ -461,11 +461,13 @@
     }
 
     // ========== MODUL LAINNYA (DAFTAR LINK FILE HTML) ==========
+    // PERBAIKAN: Menggunakan SATU spasi -> "Monitoring Siaran.html"
     const modulesList = [
         { name: "Monitoring Suhu", icon: "fas fa-temperature-high", file: "Monitoring Suhu.html", desc: "Suhu ruangan & watermark GPS" },
         { name: "Monitoring Pemancar", icon: "fas fa-broadcast-tower", file: "Monitoring Pemancar.html", desc: "Catat downtime ON/OFF" },
         { name: "Monitoring Kwh Meter", icon: "fas fa-charging-station", file: "Monitoring Kwh Meter.html", desc: "Pencatatan listrik & foto" },
         { name: "Monitoring Metering", icon: "fas fa-chart-line", file: "Monitoring Metering.html", desc: "PLN & UPS + spreadsheet" },
+        // Baris berikut menggunakan SATU spasi
         { name: "Monitoring Siaran", icon: "fas fa-satellite-dish", file: "Monitoring Siaran.html", desc: "Status channel & laporan" },
         { name: "Monitoring Kerusakan", icon: "fas fa-tools", file: "Monitoring Kerusakan.html", desc: "Multi foto & status alat" },
         { name: "Monitoring BBM", icon: "fas fa-diesel", file: "Monitoring BBM.html", desc: "Genset & konsumsi BBM" }
