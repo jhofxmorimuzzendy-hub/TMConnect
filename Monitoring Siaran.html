@@ -209,18 +209,17 @@
         const statusEl = document.getElementById('firebaseStatus');
         if (statusEl) {
             if (connected) {
-                statusEl.innerHTML = `<i class="fas fa-check-circle text-green-600"></i> ${message}`;
-                statusEl.classList.remove('bg-red-100', 'text-red-700', 'bg-gray-100', 'text-gray-600');
-                statusEl.classList.add('bg-green-100', 'text-green-700');
+                statusEl.innerHTML = `<i class="fas fa-check-circle"></i> ${message}`;
+                statusEl.style.background = "#dcfce7";
+                statusEl.style.color = "#166534";
             } else {
-                statusEl.innerHTML = `<i class="fas fa-exclamation-triangle text-amber-600"></i> ${message}`;
-                statusEl.classList.remove('bg-green-100', 'text-green-700', 'bg-gray-100', 'text-gray-600');
-                statusEl.classList.add('bg-red-100', 'text-red-700');
+                statusEl.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${message}`;
+                statusEl.style.background = "#ffe6e5";
+                statusEl.style.color = "#b91c1c";
             }
         }
     }
 
-    // Sinkronisasi ke Firebase
     async function syncToFirebase() {
         if (!isFirebaseReady || !window.db) return false;
         try {
@@ -236,7 +235,6 @@
         }
     }
 
-    // Memuat data dari Firebase (prioritas)
     async function loadFromFirebase() {
         if (!window.db) return false;
         try {
@@ -246,32 +244,25 @@
                 window.db.ref(DB_PATH_PETUGAS).once('value')
             ]);
             let changed = false;
-            if (statusSnap.exists()) {
-                const fbStatus = statusSnap.val();
-                if (fbStatus && typeof fbStatus === 'object') {
-                    channelStatus = fbStatus;
-                    localStorage.setItem(STATUS_KEY, JSON.stringify(channelStatus));
-                    changed = true;
-                }
+            if (statusSnap.exists() && statusSnap.val() && typeof statusSnap.val() === 'object') {
+                channelStatus = statusSnap.val();
+                localStorage.setItem(STATUS_KEY, JSON.stringify(channelStatus));
+                changed = true;
             }
-            if (logsSnap.exists()) {
-                const fbLogs = logsSnap.val();
-                if (Array.isArray(fbLogs) && fbLogs.length) {
-                    logEntries = fbLogs.slice(0, 500);
-                    localStorage.setItem(LOGS_KEY, JSON.stringify(logEntries));
-                    changed = true;
-                }
+            if (logsSnap.exists() && Array.isArray(logsSnap.val())) {
+                logEntries = logsSnap.val().slice(0, 500);
+                // Pastikan setiap log memiliki rawTime
+                logEntries.forEach(log => { if (!log.rawTime) log.rawTime = Date.now(); });
+                localStorage.setItem(LOGS_KEY, JSON.stringify(logEntries));
+                changed = true;
             }
-            if (petugasSnap.exists()) {
-                const fbPetugas = petugasSnap.val();
-                if (typeof fbPetugas === 'string' && fbPetugas !== currentPetugas) {
-                    currentPetugas = fbPetugas;
-                    localStorage.setItem(PETUGAS_KEY, currentPetugas);
-                    document.getElementById('namaPetugasInput').value = currentPetugas;
-                    changed = true;
-                }
+            if (petugasSnap.exists() && typeof petugasSnap.val() === 'string' && petugasSnap.val() !== currentPetugas) {
+                currentPetugas = petugasSnap.val();
+                localStorage.setItem(PETUGAS_KEY, currentPetugas);
+                document.getElementById('namaPetugasInput').value = currentPetugas;
+                changed = true;
             }
-            if (changed) updateFirebaseStatus(true, `Loaded from cloud`);
+            if (changed) updateFirebaseStatus(true, "Loaded from cloud");
             else updateFirebaseStatus(true, "Terhubung");
             return true;
         } catch (err) {
@@ -297,7 +288,6 @@
     const LOGS_KEY = "tvri_foto_logs_v14";
     const PETUGAS_KEY = "tvri_petugas";
 
-    // Fungsi persist yang dimodifikasi: simpan ke localStorage + Firebase
     async function persistData() {
         localStorage.setItem(STATUS_KEY, JSON.stringify(channelStatus));
         if (logEntries.length > 500) logEntries = logEntries.slice(0, 500);
@@ -306,22 +296,16 @@
         if (isFirebaseReady) await syncToFirebase();
     }
 
-    function persistDataSync() {
-        localStorage.setItem(STATUS_KEY, JSON.stringify(channelStatus));
-        if (logEntries.length > 500) logEntries = logEntries.slice(0, 500);
-        localStorage.setItem(LOGS_KEY, JSON.stringify(logEntries));
-        localStorage.setItem(PETUGAS_KEY, currentPetugas);
-        if (isFirebaseReady) syncToFirebase().catch(console.warn);
-    }
-
     function loadLocalData() {
         const savedStatus = localStorage.getItem(STATUS_KEY);
         if (savedStatus) { try { const p = JSON.parse(savedStatus); CHANNELS.forEach(ch => { if (p[ch.id]) channelStatus[ch.id] = p[ch.id]; }); } catch(e) {} }
         const savedLogs = localStorage.getItem(LOGS_KEY);
         if (savedLogs) { try { const p = JSON.parse(savedLogs); if (Array.isArray(p)) logEntries = p.slice(0, 500); } catch(e) {} }
+        // Pastikan rawTime ada untuk sorting dan perbandingan
+        logEntries.forEach(log => { if (!log.rawTime) log.rawTime = Date.now(); });
         currentPetugas = localStorage.getItem(PETUGAS_KEY) || "";
         document.getElementById('namaPetugasInput').value = currentPetugas;
-        if (!logEntries.length) logEntries.push({ id: Date.now(), channelId: "system", channelName: "Sistem", type: "sistem", message: "Sistem siap digunakan. Watermark premium otomatis.", petugas: currentPetugas || "Sistem", timestamp: new Date().toLocaleString('id-ID'), imageBase64: null });
+        if (!logEntries.length) logEntries.push({ id: Date.now(), channelId: "system", channelName: "Sistem", type: "sistem", message: "Sistem siap digunakan. Watermark premium otomatis.", petugas: currentPetugas || "Sistem", timestamp: new Date().toLocaleString('id-ID'), imageBase64: null, rawTime: Date.now() });
     }
 
     // ========== WATERMARK & KAMERA ==========
@@ -430,7 +414,6 @@
         });
     }
 
-    // KAMERA & GALERI (sama seperti asli, disalin dari kode sebelumnya)
     async function openNativeCamera(petugasName, locationCoord) {
         return new Promise((resolve) => {
             const modal = document.createElement('div');
@@ -497,7 +480,6 @@
     async function showImageSourceDialog() {
         return new Promise((resolve) => {
             const dialogDiv = document.createElement('div');
-            dialogDiv.className = 'image-source-dialog';
             dialogDiv.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:3000;';
             dialogDiv.innerHTML = `
                 <div class="dialog-card">
@@ -566,7 +548,7 @@
         alert(`✅ Laporan ${targetStatus === 'normal' ? 'Normal' : 'Gangguan'} untuk ${channel.name} tersimpan. Firebase: ${isFirebaseReady ? 'tersinkron' : 'offline'}`);
     }
 
-    // FUNGSI EDIT, HAPUS, PERBAIKI (dengan persistData async)
+    // EDIT, HAPUS, PERBAIKI
     async function editLogEntry(logId) {
         const log = logEntries.find(l => l.id === logId);
         if (!log) { alert("Data tidak ditemukan."); return; }
@@ -583,13 +565,8 @@
         }
         log.petugas = newPetugas.trim() || "Tidak diketahui";
         if (newReason !== undefined) log.reason = newReason;
-        if (log.type === 'normal') {
-            log.message = `📸 LAPORAN NORMAL: ${log.channelName} siaran normal.`;
-            if (log.reason) log.message += ` (Catatan: ${log.reason})`;
-        } else if (log.type === 'gangguan') {
-            log.message = `⚠️ LAPORAN GANGGUAN: ${log.channelName} mengalami gangguan.`;
-            if (log.reason) log.message += ` Penyebab: ${log.reason}`;
-        }
+        log.message = log.type === 'normal' ? `📸 LAPORAN NORMAL: ${log.channelName} siaran normal.` : `⚠️ LAPORAN GANGGUAN: ${log.channelName} mengalami gangguan.`;
+        if (log.reason) log.message += log.type === 'normal' ? ` (Catatan: ${log.reason})` : ` Penyebab: ${log.reason}`;
         log.edited = true;
         await persistData();
         renderAll();
@@ -604,8 +581,6 @@
                 await persistData();
                 renderAll();
                 alert("Laporan dihapus.");
-            } else {
-                alert("Laporan tidak ditemukan.");
             }
         }
     }
@@ -623,7 +598,7 @@
             message: `✅ PERBAIKAN: ${channel.name} telah diperbaiki (berdasarkan laporan ${log.timestamp} oleh ${log.petugas}). Status normal.`,
             reason: null, petugas: currentPetugas || "Sistem",
             timestamp: new Date().toLocaleString('id-ID', { hour12: false }),
-            imageBase64: null, relatedFixLogId: logId, edited: false
+            imageBase64: null, relatedFixLogId: logId, edited: false, rawTime: Date.now()
         };
         logEntries.unshift(fixLog);
         log.fixed = true;
@@ -632,7 +607,7 @@
         alert(`Channel ${channel.name} telah diperbaiki. Status NORMAL.`);
     }
 
-    // RENDER (sama seperti asli, hanya memanggil fungsi2 di atas)
+    // RENDER
     function renderOverallStatus() {
         const banner = document.getElementById('overallStatusBanner');
         const hasGangguan = Object.values(channelStatus).some(s => s === 'gangguan');
@@ -785,7 +760,7 @@
             for (let ch of CHANNELS) {
                 if (channelStatus[ch.id] === 'gangguan') { channelStatus[ch.id] = 'normal'; changed = true; }
             }
-            const sysLog = { id: Date.now(), channelId: "system", channelName: "Sistem", type: "sistem", message: "🔧 RESET MANUAL: Semua channel ke NORMAL.", reason: null, petugas: currentPetugas || "Sistem", timestamp: new Date().toLocaleString('id-ID'), imageBase64: null, edited: false };
+            const sysLog = { id: Date.now(), channelId: "system", channelName: "Sistem", type: "sistem", message: "🔧 RESET MANUAL: Semua channel ke NORMAL.", reason: null, petugas: currentPetugas || "Sistem", timestamp: new Date().toLocaleString('id-ID'), imageBase64: null, edited: false, rawTime: Date.now() };
             logEntries.unshift(sysLog);
             await persistData();
             renderAll();
@@ -813,7 +788,6 @@
             const editBtn = e.target.closest('.btn-edit-log');
             if (editBtn) {
                 e.preventDefault();
-                e.stopPropagation();
                 const id = parseInt(editBtn.getAttribute('data-id'));
                 if (!isNaN(id)) editLogEntry(id);
                 return;
@@ -821,7 +795,6 @@
             const deleteBtn = e.target.closest('.btn-delete-log');
             if (deleteBtn) {
                 e.preventDefault();
-                e.stopPropagation();
                 const id = parseInt(deleteBtn.getAttribute('data-id'));
                 if (!isNaN(id)) deleteLogEntry(id);
                 return;
@@ -829,7 +802,6 @@
             const fixBtn = e.target.closest('.btn-fix');
             if (fixBtn) {
                 e.preventDefault();
-                e.stopPropagation();
                 const id = parseInt(fixBtn.getAttribute('data-id'));
                 if (!isNaN(id)) fixFromLog(id);
                 return;
