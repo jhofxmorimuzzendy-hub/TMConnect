@@ -266,11 +266,11 @@
     .btn-info { background: #e0f2fe; color: #0f3b2c; }
     .btn-info:hover { background: #bae6fd; }
 
-    /* ===== RIWAYAT ENTRY YANG RAPI ===== */
+    /* ===== RIWAYAT ENTRY DENGAN TABEL RAPI ===== */
     .entries-container {
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 24px;
     }
 
     .entry-card {
@@ -289,7 +289,7 @@
       gap: 12px;
       border-bottom: 1px solid #e2edf2;
       padding-bottom: 12px;
-      margin-bottom: 16px;
+      margin-bottom: 18px;
     }
     .entry-title {
       font-weight: 700;
@@ -325,54 +325,54 @@
       background: #fecaca;
     }
 
-    /* Grid dua kolom untuk PLN dan UPS */
-    .data-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-      margin-bottom: 20px;
+    /* Tabel untuk data PLN dan UPS */
+    .data-section {
+      margin-bottom: 24px;
     }
-    .data-panel {
-      background: #f8fafc;
-      border-radius: 20px;
-      padding: 12px 16px;
-      border: 1px solid #e2e8f0;
-    }
-    .data-panel h4 {
-      font-size: 0.9rem;
+    .data-section h4 {
+      font-size: 1rem;
       font-weight: 700;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
+      color: #1e6f5c;
       display: flex;
       align-items: center;
       gap: 8px;
-      color: #1e6f5c;
-      border-bottom: 1px solid #cbd5e1;
-      padding-bottom: 6px;
+      background: #f1f5f9;
+      padding: 6px 14px;
+      border-radius: 40px;
+      width: fit-content;
     }
-    .param-row {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 8px 12px;
-      margin-bottom: 10px;
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #ffffff;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+      margin-bottom: 8px;
+    }
+    .data-table th, .data-table td {
+      border: 1px solid #e2e8f0;
+      padding: 8px 10px;
+      text-align: center;
       font-size: 0.75rem;
+    }
+    .data-table th {
+      background: #f8fafc;
+      font-weight: 700;
+      color: #1e293b;
     }
     .param-label {
       font-weight: 600;
-      color: #4a627a;
+      background: #f1f5f9;
     }
     .param-value {
       font-family: monospace;
       font-weight: 500;
     }
-    .section-title {
-      font-weight: 600;
-      margin: 8px 0 4px 0;
-      font-size: 0.75rem;
-      color: #1e6f5c;
-    }
 
     .entry-photo {
-      margin-top: 12px;
+      margin-top: 16px;
       padding-top: 12px;
       border-top: 1px solid #e2edf2;
       display: flex;
@@ -402,7 +402,7 @@
       .double-grid { gap: 16px; }
       .meas-panel { padding: 0.8rem; }
       .foto-preview { width: 120px; height: 120px; }
-      .data-grid { grid-template-columns: 1fr; gap: 12px; }
+      .data-table th, .data-table td { padding: 6px 4px; font-size: 0.7rem; }
     }
 
     footer {
@@ -870,7 +870,7 @@
     for (let e of entries) {
       const fotoThumb = e.photoBase64 ? `<img src="${e.photoBase64}" style="width:50px; height:50px; object-fit:cover; border-radius:8px;" onclick="window.open(this.src)">` : "-";
       plnRows += `<tr>
-        <tr>${escapeHtml(e.no)}</td>
+        <td>${escapeHtml(e.no)}</td>
         <td>${escapeHtml(e.tanggal)}</td>
         <td>${escapeHtml(e.petugas)}</td>
         <td>${escapeHtml(e.keterangan || '')}</td>
@@ -884,7 +884,7 @@
         <td>${formatVal(e.pln?.i?.r)}</td>
         <td>${formatVal(e.pln?.i?.s)}</td>
         <td>${formatVal(e.pln?.i?.t)}</td>
-      </table>`;
+      </tr>`;
       
       upsRows += `<tr>
         <td>${escapeHtml(e.no)}</td>
@@ -947,7 +947,7 @@
           </tr>
         </thead>
         <tbody>${upsRows}</tbody>
-      划
+      20\l
       
       <div class="footer">
         © TVRI - TX Tanah Merah | Watermark otomatis pada setiap foto | Data tersimpan di Firebase
@@ -981,7 +981,7 @@
     if(base64) { const modal = document.createElement('div'); modal.className = "modal-img"; modal.innerHTML = `<img src="${base64}">`; modal.onclick = () => modal.remove(); document.body.appendChild(modal); }
   };
 
-  // Render entry dengan tampilan rapi
+  // Render entry dengan tabel rapi untuk PLN dan UPS
   function renderEntries() {
     const entries = loadEntriesFromStorage().map(e => { 
       if (!e.photoBase64 && e.photos && e.photos.length) e.photoBase64 = e.photos[0];
@@ -991,11 +991,51 @@
     if(!entries.length) { container.innerHTML = `<div style="text-align:center; padding:2rem;">📭 Belum ada pencatatan.</div>`; return; }
     container.innerHTML = "";
     entries.forEach((e, idx) => {
-      // Helper untuk menampilkan nilai tegangan/arus
+      // Data PLN & UPS
       const plnV = e.pln?.v || {};
       const plnI = e.pln?.i || {};
       const upsV = e.ups?.v || {};
       const upsI = e.ups?.i || {};
+      
+      // Tabel untuk PLN
+      const plnTable = `
+        <table class="data-table">
+          <thead>
+            <tr><th colspan="2">⚡ Tegangan (Volt)</th><th colspan="2">🔁 Arus (Ampere)</th></tr>
+            <tr>
+              <th>Parameter</th><th>Nilai</th><th>Parameter</th><th>Nilai</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="param-label">RS</td><td class="param-value">${formatVal(plnV.rs)}</td><td class="param-label">R</td><td class="param-value">${formatVal(plnI.r)}</td></tr>
+            <tr><td class="param-label">ST</td><td class="param-value">${formatVal(plnV.st)}</td><td class="param-label">S</td><td class="param-value">${formatVal(plnI.s)}</td></tr>
+            <tr><td class="param-label">TR</td><td class="param-value">${formatVal(plnV.tr)}</td><td class="param-label">T</td><td class="param-value">${formatVal(plnI.t)}</td></tr>
+            <tr><td class="param-label">RN</td><td class="param-value">${formatVal(plnV.rn)}</td><td colspan="2" style="background:#f8fafc;"></td></tr>
+            <tr><td class="param-label">SN</td><td class="param-value">${formatVal(plnV.sn)}</td><td colspan="2"></td></tr>
+            <tr><td class="param-label">TN</td><td class="param-value">${formatVal(plnV.tn)}</td><td colspan="2"></td></tr>
+          </tbody>
+        </table>
+      `;
+      
+      // Tabel untuk UPS
+      const upsTable = `
+        <table class="data-table">
+          <thead>
+            <tr><th colspan="2">⚡ Tegangan (Volt)</th><th colspan="2">🔁 Arus (Ampere)</th></tr>
+            <tr>
+              <th>Parameter</th><th>Nilai</th><th>Parameter</th><th>Nilai</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="param-label">RS</td><td class="param-value">${formatVal(upsV.rs)}</td><td class="param-label">R</td><td class="param-value">${formatVal(upsI.r)}</td></tr>
+            <tr><td class="param-label">ST</td><td class="param-value">${formatVal(upsV.st)}</td><td class="param-label">S</td><td class="param-value">${formatVal(upsI.s)}</td></tr>
+            <tr><td class="param-label">TR</td><td class="param-value">${formatVal(upsV.tr)}</td><td class="param-label">T</td><td class="param-value">${formatVal(upsI.t)}</td></tr>
+            <tr><td class="param-label">RN</td><td class="param-value">${formatVal(upsV.rn)}</td><td colspan="2" style="background:#f8fafc;"></td></tr>
+            <tr><td class="param-label">SN</td><td class="param-value">${formatVal(upsV.sn)}</td><td colspan="2"></td></tr>
+            <tr><td class="param-label">TN</td><td class="param-value">${formatVal(upsV.tn)}</td><td colspan="2"></td></tr>
+          </tbody>
+        </table>
+      `;
       
       const card = document.createElement("div"); card.className = "entry-card";
       card.innerHTML = `
@@ -1007,43 +1047,13 @@
             <button class="delete-btn" data-idx="${idx}"><i class="fas fa-trash"></i> Hapus</button>
           </div>
         </div>
-        <div class="data-grid">
-          <div class="data-panel">
-            <h4>🏭 Sumber PLN</h4>
-            <div class="section-title">⚡ Tegangan (Volt)</div>
-            <div class="param-row">
-              <div><span class="param-label">RS:</span> <span class="param-value">${formatVal(plnV.rs)}</span></div>
-              <div><span class="param-label">ST:</span> <span class="param-value">${formatVal(plnV.st)}</span></div>
-              <div><span class="param-label">TR:</span> <span class="param-value">${formatVal(plnV.tr)}</span></div>
-              <div><span class="param-label">RN:</span> <span class="param-value">${formatVal(plnV.rn)}</span></div>
-              <div><span class="param-label">SN:</span> <span class="param-value">${formatVal(plnV.sn)}</span></div>
-              <div><span class="param-label">TN:</span> <span class="param-value">${formatVal(plnV.tn)}</span></div>
-            </div>
-            <div class="section-title">🔁 Arus (Ampere)</div>
-            <div class="param-row">
-              <div><span class="param-label">R:</span> <span class="param-value">${formatVal(plnI.r)}</span></div>
-              <div><span class="param-label">S:</span> <span class="param-value">${formatVal(plnI.s)}</span></div>
-              <div><span class="param-label">T:</span> <span class="param-value">${formatVal(plnI.t)}</span></div>
-            </div>
-          </div>
-          <div class="data-panel">
-            <h4>🔋 Sumber UPS</h4>
-            <div class="section-title">⚡ Tegangan (Volt)</div>
-            <div class="param-row">
-              <div><span class="param-label">RS:</span> <span class="param-value">${formatVal(upsV.rs)}</span></div>
-              <div><span class="param-label">ST:</span> <span class="param-value">${formatVal(upsV.st)}</span></div>
-              <div><span class="param-label">TR:</span> <span class="param-value">${formatVal(upsV.tr)}</span></div>
-              <div><span class="param-label">RN:</span> <span class="param-value">${formatVal(upsV.rn)}</span></div>
-              <div><span class="param-label">SN:</span> <span class="param-value">${formatVal(upsV.sn)}</span></div>
-              <div><span class="param-label">TN:</span> <span class="param-value">${formatVal(upsV.tn)}</span></div>
-            </div>
-            <div class="section-title">🔁 Arus (Ampere)</div>
-            <div class="param-row">
-              <div><span class="param-label">R:</span> <span class="param-value">${formatVal(upsI.r)}</span></div>
-              <div><span class="param-label">S:</span> <span class="param-value">${formatVal(upsI.s)}</span></div>
-              <div><span class="param-label">T:</span> <span class="param-value">${formatVal(upsI.t)}</span></div>
-            </div>
-          </div>
+        <div class="data-section">
+          <h4>🏭 Data Monitoring Sumber PLN</h4>
+          ${plnTable}
+        </div>
+        <div class="data-section">
+          <h4>🔋 Data Monitoring Sumber UPS</h4>
+          ${upsTable}
         </div>
         <div class="entry-photo">
           <strong>📸 Foto bukti:</strong>
