@@ -15,12 +15,20 @@
   <script src="firebase-config.js"></script>
 
   <style>
-    body { background: #f0f4f8; font-family: 'Inter', system-ui, sans-serif; }
+    body { background: linear-gradient(135deg, #eef2f8 0%, #e0f0ec 100%); font-family: 'Inter', system-ui, sans-serif; }
     .card-hover { transition: all 0.2s ease; }
     .card-hover:hover { transform: translateY(-2px); box-shadow: 0 12px 20px -12px rgba(0,0,0,0.15); }
-    .ongoing-row { background-color: #fff8e7; border-left: 4px solid #f59e0b; }
+    .ongoing-row { background-color: #fff8e7; border-left: 4px solid #f5b042; }
     .btn-action:active { transform: scale(0.96); }
-    .sync-status { font-size: 0.7rem; padding: 2px 10px; border-radius: 20px; background: #e2e8f0; display: inline-block; margin-left: 12px; }
+    .sync-status { font-size: 0.7rem; padding: 2px 10px; border-radius: 20px; background: rgba(255,255,240,0.3); display: inline-block; margin-left: 12px; }
+    /* Tema hijau custom */
+    .btn-hijau { background-color: #1e6f5c; transition: all 0.2s; }
+    .btn-hijau:hover { background-color: #0e5a48; transform: translateY(-2px); }
+    .border-hijau { border-color: #1e6f5c; }
+    .text-hijau { color: #1e6f5c; }
+    .bg-hijau-soft { background-color: #e6f7f0; }
+    .bg-hijau-grad { background: linear-gradient(135deg, #1e6f5c 0%, #0e5a48 100%); }
+    .badge-status-hijau { background: #1e6f5c; color: white; }
   </style>
 </head>
 <body class="antialiased">
@@ -30,104 +38,100 @@
   <div class="flex flex-wrap justify-between items-center mb-6 border-b border-gray-200 pb-4">
     <div>
       <h1 class="text-3xl font-bold text-gray-800 flex items-center gap-2">
-        <i class="fas fa-broadcast-tower text-blue-600"></i> 
+        <i class="fas fa-broadcast-tower text-hijau"></i> 
         Monitoring Pemancar
         <span id="firebaseStatus" class="sync-status"><i class="fas fa-cloud-upload-alt"></i> Menghubungkan...</span>
       </h1>
       <p class="text-gray-500 text-sm">Catat kapan pemancar OFF → nanti update waktu ON (otomatis deteksi beda hari) | Data tersimpan di Firebase + lokal</p>
     </div>
     <div class="flex gap-2 mt-2 sm:mt-0">
-      <button id="exportHtmlBtn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg shadow-sm text-sm font-medium flex items-center gap-1">
+      <button id="exportHtmlBtn" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg shadow-sm text-sm font-medium flex items-center gap-1 transition">
         <i class="fas fa-file-code"></i> Export HTML
       </button>
-      <button id="exportCsvBtn" class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 px-4 py-2 rounded-lg shadow-sm text-sm flex items-center gap-1">
+      <button id="exportCsvBtn" class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 px-4 py-2 rounded-lg shadow-sm text-sm flex items-center gap-1 transition">
         <i class="fas fa-download"></i> CSV
       </button>
-      <button id="clearAllBtn" class="bg-white border border-red-300 text-red-600 hover:bg-red-50 px-4 py-2 rounded-lg shadow-sm text-sm font-medium flex items-center gap-1">
+      <button id="clearAllBtn" class="bg-white border border-red-300 text-red-600 hover:bg-red-50 px-4 py-2 rounded-lg shadow-sm text-sm font-medium flex items-center gap-1 transition">
         <i class="fas fa-trash-alt"></i> Hapus Semua
       </button>
     </div>
   </div>
 
-  <!-- Statistik ringkasan -->
+  <!-- Statistik ringkasan dengan tema hijau -->
   <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-    <div class="bg-white rounded-2xl shadow p-4 flex justify-between items-center border-l-8 border-blue-500 card-hover">
+    <div class="bg-white rounded-2xl shadow p-4 flex justify-between items-center border-l-8 border-hijau card-hover">
       <div><p class="text-gray-500 text-xs uppercase font-semibold">Total Kejadian</p><p id="totalEvents" class="text-2xl font-extrabold">0</p></div>
-      <i class="fas fa-chart-line text-3xl text-blue-200"></i>
+      <i class="fas fa-chart-line text-3xl text-emerald-200"></i>
     </div>
     <div class="bg-white rounded-2xl shadow p-4 flex justify-between items-center border-l-8 border-amber-500 card-hover">
       <div><p class="text-gray-500 text-xs uppercase font-semibold">Kejadian Aktif (OFF)</p><p id="ongoingCount" class="text-2xl font-extrabold text-amber-600">0</p></div>
       <i class="fas fa-hourglass-half text-3xl text-amber-200"></i>
     </div>
-    <div class="bg-white rounded-2xl shadow p-4 flex justify-between items-center border-l-8 border-emerald-500 card-hover">
-      <div><p class="text-gray-500 text-xs uppercase font-semibold">Total Waktu OFF Selesai</p><p id="totalDowntime" class="text-xl font-extrabold">0 jam</p></div>
+    <div class="bg-white rounded-2xl shadow p-4 flex justify-between items-center border-l-8 border-emerald-600 card-hover">
+      <div><p class="text-gray-500 text-xs uppercase font-semibold">Total Waktu OFF Selesai</p><p id="totalDowntime" class="text-xl font-extrabold text-hijau">0 jam</p></div>
       <i class="fas fa-clock text-3xl text-emerald-200"></i>
     </div>
-    <div class="bg-white rounded-2xl shadow p-4 flex justify-between items-center border-l-8 border-purple-500 card-hover">
-      <div><p class="text-gray-500 text-xs uppercase font-semibold">Rata-rata Durasi</p><p id="avgDowntime" class="text-xl font-extrabold">0 menit</p></div>
-      <i class="fas fa-chart-simple text-3xl text-purple-200"></i>
+    <div class="bg-white rounded-2xl shadow p-4 flex justify-between items-center border-l-8 border-teal-500 card-hover">
+      <div><p class="text-gray-500 text-xs uppercase font-semibold">Rata-rata Durasi</p><p id="avgDowntime" class="text-xl font-extrabold text-hijau">0 menit</p></div>
+      <i class="fas fa-chart-simple text-3xl text-teal-200"></i>
     </div>
   </div>
 
-  <!-- Form CATAT OFFLINE -->
+  <!-- Form CATAT OFFLINE (hijau) -->
   <div class="bg-white rounded-2xl shadow-md p-5 mb-8 border border-gray-100">
     <h2 class="text-xl font-semibold text-gray-700 mb-4 flex items-center gap-2"><i class="fas fa-power-off text-red-500"></i> Catat Pemancar OFF (Belum ON)</h2>
     <form id="offlineForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal OFF <span class="text-red-500">*</span></label>
-        <input type="date" id="offTanggal" required class="w-full border border-gray-300 rounded-lg px-3 py-2">
+        <input type="date" id="offTanggal" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-hijau focus:border-hijau">
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Waktu OFF <span class="text-red-500">*</span></label>
-        <input type="time" id="offWaktu" required class="w-full border border-gray-300 rounded-lg px-3 py-2">
+        <input type="time" id="offWaktu" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-hijau">
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Petugas (Nama)</label>
-        <input type="text" id="offPetugas" placeholder="Contoh: Andi" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+        <input type="text" id="offPetugas" placeholder="Contoh: Andi" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-hijau">
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Alasan OFF (sementara)</label>
-        <input type="text" id="offAlasan" placeholder="Gangguan / maintenance" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+        <input type="text" id="offAlasan" placeholder="Gangguan / maintenance" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-hijau">
       </div>
       <div class="md:col-span-2 lg:col-span-4">
         <label class="block text-sm font-medium text-gray-700 mb-1">Deskripsi / Catatan awal</label>
-        <input type="text" id="offDeskripsi" placeholder="Info awal penyebab..." class="w-full border border-gray-300 rounded-lg px-3 py-2">
+        <input type="text" id="offDeskripsi" placeholder="Info awal penyebab..." class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-hijau">
       </div>
       <div class="md:col-span-2 lg:col-span-4 flex justify-end">
-        <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg shadow font-medium flex items-center gap-2 transition">
-          <i class="fas fa-save"></i> Simpan (Pemancar OFF / Belum ON)
-        </button>
+        <button type="submit" class="btn-hijau text-white px-6 py-2 rounded-lg shadow font-medium flex items-center gap-2 transition"><i class="fas fa-save"></i> Simpan (Pemancar OFF / Belum ON)</button>
       </div>
     </form>
   </div>
 
-  <!-- Form UPDATE -->
-  <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl shadow-md p-5 mb-8 border border-blue-100">
-    <h2 class="text-lg font-semibold text-blue-800 flex items-center gap-2"><i class="fas fa-check-circle"></i> Selesaikan Kejadian Aktif (Masukkan Waktu ON)</h2>
+  <!-- Form UPDATE (hijau gradien) -->
+  <div class="bg-gradient-to-r from-teal-50 to-emerald-50 rounded-2xl shadow-md p-5 mb-8 border border-emerald-100">
+    <h2 class="text-lg font-semibold text-hijau flex items-center gap-2"><i class="fas fa-check-circle"></i> Selesaikan Kejadian Aktif (Masukkan Waktu ON)</h2>
     <p class="text-sm text-gray-600 mb-3">Pilih kejadian yang masih OFF dari tabel, lalu isi waktu ON. <strong>Jika waktu ON lebih kecil dari waktu OFF, otomatis dianggap keesokan harinya.</strong></p>
     <div class="flex flex-wrap gap-3 items-end">
       <div class="flex-1 min-w-[180px]">
         <label class="block text-sm font-medium text-gray-700 mb-1">Pilih Kejadian Belum ON</label>
-        <select id="selectOngoingEvent" class="w-full border border-gray-300 rounded-lg px-3 py-2 bg-white">
+        <select id="selectOngoingEvent" class="w-full border border-gray-300 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-hijau">
           <option value="">-- Pilih dari daftar aktif --</option>
         </select>
       </div>
       <div class="w-40">
         <label class="block text-sm font-medium text-gray-700 mb-1">Waktu ON <span class="text-red-500">*</span></label>
-        <input type="time" id="updateOnTime" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+        <input type="time" id="updateOnTime" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-hijau">
       </div>
       <div class="flex-1 min-w-[180px]">
         <label class="block text-sm font-medium text-gray-700 mb-1">Alasan Final OFF</label>
-        <input type="text" id="updateAlasanFinal" placeholder="Alasan lengkap" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+        <input type="text" id="updateAlasanFinal" placeholder="Alasan lengkap" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-hijau">
       </div>
       <div class="flex-1">
         <label class="block text-sm font-medium text-gray-700 mb-1">Deskripsi Tambahan</label>
-        <input type="text" id="updateDeskripsi" placeholder="Keterangan perbaikan" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+        <input type="text" id="updateDeskripsi" placeholder="Keterangan perbaikan" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-hijau">
       </div>
       <div>
-        <button id="btnCompleteEvent" class="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg shadow font-medium flex items-center gap-1 mt-1">
-          <i class="fas fa-play-circle"></i> Set ON & Selesai
-        </button>
+        <button id="btnCompleteEvent" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-lg shadow font-medium flex items-center gap-1 mt-1 transition"><i class="fas fa-play-circle"></i> Set ON & Selesai</button>
       </div>
     </div>
   </div>
@@ -135,7 +139,7 @@
   <!-- Tabel Data Pemancar -->
   <div class="bg-white rounded-2xl shadow-md overflow-hidden border border-gray-200">
     <div class="px-5 py-4 bg-gray-50 border-b border-gray-200 flex flex-wrap justify-between items-center">
-      <h2 class="text-lg font-semibold text-gray-700"><i class="fas fa-table-list mr-2 text-blue-500"></i>Riwayat & Status Pemancar</h2>
+      <h2 class="text-lg font-semibold text-hijau"><i class="fas fa-table-list mr-2 text-hijau"></i>Riwayat & Status Pemancar</h2>
       <div class="text-xs text-gray-400"><span class="inline-block w-3 h-3 bg-amber-400 rounded-full mr-1"></span> Kuning = masih OFF (belum ON) </div>
     </div>
     <div class="overflow-x-auto">
@@ -165,7 +169,6 @@
       return false;
     }
     try {
-      // Konversi array logs menjadi object dengan key = id
       const logsObj = {};
       logs.forEach(log => { logsObj[log.id] = log; });
       await window.db.ref(DB_PATH).set(logsObj);
@@ -189,24 +192,19 @@
       if (firebaseData && typeof firebaseData === 'object') {
         const firebaseLogs = Object.values(firebaseData);
         if (firebaseLogs.length > 0) {
-          // Urutkan berdasarkan id (opsional)
           firebaseLogs.sort((a,b) => (a.id || '').localeCompare(b.id || ''));
           logs = firebaseLogs;
-          // Simpan ke localStorage sebagai cadangan
           localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
           updateFirebaseStatus(true, `Loaded ${logs.length} data`);
           return true;
         }
       }
-      // Jika Firebase kosong, ambil dari localStorage
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         logs = JSON.parse(stored);
         updateFirebaseStatus(true, "Loaded local");
-        // Sinkronkan ke Firebase
         await syncToFirebase();
       } else {
-        // Data awal contoh
         logs = [];
       }
       return true;
@@ -262,12 +260,10 @@
     return str.trim();
   }
 
-  // Fungsi simpan (localStorage + Firebase)
   async function persistAndRender() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
     renderTable();
     updateStatsAndDropdown();
-    // Kirim ke Firebase jika siap
     if (isFirebaseReady) {
       await syncToFirebase();
     }
@@ -336,7 +332,7 @@
           ${isOngoing ? `<button onclick="openCompleteModal('${item.id}')" class="text-green-600 hover:text-green-800 bg-green-50 p-1.5 rounded-md mx-1 btn-action" title="Selesaikan (isi waktu ON)"><i class="fas fa-check-double"></i></button>` : ''}
           <button onclick="deleteLog('${item.id}')" class="text-red-600 hover:text-red-800 bg-red-50 p-1.5 rounded-md mx-1 btn-action"><i class="fas fa-trash-alt"></i></button>
         </td>
-      </tr>`;
+       </tr>`;
     });
     tbody.innerHTML = html;
   }
@@ -494,7 +490,6 @@
 
   // ======================== INISIALISASI ========================
   async function init() {
-    // Tampilkan data dari localStorage dulu (cepat)
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       logs = JSON.parse(stored);
@@ -509,14 +504,12 @@
       renderTable();
       updateStatsAndDropdown();
     }
-    // Tunggu Firebase siap, lalu sync
     if (window.db) {
       isFirebaseReady = true;
       await loadFromFirebase();
       renderTable();
       updateStatsAndDropdown();
     } else {
-      // Firebase belum siap, tunggu sebentar
       setTimeout(() => {
         if (window.db) {
           isFirebaseReady = true;
@@ -526,7 +519,6 @@
         }
       }, 500);
     }
-    // Event listener form
     const today = new Date().toISOString().split('T')[0];
     document.getElementById("offTanggal").value = today;
     document.getElementById("offlineForm").addEventListener("submit", (e) => {
