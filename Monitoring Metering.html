@@ -266,7 +266,6 @@
     .btn-info { background: #e0f2fe; color: #0f3b2c; }
     .btn-info:hover { background: #bae6fd; }
 
-    /* ===== RIWAYAT ENTRY (KEMBALI KE FORMAT SEMULA) ===== */
     .entries-container {
       display: flex;
       flex-direction: column;
@@ -307,17 +306,6 @@
       object-fit: cover;
       border: 1px solid #cbd5e6;
       cursor: pointer;
-    }
-
-    .data-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 20px;
-      justify-content: space-between;
-    }
-    .data-row > div {
-      flex: 1;
-      min-width: 200px;
     }
 
     @media (max-width: 640px) {
@@ -520,6 +508,7 @@
   const hiddenLat = document.getElementById('fotoLat');
   const hiddenLng = document.getElementById('fotoLng');
 
+  // Helper watermark original (TVRI + RI logo + info)
   async function getGPSandTime() {
     return new Promise((resolve) => {
       if (!navigator.geolocation) resolve({ lat: -6.2, lng: 106.8, alt: 0, timestamp: new Date().toLocaleString('id-ID') });
@@ -604,6 +593,7 @@
     } catch(e) { alert("Gagal memproses watermark: "+e.message); return false; }
   }
 
+  // Kamera
   async function bukaKamera() {
     const petugas = document.getElementById("petugas").value.trim();
     if (!petugas) { alert("Isi nama petugas terlebih dahulu sebelum membuka kamera."); return; }
@@ -780,7 +770,7 @@
     }
   };
 
-  // ======================== EXPORT HTML RAPI (TABEL TERPISAH) ========================
+  // ======================== EXPORT HTML RAPI ========================
   function generateFullReportHTML() {
     const entries = loadEntriesFromStorage().map(e => {
       if (!e.photoBase64 && e.photos && e.photos.length) e.photoBase64 = e.photos[0];
@@ -873,7 +863,7 @@
           </tr>
         </thead>
         <tbody>${upsRows}</tbody>
-      20\l
+      划
       
       <div class="footer">
         © TVRI - TX Tanah Merah | Watermark otomatis pada setiap foto | Data tersimpan di Firebase
@@ -907,7 +897,6 @@
     if(base64) { const modal = document.createElement('div'); modal.className = "modal-img"; modal.innerHTML = `<img src="${base64}">`; modal.onclick = () => modal.remove(); document.body.appendChild(modal); }
   };
 
-  // Render entries dengan format semula (tidak pakai tabel di dalam kartu)
   function renderEntries() {
     const entries = loadEntriesFromStorage().map(e => { 
       if (!e.photoBase64 && e.photos && e.photos.length) e.photoBase64 = e.photos[0];
@@ -919,31 +908,11 @@
     entries.forEach((e, idx) => {
       const photoHtml = e.photoBase64 ? `<img src="${e.photoBase64}" class="evidence-img" onclick="viewFullFoto('${e.photoBase64}')">` : '<span>Tidak ada foto</span>';
       const card = document.createElement("div"); card.className = "entry-card";
-      card.innerHTML = `
-        <div class="entry-header">
-          <div>📄 No: ${escapeHtml(e.no)} | ${escapeHtml(e.tanggal)}</div>
-          <div>
-            <span>👤 ${escapeHtml(e.petugas)}</span>
-            <span>📝 ${escapeHtml(e.keterangan||'-')}</span>
-            <button class="btn-danger" style="margin-left:12px;padding:4px 12px;" data-idx="${idx}">✖ Hapus</button>
-          </div>
-        </div>
-        <div class="data-row">
-          <div>
-            <strong>🏭 PLN</strong><br>
-            Teg: RS:${formatVal(e.pln?.v?.rs)} ST:${formatVal(e.pln?.v?.st)} TR:${formatVal(e.pln?.v?.tr)} RN:${formatVal(e.pln?.v?.rn)} SN:${formatVal(e.pln?.v?.sn)} TN:${formatVal(e.pln?.v?.tn)}<br>
-            Arus: R:${formatVal(e.pln?.i?.r)} S:${formatVal(e.pln?.i?.s)} T:${formatVal(e.pln?.i?.t)}
-          </div>
-          <div>
-            <strong>🔋 UPS</strong><br>
-            Teg: RS:${formatVal(e.ups?.v?.rs)} ST:${formatVal(e.ups?.v?.st)} TR:${formatVal(e.ups?.v?.tr)} RN:${formatVal(e.ups?.v?.rn)} SN:${formatVal(e.ups?.v?.sn)} TN:${formatVal(e.ups?.v?.tn)}<br>
-            Arus: R:${formatVal(e.ups?.i?.r)} S:${formatVal(e.ups?.i?.s)} T:${formatVal(e.ups?.i?.t)}
-          </div>
-        </div>
-        <div class="entry-photo">
-          <strong>📸 Foto bukti:</strong> ${photoHtml}
-        </div>
-      `;
+      card.innerHTML = `<div class="entry-header"><div>📄 No: ${escapeHtml(e.no)} | ${escapeHtml(e.tanggal)}</div>
+        <div><span>👤 ${escapeHtml(e.petugas)}</span><span>📝 ${escapeHtml(e.keterangan||'-')}</span><button class="btn-danger" style="margin-left:12px;padding:4px 12px;" data-idx="${idx}">✖ Hapus</button></div></div>
+        <div class="data-row"><div><strong>🏭 PLN</strong><br>Teg: RS:${formatVal(e.pln?.v?.rs)} ST:${formatVal(e.pln?.v?.st)} TR:${formatVal(e.pln?.v?.tr)} RN:${formatVal(e.pln?.v?.rn)} SN:${formatVal(e.pln?.v?.sn)} TN:${formatVal(e.pln?.v?.tn)}<br>Arus: R:${formatVal(e.pln?.i?.r)} S:${formatVal(e.pln?.i?.s)} T:${formatVal(e.pln?.i?.t)}</div>
+        <div><strong>🔋 UPS</strong><br>Teg: RS:${formatVal(e.ups?.v?.rs)} ST:${formatVal(e.ups?.v?.st)} TR:${formatVal(e.ups?.v?.tr)} RN:${formatVal(e.ups?.v?.rn)} SN:${formatVal(e.ups?.v?.sn)} TN:${formatVal(e.ups?.v?.tn)}<br>Arus: R:${formatVal(e.ups?.i?.r)} S:${formatVal(e.ups?.i?.s)} T:${formatVal(e.ups?.i?.t)}</div></div>
+        <div class="entry-photo"><strong>📸 Foto bukti:</strong> ${photoHtml}</div>`;
       container.appendChild(card);
     });
     document.querySelectorAll("[data-idx]").forEach(btn => btn.onclick = async () => {
