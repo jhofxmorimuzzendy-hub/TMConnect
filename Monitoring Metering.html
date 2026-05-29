@@ -161,7 +161,7 @@
       font-size: 0.85rem;
     }
 
-    /* Camera & Preview Area (seperti Monitoring Suhu) */
+    /* Camera & Preview Area */
     .camera-zone {
       background: linear-gradient(135deg, #f5f9ff 0%, #eef2fa 100%);
       border-radius: 32px;
@@ -195,6 +195,7 @@
     }
 
     .video-wrapper {
+      position: relative;
       background: #000;
       border-radius: 28px;
       overflow: hidden;
@@ -208,6 +209,31 @@
       object-fit: cover;
       background: #111;
       display: block;
+    }
+
+    /* Tombol close (X) di pojok kanan atas video */
+    .close-video-btn {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: rgba(0,0,0,0.6);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      font-size: 20px;
+      font-weight: bold;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      transition: 0.2s;
+    }
+    .close-video-btn:hover {
+      background: rgba(220,38,38,0.8);
+      transform: scale(1.05);
     }
 
     .btn-group {
@@ -342,6 +368,7 @@
     .sync-status { font-size: 0.7rem; padding: 2px 8px; border-radius: 20px; display: inline-block; margin-left: 12px; background: rgba(255,255,240,0.3); }
     .modal-img { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); display:flex; align-items:center; justify-content:center; z-index:2000; cursor:pointer; }
     .modal-img img { max-width:90%; max-height:90%; border-radius:16px; }
+    .hidden { display: none; }
   </style>
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -378,18 +405,17 @@
         <button type="button" id="btnUploadManual" class="btn btn-info"><i class="fas fa-upload mr-1"></i> Upload + Watermark</button>
       </div>
 
+      <!-- Video container dengan tombol close X di pojok kanan atas -->
       <div id="videoContainer" class="video-wrapper hidden">
-        <video id="videoCamera" autoplay playsinline class="w-full"></video>
-        <div class="flex justify-between p-2 bg-gray-900 text-white text-xs">
-          <span><i class="fas fa-info-circle"></i> Posisi kamera landscape disarankan</span>
-          <button type="button" id="btnTutupKamera" class="text-red-400"><i class="fas fa-times-circle"></i> Tutup Kamera</button>
-        </div>
+        <video id="videoCamera" autoplay playsinline></video>
+        <button id="btnTutupKamera" class="close-video-btn" title="Tutup kamera">✖</button>
       </div>
+      
       <input type="hidden" id="fotoData64" value="">
       <input type="hidden" id="fotoJam" value="">
       <input type="hidden" id="fotoLat" value="">
       <input type="hidden" id="fotoLng" value="">
-      <p class="text-xs text-gray-500 mt-3"><i class="fas fa-shield-alt text-green-600"></i> <strong>Watermark premium</strong> : Logo TVRI + Info Petugas, Waktu, Koordinat, TX Tanah Merah</p>
+      <!-- Teks watermark premium dihapus sesuai permintaan -->
     </div>
 
     <!-- PARAMETER PLN & UPS -->
@@ -630,12 +656,14 @@
       await videoEl.play();
     } catch(e) { alert("Tidak dapat akses kamera. Gunakan upload foto."); }
   }
+  
   function tutupKamera() {
     if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
     videoEl.srcObject = null;
     videoContainer.classList.add("hidden");
     btnCapture.disabled = true;
   }
+  
   async function captureFromVideo() {
     if (!mediaStream) { alert("Buka kamera dulu"); return; }
     const petugas = document.getElementById("petugas").value.trim();
@@ -649,6 +677,7 @@
     const success = await processAndSetPhoto(raw, petugas);
     if (success) tutupKamera();
   }
+  
   function uploadFotoManual() {
     const petugas = document.getElementById("petugas").value.trim();
     if (!petugas) { alert("Isi nama petugas sebelum upload."); return; }
@@ -664,6 +693,7 @@
     };
     input.click();
   }
+  
   function hapusFoto() {
     currentPhotoBase64 = null;
     fotoPreview.src = "https://placehold.co/400x400?text=Belum+Ada+Foto";
@@ -826,7 +856,7 @@
     for(let e of entries) {
       let thumb = e.photoBase64 ? `<img src="${e.photoBase64}" class="thumb-spreadsheet">` : '-';
       html += `<tr>
-        <td>${escapeHtml(e.no)}</td><td>${escapeHtml(e.tanggal)}</td><td>${escapeHtml(e.petugas)}</td><td>${escapeHtml(e.keterangan||'')}</td>
+        <tr>${escapeHtml(e.no)}</td><td>${escapeHtml(e.tanggal)}</td><td>${escapeHtml(e.petugas)}</td><td>${escapeHtml(e.keterangan||'')}</td>
         <td>${e.pln?.v?.rs??'-'}</td><td>${e.pln?.v?.st??'-'}</td><td>${e.pln?.v?.tr??'-'}</td><td>${e.pln?.v?.rn??'-'}</td><td>${e.pln?.v?.sn??'-'}</td><td>${e.pln?.v?.tn??'-'}</td>
         <td>R:${e.pln?.i?.r??'-'} S:${e.pln?.i?.s??'-'} T:${e.pln?.i?.t??'-'}</td>
         <td>${e.ups?.v?.rs??'-'}</td><td>${e.ups?.v?.st??'-'}</td><td>${e.ups?.v?.tr??'-'}</td><td>${e.ups?.v?.rn??'-'}</td><td>${e.ups?.v?.sn??'-'}</td><td>${e.ups?.v?.tn??'-'}</td>
@@ -834,7 +864,7 @@
         <td>${thumb}</td>
       </tr>`;
     }
-    return html+'</tbody><tr>';
+    return html+'</tbody><table>';
   }
   
   const modal = document.getElementById("spreadsheetModal");
