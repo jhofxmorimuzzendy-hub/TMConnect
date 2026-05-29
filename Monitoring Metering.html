@@ -211,7 +211,6 @@
       display: block;
     }
 
-    /* Tombol close (X) di pojok kanan atas video */
     .close-video-btn {
       position: absolute;
       top: 12px;
@@ -390,7 +389,7 @@
       <div class="field-group"><label>Keterangan</label><input type="text" id="keterangan" placeholder="Lokasi / kondisi"></div>
     </div>
 
-    <!-- SINGLE FOTO ZONE (seperti Monitoring Suhu) -->
+    <!-- SINGLE FOTO ZONE -->
     <div class="camera-zone">
       <h3 style="margin:0 0 12px 0;">📸 FOTO BUKTI (Watermark Otomatis)</h3>
       
@@ -405,7 +404,6 @@
         <button type="button" id="btnUploadManual" class="btn btn-info"><i class="fas fa-upload mr-1"></i> Upload + Watermark</button>
       </div>
 
-      <!-- Video container dengan tombol close X di pojok kanan atas -->
       <div id="videoContainer" class="video-wrapper hidden">
         <video id="videoCamera" autoplay playsinline></video>
         <button id="btnTutupKamera" class="close-video-btn" title="Tutup kamera">✖</button>
@@ -415,7 +413,6 @@
       <input type="hidden" id="fotoJam" value="">
       <input type="hidden" id="fotoLat" value="">
       <input type="hidden" id="fotoLng" value="">
-      <!-- Teks watermark premium dihapus sesuai permintaan -->
     </div>
 
     <!-- PARAMETER PLN & UPS -->
@@ -454,7 +451,6 @@
 
     <div class="btn-group">
       <button class="btn btn-primary" id="saveWithPhotoBtn">💾 SIMPAN ENTRY (dengan foto)</button>
-      <button class="btn btn-info" id="loadLastEntryBtn">📂 AMBIL DATA DARI ENTRY TERAKHIR</button>
       <button class="btn btn-secondary" id="resetFormBtn">⟳ Reset Form + Hapus Foto</button>
       <button class="btn btn-excel" id="exportTableBtn">📊 LIHAT / SALIN TABEL</button>
       <button class="btn btn-danger" id="clearAllBtn">🗑 Hapus Semua Data</button>
@@ -710,7 +706,6 @@
   btnUploadManual.addEventListener('click', uploadFotoManual);
 
   // ======================== CRUD ENTRIES ========================
-  let currentEntries = [];
   async function saveEntriesToLocalAndFirebase(entries) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
     if (isFirebaseReady) await syncToFirebase(entries);
@@ -728,12 +723,14 @@
     let max=0; entries.forEach(e=>{ let m=e.no.match(/\d+/); if(m) max=Math.max(max,parseInt(m[0],10)); });
     return (max+1).toString().padStart(3,'0');
   }
+  
   function updateEntryNoField() {
     const entries = loadEntriesFromStorage();
     document.getElementById("entryNo").value = getNextNumber(entries);
   }
 
   function parseFloatOrNull(v) { return (v===""||v===null)?null:(isNaN(parseFloat(v))?null:parseFloat(v)); }
+  
   function getFormValues() {
     return {
       no: document.getElementById("entryNo").value.trim(),
@@ -745,37 +742,51 @@
     };
   }
 
-  function setFormValues(data) {
-    if(!data) return;
-    document.getElementById("entryNo").value = data.no || getNextNumber(loadEntriesFromStorage());
-    document.getElementById("entryDate").value = data.tanggal || "";
-    document.getElementById("petugas").value = data.petugas || "";
-    document.getElementById("keterangan").value = data.keterangan || "";
+  // Fungsi untuk mengisi form dengan data entry (tanpa foto, tanggal diset hari ini)
+  function applyEntryDataToForm(entry) {
+    if (!entry) return;
+    // Isi petugas dan keterangan
+    document.getElementById("petugas").value = entry.petugas || "";
+    document.getElementById("keterangan").value = entry.keterangan || "";
+    // Isi tegangan dan arus
     const set = (id,val) => { let el=document.getElementById(id); if(el) el.value = (val!==null&&val!==undefined)?val:""; };
-    set("vPLN_rs", data.pln?.v?.rs); set("vPLN_st", data.pln?.v?.st); set("vPLN_tr", data.pln?.v?.tr);
-    set("vPLN_rn", data.pln?.v?.rn); set("vPLN_sn", data.pln?.v?.sn); set("vPLN_tn", data.pln?.v?.tn);
-    set("iPLN_r", data.pln?.i?.r); set("iPLN_s", data.pln?.i?.s); set("iPLN_t", data.pln?.i?.t);
-    set("vUPS_rs", data.ups?.v?.rs); set("vUPS_st", data.ups?.v?.st); set("vUPS_tr", data.ups?.v?.tr);
-    set("vUPS_rn", data.ups?.v?.rn); set("vUPS_sn", data.ups?.v?.sn); set("vUPS_tn", data.ups?.v?.tn);
-    set("iUPS_r", data.ups?.i?.r); set("iUPS_s", data.ups?.i?.s); set("iUPS_t", data.ups?.i?.t);
-    if (data.photoBase64) {
-      currentPhotoBase64 = data.photoBase64;
-      fotoPreview.src = data.photoBase64;
-      hiddenFotoData.value = data.photoBase64;
-      hiddenJam.value = data.jamFoto || "";
-      hiddenLat.value = data.lat || "";
-      hiddenLng.value = data.lng || "";
-    } else { hapusFoto(); }
+    set("vPLN_rs", entry.pln?.v?.rs); set("vPLN_st", entry.pln?.v?.st); set("vPLN_tr", entry.pln?.v?.tr);
+    set("vPLN_rn", entry.pln?.v?.rn); set("vPLN_sn", entry.pln?.v?.sn); set("vPLN_tn", entry.pln?.v?.tn);
+    set("iPLN_r", entry.pln?.i?.r); set("iPLN_s", entry.pln?.i?.s); set("iPLN_t", entry.pln?.i?.t);
+    set("vUPS_rs", entry.ups?.v?.rs); set("vUPS_st", entry.ups?.v?.st); set("vUPS_tr", entry.ups?.v?.tr);
+    set("vUPS_rn", entry.ups?.v?.rn); set("vUPS_sn", entry.ups?.v?.sn); set("vUPS_tn", entry.ups?.v?.tn);
+    set("iUPS_r", entry.ups?.i?.r); set("iUPS_s", entry.ups?.i?.s); set("iUPS_t", entry.ups?.i?.t);
+    // Foto dikosongkan
+    hapusFoto();
   }
 
   function resetFormFields() {
-    document.getElementById("entryDate").value = new Date().toISOString().slice(0,10);
+    // Kosongkan semua field parameter
+    document.querySelectorAll("input[type='number']").forEach(inp => inp.value = "");
     document.getElementById("petugas").value = "";
     document.getElementById("keterangan").value = "";
-    document.querySelectorAll("input[type='number']").forEach(inp => inp.value = "");
     hapusFoto();
-    updateEntryNoField();
+    // Tanggal hari ini
+    document.getElementById("entryDate").value = new Date().toISOString().slice(0,10);
+    updateEntryNoField(); // nomor akan disesuaikan dengan data terbaru
     if(mediaStream) tutupKamera();
+  }
+
+  // Fungsi untuk mengisi form dengan data entry terakhir (jika ada) atau reset jika tidak ada
+  function applyLastEntryOrReset() {
+    const entries = loadEntriesFromStorage();
+    if (entries.length > 0) {
+      // Ambil entry terbaru (index 0 karena sudah di-sort descending)
+      const lastEntry = entries[0];
+      applyEntryDataToForm(lastEntry);
+      // Nomor tetap di-generate otomatis (increment dari max nomor yang ada)
+      updateEntryNoField();
+      // Tanggal di-set ke hari ini (override)
+      document.getElementById("entryDate").value = new Date().toISOString().slice(0,10);
+    } else {
+      // Tidak ada data, reset semua
+      resetFormFields();
+    }
   }
 
   document.getElementById("saveWithPhotoBtn").onclick = async () => {
@@ -798,16 +809,19 @@
     entries.unshift(newEntry);
     await saveEntriesToLocalAndFirebase(entries);
     hapusFoto();
-    updateEntryNoField();
+    // Setelah simpan, isi ulang form dengan data entry terbaru? Atau biarkan kosong? 
+    // Lebih baik reset form namun ambil data terakhir (sesuai kebutuhan user)
+    // Agar user bisa lanjut entry berikutnya dengan parameter yang sama (kecuali foto)
+    applyLastEntryOrReset();
     alert("Data tersimpan dengan foto. Firebase: " + (isFirebaseReady ? "tersinkron" : "offline"));
   };
 
-  document.getElementById("loadLastEntryBtn").onclick = () => {
-    const entries = loadEntriesFromStorage();
-    if(entries.length) setFormValues(entries[0]);
-    else alert("Belum ada entry.");
+  document.getElementById("resetFormBtn").onclick = () => {
+    if(confirm("Reset form dan hapus foto?")) {
+      resetFormFields();
+    }
   };
-  document.getElementById("resetFormBtn").onclick = resetFormFields;
+  
   document.getElementById("clearAllBtn").onclick = async () => {
     if(confirm("Hapus semua data? Aksi permanen.")) {
       await saveEntriesToLocalAndFirebase([]);
@@ -852,19 +866,22 @@
   function buildTableHTML() {
     const entries = loadEntriesFromStorage().map(e=>{ if (!e.photoBase64 && e.photos?.length) e.photoBase64 = e.photos[0]; return e; });
     if(!entries.length) return "<p>Tidak ada data</p>";
-    let html = '<table border="1"><thead><tr style="background:#1e6f5c;color:white;"><th>No</th><th>Tgl</th><th>Petugas</th><th>Keterangan</th><th>PLN_V_RS</th><th>PLN_V_ST</th><th>PLN_V_TR</th><th>PLN_V_RN</th><th>PLN_V_SN</th><th>PLN_V_TN</th><th>PLN_A_R/S/T</th><th>UPS_V_RS</th><th>UPS_V_ST</th><th>UPS_V_TR</th><th>UPS_V_RN</th><th>UPS_V_SN</th><th>UPS_V_TN</th><th>UPS_A_R/S/T</th><th>Foto</th></tr></thead><tbody>';
+    let html = '<table border="1"><thead><tr style="background:#1e6f5c;color:white;"><th>No</th><th>Tgl</th><th>Petugas</th><th>Keterangan</th><th>PLN_V_RS</th><th>PLN_V_ST</th><th>PLN_V_TR</th><th>PLN_V_RN</th><th>PLN_V_SN</th><th>PLN_V_TN</th><th>PLN_A_R/S/T</th><th>UPS_V_RS</th><th>UPS_V_ST</th><th>UPS_V_TR</th><th>UPS_V_RN</th><th>UPS_V_SN</th><th>UPS_V_TN</th><th>UPS_A_R/S/T</th><th>Foto</th><tr></thead><tbody>';
     for(let e of entries) {
       let thumb = e.photoBase64 ? `<img src="${e.photoBase64}" class="thumb-spreadsheet">` : '-';
       html += `<tr>
-        <tr>${escapeHtml(e.no)}</td><td>${escapeHtml(e.tanggal)}</td><td>${escapeHtml(e.petugas)}</td><td>${escapeHtml(e.keterangan||'')}</td>
+        <td>${escapeHtml(e.no)}</td>
+        <td>${escapeHtml(e.tanggal)}</td>
+        <td>${escapeHtml(e.petugas)}</td>
+        <td>${escapeHtml(e.keterangan||'')}</td>
         <td>${e.pln?.v?.rs??'-'}</td><td>${e.pln?.v?.st??'-'}</td><td>${e.pln?.v?.tr??'-'}</td><td>${e.pln?.v?.rn??'-'}</td><td>${e.pln?.v?.sn??'-'}</td><td>${e.pln?.v?.tn??'-'}</td>
         <td>R:${e.pln?.i?.r??'-'} S:${e.pln?.i?.s??'-'} T:${e.pln?.i?.t??'-'}</td>
         <td>${e.ups?.v?.rs??'-'}</td><td>${e.ups?.v?.st??'-'}</td><td>${e.ups?.v?.tr??'-'}</td><td>${e.ups?.v?.rn??'-'}</td><td>${e.ups?.v?.sn??'-'}</td><td>${e.ups?.v?.tn??'-'}</td>
         <td>R:${e.ups?.i?.r??'-'} S:${e.ups?.i?.s??'-'} T:${e.ups?.i?.t??'-'}</td>
         <td>${thumb}</td>
-      </tr>`;
+       </tr>`;
     }
-    return html+'</tbody><table>';
+    return html+'</tbody></table>';
   }
   
   const modal = document.getElementById("spreadsheetModal");
@@ -881,10 +898,9 @@
 
   // ======================== INISIALISASI ========================
   async function init() {
+    // Reset form dasar (tanggal hari ini, nomor awal jika kosong)
     resetFormFields();
-    const local = loadEntriesFromStorage();
-    renderEntries();
-    updateEntryNoField();
+    // Setelah data dimuat, isi form dengan data entry terakhir jika ada
     if (window.db) {
       isFirebaseReady = true;
       const fbEntries = await loadFromFirebase();
@@ -892,6 +908,15 @@
         localStorage.setItem(STORAGE_KEY, JSON.stringify(fbEntries));
         renderEntries();
         updateEntryNoField();
+        applyLastEntryOrReset(); // Isi form berdasarkan entry terakhir
+      } else {
+        // Jika Firebase kosong, cek localStorage lalu apply
+        const localEntries = loadEntriesFromStorage();
+        if (localEntries.length) {
+          applyLastEntryOrReset();
+        } else {
+          resetFormFields(); // pastikan form kosong
+        }
       }
       updateFirebaseStatus(true, "Terhubung");
     } else {
@@ -902,10 +927,24 @@
             if (fbEntries?.length) {
               localStorage.setItem(STORAGE_KEY, JSON.stringify(fbEntries));
               renderEntries(); updateEntryNoField();
+              applyLastEntryOrReset();
+            } else {
+              const localEntries = loadEntriesFromStorage();
+              if (localEntries.length) applyLastEntryOrReset();
+              else resetFormFields();
             }
             updateFirebaseStatus(true, "Terhubung");
           });
-        } else updateFirebaseStatus(false, "Firebase tidak tersedia");
+        } else {
+          updateFirebaseStatus(false, "Firebase tidak tersedia");
+          // Meskipun tanpa Firebase, tetap coba load data lokal
+          const localEntries = loadEntriesFromStorage();
+          if (localEntries.length) {
+            renderEntries();
+            updateEntryNoField();
+            applyLastEntryOrReset();
+          }
+        }
       }, 500);
     }
   }
