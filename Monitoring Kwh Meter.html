@@ -47,7 +47,7 @@
         <i class="fas fa-charging-station text-hijau"></i> Monitoring kWh Meter TVRI Papua
         <span id="firebaseStatus" class="sync-status"><i class="fas fa-cloud-upload-alt"></i> Menghubungkan...</span>
       </h1>
-      <p class="text-slate-500 text-sm">Pencatatan wajib tgl 23 • Foto dengan watermark • Data tersimpan di Firebase + lokal</p>
+      <p class="text-slate-500 text-sm">Pencatatan fleksibel setiap hari • Foto dengan watermark • Data tersimpan di Firebase + lokal</p>
     </div>
     <div class="flex gap-2">
       <button id="printReportBtn" class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded-xl shadow text-sm"><i class="fas fa-print"></i> Cetak</button>
@@ -63,7 +63,7 @@
         <p class="text-gray-800"><i class="fas fa-map-marker-alt w-5 text-hijau"></i> Alamat : Sokanggo Tanah Mrh Merauke</p>
         <p class="text-gray-700 text-sm"><i class="fas fa-id-card"></i> ID Pelanggan : 425210003624 | Daya : 33.000 Gol II</p>
       </div>
-      <div class="bg-emerald-50 p-2 rounded-xl text-center"><span class="text-xs font-semibold text-hijau">Periode pencatatan tgl 23</span></div>
+      <div class="bg-emerald-50 p-2 rounded-xl text-center"><span class="text-xs font-semibold text-hijau">Pencatatan dapat dilakukan kapan saja</span></div>
     </div>
   </div>
 
@@ -97,13 +97,13 @@
   <div class="bg-white rounded-2xl card-shadow overflow-hidden">
     <div class="px-5 py-4 border-b bg-gray-50 flex justify-between">
       <h3 class="font-semibold"><i class="fas fa-history text-hijau"></i> Riwayat Pencatatan kWh</h3>
-      <span class="text-xs text-gray-500 no-print"><i class="far fa-calendar-check"></i> tgl 23</span>
+      <span class="text-xs text-gray-500 no-print"><i class="far fa-calendar-check"></i> Satu entri per bulan</span>
     </div>
     <div class="p-4 overflow-x-auto">
       <table class="min-w-full border-collapse" id="mainTable">
         <thead class="bg-emerald-50">报<th class="px-4 py-3">No</th><th>Tanggal</th><th>Awal (kWh)</th><th>Tagihan</th><th>Foto</th><th>Petugas</th><th class="aksi-col">Aksi</th></tr></thead>
-        <tbody id="tableBody"><tr><td colspan="7" class="text-center py-8">Memuat data dari Firebase...</td></tr></tbody>
-      </table>
+        <tbody id="tableBody"><tr><td colspan="7" class="text-center py-8">Memuat data dari Firebase...</td>}</tbody>
+      更</table>
     </div>
   </div>
 </div>
@@ -211,10 +211,18 @@
   const STORAGE_KEY = "kwh_tvri_monitoring";
   let monitoringData = [];
 
-  function getDateFromMonthYear(m) { if(!m) return null; const [y,mo]=m.split("-"); return `${y}-${mo}-23`; }
+  function getDateFromMonthYear(m) { if(!m) return null; const [y,mo]=m.split("-"); return `${y}-${mo}-23`; } // tetap pakai tgl 23 untuk konsistensi internal
   function formatTanggalIndonesia(d) { if(!d) return "-"; const t=new Date(d); if(isNaN(t)) return d; const bln=["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"]; return `${t.getDate()} ${bln[t.getMonth()]} ${t.getFullYear()}`; }
-  function isTodayTwentyThird() { return new Date().getDate() === 23; }
-  function updateDateStatus() { const t=new Date(); const txt=`${t.getDate()} ${["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"][t.getMonth()]} ${t.getFullYear()}`; const btn=document.getElementById("simpanBtn"); if(isTodayTwentyThird()){ document.getElementById("todayDateText").innerHTML=`<span class="text-green-700">${txt}</span> ✓`; btn.disabled=false; btn.classList.remove("opacity-60"); } else { document.getElementById("todayDateText").innerHTML=`<span class="text-red-600">${txt}</span> (bukan tgl 23)`; btn.disabled=true; btn.classList.add("opacity-60"); } }
+  
+  // TIDAK ADA LAGI PEMBATASAN TANGGAL 23, tombol simpan selalu aktif
+  function updateDateStatus() { 
+    const today = new Date();
+    const txt = `${today.getDate()} ${["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"][today.getMonth()]} ${today.getFullYear()}`;
+    document.getElementById("todayDateText").innerHTML = `<span class="text-gray-700">${txt}</span> (pencatatan bebas)`;
+    // tombol simpan selalu aktif
+    const simpanBtn = document.getElementById("simpanBtn");
+    if(simpanBtn) { simpanBtn.disabled = false; simpanBtn.classList.remove("opacity-60"); }
+  }
 
   async function saveDataAndSync() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(monitoringData));
@@ -222,60 +230,81 @@
     if (isFirebaseReady) await syncToFirebase();
   }
 
-  function isDuplicate(month,exclude=null) { const t=getDateFromMonthYear(month); return t ? monitoringData.some(i=>i.date===t && i.id!==exclude) : false; }
-  function autoTagihan(month,awal) { if(!month||awal===undefined) return 0; const cur=getDateFromMonthYear(month); const prev=monitoringData.filter(i=>i.date<cur).sort((a,b)=>new Date(b.date)-new Date(a.date)); if(!prev.length) return 0; let diff=awal-prev[0].awalReading; return diff<0?0:parseFloat(diff.toFixed(2)); }
+  function isDuplicate(month, exclude=null) { 
+    const t = getDateFromMonthYear(month); 
+    return t ? monitoringData.some(i => i.date === t && i.id !== exclude) : false; 
+  }
   
-  async function addRecord(month,awal,total,petugas,photo) { 
-    if(!isTodayTwentyThird()) throw new Error("Hanya tgl 23"); 
-    if(!month||!awal||awal<0) throw new Error("Awal kWh harus positif"); 
+  function autoTagihan(month, awal) { 
+    if(!month || awal===undefined) return 0; 
+    const cur = getDateFromMonthYear(month); 
+    const prev = monitoringData.filter(i => i.date < cur).sort((a,b) => new Date(b.date) - new Date(a.date)); 
+    if(!prev.length) return 0; 
+    let diff = awal - prev[0].awalReading; 
+    return diff < 0 ? 0 : parseFloat(diff.toFixed(2)); 
+  }
+  
+  // TIDAK ADA LAGI PENGECEKAN TANGGAL 23
+  async function addRecord(month, awal, total, petugas, photo) { 
+    if(!month || awal===undefined || awal<0) throw new Error("Awal kWh harus positif"); 
     if(!petugas.trim()) throw new Error("Petugas wajib"); 
-    if(isDuplicate(month)) throw new Error("Bulan sudah ada"); 
-    const fullDate=getDateFromMonthYear(month); 
+    if(isDuplicate(month)) throw new Error("Bulan yang sama sudah pernah dicatat. Hanya satu entri per bulan."); 
+    const fullDate = getDateFromMonthYear(month); 
     const newId = Date.now() + '-' + Math.random().toString(36).substring(2, 8);
     monitoringData.push({
-      id:newId, date:fullDate, displayDate:formatTanggalIndonesia(fullDate),
-      awalReading:parseFloat(awal), totalTagihan:parseFloat(total),
-      petugas:petugas.trim(), lampiran:photo
+      id: newId, 
+      date: fullDate, 
+      displayDate: formatTanggalIndonesia(fullDate),
+      awalReading: parseFloat(awal), 
+      totalTagihan: parseFloat(total),
+      petugas: petugas.trim(), 
+      lampiran: photo
     }); 
-    monitoringData.sort((a,b)=>new Date(a.date)-new Date(b.date)); 
+    monitoringData.sort((a,b) => new Date(a.date) - new Date(b.date)); 
     await saveDataAndSync();
   }
   
-  async function editRecord(id,month,awal,total,petugas,photo,removeFlag) { 
-    const idx=monitoringData.findIndex(i=>i.id===id); 
-    if(idx===-1) throw new Error("Not found"); 
-    const old=monitoringData[idx]; 
-    const newDate=getDateFromMonthYear(month); 
-    if(isDuplicate(month,id)) throw new Error("Bulan sudah ada"); 
-    let finalLampiran=old.lampiran; 
-    if(removeFlag) finalLampiran=null; 
-    if(photo) finalLampiran=photo; 
-    monitoringData[idx]={...old, date:newDate, displayDate:formatTanggalIndonesia(newDate),
-      awalReading:parseFloat(awal), totalTagihan:parseFloat(total),
-      petugas:petugas.trim(), lampiran:finalLampiran}; 
-    monitoringData.sort((a,b)=>new Date(a.date)-new Date(b.date)); 
+  async function editRecord(id, month, awal, total, petugas, photo, removeFlag) { 
+    const idx = monitoringData.findIndex(i => i.id === id); 
+    if(idx === -1) throw new Error("Not found"); 
+    const old = monitoringData[idx]; 
+    const newDate = getDateFromMonthYear(month); 
+    if(isDuplicate(month, id)) throw new Error("Bulan yang sama sudah ada untuk entri lain."); 
+    let finalLampiran = old.lampiran; 
+    if(removeFlag) finalLampiran = null; 
+    if(photo) finalLampiran = photo; 
+    monitoringData[idx] = {
+      ...old, 
+      date: newDate, 
+      displayDate: formatTanggalIndonesia(newDate),
+      awalReading: parseFloat(awal), 
+      totalTagihan: parseFloat(total),
+      petugas: petugas.trim(), 
+      lampiran: finalLampiran
+    }; 
+    monitoringData.sort((a,b) => new Date(a.date) - new Date(b.date)); 
     await saveDataAndSync();
   }
   
   function deleteRecord(id){ 
-    Swal.fire({title:"Hapus?",icon:"warning",showCancelButton:true,confirmButtonColor:"#d33",confirmButtonText:"Ya"}).then(async res=>{
+    Swal.fire({title:"Hapus data?", icon:"warning", showCancelButton:true, confirmButtonColor:"#d33", confirmButtonText:"Ya"}).then(async res => {
       if(res.isConfirmed){ 
-        monitoringData=monitoringData.filter(i=>i.id!==id); 
+        monitoringData = monitoringData.filter(i => i.id !== id); 
         await saveDataAndSync(); 
-        Swal.fire("Terhapus"); 
+        Swal.fire("Terhapus", "", "success"); 
       }
     }); 
   }
   
   function renderTable(){ 
-    const tbody=document.getElementById("tableBody"); 
-    if(!monitoringData.length){ tbody.innerHTML=`<tr><td colspan="7" class="text-center py-8">Belum ada data</td></tr>`; return; } 
-    const sorted=[...monitoringData].sort((a,b)=>new Date(b.date)-new Date(a.date)); 
-    let html=""; 
-    sorted.forEach((item,idx)=>{ 
-      let fotoCell=`<span class="text-gray-400">Tdk ada</span>`; 
-      if(item.lampiran?.base64) fotoCell=`<img src="${item.lampiran.base64}" class="image-thumb" onclick="window.open('${item.lampiran.base64}','_blank')">`; 
-      html+=`<tr class="border-b"><td class="px-4 py-3">${idx+1}</td>
+    const tbody = document.getElementById("tableBody"); 
+    if(!monitoringData.length){ tbody.innerHTML = `<tr><td colspan="7" class="text-center py-8">Belum ada data</td></tr>`; return; } 
+    const sorted = [...monitoringData].sort((a,b) => new Date(b.date) - new Date(a.date)); 
+    let html = ""; 
+    sorted.forEach((item, idx) => { 
+      let fotoCell = `<span class="text-gray-400">Tdk ada</span>`; 
+      if(item.lampiran?.base64) fotoCell = `<img src="${item.lampiran.base64}" class="image-thumb" onclick="window.open('${item.lampiran.base64}','_blank')">`; 
+      html += `<tr class="border-b"><td class="px-4 py-3">${idx+1}</td>
         <td class="px-4 py-3">${item.displayDate}</td>
         <td class="px-4 py-3">${item.awalReading.toFixed(2)} kWh</td>
         <td class="font-semibold text-hijau">${item.totalTagihan.toFixed(2)} kWh</td>
@@ -283,17 +312,17 @@
         <td class="px-4 py-3">${escapeHtml(item.petugas)}</td>
         <td class="aksi-col"><button class="editBtn text-blue-600 mx-1" data-id="${item.id}"><i class="fas fa-edit"></i></button><button class="deleteBtn text-red-500 mx-1" data-id="${item.id}"><i class="fas fa-trash-alt"></i></button></td></tr>`; 
     }); 
-    tbody.innerHTML=html; 
-    document.querySelectorAll('.editBtn').forEach(btn=>btn.addEventListener('click',()=>openEditModal(btn.dataset.id))); 
-    document.querySelectorAll('.deleteBtn').forEach(btn=>btn.addEventListener('click',()=>deleteRecord(btn.dataset.id))); 
+    tbody.innerHTML = html; 
+    document.querySelectorAll('.editBtn').forEach(btn => btn.addEventListener('click', () => openEditModal(btn.dataset.id))); 
+    document.querySelectorAll('.deleteBtn').forEach(btn => btn.addEventListener('click', () => deleteRecord(btn.dataset.id))); 
   }
   
-  function escapeHtml(s){ if(!s) return ''; return s.replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); }
+  function escapeHtml(s){ if(!s) return ''; return s.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); }
 
   // ========== WATERMARK & KAMERA ==========
-  function showLoading(msg){ let ld=document.getElementById('globalLoading'); if(!ld){ ld=document.createElement('div'); ld.id='globalLoading'; ld.className='loading-overlay'; ld.innerHTML=`<div><i class="fas fa-spinner fa-pulse text-3xl mb-2"></i><div>${msg}</div></div>`; document.body.appendChild(ld); } }
-  function hideLoading(){ let ld=document.getElementById('globalLoading'); if(ld) ld.remove(); }
-  function getCurrentPosition(){ return new Promise(resolve=>{ if(!navigator.geolocation) resolve(null); else navigator.geolocation.getCurrentPosition(p=>resolve({lat:p.coords.latitude,lng:p.coords.longitude}), ()=>resolve(null),{timeout:5000}); }); }
+  function showLoading(msg){ let ld = document.getElementById('globalLoading'); if(!ld){ ld = document.createElement('div'); ld.id = 'globalLoading'; ld.className = 'loading-overlay'; ld.innerHTML = `<div><i class="fas fa-spinner fa-pulse text-3xl mb-2"></i><div>${msg}</div></div>`; document.body.appendChild(ld); } }
+  function hideLoading(){ let ld = document.getElementById('globalLoading'); if(ld) ld.remove(); }
+  function getCurrentPosition(){ return new Promise(resolve => { if(!navigator.geolocation) resolve(null); else navigator.geolocation.getCurrentPosition(p => resolve({lat:p.coords.latitude, lng:p.coords.longitude}), () => resolve(null), {timeout:5000}); }); }
   async function applySimpleWatermark(originalBase64, petugas, lokasi, waktuStr) {
     return new Promise((resolve, reject) => {
       const img = new Image();
@@ -390,15 +419,30 @@
   document.getElementById("takePhotoBtn").addEventListener("click",()=>{ if(!document.getElementById("petugas").value.trim()){ Swal.fire("Isi petugas dulu"); return; } openCamera(handleNewPhoto); });
   document.getElementById("lampiranFile").addEventListener("change",async(e)=>{ if(e.target.files.length){ const file=e.target.files[0]; const reader=new FileReader(); reader.onload=async(ev)=>{ await handleNewPhoto(ev.target.result); }; reader.readAsDataURL(file); }else{ document.getElementById("previewLampiran").innerHTML=""; window.tempPhotoFile=null; currentWatermarked=null; } });
   document.getElementById("resetFormBtn").addEventListener("click",()=>{ document.getElementById("awalKwh").value=""; document.getElementById("petugas").value=""; document.getElementById("lampiranFile").value=""; document.getElementById("previewLampiran").innerHTML=""; document.getElementById("totalTagihan").value="0"; document.getElementById("monthYear").value=`${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`; window.tempPhotoFile=null; currentWatermarked=null; refreshAuto(); });
-  document.getElementById("simpanBtn").addEventListener("click",async()=>{ 
-    if(!isTodayTwentyThird()) return Swal.fire("Akses ditolak","Hanya tgl 23","warning"); 
-    const month=document.getElementById("monthYear").value, awal=parseFloat(document.getElementById("awalKwh").value), total=parseFloat(document.getElementById("totalTagihan").value), petugas=document.getElementById("petugas").value; 
-    if(isNaN(awal)||awal<0) return Swal.fire("Error","Awal kWh harus angka positif"); 
-    if(!petugas.trim()) return Swal.fire("Error","Petugas wajib"); 
-    if(!window.tempPhotoFile) return Swal.fire("Error","Harap ambil/upload foto terlebih dahulu"); 
-    try{ await addRecord(month,awal,total,petugas,window.tempPhotoFile); Swal.fire("Berhasil","Data tersimpan dengan watermark dan sinkron ke Firebase","success"); 
-      document.getElementById("awalKwh").value=""; document.getElementById("petugas").value=""; document.getElementById("lampiranFile").value=""; document.getElementById("previewLampiran").innerHTML=""; document.getElementById("totalTagihan").value="0"; window.tempPhotoFile=null; document.getElementById("monthYear").value=`${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`; refreshAuto(); 
-    }catch(err){ Swal.fire("Gagal",err.message,"error"); } 
+  
+  // TOMBOL SIMPAN SEKARANG TANPA PENGECEKAN TANGGAL 23
+  document.getElementById("simpanBtn").addEventListener("click", async () => {
+    const month = document.getElementById("monthYear").value, 
+          awal = parseFloat(document.getElementById("awalKwh").value), 
+          total = parseFloat(document.getElementById("totalTagihan").value), 
+          petugas = document.getElementById("petugas").value;
+    if (isNaN(awal) || awal < 0) return Swal.fire("Error", "Awal kWh harus angka positif", "error");
+    if (!petugas.trim()) return Swal.fire("Error", "Petugas wajib diisi", "error");
+    if (!window.tempPhotoFile) return Swal.fire("Error", "Harap ambil/upload foto terlebih dahulu", "error");
+    try {
+      await addRecord(month, awal, total, petugas, window.tempPhotoFile);
+      Swal.fire("Berhasil", "Data tersimpan dengan watermark dan sinkron ke Firebase", "success");
+      document.getElementById("awalKwh").value = "";
+      document.getElementById("petugas").value = "";
+      document.getElementById("lampiranFile").value = "";
+      document.getElementById("previewLampiran").innerHTML = "";
+      document.getElementById("totalTagihan").value = "0";
+      window.tempPhotoFile = null;
+      document.getElementById("monthYear").value = `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`;
+      refreshAuto();
+    } catch (err) {
+      Swal.fire("Gagal", err.message, "error");
+    }
   });
 
   function refreshAuto(){ const month=document.getElementById("monthYear").value, awal=parseFloat(document.getElementById("awalKwh").value); if(month&&!isNaN(awal)) document.getElementById("totalTagihan").value=autoTagihan(month,awal).toFixed(2); }
