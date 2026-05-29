@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-  <title>TVRI - TX Tanah Merah | Monitoring PLN & UPS + Single Foto + Firebase</title>
+  <title>TVRI - TX Tanah Merah | Monitoring PLN & UPS + 2 Foto + Firebase</title>
   <link rel="icon" type="image/png" href="Logo%20PortalTM-noBg.png">
   <style>
     * {
@@ -161,6 +161,7 @@
       font-size: 0.85rem;
     }
 
+    /* Camera & 2 Foto */
     .camera-zone {
       background: linear-gradient(135deg, #f5f9ff 0%, #eef2fa 100%);
       border-radius: 32px;
@@ -169,30 +170,48 @@
       border: 1px solid #cbdff2;
     }
 
-    .preview-container {
-      display: flex;
-      justify-content: center;
-      margin-bottom: 20px;
-    }
-
-    .foto-preview {
-      width: 160px;
-      height: 160px;
-      border-radius: 24px;
-      object-fit: cover;
-      background: #e2e8f0;
-      border: 3px solid white;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-    }
-
-    .camera-controls {
+    .photo-pair {
       display: flex;
       flex-wrap: wrap;
-      gap: 12px;
+      gap: 24px;
       justify-content: center;
-      margin-bottom: 20px;
+      margin-bottom: 24px;
     }
-
+    .photo-slot {
+      flex: 1;
+      min-width: 200px;
+      background: rgba(255,255,255,0.6);
+      border-radius: 24px;
+      padding: 12px;
+      text-align: center;
+    }
+    .photo-slot h4 {
+      margin-bottom: 10px;
+      color: #1e6f5c;
+      font-weight: 700;
+    }
+    .preview-img {
+      width: 150px;
+      height: 150px;
+      border-radius: 20px;
+      object-fit: cover;
+      background: #e2e8f0;
+      border: 2px solid white;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      margin-bottom: 12px;
+    }
+    .slot-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 8px;
+    }
+    .btn-small {
+      padding: 6px 12px;
+      font-size: 0.7rem;
+      border-radius: 30px;
+    }
     .video-wrapper {
       position: relative;
       background: #000;
@@ -200,7 +219,6 @@
       overflow: hidden;
       margin-top: 16px;
     }
-
     #videoCamera {
       width: 100%;
       max-width: 100%;
@@ -209,7 +227,6 @@
       background: #111;
       display: block;
     }
-
     .close-video-btn {
       position: absolute;
       top: 12px;
@@ -233,7 +250,6 @@
       background: rgba(220,38,38,0.8);
       transform: scale(1.05);
     }
-
     .btn-group {
       display: flex;
       flex-wrap: wrap;
@@ -241,7 +257,6 @@
       margin-top: 28px;
       justify-content: flex-start;
     }
-
     .btn {
       padding: 10px 20px;
       border-radius: 40px;
@@ -251,7 +266,6 @@
       transition: 0.2s;
       font-size: 0.85rem;
     }
-
     .btn-primary { background: #1e6f5c; color: white; }
     .btn-primary:hover { background: #0e5a48; transform: translateY(-2px); }
     .btn-secondary { background: #e9ecef; color: #2c3e50; }
@@ -270,7 +284,6 @@
       flex-direction: column;
       gap: 20px;
     }
-
     .entry-card {
       background: white;
       border-radius: 28px;
@@ -278,7 +291,6 @@
       box-shadow: 0 6px 14px rgba(0, 0, 0, 0.05);
       border: 1px solid #eef2f0;
     }
-
     .entry-header {
       display: flex;
       flex-wrap: wrap;
@@ -289,15 +301,13 @@
       padding-bottom: 10px;
       margin-bottom: 14px;
     }
-
-    .entry-photo {
+    .entry-photos {
       margin-top: 12px;
       display: flex;
-      align-items: center;
-      gap: 12px;
       flex-wrap: wrap;
+      gap: 16px;
+      align-items: center;
     }
-
     .evidence-img {
       width: 70px;
       height: 70px;
@@ -306,31 +316,35 @@
       border: 1px solid #cbd5e6;
       cursor: pointer;
     }
-
+    .data-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: space-between;
+    }
+    .data-row > div {
+      flex: 1;
+      min-width: 200px;
+    }
     @media (max-width: 640px) {
       body { padding: 12px; }
       .card { padding: 1rem; }
-      h1 { font-size: 1.3rem; }
-      .param-grid { grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)); }
+      .photo-pair { flex-direction: column; gap: 16px; }
+      .photo-slot { min-width: auto; }
+      .preview-img { width: 120px; height: 120px; }
       .btn-group { justify-content: center; }
-      .double-grid { gap: 16px; }
-      .meas-panel { padding: 0.8rem; }
-      .foto-preview { width: 120px; height: 120px; }
     }
-
     footer {
       text-align: center;
       font-size: 0.65rem;
       margin-top: 1.5rem;
       color: #5b7c8c;
     }
-
     .sync-status { font-size: 0.7rem; padding: 2px 8px; border-radius: 20px; display: inline-block; margin-left: 12px; background: rgba(255,255,240,0.3); }
     .modal-img { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); display:flex; align-items:center; justify-content:center; z-index:2000; cursor:pointer; }
     .modal-img img { max-width:90%; max-height:90%; border-radius:16px; }
     .hidden { display: none; }
   </style>
-  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
   <script src="firebase-config.js"></script>
@@ -338,10 +352,10 @@
 <body>
 <div class="container">
   <div class="card">
-    <h1>📡 TVRI - TX Tanah Merah <small>PLN & UPS + Single Foto Watermark + Firebase</small>
+    <h1>📡 TVRI - TX Tanah Merah <small>PLN & UPS + 2 Foto + Firebase</small>
       <span id="firebaseStatus" class="sync-status"><i class="fas fa-cloud-upload-alt"></i> Menghubungkan...</span>
     </h1>
-    <p style="margin-bottom: 12px; font-size: 0.85rem;">✅ Satu foto bukti per pencatatan + watermark GPS & petugas. Data tersimpan di Firebase dan lokal.</p>
+    <p style="margin-bottom: 12px; font-size: 0.85rem;">✅ Dua foto bukti (depan & belakang/sisi) + watermark GPS & petugas. Data tersimpan di Firebase dan lokal.</p>
 
     <div class="form-row">
       <div class="field-group"><label>No. Entry</label><input type="text" id="entryNo" readonly style="background:#f9f9f9;"></div>
@@ -350,31 +364,44 @@
       <div class="field-group"><label>Keterangan</label><input type="text" id="keterangan" placeholder="Lokasi / kondisi"></div>
     </div>
 
+    <!-- 2 FOTO ZONE -->
     <div class="camera-zone">
-      <h3 style="margin:0 0 12px 0;">📸 FOTO BUKTI (Watermark Otomatis)</h3>
-      
-      <div class="preview-container">
-        <img id="fotoPreview" src="https://placehold.co/400x400?text=Belum+Ada+Foto" class="foto-preview" alt="preview">
+      <h3 style="margin:0 0 12px 0;">📸 DUA FOTO BUKTI (Watermark Otomatis)</h3>
+      <div class="photo-pair">
+        <div class="photo-slot">
+          <h4>📷 Foto 1 (Depan/Meter)</h4>
+          <img id="previewFoto1" src="https://placehold.co/400x400?text=Foto+1" class="preview-img">
+          <div class="slot-buttons">
+            <button type="button" class="btn btn-small btn-camera" data-target="1">📸 Ambil untuk Foto 1</button>
+            <button type="button" class="btn btn-small btn-info" data-target="1_upload">📁 Upload Foto 1</button>
+            <button type="button" class="btn btn-small btn-secondary" data-target="1_hapus">🗑 Hapus Foto 1</button>
+          </div>
+          <input type="hidden" id="foto1Data64" value="">
+          <input type="hidden" id="foto1Jam" value="">
+          <input type="hidden" id="foto1Lat" value="">
+          <input type="hidden" id="foto1Lng" value="">
+        </div>
+        <div class="photo-slot">
+          <h4>📷 Foto 2 (Belakang/Sisi)</h4>
+          <img id="previewFoto2" src="https://placehold.co/400x400?text=Foto+2" class="preview-img">
+          <div class="slot-buttons">
+            <button type="button" class="btn btn-small btn-camera" data-target="2">📸 Ambil untuk Foto 2</button>
+            <button type="button" class="btn btn-small btn-info" data-target="2_upload">📁 Upload Foto 2</button>
+            <button type="button" class="btn btn-small btn-secondary" data-target="2_hapus">🗑 Hapus Foto 2</button>
+          </div>
+          <input type="hidden" id="foto2Data64" value="">
+          <input type="hidden" id="foto2Jam" value="">
+          <input type="hidden" id="foto2Lat" value="">
+          <input type="hidden" id="foto2Lng" value="">
+        </div>
       </div>
-
-      <div class="camera-controls">
-        <button type="button" id="btnBukaKamera" class="btn btn-camera"><i class="fas fa-video mr-1"></i> Buka Kamera</button>
-        <button type="button" id="btnCaptureFoto" class="btn btn-primary" disabled><i class="fas fa-camera mr-1"></i> Ambil + Watermark</button>
-        <button type="button" id="btnHapusFoto" class="btn btn-secondary"><i class="fas fa-trash-alt mr-1"></i> Hapus Foto</button>
-        <button type="button" id="btnUploadManual" class="btn btn-info"><i class="fas fa-upload mr-1"></i> Upload + Watermark</button>
-      </div>
-
       <div id="videoContainer" class="video-wrapper hidden">
         <video id="videoCamera" autoplay playsinline></video>
         <button id="btnTutupKamera" class="close-video-btn" title="Tutup kamera">✖</button>
       </div>
-      
-      <input type="hidden" id="fotoData64" value="">
-      <input type="hidden" id="fotoJam" value="">
-      <input type="hidden" id="fotoLat" value="">
-      <input type="hidden" id="fotoLng" value="">
     </div>
 
+    <!-- PARAMETER PLN & UPS (sama seperti sebelumnya) -->
     <div class="double-grid">
       <div class="meas-panel"><h3>🏭 SUMBER PLN</h3>
         <div><strong class="subtitle">⚡ Tegangan (Volt)</strong></div>
@@ -409,7 +436,7 @@
     </div>
 
     <div class="btn-group">
-      <button class="btn btn-primary" id="saveWithPhotoBtn">💾 SIMPAN ENTRY (dengan foto)</button>
+      <button class="btn btn-primary" id="saveWithPhotoBtn">💾 SIMPAN ENTRY (dengan 2 foto)</button>
       <button class="btn btn-secondary" id="resetFormBtn">⟳ Reset Form + Hapus Foto</button>
       <button class="btn btn-excel" id="exportHtmlBtn">📄 Export HTML</button>
       <button class="btn btn-danger" id="clearAllBtn">🗑 Hapus Semua Data</button>
@@ -426,7 +453,7 @@
 <script>
   // ======================== FIREBASE KONFIGURASI ========================
   let isFirebaseReady = false;
-  const DB_PATH = 'monitoring/pln_ups/entries';
+  const DB_PATH = 'monitoring/pln_ups_2foto/entries';
 
   function updateFirebaseStatus(connected, message) {
     const statusEl = document.getElementById('firebaseStatus');
@@ -486,23 +513,28 @@
     }
   }
 
-  const STORAGE_KEY = "pln_ups_tanah_merah_v6_single";
+  const STORAGE_KEY = "pln_ups_tanah_merah_2foto";
   let mediaStream = null;
-  let currentPhotoBase64 = null;
+  let activeTarget = 1; // 1 atau 2 untuk foto mana yang sedang diambil
+
+  // Foto 1 elements
+  const foto1Preview = document.getElementById('previewFoto1');
+  const foto1Data = document.getElementById('foto1Data64');
+  const foto1Jam = document.getElementById('foto1Jam');
+  const foto1Lat = document.getElementById('foto1Lat');
+  const foto1Lng = document.getElementById('foto1Lng');
+  // Foto 2 elements
+  const foto2Preview = document.getElementById('previewFoto2');
+  const foto2Data = document.getElementById('foto2Data64');
+  const foto2Jam = document.getElementById('foto2Jam');
+  const foto2Lat = document.getElementById('foto2Lat');
+  const foto2Lng = document.getElementById('foto2Lng');
 
   const videoEl = document.getElementById('videoCamera');
   const videoContainer = document.getElementById('videoContainer');
-  const btnBukaKamera = document.getElementById('btnBukaKamera');
-  const btnCapture = document.getElementById('btnCaptureFoto');
   const btnTutupKamera = document.getElementById('btnTutupKamera');
-  const btnHapusFoto = document.getElementById('btnHapusFoto');
-  const btnUploadManual = document.getElementById('btnUploadManual');
-  const fotoPreview = document.getElementById('fotoPreview');
-  const hiddenFotoData = document.getElementById('fotoData64');
-  const hiddenJam = document.getElementById('fotoJam');
-  const hiddenLat = document.getElementById('fotoLat');
-  const hiddenLng = document.getElementById('fotoLng');
 
+  // Helper watermark (sama seperti sebelumnya)
   async function getGPSandTime() {
     return new Promise((resolve) => {
       if (!navigator.geolocation) resolve({ lat: -6.2, lng: 106.8, alt: 0, timestamp: new Date().toLocaleString('id-ID') });
@@ -569,25 +601,32 @@
     });
   }
 
-  async function processAndSetPhoto(rawDataUrl, petugasName) {
-    if (!petugasName || petugasName.trim() === "") {
-      alert("Isi nama petugas terlebih dahulu sebelum mengambil/upload foto.");
-      return false;
-    }
+  async function processAndSetPhoto(rawDataUrl, targetFoto) {
+    const petugas = document.getElementById("petugas").value.trim();
+    if (!petugas) { alert("Isi nama petugas terlebih dahulu sebelum mengambil/upload foto."); return false; }
     try {
       const gps = await getGPSandTime();
-      const watermarked = await applyWatermarkTanahMerah(rawDataUrl, petugasName, gps.lat, gps.lng, gps.alt, gps.timestamp);
-      currentPhotoBase64 = watermarked;
-      fotoPreview.src = watermarked;
-      hiddenFotoData.value = watermarked;
-      hiddenJam.value = gps.timestamp;
-      hiddenLat.value = gps.lat;
-      hiddenLng.value = gps.lng;
+      const watermarked = await applyWatermarkTanahMerah(rawDataUrl, petugas, gps.lat, gps.lng, gps.alt, gps.timestamp);
+      if (targetFoto === 1) {
+        foto1Preview.src = watermarked;
+        foto1Data.value = watermarked;
+        foto1Jam.value = gps.timestamp;
+        foto1Lat.value = gps.lat;
+        foto1Lng.value = gps.lng;
+      } else {
+        foto2Preview.src = watermarked;
+        foto2Data.value = watermarked;
+        foto2Jam.value = gps.timestamp;
+        foto2Lat.value = gps.lat;
+        foto2Lng.value = gps.lng;
+      }
       return true;
     } catch(e) { alert("Gagal memproses watermark: "+e.message); return false; }
   }
 
-  async function bukaKamera() {
+  // Kamera
+  async function bukaKamera(target) {
+    activeTarget = target;
     const petugas = document.getElementById("petugas").value.trim();
     if (!petugas) { alert("Isi nama petugas terlebih dahulu sebelum membuka kamera."); return; }
     if (mediaStream) tutupKamera();
@@ -596,62 +635,82 @@
       mediaStream = stream;
       videoEl.srcObject = stream;
       videoContainer.classList.remove("hidden");
-      btnCapture.disabled = false;
       await videoEl.play();
     } catch(e) { alert("Tidak dapat akses kamera. Gunakan upload foto."); }
   }
-  
   function tutupKamera() {
     if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
     videoEl.srcObject = null;
     videoContainer.classList.add("hidden");
-    btnCapture.disabled = true;
   }
-  
   async function captureFromVideo() {
     if (!mediaStream) { alert("Buka kamera dulu"); return; }
-    const petugas = document.getElementById("petugas").value.trim();
-    if (!petugas) { alert("Petugas wajib diisi."); return; }
     if (videoEl.videoWidth === 0) { alert("Video belum siap"); return; }
     const canvas = document.createElement('canvas');
     canvas.width = videoEl.videoWidth;
     canvas.height = videoEl.videoHeight;
     canvas.getContext('2d').drawImage(videoEl, 0, 0);
     const raw = canvas.toDataURL('image/jpeg', 0.92);
-    const success = await processAndSetPhoto(raw, petugas);
+    const success = await processAndSetPhoto(raw, activeTarget);
     if (success) tutupKamera();
   }
-  
-  function uploadFotoManual() {
+  function uploadFoto(target) {
     const petugas = document.getElementById("petugas").value.trim();
-    if (!petugas) { alert("Isi nama petugas sebelum upload."); return; }
+    if (!petugas) { alert("Isi nama petugas sebelum upload foto."); return; }
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
     input.onchange = async (e) => {
       if (e.target.files[0]) {
         const reader = new FileReader();
-        reader.onload = async (ev) => { await processAndSetPhoto(ev.target.result, petugas); };
+        reader.onload = async (ev) => { await processAndSetPhoto(ev.target.result, target); };
         reader.readAsDataURL(e.target.files[0]);
       }
     };
     input.click();
   }
-  
-  function hapusFoto() {
-    currentPhotoBase64 = null;
-    fotoPreview.src = "https://placehold.co/400x400?text=Belum+Ada+Foto";
-    hiddenFotoData.value = "";
-    hiddenJam.value = "";
-    hiddenLat.value = "";
-    hiddenLng.value = "";
+  function hapusFoto(target) {
+    if (target === 1) {
+      foto1Preview.src = "https://placehold.co/400x400?text=Foto+1";
+      foto1Data.value = "";
+      foto1Jam.value = "";
+      foto1Lat.value = "";
+      foto1Lng.value = "";
+    } else {
+      foto2Preview.src = "https://placehold.co/400x400?text=Foto+2";
+      foto2Data.value = "";
+      foto2Jam.value = "";
+      foto2Lat.value = "";
+      foto2Lng.value = "";
+    }
   }
 
-  btnBukaKamera.addEventListener('click', bukaKamera);
-  btnCapture.addEventListener('click', captureFromVideo);
+  // Event listeners untuk tombol foto
+  document.querySelectorAll('[data-target]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const target = btn.getAttribute('data-target');
+      if (target === '1') bukaKamera(1);
+      else if (target === '2') bukaKamera(2);
+      else if (target === '1_upload') uploadFoto(1);
+      else if (target === '2_upload') uploadFoto(2);
+      else if (target === '1_hapus') hapusFoto(1);
+      else if (target === '2_hapus') hapusFoto(2);
+    });
+  });
   btnTutupKamera.addEventListener('click', tutupKamera);
-  btnHapusFoto.addEventListener('click', hapusFoto);
-  btnUploadManual.addEventListener('click', uploadFotoManual);
+
+  // Simpan tombol capture dari video (tambahkan tombol capture di video container)
+  const captureBtn = document.createElement('button');
+  captureBtn.textContent = '📸 Ambil Foto';
+  captureBtn.className = 'btn btn-primary btn-small';
+  captureBtn.style.position = 'absolute';
+  captureBtn.style.bottom = '12px';
+  captureBtn.style.left = '50%';
+  captureBtn.style.transform = 'translateX(-50%)';
+  captureBtn.style.zIndex = '10';
+  captureBtn.addEventListener('click', captureFromVideo);
+  videoContainer.style.position = 'relative';
+  videoContainer.appendChild(captureBtn);
 
   // ======================== CRUD ENTRIES ========================
   async function saveEntriesToLocalAndFirebase(entries) {
@@ -660,25 +719,20 @@
     renderEntries();
     updateEntryNoField();
   }
-
   function loadEntriesFromStorage() {
     const stored = localStorage.getItem(STORAGE_KEY);
     return stored ? JSON.parse(stored) : [];
   }
-
   function getNextNumber(entries) {
     if(!entries.length) return "001";
     let max=0; entries.forEach(e=>{ let m=e.no.match(/\d+/); if(m) max=Math.max(max,parseInt(m[0],10)); });
     return (max+1).toString().padStart(3,'0');
   }
-  
   function updateEntryNoField() {
     const entries = loadEntriesFromStorage();
     document.getElementById("entryNo").value = getNextNumber(entries);
   }
-
   function parseFloatOrNull(v) { return (v===""||v===null)?null:(isNaN(parseFloat(v))?null:parseFloat(v)); }
-  
   function getFormValues() {
     return {
       no: document.getElementById("entryNo").value.trim(),
@@ -689,7 +743,6 @@
       ups: { v: { rs: parseFloatOrNull(vUPS_rs.value), st: parseFloatOrNull(vUPS_st.value), tr: parseFloatOrNull(vUPS_tr.value), rn: parseFloatOrNull(vUPS_rn.value), sn: parseFloatOrNull(vUPS_sn.value), tn: parseFloatOrNull(vUPS_tn.value) }, i: { r: parseFloatOrNull(iUPS_r.value), s: parseFloatOrNull(iUPS_s.value), t: parseFloatOrNull(iUPS_t.value) } }
     };
   }
-
   function applyEntryDataToForm(entry) {
     if (!entry) return;
     document.getElementById("petugas").value = entry.petugas || "";
@@ -701,19 +754,31 @@
     set("vUPS_rs", entry.ups?.v?.rs); set("vUPS_st", entry.ups?.v?.st); set("vUPS_tr", entry.ups?.v?.tr);
     set("vUPS_rn", entry.ups?.v?.rn); set("vUPS_sn", entry.ups?.v?.sn); set("vUPS_tn", entry.ups?.v?.tn);
     set("iUPS_r", entry.ups?.i?.r); set("iUPS_s", entry.ups?.i?.s); set("iUPS_t", entry.ups?.i?.t);
-    hapusFoto();
+    // isi foto
+    if (entry.photo1Base64) {
+      foto1Preview.src = entry.photo1Base64;
+      foto1Data.value = entry.photo1Base64;
+      foto1Jam.value = entry.foto1Jam || "";
+      foto1Lat.value = entry.foto1Lat || "";
+      foto1Lng.value = entry.foto1Lng || "";
+    } else { hapusFoto(1); }
+    if (entry.photo2Base64) {
+      foto2Preview.src = entry.photo2Base64;
+      foto2Data.value = entry.photo2Base64;
+      foto2Jam.value = entry.foto2Jam || "";
+      foto2Lat.value = entry.foto2Lat || "";
+      foto2Lng.value = entry.foto2Lng || "";
+    } else { hapusFoto(2); }
   }
-
   function resetFormFields() {
     document.querySelectorAll("input[type='number']").forEach(inp => inp.value = "");
     document.getElementById("petugas").value = "";
     document.getElementById("keterangan").value = "";
-    hapusFoto();
+    hapusFoto(1); hapusFoto(2);
     document.getElementById("entryDate").value = new Date().toISOString().slice(0,10);
     updateEntryNoField();
     if(mediaStream) tutupKamera();
   }
-
   function applyLastEntryOrReset() {
     const entries = loadEntriesFromStorage();
     if (entries.length > 0) {
@@ -725,317 +790,85 @@
       resetFormFields();
     }
   }
-
   document.getElementById("saveWithPhotoBtn").onclick = async () => {
     const no = document.getElementById("entryNo").value.trim();
     const tgl = document.getElementById("entryDate").value;
     const petugas = document.getElementById("petugas").value.trim();
     if(!no || !tgl || !petugas) { alert("No, Tanggal, Petugas wajib diisi."); return; }
-    if(!currentPhotoBase64) { alert("Harap ambil/upload foto bukti terlebih dahulu."); return; }
+    if(!foto1Data.value && !foto2Data.value) { alert("Harap ambil minimal satu foto (Foto 1 atau Foto 2)."); return; }
     const formData = getFormValues();
     const newEntry = { 
       id: Date.now(), 
       ...formData, 
-      photoBase64: currentPhotoBase64,
-      jamFoto: hiddenJam.value,
-      lat: hiddenLat.value ? parseFloat(hiddenLat.value) : null,
-      lng: hiddenLng.value ? parseFloat(hiddenLng.value) : null,
+      photo1Base64: foto1Data.value || null,
+      photo2Base64: foto2Data.value || null,
+      foto1Jam: foto1Jam.value,
+      foto2Jam: foto2Jam.value,
+      foto1Lat: foto1Lat.value ? parseFloat(foto1Lat.value) : null,
+      foto1Lng: foto1Lng.value ? parseFloat(foto1Lng.value) : null,
+      foto2Lat: foto2Lat.value ? parseFloat(foto2Lat.value) : null,
+      foto2Lng: foto2Lng.value ? parseFloat(foto2Lng.value) : null,
       createdAt: new Date().toISOString() 
     };
     const entries = loadEntriesFromStorage();
     entries.unshift(newEntry);
     await saveEntriesToLocalAndFirebase(entries);
-    hapusFoto();
-    applyLastEntryOrReset();
+    resetFormFields();
+    applyLastEntryOrReset(); // agar form terisi dengan data terbaru (kosongkan foto)
     alert("Data tersimpan dengan foto. Firebase: " + (isFirebaseReady ? "tersinkron" : "offline"));
   };
+  document.getElementById("resetFormBtn").onclick = () => { if(confirm("Reset form dan hapus foto?")) resetFormFields(); };
+  document.getElementById("clearAllBtn").onclick = async () => { if(confirm("Hapus semua data?")) { await saveEntriesToLocalAndFirebase([]); resetFormFields(); } };
 
-  document.getElementById("resetFormBtn").onclick = () => {
-    if(confirm("Reset form dan hapus foto?")) {
-      resetFormFields();
-    }
-  };
-  
-  document.getElementById("clearAllBtn").onclick = async () => {
-    if(confirm("Hapus semua data? Aksi permanen.")) {
-      await saveEntriesToLocalAndFirebase([]);
-      resetFormFields();
-    }
-  };
-
-  // ======================== EXPORT HTML DENGAN TABEL RAPI ========================
+  // Export HTML dengan 2 foto
   function generateFullReportHTML() {
-    const entries = loadEntriesFromStorage().map(e => {
-      if (!e.photoBase64 && e.photos && e.photos.length) e.photoBase64 = e.photos[0];
-      return e;
-    });
+    const entries = loadEntriesFromStorage();
     if (!entries.length) return "<p>Tidak ada data untuk diekspor.</p>";
-    
     const formatVal = (v) => (v !== null && v !== undefined) ? parseFloat(v).toFixed(1) : "-";
     const escapeHtml = (s) => s ? s.replace(/[&<>]/g, m=> m==='&'?'&amp;': m==='<'?'&lt;':'&gt;') : "";
-    
-    let plnRows = "";
-    let upsRows = "";
+    let plnRows = "", upsRows = "";
     for (let e of entries) {
-      const fotoThumb = e.photoBase64 
-        ? `<img src="${e.photoBase64}" style="width:60px; height:60px; object-fit:cover; border-radius:6px; border:1px solid #ccc;" onclick="window.open(this.src)">` 
-        : "-";
-      
-      plnRows += `<tr>
-        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${escapeHtml(e.no)}</td>
-        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${escapeHtml(e.tanggal)}</td>
-        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${escapeHtml(e.petugas)}</td>
-        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${escapeHtml(e.keterangan || '-')}</td>
-        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${fotoThumb}</td>
-        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${formatVal(e.pln?.v?.rs)}</td>
-        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${formatVal(e.pln?.v?.st)}</td>
-        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${formatVal(e.pln?.v?.tr)}</td>
-        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${formatVal(e.pln?.v?.rn)}</td>
-        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${formatVal(e.pln?.v?.sn)}</td>
-        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${formatVal(e.pln?.v?.tn)}</td>
-        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${formatVal(e.pln?.i?.r)}</td>
-        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${formatVal(e.pln?.i?.s)}</td>
-        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${formatVal(e.pln?.i?.t)}</td>
-      </tr>`;
-      
-      upsRows += `<tr>
-        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${escapeHtml(e.no)}</td>
-        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${escapeHtml(e.tanggal)}</td>
-        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${escapeHtml(e.petugas)}</td>
-        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${escapeHtml(e.keterangan || '-')}</td>
-        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${fotoThumb}</td>
-        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${formatVal(e.ups?.v?.rs)}</td>
-        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${formatVal(e.ups?.v?.st)}</td>
-        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${formatVal(e.ups?.v?.tr)}</td>
-        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${formatVal(e.ups?.v?.rn)}</td>
-        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${formatVal(e.ups?.v?.sn)}</td>
-        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${formatVal(e.ups?.v?.tn)}</td>
-        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${formatVal(e.ups?.i?.r)}</td>
-        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${formatVal(e.ups?.i?.s)}</td>
-        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${formatVal(e.ups?.i?.t)}</td>
-      </tr>`;
+      const foto1Thumb = e.photo1Base64 ? `<img src="${e.photo1Base64}" style="width:50px; height:50px; object-fit:cover; border-radius:6px;" onclick="window.open(this.src)">` : "-";
+      const foto2Thumb = e.photo2Base64 ? `<img src="${e.photo2Base64}" style="width:50px; height:50px; object-fit:cover; border-radius:6px;" onclick="window.open(this.src)">` : "-";
+      const fotoCombine = `<div style="display:flex; gap:5px; justify-content:center;">Foto1: ${foto1Thumb}<br>Foto2: ${foto2Thumb}</div>`;
+      plnRows += `<tr><td style="border:1px solid #cbd5e1; padding:8px;">${escapeHtml(e.no)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${escapeHtml(e.tanggal)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${escapeHtml(e.petugas)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${escapeHtml(e.keterangan||'-')}</td><td style="border:1px solid #cbd5e1; padding:8px;">${fotoCombine}</td><td style="border:1px solid #cbd5e1; padding:8px;">${formatVal(e.pln?.v?.rs)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${formatVal(e.pln?.v?.st)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${formatVal(e.pln?.v?.tr)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${formatVal(e.pln?.v?.rn)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${formatVal(e.pln?.v?.sn)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${formatVal(e.pln?.v?.tn)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${formatVal(e.pln?.i?.r)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${formatVal(e.pln?.i?.s)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${formatVal(e.pln?.i?.t)}</td></tr>`;
+      upsRows += `<tr><td style="border:1px solid #cbd5e1; padding:8px;">${escapeHtml(e.no)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${escapeHtml(e.tanggal)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${escapeHtml(e.petugas)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${escapeHtml(e.keterangan||'-')}</td><td style="border:1px solid #cbd5e1; padding:8px;">${fotoCombine}</td><td style="border:1px solid #cbd5e1; padding:8px;">${formatVal(e.ups?.v?.rs)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${formatVal(e.ups?.v?.st)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${formatVal(e.ups?.v?.tr)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${formatVal(e.ups?.v?.rn)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${formatVal(e.ups?.v?.sn)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${formatVal(e.ups?.v?.tn)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${formatVal(e.ups?.i?.r)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${formatVal(e.ups?.i?.s)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${formatVal(e.ups?.i?.t)}</td></tr>`;
     }
-    
-    return `<!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="UTF-8">
-      <title>Laporan Monitoring PLN & UPS - TVRI Tanah Merah</title>
-      <style>
-        * { font-family: 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif; }
-        body { background: #f1f5f9; margin: 20px; padding: 0; }
-        .report-container {
-          max-width: 1400px;
-          margin: 0 auto;
-          background: white;
-          border-radius: 28px;
-          padding: 24px 28px;
-          box-shadow: 0 12px 30px rgba(0,0,0,0.08);
-        }
-        h1 {
-          font-size: 1.8rem;
-          color: #1e6f5c;
-          border-left: 6px solid #1e6f5c;
-          padding-left: 20px;
-          margin-bottom: 16px;
-        }
-        .subhead {
-          color: #475569;
-          margin-bottom: 28px;
-          font-size: 0.85rem;
-          border-bottom: 1px dashed #cbd5e1;
-          padding-bottom: 12px;
-        }
-        .section-title {
-          font-size: 1.35rem;
-          font-weight: 700;
-          background: #eef2ff;
-          display: inline-block;
-          padding: 6px 24px;
-          border-radius: 40px;
-          margin: 24px 0 16px 0;
-          color: #0f3b2c;
-        }
-        table {
-          width: 100%;
-          border-collapse: collapse;
-          background: white;
-          margin-bottom: 32px;
-          font-size: 0.75rem;
-          box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-        }
-        th {
-          background: #1e6f5c;
-          color: white;
-          font-weight: 600;
-          padding: 10px 6px;
-          font-size: 0.78rem;
-          text-align: center;
-          border: 1px solid #1a5f4e;
-        }
-        td {
-          border: 1px solid #cbd5e1;
-          text-align: center;
-          vertical-align: middle;
-        }
-        tr:nth-child(even) {
-          background-color: #f8fafc;
-        }
-        .footer {
-          margin-top: 30px;
-          text-align: center;
-          font-size: 0.7rem;
-          color: #5b7c8c;
-          border-top: 1px solid #e2e8f0;
-          padding-top: 18px;
-        }
-        @media (max-width: 800px) {
-          .report-container { padding: 16px; }
-          th, td { font-size: 0.65rem; padding: 6px 3px; }
-          .section-title { font-size: 1.1rem; }
-        }
-      </style>
-    </head>
-    <body>
-    <div class="report-container">
-      <h1>📡 TVRI - TX Tanah Merah</h1>
-      <div class="subhead">
-        <strong>Laporan Monitoring PLN & UPS</strong> &nbsp;|&nbsp;
-        Tanggal export: ${new Date().toLocaleString('id-ID')} &nbsp;|&nbsp;
-        Total data: ${entries.length} pencatatan
-      </div>
-      
-      <div class="section-title">🏭 Data Monitoring Sumber PLN</div>
-      <div style="overflow-x: auto;">
-        <table>
-          <thead>
-            <tr>
-              <th>No</th><th>Tanggal</th><th>Petugas</th><th>Keterangan</th><th>Foto</th>
-              <th>V_RS</th><th>V_ST</th><th>V_TR</th><th>V_RN</th><th>V_SN</th><th>V_TN</th>
-              <th>I_R</th><th>I_S</th><th>I_T</th>
-            </tr>
-          </thead>
-          <tbody>${plnRows}</tbody>
-        </table>
-      </div>
-      
-      <div class="section-title">🔋 Data Monitoring Sumber UPS</div>
-      <div style="overflow-x: auto;">
-        <table>
-          <thead>
-            <tr>
-              <th>No</th><th>Tanggal</th><th>Petugas</th><th>Keterangan</th><th>Foto</th>
-              <th>V_RS</th><th>V_ST</th><th>V_TR</th><th>V_RN</th><th>V_SN</th><th>V_TN</th>
-              <th>I_R</th><th>I_S</th><th>I_T</th>
-            </tr>
-          </thead>
-          <tbody>${upsRows}</tbody>
-        </table>
-      </div>
-      
-      <div class="footer">
-        © TVRI - TX Tanah Merah | Watermark otomatis pada setiap foto bukti | Data tersimpan di Firebase & localStorage
-      </div>
-    </div>
-    </body>
-    </html>`;
+    return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Laporan PLN & UPS 2 Foto</title><style>body{font-family:Inter,sans-serif;background:#f1f5f9;margin:20px}.container{max-width:1400px;margin:auto;background:white;border-radius:28px;padding:24px;box-shadow:0 12px 30px rgba(0,0,0,0.1)}h1{color:#1e6f5c;border-left:6px solid #1e6f5c;padding-left:20px}.section-title{background:#eef2ff;display:inline-block;padding:6px 24px;border-radius:40px;margin:24px 0 16px;font-weight:700}table{border-collapse:collapse;width:100%;margin-bottom:30px;font-size:0.75rem}th{background:#1e6f5c;color:white;padding:10px 6px;border:1px solid #1a5f4e}td{border:1px solid #cbd5e1;text-align:center}img{max-width:50px;border-radius:6px}.footer{margin-top:30px;text-align:center;font-size:0.7rem;color:#5b7c8c;border-top:1px solid #e2e8f0;padding-top:18px}</style></head><body><div class="container"><h1>📡 TVRI - TX Tanah Merah</h1><div><strong>Laporan PLN & UPS (2 Foto)</strong> | ${new Date().toLocaleString('id-ID')} | Total: ${entries.length}</div><div class="section-title">🏭 PLN</div><div style="overflow-x:auto;"><table><thead><tr><th>No</th><th>Tgl</th><th>Petugas</th><th>Keterangan</th><th>Foto 1 & 2</th><th>V_RS</th><th>V_ST</th><th>V_TR</th><th>V_RN</th><th>V_SN</th><th>V_TN</th><th>I_R</th><th>I_S</th><th>I_T</th></tr></thead><tbody>${plnRows}</tbody></table></div><div class="section-title">🔋 UPS</div><div style="overflow-x:auto;"><table><thead><tr><th>No</th><th>Tgl</th><th>Petugas</th><th>Keterangan</th><th>Foto 1 & 2</th><th>V_RS</th><th>V_ST</th><th>V_TR</th><th>V_RN</th><th>V_SN</th><th>V_TN</th><th>I_R</th><th>I_S</th><th>I_T</th></tr></thead><tbody>${upsRows}</tbody></table></div><div class="footer">© TVRI - TX Tanah Merah | Watermark otomatis | 2 foto per entry</div></div></body></html>`;
   }
-
   document.getElementById("exportHtmlBtn").onclick = () => {
-    const entries = loadEntriesFromStorage();
-    if (!entries.length) {
-      alert("Tidak ada data untuk diekspor.");
-      return;
-    }
-    const htmlContent = generateFullReportHTML();
-    const blob = new Blob([htmlContent], { type: "text/html" });
+    if (!loadEntriesFromStorage().length) { alert("Tidak ada data."); return; }
+    const blob = new Blob([generateFullReportHTML()], { type: "text/html" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = `laporan_pln_ups_tanah_merah_${Date.now()}.html`;
-    document.body.appendChild(link);
+    link.download = `laporan_2foto_${Date.now()}.html`;
     link.click();
-    document.body.removeChild(link);
     URL.revokeObjectURL(blob);
   };
-
   function formatVal(v) { return (v!==null && v!==undefined) ? parseFloat(v).toFixed(1) : "-"; }
   function escapeHtml(s) { if(!s) return ""; return s.replace(/[&<>]/g, m=>m==='&'?'&amp;':m==='<'?'&lt;':'&gt;'); }
-
-  window.viewFullFoto = (base64) => {
-    if(base64) { const modal = document.createElement('div'); modal.className = "modal-img"; modal.innerHTML = `<img src="${base64}">`; modal.onclick = () => modal.remove(); document.body.appendChild(modal); }
-  };
-
+  window.viewFullFoto = (url) => { if(url && url!="#"){ const m=document.createElement('div'); m.className="modal-img"; m.innerHTML=`<img src="${url}">`; m.onclick=()=>m.remove(); document.body.appendChild(m); } };
   function renderEntries() {
-    const entries = loadEntriesFromStorage().map(e => { 
-      if (!e.photoBase64 && e.photos && e.photos.length) e.photoBase64 = e.photos[0];
-      return e; 
-    });
+    const entries = loadEntriesFromStorage();
     const container = document.getElementById("entriesList");
-    if(!entries.length) { container.innerHTML = `<div style="text-align:center; padding:2rem;">📭 Belum ada pencatatan.</div>`; return; }
-    container.innerHTML = "";
-    entries.forEach((e, idx) => {
-      const photoHtml = e.photoBase64 ? `<img src="${e.photoBase64}" class="evidence-img" onclick="viewFullFoto('${e.photoBase64}')">` : '<span>Tidak ada foto</span>';
-      const card = document.createElement("div"); card.className = "entry-card";
-      card.innerHTML = `<div class="entry-header"><div>📄 No: ${escapeHtml(e.no)} | ${escapeHtml(e.tanggal)}</div>
-        <div><span>👤 ${escapeHtml(e.petugas)}</span><span>📝 ${escapeHtml(e.keterangan||'-')}</span><button class="btn-danger" style="margin-left:12px;padding:4px 12px;" data-idx="${idx}">✖ Hapus</button></div></div>
+    if(!entries.length){ container.innerHTML='<div style="text-align:center;padding:2rem;">📭 Belum ada pencatatan.</div>'; return; }
+    container.innerHTML="";
+    entries.forEach((e,idx)=>{
+      const foto1Html = e.photo1Base64 ? `<img src="${e.photo1Base64}" class="evidence-img" onclick="viewFullFoto('${e.photo1Base64}')">` : '<span>Tidak ada</span>';
+      const foto2Html = e.photo2Base64 ? `<img src="${e.photo2Base64}" class="evidence-img" onclick="viewFullFoto('${e.photo2Base64}')">` : '<span>Tidak ada</span>';
+      const card = document.createElement("div"); card.className="entry-card";
+      card.innerHTML = `<div class="entry-header"><div>📄 No: ${escapeHtml(e.no)} | ${escapeHtml(e.tanggal)}</div><div><span>👤 ${escapeHtml(e.petugas)}</span><span>📝 ${escapeHtml(e.keterangan||'-')}</span><button class="btn-danger" style="margin-left:12px;padding:4px 12px;" data-idx="${idx}">✖ Hapus</button></div></div>
         <div class="data-row"><div><strong>🏭 PLN</strong><br>Teg: RS:${formatVal(e.pln?.v?.rs)} ST:${formatVal(e.pln?.v?.st)} TR:${formatVal(e.pln?.v?.tr)} RN:${formatVal(e.pln?.v?.rn)} SN:${formatVal(e.pln?.v?.sn)} TN:${formatVal(e.pln?.v?.tn)}<br>Arus: R:${formatVal(e.pln?.i?.r)} S:${formatVal(e.pln?.i?.s)} T:${formatVal(e.pln?.i?.t)}</div>
         <div><strong>🔋 UPS</strong><br>Teg: RS:${formatVal(e.ups?.v?.rs)} ST:${formatVal(e.ups?.v?.st)} TR:${formatVal(e.ups?.v?.tr)} RN:${formatVal(e.ups?.v?.rn)} SN:${formatVal(e.ups?.v?.sn)} TN:${formatVal(e.ups?.v?.tn)}<br>Arus: R:${formatVal(e.ups?.i?.r)} S:${formatVal(e.ups?.i?.s)} T:${formatVal(e.ups?.i?.t)}</div></div>
-        <div class="entry-photo"><strong>📸 Foto bukti:</strong> ${photoHtml}</div>`;
+        <div class="entry-photos"><strong>📸 Foto 1:</strong> ${foto1Html} &nbsp;&nbsp;<strong>Foto 2:</strong> ${foto2Html}</div>`;
       container.appendChild(card);
     });
-    document.querySelectorAll("[data-idx]").forEach(btn => btn.onclick = async () => {
-      let arr = loadEntriesFromStorage();
-      arr.splice(parseInt(btn.dataset.idx),1);
-      await saveEntriesToLocalAndFirebase(arr);
-      renderEntries();
-      updateEntryNoField();
-    });
+    document.querySelectorAll("[data-idx]").forEach(btn=>btn.onclick=async()=>{ let arr=loadEntriesFromStorage(); arr.splice(parseInt(btn.dataset.idx),1); await saveEntriesToLocalAndFirebase(arr); });
   }
-
-  // ======================== INISIALISASI ========================
   async function init() {
     resetFormFields();
-    if (window.db) {
-      isFirebaseReady = true;
-      const fbEntries = await loadFromFirebase();
-      if (fbEntries && fbEntries.length) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(fbEntries));
-        renderEntries();
-        updateEntryNoField();
-        applyLastEntryOrReset();
-      } else {
-        const localEntries = loadEntriesFromStorage();
-        if (localEntries.length) applyLastEntryOrReset();
-        else resetFormFields();
-      }
-      updateFirebaseStatus(true, "Terhubung");
-    } else {
-      setTimeout(() => {
-        if (window.db) {
-          isFirebaseReady = true;
-          loadFromFirebase().then(fbEntries => {
-            if (fbEntries?.length) {
-              localStorage.setItem(STORAGE_KEY, JSON.stringify(fbEntries));
-              renderEntries(); updateEntryNoField();
-              applyLastEntryOrReset();
-            } else {
-              const localEntries = loadEntriesFromStorage();
-              if (localEntries.length) applyLastEntryOrReset();
-              else resetFormFields();
-            }
-            updateFirebaseStatus(true, "Terhubung");
-          });
-        } else {
-          updateFirebaseStatus(false, "Firebase tidak tersedia");
-          const localEntries = loadEntriesFromStorage();
-          if (localEntries.length) {
-            renderEntries();
-            updateEntryNoField();
-            applyLastEntryOrReset();
-          }
-        }
-      }, 500);
-    }
+    if(window.db){ isFirebaseReady=true; const fb=await loadFromFirebase(); if(fb&&fb.length){ localStorage.setItem(STORAGE_KEY,JSON.stringify(fb)); renderEntries(); updateEntryNoField(); applyLastEntryOrReset(); } else{ const local=loadEntriesFromStorage(); if(local.length) applyLastEntryOrReset(); else resetFormFields(); } updateFirebaseStatus(true,"Terhubung"); }
+    else{ setTimeout(()=>{ if(window.db){ isFirebaseReady=true; loadFromFirebase().then(fb=>{ if(fb?.length){ localStorage.setItem(STORAGE_KEY,JSON.stringify(fb)); renderEntries(); updateEntryNoField(); applyLastEntryOrReset(); } else{ const local=loadEntriesFromStorage(); if(local.length) applyLastEntryOrReset(); else resetFormFields(); } updateFirebaseStatus(true,"Terhubung"); }); } else{ updateFirebaseStatus(false,"Firebase tidak tersedia"); const local=loadEntriesFromStorage(); if(local.length){ renderEntries(); updateEntryNoField(); applyLastEntryOrReset(); } } },500); }
   }
   init();
 </script>
