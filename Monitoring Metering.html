@@ -266,11 +266,11 @@
     .btn-info { background: #e0f2fe; color: #0f3b2c; }
     .btn-info:hover { background: #bae6fd; }
 
-    /* ===== RIWAYAT ENTRY DENGAN TABEL RAPI ===== */
+    /* ===== RIWAYAT ENTRY (KEMBALI KE FORMAT SEMULA) ===== */
     .entries-container {
       display: flex;
       flex-direction: column;
-      gap: 24px;
+      gap: 20px;
     }
 
     .entry-card {
@@ -285,101 +285,21 @@
       display: flex;
       flex-wrap: wrap;
       justify-content: space-between;
-      align-items: center;
-      gap: 12px;
+      align-items: baseline;
+      gap: 10px;
       border-bottom: 1px solid #e2edf2;
-      padding-bottom: 12px;
-      margin-bottom: 18px;
-    }
-    .entry-title {
-      font-weight: 700;
-      font-size: 1rem;
-      background: #eef2ff;
-      padding: 4px 12px;
-      border-radius: 30px;
-      color: #1e6f5c;
-    }
-    .entry-meta {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 16px;
-      align-items: center;
-      font-size: 0.85rem;
-    }
-    .entry-meta span i {
-      margin-right: 4px;
-      color: #4b6b8f;
-    }
-    .delete-btn {
-      background: #fee2e2;
-      color: #b91c1c;
-      border: none;
-      padding: 4px 12px;
-      border-radius: 30px;
-      cursor: pointer;
-      font-weight: 600;
-      font-size: 0.7rem;
-      transition: 0.2s;
-    }
-    .delete-btn:hover {
-      background: #fecaca;
-    }
-
-    /* Tabel untuk data PLN dan UPS */
-    .data-section {
-      margin-bottom: 24px;
-    }
-    .data-section h4 {
-      font-size: 1rem;
-      font-weight: 700;
-      margin-bottom: 10px;
-      color: #1e6f5c;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      background: #f1f5f9;
-      padding: 6px 14px;
-      border-radius: 40px;
-      width: fit-content;
-    }
-    .data-table {
-      width: 100%;
-      border-collapse: collapse;
-      background: #ffffff;
-      border-radius: 16px;
-      overflow: hidden;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-      margin-bottom: 8px;
-    }
-    .data-table th, .data-table td {
-      border: 1px solid #e2e8f0;
-      padding: 8px 10px;
-      text-align: center;
-      font-size: 0.75rem;
-    }
-    .data-table th {
-      background: #f8fafc;
-      font-weight: 700;
-      color: #1e293b;
-    }
-    .param-label {
-      font-weight: 600;
-      background: #f1f5f9;
-    }
-    .param-value {
-      font-family: monospace;
-      font-weight: 500;
+      padding-bottom: 10px;
+      margin-bottom: 14px;
     }
 
     .entry-photo {
-      margin-top: 16px;
-      padding-top: 12px;
-      border-top: 1px solid #e2edf2;
+      margin-top: 12px;
       display: flex;
       align-items: center;
       gap: 12px;
       flex-wrap: wrap;
     }
+
     .evidence-img {
       width: 70px;
       height: 70px;
@@ -387,10 +307,17 @@
       object-fit: cover;
       border: 1px solid #cbd5e6;
       cursor: pointer;
-      transition: transform 0.2s;
     }
-    .evidence-img:hover {
-      transform: scale(1.05);
+
+    .data-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: space-between;
+    }
+    .data-row > div {
+      flex: 1;
+      min-width: 200px;
     }
 
     @media (max-width: 640px) {
@@ -402,7 +329,6 @@
       .double-grid { gap: 16px; }
       .meas-panel { padding: 0.8rem; }
       .foto-preview { width: 120px; height: 120px; }
-      .data-table th, .data-table td { padding: 6px 4px; font-size: 0.7rem; }
     }
 
     footer {
@@ -854,7 +780,7 @@
     }
   };
 
-  // ======================== EXPORT HTML RAPI ========================
+  // ======================== EXPORT HTML RAPI (TABEL TERPISAH) ========================
   function generateFullReportHTML() {
     const entries = loadEntriesFromStorage().map(e => {
       if (!e.photoBase64 && e.photos && e.photos.length) e.photoBase64 = e.photos[0];
@@ -981,7 +907,7 @@
     if(base64) { const modal = document.createElement('div'); modal.className = "modal-img"; modal.innerHTML = `<img src="${base64}">`; modal.onclick = () => modal.remove(); document.body.appendChild(modal); }
   };
 
-  // Render entry dengan tabel rapi untuk PLN dan UPS
+  // Render entries dengan format semula (tidak pakai tabel di dalam kartu)
   function renderEntries() {
     const entries = loadEntriesFromStorage().map(e => { 
       if (!e.photoBase64 && e.photos && e.photos.length) e.photoBase64 = e.photos[0];
@@ -991,78 +917,36 @@
     if(!entries.length) { container.innerHTML = `<div style="text-align:center; padding:2rem;">📭 Belum ada pencatatan.</div>`; return; }
     container.innerHTML = "";
     entries.forEach((e, idx) => {
-      // Data PLN & UPS
-      const plnV = e.pln?.v || {};
-      const plnI = e.pln?.i || {};
-      const upsV = e.ups?.v || {};
-      const upsI = e.ups?.i || {};
-      
-      // Tabel untuk PLN
-      const plnTable = `
-        <table class="data-table">
-          <thead>
-            <tr><th colspan="2">⚡ Tegangan (Volt)</th><th colspan="2">🔁 Arus (Ampere)</th></tr>
-            <tr>
-              <th>Parameter</th><th>Nilai</th><th>Parameter</th><th>Nilai</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td class="param-label">RS</td><td class="param-value">${formatVal(plnV.rs)}</td><td class="param-label">R</td><td class="param-value">${formatVal(plnI.r)}</td></tr>
-            <tr><td class="param-label">ST</td><td class="param-value">${formatVal(plnV.st)}</td><td class="param-label">S</td><td class="param-value">${formatVal(plnI.s)}</td></tr>
-            <tr><td class="param-label">TR</td><td class="param-value">${formatVal(plnV.tr)}</td><td class="param-label">T</td><td class="param-value">${formatVal(plnI.t)}</td></tr>
-            <tr><td class="param-label">RN</td><td class="param-value">${formatVal(plnV.rn)}</td><td colspan="2" style="background:#f8fafc;"></td></tr>
-            <tr><td class="param-label">SN</td><td class="param-value">${formatVal(plnV.sn)}</td><td colspan="2"></td></tr>
-            <tr><td class="param-label">TN</td><td class="param-value">${formatVal(plnV.tn)}</td><td colspan="2"></td></tr>
-          </tbody>
-        </table>
-      `;
-      
-      // Tabel untuk UPS
-      const upsTable = `
-        <table class="data-table">
-          <thead>
-            <tr><th colspan="2">⚡ Tegangan (Volt)</th><th colspan="2">🔁 Arus (Ampere)</th></tr>
-            <tr>
-              <th>Parameter</th><th>Nilai</th><th>Parameter</th><th>Nilai</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td class="param-label">RS</td><td class="param-value">${formatVal(upsV.rs)}</td><td class="param-label">R</td><td class="param-value">${formatVal(upsI.r)}</td></tr>
-            <tr><td class="param-label">ST</td><td class="param-value">${formatVal(upsV.st)}</td><td class="param-label">S</td><td class="param-value">${formatVal(upsI.s)}</td></tr>
-            <tr><td class="param-label">TR</td><td class="param-value">${formatVal(upsV.tr)}</td><td class="param-label">T</td><td class="param-value">${formatVal(upsI.t)}</td></tr>
-            <tr><td class="param-label">RN</td><td class="param-value">${formatVal(upsV.rn)}</td><td colspan="2" style="background:#f8fafc;"></td></tr>
-            <tr><td class="param-label">SN</td><td class="param-value">${formatVal(upsV.sn)}</td><td colspan="2"></td></tr>
-            <tr><td class="param-label">TN</td><td class="param-value">${formatVal(upsV.tn)}</td><td colspan="2"></td></tr>
-          </tbody>
-        </table>
-      `;
-      
+      const photoHtml = e.photoBase64 ? `<img src="${e.photoBase64}" class="evidence-img" onclick="viewFullFoto('${e.photoBase64}')">` : '<span>Tidak ada foto</span>';
       const card = document.createElement("div"); card.className = "entry-card";
       card.innerHTML = `
         <div class="entry-header">
-          <div class="entry-title">📄 No. ${escapeHtml(e.no)} • ${escapeHtml(e.tanggal)}</div>
-          <div class="entry-meta">
-            <span><i class="fas fa-user"></i> ${escapeHtml(e.petugas)}</span>
-            <span><i class="fas fa-pen-alt"></i> ${escapeHtml(e.keterangan) || '-'}</span>
-            <button class="delete-btn" data-idx="${idx}"><i class="fas fa-trash"></i> Hapus</button>
+          <div>📄 No: ${escapeHtml(e.no)} | ${escapeHtml(e.tanggal)}</div>
+          <div>
+            <span>👤 ${escapeHtml(e.petugas)}</span>
+            <span>📝 ${escapeHtml(e.keterangan||'-')}</span>
+            <button class="btn-danger" style="margin-left:12px;padding:4px 12px;" data-idx="${idx}">✖ Hapus</button>
           </div>
         </div>
-        <div class="data-section">
-          <h4>🏭 Data Monitoring Sumber PLN</h4>
-          ${plnTable}
-        </div>
-        <div class="data-section">
-          <h4>🔋 Data Monitoring Sumber UPS</h4>
-          ${upsTable}
+        <div class="data-row">
+          <div>
+            <strong>🏭 PLN</strong><br>
+            Teg: RS:${formatVal(e.pln?.v?.rs)} ST:${formatVal(e.pln?.v?.st)} TR:${formatVal(e.pln?.v?.tr)} RN:${formatVal(e.pln?.v?.rn)} SN:${formatVal(e.pln?.v?.sn)} TN:${formatVal(e.pln?.v?.tn)}<br>
+            Arus: R:${formatVal(e.pln?.i?.r)} S:${formatVal(e.pln?.i?.s)} T:${formatVal(e.pln?.i?.t)}
+          </div>
+          <div>
+            <strong>🔋 UPS</strong><br>
+            Teg: RS:${formatVal(e.ups?.v?.rs)} ST:${formatVal(e.ups?.v?.st)} TR:${formatVal(e.ups?.v?.tr)} RN:${formatVal(e.ups?.v?.rn)} SN:${formatVal(e.ups?.v?.sn)} TN:${formatVal(e.ups?.v?.tn)}<br>
+            Arus: R:${formatVal(e.ups?.i?.r)} S:${formatVal(e.ups?.i?.s)} T:${formatVal(e.ups?.i?.t)}
+          </div>
         </div>
         <div class="entry-photo">
-          <strong>📸 Foto bukti:</strong>
-          ${e.photoBase64 ? `<img src="${e.photoBase64}" class="evidence-img" onclick="viewFullFoto('${e.photoBase64}')">` : '<span class="text-gray-400">Tidak ada foto</span>'}
+          <strong>📸 Foto bukti:</strong> ${photoHtml}
         </div>
       `;
       container.appendChild(card);
     });
-    document.querySelectorAll(".delete-btn").forEach(btn => btn.onclick = async () => {
+    document.querySelectorAll("[data-idx]").forEach(btn => btn.onclick = async () => {
       let arr = loadEntriesFromStorage();
       arr.splice(parseInt(btn.dataset.idx),1);
       await saveEntriesToLocalAndFirebase(arr);
