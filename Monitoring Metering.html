@@ -308,44 +308,6 @@
       cursor: pointer;
     }
 
-    .modal-table {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.8);
-      z-index: 1000;
-      overflow: auto;
-      padding: 16px;
-    }
-
-    .modal-content {
-      background: white;
-      margin: 20px auto;
-      max-width: 98%;
-      width: fit-content;
-      border-radius: 32px;
-      padding: 16px;
-      max-height: 90vh;
-      overflow: auto;
-    }
-
-    .modal-content table {
-      border-collapse: collapse;
-      width: 100%;
-      font-size: 0.7rem;
-      min-width: 1100px;
-    }
-
-    .thumb-spreadsheet {
-      max-width: 55px;
-      max-height: 55px;
-      border-radius: 8px;
-      margin: 2px;
-    }
-
     @media (max-width: 640px) {
       body { padding: 12px; }
       .card { padding: 1rem; }
@@ -452,7 +414,7 @@
     <div class="btn-group">
       <button class="btn btn-primary" id="saveWithPhotoBtn">💾 SIMPAN ENTRY (dengan foto)</button>
       <button class="btn btn-secondary" id="resetFormBtn">⟳ Reset Form + Hapus Foto</button>
-      <button class="btn btn-excel" id="exportTableBtn">📊 LIHAT / SALIN TABEL</button>
+      <button class="btn btn-excel" id="exportHtmlBtn">📄 Export HTML</button>
       <button class="btn btn-danger" id="clearAllBtn">🗑 Hapus Semua Data</button>
     </div>
   </div>
@@ -463,13 +425,6 @@
   </div>
   <footer>© TVRI - TX Tanah Merah | Watermark per foto | Data sinkron Firebase + localStorage</footer>
 </div>
-
-<!-- Modal Spreadsheet -->
-<div id="spreadsheetModal" class="modal-table"><div class="modal-content"><span class="close-modal" style="float:right;font-size:26px;cursor:pointer;">&times;</span>
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap;"><h3 style="margin:0;">📑 DATA LENGKAP + THUMBNAIL</h3>
-    <div><button id="copyTableBtn" class="copy-btn" style="background:#1e6f5c;color:white;border:none;padding:6px 16px;border-radius:30px;">📋 Salin Tabel</button>
-    <button id="openFullReportBtn" class="report-btn" style="background:#1e6f5c;color:white;border:none;padding:6px 16px;border-radius:30px;">📄 Buka Laporan Lengkap</button></div></div>
-  <div id="tableContainer" style="overflow-x: auto;"></div></div></div>
 
 <script>
   // ======================== FIREBASE KONFIGURASI ========================
@@ -742,13 +697,10 @@
     };
   }
 
-  // Fungsi untuk mengisi form dengan data entry (tanpa foto, tanggal diset hari ini)
   function applyEntryDataToForm(entry) {
     if (!entry) return;
-    // Isi petugas dan keterangan
     document.getElementById("petugas").value = entry.petugas || "";
     document.getElementById("keterangan").value = entry.keterangan || "";
-    // Isi tegangan dan arus
     const set = (id,val) => { let el=document.getElementById(id); if(el) el.value = (val!==null&&val!==undefined)?val:""; };
     set("vPLN_rs", entry.pln?.v?.rs); set("vPLN_st", entry.pln?.v?.st); set("vPLN_tr", entry.pln?.v?.tr);
     set("vPLN_rn", entry.pln?.v?.rn); set("vPLN_sn", entry.pln?.v?.sn); set("vPLN_tn", entry.pln?.v?.tn);
@@ -756,35 +708,27 @@
     set("vUPS_rs", entry.ups?.v?.rs); set("vUPS_st", entry.ups?.v?.st); set("vUPS_tr", entry.ups?.v?.tr);
     set("vUPS_rn", entry.ups?.v?.rn); set("vUPS_sn", entry.ups?.v?.sn); set("vUPS_tn", entry.ups?.v?.tn);
     set("iUPS_r", entry.ups?.i?.r); set("iUPS_s", entry.ups?.i?.s); set("iUPS_t", entry.ups?.i?.t);
-    // Foto dikosongkan
     hapusFoto();
   }
 
   function resetFormFields() {
-    // Kosongkan semua field parameter
     document.querySelectorAll("input[type='number']").forEach(inp => inp.value = "");
     document.getElementById("petugas").value = "";
     document.getElementById("keterangan").value = "";
     hapusFoto();
-    // Tanggal hari ini
     document.getElementById("entryDate").value = new Date().toISOString().slice(0,10);
-    updateEntryNoField(); // nomor akan disesuaikan dengan data terbaru
+    updateEntryNoField();
     if(mediaStream) tutupKamera();
   }
 
-  // Fungsi untuk mengisi form dengan data entry terakhir (jika ada) atau reset jika tidak ada
   function applyLastEntryOrReset() {
     const entries = loadEntriesFromStorage();
     if (entries.length > 0) {
-      // Ambil entry terbaru (index 0 karena sudah di-sort descending)
       const lastEntry = entries[0];
       applyEntryDataToForm(lastEntry);
-      // Nomor tetap di-generate otomatis (increment dari max nomor yang ada)
       updateEntryNoField();
-      // Tanggal di-set ke hari ini (override)
       document.getElementById("entryDate").value = new Date().toISOString().slice(0,10);
     } else {
-      // Tidak ada data, reset semua
       resetFormFields();
     }
   }
@@ -809,9 +753,6 @@
     entries.unshift(newEntry);
     await saveEntriesToLocalAndFirebase(entries);
     hapusFoto();
-    // Setelah simpan, isi ulang form dengan data entry terbaru? Atau biarkan kosong? 
-    // Lebih baik reset form namun ambil data terakhir (sesuai kebutuhan user)
-    // Agar user bisa lanjut entry berikutnya dengan parameter yang sama (kecuali foto)
     applyLastEntryOrReset();
     alert("Data tersimpan dengan foto. Firebase: " + (isFirebaseReady ? "tersinkron" : "offline"));
   };
@@ -827,6 +768,126 @@
       await saveEntriesToLocalAndFirebase([]);
       resetFormFields();
     }
+  };
+
+  // ======================== EXPORT HTML RAPI ========================
+  function generateFullReportHTML() {
+    const entries = loadEntriesFromStorage().map(e => {
+      if (!e.photoBase64 && e.photos && e.photos.length) e.photoBase64 = e.photos[0];
+      return e;
+    });
+    if (!entries.length) return "<p>Tidak ada data untuk diekspor.</p>";
+    
+    const formatVal = (v) => (v !== null && v !== undefined) ? parseFloat(v).toFixed(1) : "-";
+    const escapeHtml = (s) => s ? s.replace(/[&<>]/g, m=> m==='&'?'&amp;': m==='<'?'&lt;':'&gt;') : "";
+    
+    let plnRows = "";
+    let upsRows = "";
+    for (let e of entries) {
+      const fotoThumb = e.photoBase64 ? `<img src="${e.photoBase64}" style="width:50px; height:50px; object-fit:cover; border-radius:8px;" onclick="window.open(this.src)">` : "-";
+      plnRows += `<tr>
+        <td>${escapeHtml(e.no)}</td>
+        <td>${escapeHtml(e.tanggal)}</td>
+        <td>${escapeHtml(e.petugas)}</td>
+        <td>${escapeHtml(e.keterangan || '')}</td>
+        <td>${fotoThumb}</td>
+        <td>${formatVal(e.pln?.v?.rs)}</td>
+        <td>${formatVal(e.pln?.v?.st)}</td>
+        <td>${formatVal(e.pln?.v?.tr)}</td>
+        <td>${formatVal(e.pln?.v?.rn)}</td>
+        <td>${formatVal(e.pln?.v?.sn)}</td>
+        <td>${formatVal(e.pln?.v?.tn)}</td>
+        <td>${formatVal(e.pln?.i?.r)}</td>
+        <td>${formatVal(e.pln?.i?.s)}</td>
+        <td>${formatVal(e.pln?.i?.t)}</td>
+      </tr>`;
+      
+      upsRows += `<tr>
+        <td>${escapeHtml(e.no)}</td>
+        <td>${escapeHtml(e.tanggal)}</td>
+        <td>${escapeHtml(e.petugas)}</td>
+        <td>${escapeHtml(e.keterangan || '')}</td>
+        <td>${fotoThumb}</td>
+        <td>${formatVal(e.ups?.v?.rs)}</td>
+        <td>${formatVal(e.ups?.v?.st)}</td>
+        <td>${formatVal(e.ups?.v?.tr)}</td>
+        <td>${formatVal(e.ups?.v?.rn)}</td>
+        <td>${formatVal(e.ups?.v?.sn)}</td>
+        <td>${formatVal(e.ups?.v?.tn)}</td>
+        <td>${formatVal(e.ups?.i?.r)}</td>
+        <td>${formatVal(e.ups?.i?.s)}</td>
+        <td>${formatVal(e.ups?.i?.t)}</td>
+      </tr>`;
+    }
+    
+    return `<!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <title>Laporan Monitoring PLN & UPS - TVRI Tanah Merah</title>
+      <style>
+        body { font-family: 'Inter', sans-serif; background: #f0f4f8; margin: 20px; }
+        .container { max-width: 1400px; margin: auto; background: white; border-radius: 24px; padding: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
+        h1 { color: #1e6f5c; border-left: 5px solid #1e6f5c; padding-left: 16px; margin-bottom: 24px; }
+        h2 { background: #eef2f8; padding: 8px 16px; border-radius: 40px; font-size: 1.2rem; color: #0f3b2c; margin-top: 30px; }
+        table { border-collapse: collapse; width: 100%; margin-bottom: 30px; font-size: 13px; }
+        th, td { border: 1px solid #cbd5e1; padding: 8px 6px; text-align: center; vertical-align: middle; }
+        th { background: #1e6f5c; color: white; font-weight: 600; }
+        img { max-width: 55px; border-radius: 8px; cursor: pointer; }
+        .footer { margin-top: 30px; text-align: center; font-size: 11px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 16px; }
+        @media (max-width: 768px) { th, td { font-size: 10px; padding: 4px; } }
+      </style>
+    </head>
+    <body>
+    <div class="container">
+      <h1>📡 TVRI - TX Tanah Merah</h1>
+      <p><strong>Laporan Monitoring PLN & UPS</strong> | Tanggal export: ${new Date().toLocaleString('id-ID')}</p>
+      
+      <h2>🏭 Data Monitoring Sumber PLN</h2>
+      <table>
+        <thead>
+          <tr><th>No</th><th>Tanggal</th><th>Petugas</th><th>Keterangan</th><th>Foto</th>
+            <th>V_RS</th><th>V_ST</th><th>V_TR</th><th>V_RN</th><th>V_SN</th><th>V_TN</th>
+            <th>I_R</th><th>I_S</th><th>I_T</th>
+          </tr>
+        </thead>
+        <tbody>${plnRows}</tbody>
+      20\l
+      
+      <h2>🔋 Data Monitoring Sumber UPS</h2>
+      <table>
+        <thead>
+          <tr><th>No</th><th>Tanggal</th><th>Petugas</th><th>Keterangan</th><th>Foto</th>
+            <th>V_RS</th><th>V_ST</th><th>V_TR</th><th>V_RN</th><th>V_SN</th><th>V_TN</th>
+            <th>I_R</th><th>I_S</th><th>I_T</th>
+          </tr>
+        </thead>
+        <tbody>${upsRows}</tbody>
+      划
+      
+      <div class="footer">
+        © TVRI - TX Tanah Merah | Watermark otomatis pada setiap foto | Data tersimpan di Firebase
+      </div>
+    </div>
+    </body>
+    </html>`;
+  }
+
+  document.getElementById("exportHtmlBtn").onclick = () => {
+    const entries = loadEntriesFromStorage();
+    if (!entries.length) {
+      alert("Tidak ada data untuk diekspor.");
+      return;
+    }
+    const htmlContent = generateFullReportHTML();
+    const blob = new Blob([htmlContent], { type: "text/html" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `laporan_pln_ups_tanah_merah_${Date.now()}.html`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(blob);
   };
 
   function formatVal(v) { return (v!==null && v!==undefined) ? parseFloat(v).toFixed(1) : "-"; }
@@ -863,44 +924,9 @@
     });
   }
 
-  function buildTableHTML() {
-    const entries = loadEntriesFromStorage().map(e=>{ if (!e.photoBase64 && e.photos?.length) e.photoBase64 = e.photos[0]; return e; });
-    if(!entries.length) return "<p>Tidak ada data</p>";
-    let html = '<table border="1"><thead><tr style="background:#1e6f5c;color:white;"><th>No</th><th>Tgl</th><th>Petugas</th><th>Keterangan</th><th>PLN_V_RS</th><th>PLN_V_ST</th><th>PLN_V_TR</th><th>PLN_V_RN</th><th>PLN_V_SN</th><th>PLN_V_TN</th><th>PLN_A_R/S/T</th><th>UPS_V_RS</th><th>UPS_V_ST</th><th>UPS_V_TR</th><th>UPS_V_RN</th><th>UPS_V_SN</th><th>UPS_V_TN</th><th>UPS_A_R/S/T</th><th>Foto</th><tr></thead><tbody>';
-    for(let e of entries) {
-      let thumb = e.photoBase64 ? `<img src="${e.photoBase64}" class="thumb-spreadsheet">` : '-';
-      html += `<tr>
-        <td>${escapeHtml(e.no)}</td>
-        <td>${escapeHtml(e.tanggal)}</td>
-        <td>${escapeHtml(e.petugas)}</td>
-        <td>${escapeHtml(e.keterangan||'')}</td>
-        <td>${e.pln?.v?.rs??'-'}</td><td>${e.pln?.v?.st??'-'}</td><td>${e.pln?.v?.tr??'-'}</td><td>${e.pln?.v?.rn??'-'}</td><td>${e.pln?.v?.sn??'-'}</td><td>${e.pln?.v?.tn??'-'}</td>
-        <td>R:${e.pln?.i?.r??'-'} S:${e.pln?.i?.s??'-'} T:${e.pln?.i?.t??'-'}</td>
-        <td>${e.ups?.v?.rs??'-'}</td><td>${e.ups?.v?.st??'-'}</td><td>${e.ups?.v?.tr??'-'}</td><td>${e.ups?.v?.rn??'-'}</td><td>${e.ups?.v?.sn??'-'}</td><td>${e.ups?.v?.tn??'-'}</td>
-        <td>R:${e.ups?.i?.r??'-'} S:${e.ups?.i?.s??'-'} T:${e.ups?.i?.t??'-'}</td>
-        <td>${thumb}</td>
-       </tr>`;
-    }
-    return html+'</tbody></table>';
-  }
-  
-  const modal = document.getElementById("spreadsheetModal");
-  document.getElementById("exportTableBtn").onclick = () => { document.getElementById("tableContainer").innerHTML = buildTableHTML(); modal.style.display="block"; };
-  document.querySelector(".close-modal").onclick = () => modal.style.display="none";
-  window.onclick = (e) => { if(e.target===modal) modal.style.display="none"; };
-  document.getElementById("copyTableBtn").onclick = () => { const range=document.createRange(); const tbl=document.querySelector("#tableContainer table"); if(tbl){ range.selectNode(tbl); window.getSelection().removeAllRanges(); window.getSelection().addRange(range); document.execCommand("copy"); alert("Tabel tersalin."); } };
-  document.getElementById("openFullReportBtn").onclick = () => {
-    const entries = loadEntriesFromStorage();
-    if(!entries.length) return alert("Tidak ada data");
-    let repHtml = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Laporan TVRI Tanah Merah</title><style>body{font-family:sans-serif;padding:20px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccc;padding:8px}img{max-width:70px;border-radius:8px}</style></head><body><h1>Laporan PLN+UPS</h1>${buildTableHTML()}<p>Cetak/PDF</p></body></html>`;
-    let w=window.open(); w.document.write(repHtml); w.document.close();
-  };
-
   // ======================== INISIALISASI ========================
   async function init() {
-    // Reset form dasar (tanggal hari ini, nomor awal jika kosong)
     resetFormFields();
-    // Setelah data dimuat, isi form dengan data entry terakhir jika ada
     if (window.db) {
       isFirebaseReady = true;
       const fbEntries = await loadFromFirebase();
@@ -908,15 +934,11 @@
         localStorage.setItem(STORAGE_KEY, JSON.stringify(fbEntries));
         renderEntries();
         updateEntryNoField();
-        applyLastEntryOrReset(); // Isi form berdasarkan entry terakhir
+        applyLastEntryOrReset();
       } else {
-        // Jika Firebase kosong, cek localStorage lalu apply
         const localEntries = loadEntriesFromStorage();
-        if (localEntries.length) {
-          applyLastEntryOrReset();
-        } else {
-          resetFormFields(); // pastikan form kosong
-        }
+        if (localEntries.length) applyLastEntryOrReset();
+        else resetFormFields();
       }
       updateFirebaseStatus(true, "Terhubung");
     } else {
@@ -937,7 +959,6 @@
           });
         } else {
           updateFirebaseStatus(false, "Firebase tidak tersedia");
-          // Meskipun tanpa Firebase, tetap coba load data lokal
           const localEntries = loadEntriesFromStorage();
           if (localEntries.length) {
             renderEntries();
