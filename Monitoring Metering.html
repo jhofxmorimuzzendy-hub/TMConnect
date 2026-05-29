@@ -161,7 +161,6 @@
       font-size: 0.85rem;
     }
 
-    /* Camera & Preview Area */
     .camera-zone {
       background: linear-gradient(135deg, #f5f9ff 0%, #eef2fa 100%);
       border-radius: 32px;
@@ -351,7 +350,6 @@
       <div class="field-group"><label>Keterangan</label><input type="text" id="keterangan" placeholder="Lokasi / kondisi"></div>
     </div>
 
-    <!-- SINGLE FOTO ZONE -->
     <div class="camera-zone">
       <h3 style="margin:0 0 12px 0;">📸 FOTO BUKTI (Watermark Otomatis)</h3>
       
@@ -377,7 +375,6 @@
       <input type="hidden" id="fotoLng" value="">
     </div>
 
-    <!-- PARAMETER PLN & UPS -->
     <div class="double-grid">
       <div class="meas-panel"><h3>🏭 SUMBER PLN</h3>
         <div><strong class="subtitle">⚡ Tegangan (Volt)</strong></div>
@@ -489,12 +486,10 @@
     }
   }
 
-  // ======================== DATA STORAGE ========================
   const STORAGE_KEY = "pln_ups_tanah_merah_v6_single";
   let mediaStream = null;
   let currentPhotoBase64 = null;
 
-  // DOM elements camera & foto
   const videoEl = document.getElementById('videoCamera');
   const videoContainer = document.getElementById('videoContainer');
   const btnBukaKamera = document.getElementById('btnBukaKamera');
@@ -768,7 +763,7 @@
     }
   };
 
-  // ======================== EXPORT HTML RAPI (TIDAK ADA KARAKTER ANEH) ========================
+  // ======================== EXPORT HTML DENGAN TABEL RAPI ========================
   function generateFullReportHTML() {
     const entries = loadEntriesFromStorage().map(e => {
       if (!e.photoBase64 && e.photos && e.photos.length) e.photoBase64 = e.photos[0];
@@ -783,42 +778,41 @@
     let upsRows = "";
     for (let e of entries) {
       const fotoThumb = e.photoBase64 
-        ? `<img src="${e.photoBase64}" style="width:55px; height:55px; object-fit:cover; border-radius:6px; border:1px solid #ccc;" onclick="window.open(this.src)">` 
+        ? `<img src="${e.photoBase64}" style="width:60px; height:60px; object-fit:cover; border-radius:6px; border:1px solid #ccc;" onclick="window.open(this.src)">` 
         : "-";
-      // Baris untuk tabel PLN
+      
       plnRows += `<tr>
-        <td style="border:1px solid #cbd5e1; padding:8px 5px; text-align:center;">${escapeHtml(e.no)}</td>
-        <td style="border:1px solid #cbd5e1; padding:8px 5px; text-align:center;">${escapeHtml(e.tanggal)}</td>
-        <td style="border:1px solid #cbd5e1; padding:8px 5px; text-align:center;">${escapeHtml(e.petugas)}</td>
-        <td style="border:1px solid #cbd5e1; padding:8px 5px; text-align:center;">${escapeHtml(e.keterangan || '-')}</td>
-        <td style="border:1px solid #cbd5e1; padding:8px 5px; text-align:center;">${fotoThumb}</td>
-        <td style="border:1px solid #cbd5e1; padding:8px 5px; text-align:center;">${formatVal(e.pln?.v?.rs)}</td>
-        <td style="border:1px solid #cbd5e1; padding:8px 5px; text-align:center;">${formatVal(e.pln?.v?.st)}</td>
-        <td style="border:1px solid #cbd5e1; padding:8px 5px; text-align:center;">${formatVal(e.pln?.v?.tr)}</td>
-        <td style="border:1px solid #cbd5e1; padding:8px 5px; text-align:center;">${formatVal(e.pln?.v?.rn)}</td>
-        <td style="border:1px solid #cbd5e1; padding:8px 5px; text-align:center;">${formatVal(e.pln?.v?.sn)}</td>
-        <td style="border:1px solid #cbd5e1; padding:8px 5px; text-align:center;">${formatVal(e.pln?.v?.tn)}</td>
-        <td style="border:1px solid #cbd5e1; padding:8px 5px; text-align:center;">${formatVal(e.pln?.i?.r)}</td>
-        <td style="border:1px solid #cbd5e1; padding:8px 5px; text-align:center;">${formatVal(e.pln?.i?.s)}</td>
-        <td style="border:1px solid #cbd5e1; padding:8px 5px; text-align:center;">${formatVal(e.pln?.i?.t)}</td>
+        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${escapeHtml(e.no)}</td>
+        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${escapeHtml(e.tanggal)}</td>
+        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${escapeHtml(e.petugas)}</td>
+        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${escapeHtml(e.keterangan || '-')}</td>
+        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${fotoThumb}</td>
+        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${formatVal(e.pln?.v?.rs)}</td>
+        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${formatVal(e.pln?.v?.st)}</td>
+        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${formatVal(e.pln?.v?.tr)}</td>
+        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${formatVal(e.pln?.v?.rn)}</td>
+        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${formatVal(e.pln?.v?.sn)}</td>
+        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${formatVal(e.pln?.v?.tn)}</td>
+        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${formatVal(e.pln?.i?.r)}</td>
+        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${formatVal(e.pln?.i?.s)}</td>
+        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${formatVal(e.pln?.i?.t)}</td>
       </tr>`;
       
-      // Baris untuk tabel UPS
       upsRows += `<tr>
-        <td style="border:1px solid #cbd5e1; padding:8px 5px; text-align:center;">${escapeHtml(e.no)}</td>
-        <td style="border:1px solid #cbd5e1; padding:8px 5px; text-align:center;">${escapeHtml(e.tanggal)}</td>
-        <td style="border:1px solid #cbd5e1; padding:8px 5px; text-align:center;">${escapeHtml(e.petugas)}</td>
-        <td style="border:1px solid #cbd5e1; padding:8px 5px; text-align:center;">${escapeHtml(e.keterangan || '-')}</td>
-        <td style="border:1px solid #cbd5e1; padding:8px 5px; text-align:center;">${fotoThumb}</td>
-        <td style="border:1px solid #cbd5e1; padding:8px 5px; text-align:center;">${formatVal(e.ups?.v?.rs)}</td>
-        <td style="border:1px solid #cbd5e1; padding:8px 5px; text-align:center;">${formatVal(e.ups?.v?.st)}</td>
-        <td style="border:1px solid #cbd5e1; padding:8px 5px; text-align:center;">${formatVal(e.ups?.v?.tr)}</td>
-        <td style="border:1px solid #cbd5e1; padding:8px 5px; text-align:center;">${formatVal(e.ups?.v?.rn)}</td>
-        <td style="border:1px solid #cbd5e1; padding:8px 5px; text-align:center;">${formatVal(e.ups?.v?.sn)}</td>
-        <td style="border:1px solid #cbd5e1; padding:8px 5px; text-align:center;">${formatVal(e.ups?.v?.tn)}</td>
-        <td style="border:1px solid #cbd5e1; padding:8px 5px; text-align:center;">${formatVal(e.ups?.i?.r)}</td>
-        <td style="border:1px solid #cbd5e1; padding:8px 5px; text-align:center;">${formatVal(e.ups?.i?.s)}</td>
-        <td style="border:1px solid #cbd5e1; padding:8px 5px; text-align:center;">${formatVal(e.ups?.i?.t)}</td>
+        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${escapeHtml(e.no)}</td>
+        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${escapeHtml(e.tanggal)}</td>
+        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${escapeHtml(e.petugas)}</td>
+        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${escapeHtml(e.keterangan || '-')}</td>
+        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${fotoThumb}</td>
+        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${formatVal(e.ups?.v?.rs)}</td>
+        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${formatVal(e.ups?.v?.st)}</td>
+        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${formatVal(e.ups?.v?.tr)}</td>
+        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${formatVal(e.ups?.v?.rn)}</td>
+        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${formatVal(e.ups?.v?.sn)}</td>
+        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${formatVal(e.ups?.v?.tn)}</td>
+        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${formatVal(e.ups?.i?.r)}</td>
+        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${formatVal(e.ups?.i?.s)}</td>
+        <td style="border:1px solid #cbd5e1; padding:8px 6px; text-align:center;">${formatVal(e.ups?.i?.t)}</td>
       </tr>`;
     }
     
@@ -828,14 +822,8 @@
       <meta charset="UTF-8">
       <title>Laporan Monitoring PLN & UPS - TVRI Tanah Merah</title>
       <style>
-        * {
-          font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-        }
-        body {
-          background: #f1f5f9;
-          margin: 20px;
-          padding: 0;
-        }
+        * { font-family: 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif; }
+        body { background: #f1f5f9; margin: 20px; padding: 0; }
         .report-container {
           max-width: 1400px;
           margin: 0 auto;
@@ -880,7 +868,7 @@
           background: #1e6f5c;
           color: white;
           font-weight: 600;
-          padding: 10px 5px;
+          padding: 10px 6px;
           font-size: 0.78rem;
           text-align: center;
           border: 1px solid #1a5f4e;
