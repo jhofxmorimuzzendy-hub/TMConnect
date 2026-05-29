@@ -13,7 +13,7 @@
     }
 
     body {
-      background: #eef2f7;
+      background: linear-gradient(135deg, #eef2f8 0%, #e0f0ec 100%);
       padding: 20px 16px;
     }
 
@@ -44,8 +44,8 @@
 
     h1 small {
       font-size: 0.7rem;
-      background: #d9f0ec;
-      color: #0f5b4b;
+      background: #e6f7f0;
+      color: #1e6f5c;
       padding: 4px 12px;
       border-radius: 40px;
     }
@@ -53,8 +53,8 @@
     h2 {
       font-size: 1.3rem;
       font-weight: 600;
-      color: #0f3b2c;
-      border-left: 5px solid #2b7a62;
+      color: #1e6f5c;
+      border-left: 5px solid #1e6f5c;
       padding-left: 16px;
       margin: 1rem 0 1rem 0;
     }
@@ -69,6 +69,7 @@
       background: #f1f5f9;
       padding: 8px 16px;
       border-radius: 60px;
+      color: #1e6f5c;
     }
 
     .form-row {
@@ -101,6 +102,12 @@
       font-size: 0.85rem;
       transition: 0.2s;
       background: white;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      border-color: #1e6f5c;
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(30,111,92,0.2);
     }
 
     .double-grid {
@@ -147,7 +154,7 @@
       font-weight: 700;
       margin-top: 8px;
       margin-bottom: 6px;
-      color: #0b3b2f;
+      color: #1e6f5c;
       border-bottom: 2px dashed #cbd5e1;
       display: inline-block;
       font-size: 0.85rem;
@@ -267,12 +274,16 @@
       font-size: 0.85rem;
     }
 
-    .btn-primary { background: #1f6e5a; color: white; }
-    .btn-primary:hover { background: #0f5544; transform: translateY(-2px); }
+    .btn-primary { background: #1e6f5c; color: white; }
+    .btn-primary:hover { background: #0e5a48; transform: translateY(-2px); }
     .btn-secondary { background: #e9ecef; color: #2c3e50; }
-    .btn-camera { background: #2c5282; color: white; }
+    .btn-secondary:hover { background: #dee2e6; }
+    .btn-camera { background: #1e6f5c; color: white; }
+    .btn-camera:hover { background: #0e5a48; transform: translateY(-2px); }
     .btn-danger { background: #fee2e2; color: #b91c1c; }
-    .btn-excel { background: #1e6f3f; color: white; }
+    .btn-danger:hover { background: #fecaca; }
+    .btn-excel { background: #1e6f5c; color: white; }
+    .btn-excel:hover { background: #0e5a48; transform: translateY(-2px); }
 
     .entries-container {
       display: flex;
@@ -375,8 +386,11 @@
       color: #5b7c8c;
     }
 
-    .report-btn { background: #4a627a; color: white; }
-    .sync-status { font-size: 0.7rem; padding: 2px 8px; border-radius: 20px; display: inline-block; margin-left: 12px; }
+    .report-btn { background: #1e6f5c; color: white; }
+    .report-btn:hover { background: #0e5a48; transform: translateY(-2px); }
+    .sync-status { font-size: 0.7rem; padding: 2px 8px; border-radius: 20px; display: inline-block; margin-left: 12px; background: rgba(255,255,240,0.3); }
+    .btn-info { background: #e0f2fe; color: #0f3b2c; }
+    .btn-info:hover { background: #bae6fd; }
   </style>
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -479,8 +493,8 @@
 <!-- Modal Spreadsheet -->
 <div id="spreadsheetModal" class="modal-table"><div class="modal-content"><span class="close-modal" style="float:right;font-size:26px;cursor:pointer;">&times;</span>
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap;"><h3 style="margin:0;">📑 DATA LENGKAP + THUMBNAIL</h3>
-    <div><button id="copyTableBtn" class="copy-btn" style="background:#2b7a62;color:white;border:none;padding:6px 16px;border-radius:30px;">📋 Salin Tabel</button>
-    <button id="openFullReportBtn" class="report-btn" style="background:#4a627a;color:white;border:none;padding:6px 16px;border-radius:30px;">📄 Buka Laporan Lengkap</button></div></div>
+    <div><button id="copyTableBtn" class="copy-btn" style="background:#1e6f5c;color:white;border:none;padding:6px 16px;border-radius:30px;">📋 Salin Tabel</button>
+    <button id="openFullReportBtn" class="report-btn" style="background:#1e6f5c;color:white;border:none;padding:6px 16px;border-radius:30px;">📄 Buka Laporan Lengkap</button></div></div>
   <div id="tableContainer" style="overflow-x: auto;"></div></div></div>
 
 <script>
@@ -531,19 +545,16 @@
       if (firebaseData && typeof firebaseData === 'object') {
         const fbEntries = Object.values(firebaseData);
         if (fbEntries.length > 0) {
-          // Urutkan berdasarkan id (descending)
           fbEntries.sort((a,b) => (b.id || 0) - (a.id || 0));
           localStorage.setItem(STORAGE_KEY, JSON.stringify(fbEntries));
           updateFirebaseStatus(true, `Loaded ${fbEntries.length} data`);
           return fbEntries;
         }
       }
-      // Jika Firebase kosong, ambil dari localStorage
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         const localEntries = JSON.parse(stored);
         updateFirebaseStatus(true, "Loaded local");
-        // Sinkronkan data lokal ke Firebase jika ada
         if (localEntries.length) await syncToFirebase(localEntries);
         return localEntries;
       }
@@ -556,7 +567,7 @@
     }
   }
 
-  // ======================== DATA STORAGE (modifikasi) ========================
+  // ======================== DATA STORAGE ========================
   const STORAGE_KEY = "pln_ups_tanah_merah_v5_multi";
   let mediaStream = null;
   let currentPhotosArray = [];
@@ -570,7 +581,7 @@
   const photoGalleryContainer = document.getElementById('photoGalleryContainer');
   const clearAllPhotosBtn = document.getElementById('clearAllPhotosBtn');
 
-  // Watermark & GPS (sama seperti sebelumnya)
+  // Watermark & GPS
   async function applyWatermarkTanahMerah(imageDataUrl, petugasNama, lat, lng, altitude, timestampStr) {
     return new Promise((resolve, reject) => {
       const img = new Image();
@@ -615,7 +626,7 @@
         ctx.lineTo(posX+bgWidth, posY+bgHeight-16); ctx.quadraticCurveTo(posX+bgWidth, posY+bgHeight, posX+bgWidth-16, posY+bgHeight);
         ctx.lineTo(posX+16, posY+bgHeight); ctx.quadraticCurveTo(posX, posY+bgHeight, posX, posY+bgHeight-16);
         ctx.lineTo(posX, posY+16); ctx.quadraticCurveTo(posX, posY, posX+16, posY); ctx.closePath(); ctx.fill();
-        ctx.globalAlpha=1; ctx.strokeStyle="#eab308"; ctx.lineWidth=1.8; ctx.stroke();
+        ctx.globalAlpha=1; ctx.strokeStyle="#f5b042"; ctx.lineWidth=1.8; ctx.stroke();
         ctx.font = `${smallFontSize}px "Inter", sans-serif`; ctx.fillStyle = "#FFFFFF"; ctx.shadowBlur=2;
         for(let i=0;i<lines.length;i++) ctx.fillText(lines[i], posX+padding, posY+padding+(i+1)*lineHeight-4);
         ctx.restore();
@@ -851,7 +862,7 @@
   function buildTableHTML() {
     const entries = loadEntriesFromStorage().map(e=>{ if(!e.photos && e.photoBase64) e.photos=[e.photoBase64]; else if(!e.photos) e.photos=[]; return e; });
     if(!entries.length) return "<p>Tidak ada data</p>";
-    let html = '<table border="1"><thead><tr style="background:#1f6e5a;color:white;"><th>No</th><th>Tgl</th><th>Petugas</th><th>Keterangan</th><th>PLN_V_RS</th><th>PLN_V_ST</th><th>PLN_V_TR</th><th>PLN_V_RN</th><th>PLN_V_SN</th><th>PLN_V_TN</th><th>PLN_A_R/S/T</th><th>UPS_V_RS</th><th>UPS_V_ST</th><th>UPS_V_TR</th><th>UPS_V_RN</th><th>UPS_V_SN</th><th>UPS_V_TN</th><th>UPS_A_R/S/T</th><th>Foto</th></tr></thead><tbody>';
+    let html = '<table border="1"><thead><tr style="background:#1e6f5c;color:white;"><th>No</th><th>Tgl</th><th>Petugas</th><th>Keterangan</th><th>PLN_V_RS</th><th>PLN_V_ST</th><th>PLN_V_TR</th><th>PLN_V_RN</th><th>PLN_V_SN</th><th>PLN_V_TN</th><th>PLN_A_R/S/T</th><th>UPS_V_RS</th><th>UPS_V_ST</th><th>UPS_V_TR</th><th>UPS_V_RN</th><th>UPS_V_SN</th><th>UPS_V_TN</th><th>UPS_A_R/S/T</th><th>Foto</th></tr></thead><tbody>';
     for(let e of entries) {
       let fotoThumbs = (e.photos||[]).slice(0,2).map(p => `<img src="${p}" class="thumb-spreadsheet">`).join('') + ((e.photos||[]).length > 2 ? ` +${e.photos.length-2}` : '');
       if((e.photos||[]).length===0) fotoThumbs = '-';
@@ -879,16 +890,13 @@
   // ======================== INISIALISASI ========================
   async function init() {
     resetFormFields();
-    // Muat data dari localStorage dulu
     const local = loadEntriesFromStorage();
     renderEntries();
     updateEntryNoField();
-    // Sinkron dengan Firebase jika tersedia
     if (window.db) {
       isFirebaseReady = true;
       const fbEntries = await loadFromFirebase();
       if (fbEntries && fbEntries.length) {
-        // Pastikan data terbaru dari Firebase menggantikan lokal
         localStorage.setItem(STORAGE_KEY, JSON.stringify(fbEntries));
         renderEntries();
         updateEntryNoField();
