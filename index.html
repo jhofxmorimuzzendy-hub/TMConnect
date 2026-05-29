@@ -43,7 +43,7 @@
         .header-left {
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: 8px; /* <--- DIPERKECIL: dari 16px menjadi 8px (logo & teks semakin dekat) */
             flex-wrap: wrap;
         }
 
@@ -67,6 +67,7 @@
             font-weight: 700;
             letter-spacing: 0.5px;
             color: white;
+            margin: 0; /* Hilangkan margin default agar lebih rapat */
         }
 
         .sync-status {
@@ -340,16 +341,21 @@
             font-size: 0.8rem;
         }
 
-        /* Perbaikan ukuran logo untuk HP (lebih besar) */
+        /* Perbaikan ukuran logo untuk HP (lebih besar & tetap dekat dengan teks) */
         @media (max-width: 640px) {
             body { padding: 8px 8px; }
             .header { padding: 14px 16px; }
-            .header-left { gap: 12px; }
+            .header-left { 
+                gap: 6px; /* <--- semakin dekat di mobile */
+            }
             .header-logo { 
                 height: 90px; 
                 max-width: 250px; 
             }
-            .header h1 { font-size: 1.2rem; white-space: normal; }
+            .header h1 { 
+                font-size: 1.2rem; 
+                white-space: normal; 
+            }
             .month-picker { padding: 5px 12px; gap: 8px; }
             .shift-today-card { margin: 12px 14px 0 14px; padding: 12px 16px; }
             .shift-item { font-size: 0.75rem; padding: 6px 12px; }
@@ -374,6 +380,9 @@
                 max-width: 210px; 
             }
             .header h1 { font-size: 1.1rem; }
+            .header-left { 
+                gap: 5px; /* semakin dekat pada layar sangat kecil */
+            }
         }
 
         button, .module-card, select { touch-action: manipulation; }
@@ -631,7 +640,8 @@
             </div>
             <div class="shift-table-container">
                 <table class="shift-table">
-                    <thead><tr><th>Tanggal</th><th>Hari</th><th>Shift 1 (00-08)</th><th>Shift 2 (08-16)</th><th>Shift 3 (16-00)</th></tr></thead>
+                    <thead><tr><th>Tanggal</th><th>Hari</th><th>Shift 1 (00-08)</th><th>Shift 2 (08-16)</th><th>Shift 3 (16-00)</th></tr>
+                    </thead>
                     <tbody>
         `;
         for (let d = 1; d <= daysCount; d++) {
