@@ -15,24 +15,71 @@
     <script src="firebase-config.js"></script>
 
     <script>
-        tailwind.config = { theme: { extend: { colors: { primary: '#0f172a', secondary: '#3b82f6', accent: '#10b981' } } } }
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1e6f5c',    // hijau tua utama
+                        primaryDark: '#0e5a48',
+                        secondary: '#f5b042',   // aksen kuning/oranye
+                        accent: '#2c8c74'
+                    }
+                }
+            }
+        }
     </script>
     <style>
         .loading-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 999; backdrop-filter: blur(2px); font-family: 'Inter', sans-serif; }
         .table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
         @media (max-width: 768px) { td, th { font-size: 0.75rem; padding: 0.5rem 0.25rem; } }
-        .badge-transmisi { background: #1e293b; color: #facc15; font-size: 0.75rem; border-radius: 40px; padding: 0.3rem 1rem; display: inline-block; font-weight: 600; letter-spacing: 0.3px; }
+        .badge-transmisi {
+            background: #1e6f5c;
+            color: white;
+            font-size: 0.75rem;
+            border-radius: 40px;
+            padding: 0.3rem 1rem;
+            display: inline-block;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
         .modal-img { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 2000; cursor: pointer; }
         .modal-img img { max-width: 90%; max-height: 90%; border-radius: 16px; }
         .sync-status { font-size: 0.7rem; padding: 2px 8px; border-radius: 20px; display: inline-block; }
+        /* Custom hijau theme untuk tombol dan hover */
+        .btn-hijau {
+            background-color: #1e6f5c;
+            transition: all 0.2s ease;
+        }
+        .btn-hijau:hover {
+            background-color: #0e5a48;
+            transform: translateY(-2px);
+        }
+        .btn-outline-hijau {
+            border: 1px solid #1e6f5c;
+            color: #1e6f5c;
+            transition: all 0.2s ease;
+        }
+        .btn-outline-hijau:hover {
+            background-color: #1e6f5c;
+            color: white;
+        }
+        input:focus, textarea:focus, select:focus {
+            border-color: #1e6f5c !important;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(30,111,92,0.2) !important;
+        }
+        .card-header {
+            background: linear-gradient(135deg, #1e6f5c 0%, #0e5a48 100%);
+        }
     </style>
 </head>
-<body class="bg-gradient-to-br from-slate-50 to-gray-100 font-sans antialiased" style="font-family: 'Inter', sans-serif;">
+<body class="bg-gradient-to-br from-teal-50 to-emerald-50 font-sans antialiased" style="font-family: 'Inter', sans-serif;">
     <div class="container max-w-7xl mx-auto px-4 py-5 md:py-8">
         <!-- Header -->
         <div class="text-center mb-7">
-            <div class="inline-flex items-center justify-center bg-gradient-to-r from-slate-700 to-blue-800 p-3 rounded-full shadow-md">
-                <i class="fas fa-satellite-dish text-white text-2xl"></i>
+            <div class="inline-flex items-center justify-center bg-gradient-to-r from-primary to-primaryDark p-3 rounded-full shadow-md">
+                <i class="fas fa-temperature-high text-white text-2xl"></i>
             </div>
             <h1 class="text-2xl md:text-4xl font-extrabold text-slate-800 mt-3">
                 Monitoring Suhu Ruangan
@@ -45,33 +92,33 @@
 
         <!-- Form Card -->
         <div class="bg-white rounded-2xl shadow-xl overflow-hidden mb-8 border border-gray-100 transition-all">
-            <div class="bg-gradient-to-r from-primary to-slate-800 px-5 py-4">
+            <div class="card-header px-5 py-4">
                 <h2 class="text-lg md:text-xl font-semibold text-white"><i class="fas fa-pen-alt mr-2"></i> Input Data Baru</h2>
             </div>
             <div class="p-5 md:p-6">
                 <form id="formSuhu" class="space-y-5">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <div><label class="block text-sm font-medium text-gray-700 mb-1">Nomor (Otomatis)</label><input type="text" id="nomorOtomatis" readonly class="w-full bg-gray-100 border border-gray-300 rounded-xl px-4 py-2.5 text-gray-600 font-mono"></div>
-                        <div><label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Pencatatan <span class="text-red-500">*</span></label><input type="date" id="tanggal" required class="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-blue-300"></div>
+                        <div><label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Pencatatan <span class="text-red-500">*</span></label><input type="date" id="tanggal" required class="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary"></div>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <div><label class="block text-sm font-medium text-gray-700 mb-1">Suhu (°C) <span class="text-red-500">*</span></label><input type="number" step="0.1" id="suhu" required placeholder="Contoh: 24.5" class="w-full border border-gray-300 rounded-xl px-4 py-2.5"></div>
-                        <div><label class="block text-sm font-medium text-gray-700 mb-1">Petugas <span class="text-red-500">*</span></label><input type="text" id="petugas" required placeholder="Nama petugas" class="w-full border border-gray-300 rounded-xl px-4 py-2.5"></div>
+                        <div><label class="block text-sm font-medium text-gray-700 mb-1">Suhu (°C) <span class="text-red-500">*</span></label><input type="number" step="0.1" id="suhu" required placeholder="Contoh: 24.5" class="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-primary"></div>
+                        <div><label class="block text-sm font-medium text-gray-700 mb-1">Petugas <span class="text-red-500">*</span></label><input type="text" id="petugas" required placeholder="Nama petugas" class="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-primary"></div>
                     </div>
-                    <div><label class="block text-sm font-medium text-gray-700 mb-1">Keterangan</label><textarea id="keterangan" rows="2" placeholder="Catatan tambahan (opsional)" class="w-full border border-gray-300 rounded-xl px-4 py-2.5"></textarea></div>
+                    <div><label class="block text-sm font-medium text-gray-700 mb-1">Keterangan</label><textarea id="keterangan" rows="2" placeholder="Catatan tambahan (opsional)" class="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-primary"></textarea></div>
                     
                     <div class="border-t border-gray-200 pt-4 mt-2">
-                        <label class="block text-md font-semibold text-gray-800 mb-2"><i class="fas fa-camera-retro text-blue-600 mr-2"></i> Dokumentasi Foto Ruangan (watermark otomatis)</label>
+                        <label class="block text-md font-semibold text-gray-800 mb-2"><i class="fas fa-camera-retro text-primary mr-2"></i> Dokumentasi Foto Ruangan (watermark otomatis)</label>
                         <div class="bg-slate-50 rounded-xl p-4 border border-dashed border-gray-300">
                             <div class="flex flex-col items-center gap-3">
                                 <div class="relative w-36 h-36 md:w-40 md:h-40 rounded-xl overflow-hidden bg-gray-200 border-2 border-gray-300 shadow-sm">
                                     <img id="fotoPreview" src="https://placehold.co/400x400?text=Belum+Ada+Foto" class="w-full h-full object-cover">
                                 </div>
                                 <div class="flex flex-wrap gap-3 justify-center">
-                                    <button type="button" id="btnBukaKamera" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm shadow"><i class="fas fa-video mr-1"></i> Buka Kamera</button>
-                                    <button type="button" id="btnCaptureFoto" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl disabled:opacity-50 text-sm shadow" disabled><i class="fas fa-camera mr-1"></i> Ambil + Watermark</button>
+                                    <button type="button" id="btnBukaKamera" class="btn-hijau text-white px-4 py-2 rounded-xl text-sm shadow"><i class="fas fa-video mr-1"></i> Buka Kamera</button>
+                                    <button type="button" id="btnCaptureFoto" class="btn-hijau text-white px-4 py-2 rounded-xl disabled:opacity-50 text-sm shadow" disabled><i class="fas fa-camera mr-1"></i> Ambil + Watermark</button>
                                     <button type="button" id="btnHapusFoto" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-xl text-sm"><i class="fas fa-trash-alt mr-1"></i> Hapus</button>
-                                    <button type="button" id="btnUploadManual" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-xl text-sm"><i class="fas fa-upload mr-1"></i> Upload + Watermark</button>
+                                    <button type="button" id="btnUploadManual" class="bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2 rounded-xl text-sm shadow"><i class="fas fa-upload mr-1"></i> Upload + Watermark</button>
                                 </div>
                             </div>
                             <div id="videoContainer" class="hidden mt-4 rounded-xl overflow-hidden bg-black shadow-md">
@@ -87,7 +134,7 @@
                     </div>
 
                     <div class="flex flex-col sm:flex-row gap-4 pt-2">
-                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl flex-1 transition shadow"><i class="fas fa-save mr-2"></i> Simpan Data Suhu</button>
+                        <button type="submit" class="btn-hijau text-white font-semibold py-3 rounded-xl flex-1 transition shadow"><i class="fas fa-save mr-2"></i> Simpan Data Suhu</button>
                         <button type="button" id="btnResetForm" class="bg-gray-200 hover:bg-gray-300 text-gray-800 py-3 rounded-xl flex-1 transition"><i class="fas fa-undo-alt mr-2"></i> Reset Form</button>
                     </div>
                 </form>
@@ -96,10 +143,10 @@
 
         <!-- Daftar Riwayat + Export -->
         <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
-            <div class="bg-gradient-to-r from-slate-700 to-slate-800 px-5 py-4 flex justify-between items-center flex-wrap gap-3">
+            <div class="card-header px-5 py-4 flex justify-between items-center flex-wrap gap-3">
                 <h2 class="text-lg md:text-xl font-semibold text-white"><i class="fas fa-table-list mr-2"></i> Riwayat Pencatatan</h2>
                 <div class="flex gap-2">
-                    <button id="btnExportHTML" class="bg-green-600 hover:bg-green-700 text-white text-xs md:text-sm px-3 py-1.5 rounded-full shadow"><i class="fas fa-file-export mr-1"></i> Export Tabel + Foto</button>
+                    <button id="btnExportHTML" class="bg-amber-500 hover:bg-amber-600 text-white text-xs md:text-sm px-3 py-1.5 rounded-full shadow"><i class="fas fa-file-export mr-1"></i> Export Tabel + Foto</button>
                     <button id="btnHapusSemua" class="bg-red-600 hover:bg-red-700 text-white text-xs md:text-sm px-3 py-1.5 rounded-full shadow"><i class="fas fa-dumpster-fire mr-1"></i> Hapus Semua</button>
                 </div>
             </div>
@@ -234,7 +281,7 @@
             let html = "";
             dataEntries.forEach(entry => {
                 let fotoHtml = `<div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden shadow-inner">${entry.fotoBase64 && entry.fotoBase64.startsWith("data:image") ? `<img src="${entry.fotoBase64}" class="w-full h-full object-cover">` : `<i class="fas fa-image text-gray-400 text-lg"></i>`}</div>`;
-                const viewBtn = entry.fotoBase64 ? `<button onclick="viewFullFoto(${entry.id})" class="text-blue-500 text-xs ml-1 hover:scale-110 transition"><i class="fas fa-search-plus"></i></button>` : '';
+                const viewBtn = entry.fotoBase64 ? `<button onclick="viewFullFoto(${entry.id})" class="text-primary text-xs ml-1 hover:scale-110 transition"><i class="fas fa-search-plus"></i></button>` : '';
                 let koordinatTeks = "-";
                 if (entry.lat && entry.lng) koordinatTeks = `${entry.lat.toFixed(6)}, ${entry.lng.toFixed(6)}`;
                 else if (entry.lat === null && entry.lng === null) koordinatTeks = "Tidak tersedia";
@@ -352,7 +399,7 @@
                     ctx.closePath();
                     ctx.fill();
                     ctx.globalAlpha = 1;
-                    ctx.strokeStyle = "#eab308";
+                    ctx.strokeStyle = "#f5b042";
                     ctx.lineWidth = 1.8;
                     ctx.stroke();
                     ctx.font = `${smallFontSize}px "Inter", sans-serif`;
@@ -542,7 +589,7 @@
             <style>
                 body { font-family: 'Segoe UI', Arial, sans-serif; margin: 25px; background: #f1f5f9; }
                 .container { max-width: 1300px; margin: auto; background: white; border-radius: 24px; padding: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
-                h2 { color: #0c4a6e; border-left: 6px solid #3b82f6; padding-left: 16px; }
+                h2 { color: #1e6f5c; border-left: 6px solid #1e6f5c; padding-left: 16px; }
                 table { border-collapse: collapse; width: 100%; margin-top: 20px; font-size: 13px; }
                 th, td { border: 1px solid #cbd5e1; padding: 10px 6px; text-align: center; vertical-align: middle; }
                 th { background-color: #e2e8f0; font-weight: 700; }
