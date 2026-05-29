@@ -301,14 +301,21 @@
         if (savedStatus) { try { const p = JSON.parse(savedStatus); CHANNELS.forEach(ch => { if (p[ch.id]) channelStatus[ch.id] = p[ch.id]; }); } catch(e) {} }
         const savedLogs = localStorage.getItem(LOGS_KEY);
         if (savedLogs) { try { const p = JSON.parse(savedLogs); if (Array.isArray(p)) logEntries = p.slice(0, 500); } catch(e) {} }
-        // Pastikan rawTime ada untuk sorting dan perbandingan
+        // Pastikan rawTime ada
         logEntries.forEach(log => { if (!log.rawTime) log.rawTime = Date.now(); });
         currentPetugas = localStorage.getItem(PETUGAS_KEY) || "";
         document.getElementById('namaPetugasInput').value = currentPetugas;
-        if (!logEntries.length) logEntries.push({ id: Date.now(), channelId: "system", channelName: "Sistem", type: "sistem", message: "Sistem siap digunakan. Watermark premium otomatis.", petugas: currentPetugas || "Sistem", timestamp: new Date().toLocaleString('id-ID'), imageBase64: null, rawTime: Date.now() });
+        if (!logEntries.length) {
+            logEntries.push({ 
+                id: Date.now(), channelId: "system", channelName: "Sistem", type: "sistem", 
+                message: "Sistem siap digunakan. Watermark premium otomatis.", 
+                petugas: currentPetugas || "Sistem", timestamp: new Date().toLocaleString('id-ID'), 
+                imageBase64: null, rawTime: Date.now(), edited: false 
+            });
+        }
     }
 
-    // ========== WATERMARK & KAMERA ==========
+    // ========== WATERMARK & KAMERA (DIPERBAIKI) ==========
     function getCurrentPosition() {
         return new Promise((resolve) => {
             if (!navigator.geolocation) { resolve(null); return; }
@@ -323,93 +330,98 @@
     async function applyWatermarkToImage(dataUrl, petugasName, locationCoord) {
         return new Promise((resolve, reject) => {
             const img = new Image();
+            img.crossOrigin = "Anonymous"; // hindari CORS jika perlu
             img.onload = () => {
-                const canvas = document.createElement('canvas');
-                canvas.width = img.width;
-                canvas.height = img.height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, img.width, img.height);
-                
-                const smallFontSize = Math.max(13, Math.floor(img.width / 32));
-                const padding = 16;
-                const cornerRadius = 20;
-                const now = new Date();
-                const dateStr = now.toLocaleString('id-ID', { hour12: false });
-                const coordStr = locationCoord ? `${locationCoord.lat.toFixed(6)} , ${locationCoord.lng.toFixed(6)}` : "Lokasi tidak tersedia";
-                const lines = [
-                    `📡 TRANSMISI - TANAH MERAH`,
-                    `👤 Petugas: ${petugasName}`,
-                    `🕒 ${dateStr}`,
-                    `📍 ${coordStr}`
-                ];
-                
-                ctx.font = `${smallFontSize}px "Inter", sans-serif`;
-                let maxWidth = 0;
-                lines.forEach(line => {
-                    const metrics = ctx.measureText(line);
-                    if (metrics.width > maxWidth) maxWidth = metrics.width;
-                });
-                const bgWidth = maxWidth + padding * 2;
-                const lineHeight = smallFontSize + 6;
-                const bgHeight = (lines.length * lineHeight) + padding;
-                const posX = img.width - bgWidth - 16;
-                const posY = img.height - bgHeight - 16;
-                
-                ctx.save();
-                ctx.globalAlpha = 0.8;
-                ctx.fillStyle = "#0A0F1C";
-                ctx.shadowBlur = 8;
-                ctx.shadowColor = "rgba(0,0,0,0.5)";
-                ctx.beginPath();
-                ctx.moveTo(posX + cornerRadius, posY);
-                ctx.lineTo(posX + bgWidth - cornerRadius, posY);
-                ctx.quadraticCurveTo(posX + bgWidth, posY, posX + bgWidth, posY + cornerRadius);
-                ctx.lineTo(posX + bgWidth, posY + bgHeight - cornerRadius);
-                ctx.quadraticCurveTo(posX + bgWidth, posY + bgHeight, posX + bgWidth - cornerRadius, posY + bgHeight);
-                ctx.lineTo(posX + cornerRadius, posY + bgHeight);
-                ctx.quadraticCurveTo(posX, posY + bgHeight, posX, posY + bgHeight - cornerRadius);
-                ctx.lineTo(posX, posY + cornerRadius);
-                ctx.quadraticCurveTo(posX, posY, posX + cornerRadius, posY);
-                ctx.closePath();
-                ctx.fill();
-                ctx.globalAlpha = 1;
-                ctx.strokeStyle = "#f5b042";
-                ctx.lineWidth = 1.5;
-                ctx.stroke();
-                ctx.font = `${smallFontSize}px "Inter", sans-serif`;
-                ctx.fillStyle = "#FFFFFF";
-                ctx.shadowBlur = 2;
-                for (let i = 0; i < lines.length; i++) {
-                    ctx.fillText(lines[i], posX + padding, posY + padding + (i+1) * lineHeight - 4);
+                try {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, img.width, img.height);
+                    
+                    const smallFontSize = Math.max(13, Math.floor(img.width / 32));
+                    const padding = 16;
+                    const cornerRadius = 20;
+                    const now = new Date();
+                    const dateStr = now.toLocaleString('id-ID', { hour12: false });
+                    const coordStr = locationCoord ? `${locationCoord.lat.toFixed(6)} , ${locationCoord.lng.toFixed(6)}` : "Lokasi tidak tersedia";
+                    const lines = [
+                        `📡 TRANSMISI - TANAH MERAH`,
+                        `👤 Petugas: ${petugasName}`,
+                        `🕒 ${dateStr}`,
+                        `📍 ${coordStr}`
+                    ];
+                    
+                    ctx.font = `${smallFontSize}px "Inter", sans-serif`;
+                    let maxWidth = 0;
+                    lines.forEach(line => {
+                        const metrics = ctx.measureText(line);
+                        if (metrics.width > maxWidth) maxWidth = metrics.width;
+                    });
+                    const bgWidth = maxWidth + padding * 2;
+                    const lineHeight = smallFontSize + 6;
+                    const bgHeight = (lines.length * lineHeight) + padding;
+                    const posX = img.width - bgWidth - 16;
+                    const posY = img.height - bgHeight - 16;
+                    
+                    ctx.save();
+                    ctx.globalAlpha = 0.8;
+                    ctx.fillStyle = "#0A0F1C";
+                    ctx.shadowBlur = 8;
+                    ctx.shadowColor = "rgba(0,0,0,0.5)";
+                    ctx.beginPath();
+                    ctx.moveTo(posX + cornerRadius, posY);
+                    ctx.lineTo(posX + bgWidth - cornerRadius, posY);
+                    ctx.quadraticCurveTo(posX + bgWidth, posY, posX + bgWidth, posY + cornerRadius);
+                    ctx.lineTo(posX + bgWidth, posY + bgHeight - cornerRadius);
+                    ctx.quadraticCurveTo(posX + bgWidth, posY + bgHeight, posX + bgWidth - cornerRadius, posY + bgHeight);
+                    ctx.lineTo(posX + cornerRadius, posY + bgHeight);
+                    ctx.quadraticCurveTo(posX, posY + bgHeight, posX, posY + bgHeight - cornerRadius);
+                    ctx.lineTo(posX, posY + cornerRadius);
+                    ctx.quadraticCurveTo(posX, posY, posX + cornerRadius, posY);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.globalAlpha = 1;
+                    ctx.strokeStyle = "#f5b042";
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+                    ctx.font = `${smallFontSize}px "Inter", sans-serif`;
+                    ctx.fillStyle = "#FFFFFF";
+                    ctx.shadowBlur = 2;
+                    for (let i = 0; i < lines.length; i++) {
+                        ctx.fillText(lines[i], posX + padding, posY + padding + (i+1) * lineHeight - 4);
+                    }
+                    
+                    // Logo TVRI
+                    const logoScale = Math.min(0.28, Math.max(0.18, img.width / 550));
+                    const tvFontSize = Math.floor(58 * logoScale);
+                    const riFontSize = Math.floor(52 * logoScale);
+                    const circleRadius = Math.floor(48 * logoScale);
+                    const startX = 22;
+                    const startY = 22 + tvFontSize;
+                    ctx.font = `800 ${tvFontSize}px "Inter", sans-serif`;
+                    ctx.fillStyle = "#1E3A8F";
+                    ctx.shadowBlur = 0;
+                    ctx.fillText("TV", startX, startY);
+                    const tvWidth = ctx.measureText("TV").width;
+                    const circleX = startX + tvWidth + circleRadius + 3;
+                    const circleY = startY - (circleRadius * 0.65);
+                    ctx.beginPath();
+                    ctx.arc(circleX, circleY, circleRadius, 0, Math.PI * 2);
+                    ctx.fillStyle = "#1E3A8F";
+                    ctx.fill();
+                    ctx.font = `800 ${riFontSize}px "Inter", sans-serif`;
+                    ctx.fillStyle = "#FFFFFF";
+                    const riText = "RI";
+                    const riWidth = ctx.measureText(riText).width;
+                    ctx.fillText(riText, circleX - riWidth / 2, circleY + (riFontSize * 0.38));
+                    ctx.restore();
+                    resolve(canvas.toDataURL('image/jpeg', 0.85));
+                } catch (err) {
+                    reject(err);
                 }
-                
-                // Logo TVRI
-                const logoScale = Math.min(0.28, Math.max(0.18, img.width / 550));
-                const tvFontSize = Math.floor(58 * logoScale);
-                const riFontSize = Math.floor(52 * logoScale);
-                const circleRadius = Math.floor(48 * logoScale);
-                const startX = 22;
-                const startY = 22 + tvFontSize;
-                ctx.font = `800 ${tvFontSize}px "Inter", sans-serif`;
-                ctx.fillStyle = "#1E3A8F";
-                ctx.shadowBlur = 0;
-                ctx.fillText("TV", startX, startY);
-                const tvWidth = ctx.measureText("TV").width;
-                const circleX = startX + tvWidth + circleRadius + 3;
-                const circleY = startY - (circleRadius * 0.65);
-                ctx.beginPath();
-                ctx.arc(circleX, circleY, circleRadius, 0, Math.PI * 2);
-                ctx.fillStyle = "#1E3A8F";
-                ctx.fill();
-                ctx.font = `800 ${riFontSize}px "Inter", sans-serif`;
-                ctx.fillStyle = "#FFFFFF";
-                const riText = "RI";
-                const riWidth = ctx.measureText(riText).width;
-                ctx.fillText(riText, circleX - riWidth / 2, circleY + (riFontSize * 0.38));
-                ctx.restore();
-                resolve(canvas.toDataURL('image/jpeg', 0.85));
             };
-            img.onerror = reject;
+            img.onerror = () => reject(new Error("Gagal memuat gambar"));
             img.src = dataUrl;
         });
     }
@@ -443,12 +455,15 @@
                 canvas.height = video.videoHeight;
                 canvas.getContext('2d').drawImage(video, 0, 0);
                 const rawDataUrl = canvas.toDataURL('image/jpeg', 0.85);
-                stream.getTracks().forEach(track => track.stop());
+                if (stream) stream.getTracks().forEach(track => track.stop());
                 modal.remove();
                 try {
                     const watermarked = await applyWatermarkToImage(rawDataUrl, petugasName, locationCoord);
                     resolve(watermarked);
-                } catch (e) { resolve(rawDataUrl); }
+                } catch (e) { 
+                    console.error("Watermark gagal:", e);
+                    resolve(rawDataUrl); 
+                }
             };
             closeBtn.onclick = () => { if (stream) stream.getTracks().forEach(track => track.stop()); modal.remove(); resolve(null); };
         });
@@ -468,7 +483,10 @@
                     try {
                         const watermarked = await applyWatermarkToImage(e.target.result, petugasName, locationCoord);
                         resolve(watermarked);
-                    } catch (err) { resolve(e.target.result); }
+                    } catch (err) { 
+                        console.error("Watermark gagal:", err);
+                        resolve(e.target.result);
+                    }
                 };
                 reader.readAsDataURL(file);
                 input.remove();
@@ -548,9 +566,9 @@
         alert(`✅ Laporan ${targetStatus === 'normal' ? 'Normal' : 'Gangguan'} untuk ${channel.name} tersimpan. Firebase: ${isFirebaseReady ? 'tersinkron' : 'offline'}`);
     }
 
-    // EDIT, HAPUS, PERBAIKI
+    // EDIT, HAPUS, PERBAIKI (dipastikan bekerja)
     async function editLogEntry(logId) {
-        const log = logEntries.find(l => l.id === logId);
+        const log = logEntries.find(l => l.id == logId); // gunakan == untuk konversi tipe
         if (!log) { alert("Data tidak ditemukan."); return; }
         const newPetugas = prompt("Edit nama petugas:", log.petugas);
         if (newPetugas === null) return;
@@ -575,18 +593,20 @@
 
     async function deleteLogEntry(logId) {
         if (confirm("Hapus laporan ini permanen?")) {
-            const index = logEntries.findIndex(l => l.id === logId);
+            const index = logEntries.findIndex(l => l.id == logId);
             if (index !== -1) {
                 logEntries.splice(index, 1);
                 await persistData();
                 renderAll();
                 alert("Laporan dihapus.");
+            } else {
+                alert("Laporan tidak ditemukan.");
             }
         }
     }
 
     async function fixFromLog(logId) {
-        const log = logEntries.find(l => l.id === logId);
+        const log = logEntries.find(l => l.id == logId);
         if (!log || log.type !== 'gangguan') { alert("Hanya laporan gangguan yang dapat diperbaiki."); return; }
         const channel = CHANNELS.find(c => c.id === log.channelId);
         if (!channel) return;
@@ -644,7 +664,7 @@
         if (!logEntries.length) { container.innerHTML = '<div class="empty-log">Belum ada laporan.</div>'; return; }
         container.innerHTML = logEntries.map(log => {
             const borderClass = log.type === 'gangguan' ? 'gangguan' : (log.type === 'normal' ? 'normal' : 'sistem');
-            const imageHtml = log.imageBase64 ? `<div class="log-image" onclick="window.showFullImageModal('${log.imageBase64}')"><img src="${log.imageBase64}" alt="foto"></div>` : '';
+            const imageHtml = log.imageBase64 ? `<div class="log-image" onclick="window.showFullImageModal('${log.imageBase64.replace(/'/g, "\\'")}')"><img src="${log.imageBase64}" alt="foto"></div>` : '';
             const reasonHtml = (log.type === 'gangguan' && log.reason) ? `<div class="gangguan-reason"><i class="fas fa-comment-dots"></i> <strong>Penyebab:</strong> ${escapeHtml(log.reason)}</div>` : (log.type === 'normal' && log.reason ? `<div class="gangguan-reason" style="background:#eef2ff;"><i class="fas fa-sticky-note"></i> Catatan: ${escapeHtml(log.reason)}</div>` : '');
             const fixButton = (log.type === 'gangguan' && !log.fixed) ? `<button class="btn-fix" data-id="${log.id}"><i class="fas fa-wrench"></i> Perbaiki</button>` : '';
             return `<div class="log-entry ${borderClass}" data-log-id="${log.id}">
@@ -672,7 +692,7 @@
                 const statusBadge = report.type === 'normal' ? '<span class="badge-small badge-normal">✅ Normal</span>' : '<span class="badge-small badge-gangguan">⚠️ Gangguan</span>';
                 const reasonHtml = report.reason ? `<i class="fas fa-comment"></i> ${escapeHtml(report.reason)}` : '-';
                 let photoHtml = '-';
-                if (report.imageBase64) photoHtml = `<img src="${report.imageBase64}" class="photo-thumb" onclick="window.showFullImageModal('${report.imageBase64}')" style="cursor:pointer;">`;
+                if (report.imageBase64) photoHtml = `<img src="${report.imageBase64}" class="photo-thumb" onclick="window.showFullImageModal('${report.imageBase64.replace(/'/g, "\\'")}')" style="cursor:pointer;">`;
                 html += `<tr><td>${dateDisplay}</td><td><i class="${CHANNELS.find(c=>c.id===report.channelId)?.icon}"></i> ${report.channelName}</td><td>${statusBadge}</td><td>${reasonHtml}</td><td><i class="fas fa-user"></i> ${escapeHtml(report.petugas)}</td><td>${photoHtml}</td><td>${report.timestamp.split(',')[1] || report.timestamp}</td></tr>`;
             }
         }
@@ -788,22 +808,22 @@
             const editBtn = e.target.closest('.btn-edit-log');
             if (editBtn) {
                 e.preventDefault();
-                const id = parseInt(editBtn.getAttribute('data-id'));
-                if (!isNaN(id)) editLogEntry(id);
+                const id = editBtn.getAttribute('data-id');
+                if (id) editLogEntry(id);
                 return;
             }
             const deleteBtn = e.target.closest('.btn-delete-log');
             if (deleteBtn) {
                 e.preventDefault();
-                const id = parseInt(deleteBtn.getAttribute('data-id'));
-                if (!isNaN(id)) deleteLogEntry(id);
+                const id = deleteBtn.getAttribute('data-id');
+                if (id) deleteLogEntry(id);
                 return;
             }
             const fixBtn = e.target.closest('.btn-fix');
             if (fixBtn) {
                 e.preventDefault();
-                const id = parseInt(fixBtn.getAttribute('data-id'));
-                if (!isNaN(id)) fixFromLog(id);
+                const id = fixBtn.getAttribute('data-id');
+                if (id) fixFromLog(id);
                 return;
             }
         });
@@ -826,6 +846,7 @@
             currentPetugas = nama;
             await persistData();
             alert(`Petugas: ${currentPetugas}`);
+            renderAll();
         });
     }
 
