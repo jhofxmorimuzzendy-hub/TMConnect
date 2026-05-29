@@ -770,7 +770,7 @@
     }
   };
 
-  // ======================== EXPORT HTML RAPI ========================
+  // ======================== EXPORT HTML YANG LEBIH RAPI ========================
   function generateFullReportHTML() {
     const entries = loadEntriesFromStorage().map(e => {
       if (!e.photoBase64 && e.photos && e.photos.length) e.photoBase64 = e.photos[0];
@@ -784,39 +784,42 @@
     let plnRows = "";
     let upsRows = "";
     for (let e of entries) {
-      const fotoThumb = e.photoBase64 ? `<img src="${e.photoBase64}" style="width:50px; height:50px; object-fit:cover; border-radius:8px;" onclick="window.open(this.src)">` : "-";
-      plnRows += `<tr>
-        <td>${escapeHtml(e.no)}</td>
-        <td>${escapeHtml(e.tanggal)}</td>
-        <td>${escapeHtml(e.petugas)}</td>
-        <td>${escapeHtml(e.keterangan || '')}</td>
-        <td>${fotoThumb}</td>
-        <td>${formatVal(e.pln?.v?.rs)}</td>
-        <td>${formatVal(e.pln?.v?.st)}</td>
-        <td>${formatVal(e.pln?.v?.tr)}</td>
-        <td>${formatVal(e.pln?.v?.rn)}</td>
-        <td>${formatVal(e.pln?.v?.sn)}</td>
-        <td>${formatVal(e.pln?.v?.tn)}</td>
-        <td>${formatVal(e.pln?.i?.r)}</td>
-        <td>${formatVal(e.pln?.i?.s)}</td>
-        <td>${formatVal(e.pln?.i?.t)}</td>
+      const fotoThumb = e.photoBase64 
+        ? `<img src="${e.photoBase64}" style="width:60px; height:60px; object-fit:cover; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.2);" onclick="window.open(this.src)">` 
+        : "<span style='color:#999;'>-</span>";
+      
+      plnRows += `<tr style="border-bottom:1px solid #e2e8f0;">
+        <td style="padding:10px 6px;">${escapeHtml(e.no)}</td>
+        <td style="padding:10px 6px;">${escapeHtml(e.tanggal)}</td>
+        <td style="padding:10px 6px;">${escapeHtml(e.petugas)}</td>
+        <td style="padding:10px 6px;">${escapeHtml(e.keterangan || '-')}</td>
+        <td style="padding:10px 6px; text-align:center;">${fotoThumb}</td>
+        <td style="padding:10px 6px;">${formatVal(e.pln?.v?.rs)}</td>
+        <td style="padding:10px 6px;">${formatVal(e.pln?.v?.st)}</td>
+        <td style="padding:10px 6px;">${formatVal(e.pln?.v?.tr)}</td>
+        <td style="padding:10px 6px;">${formatVal(e.pln?.v?.rn)}</td>
+        <td style="padding:10px 6px;">${formatVal(e.pln?.v?.sn)}</td>
+        <td style="padding:10px 6px;">${formatVal(e.pln?.v?.tn)}</td>
+        <td style="padding:10px 6px;">${formatVal(e.pln?.i?.r)}</td>
+        <td style="padding:10px 6px;">${formatVal(e.pln?.i?.s)}</td>
+        <td style="padding:10px 6px;">${formatVal(e.pln?.i?.t)}</td>
       </tr>`;
       
-      upsRows += `<tr>
-        <td>${escapeHtml(e.no)}</td>
-        <td>${escapeHtml(e.tanggal)}</td>
-        <td>${escapeHtml(e.petugas)}</td>
-        <td>${escapeHtml(e.keterangan || '')}</td>
-        <td>${fotoThumb}</td>
-        <td>${formatVal(e.ups?.v?.rs)}</td>
-        <td>${formatVal(e.ups?.v?.st)}</td>
-        <td>${formatVal(e.ups?.v?.tr)}</td>
-        <td>${formatVal(e.ups?.v?.rn)}</td>
-        <td>${formatVal(e.ups?.v?.sn)}</td>
-        <td>${formatVal(e.ups?.v?.tn)}</td>
-        <td>${formatVal(e.ups?.i?.r)}</td>
-        <td>${formatVal(e.ups?.i?.s)}</td>
-        <td>${formatVal(e.ups?.i?.t)}</td>
+      upsRows += `<tr style="border-bottom:1px solid #e2e8f0;">
+        <td style="padding:10px 6px;">${escapeHtml(e.no)}</td>
+        <td style="padding:10px 6px;">${escapeHtml(e.tanggal)}</td>
+        <td style="padding:10px 6px;">${escapeHtml(e.petugas)}</td>
+        <td style="padding:10px 6px;">${escapeHtml(e.keterangan || '-')}</td>
+        <td style="padding:10px 6px; text-align:center;">${fotoThumb}</td>
+        <td style="padding:10px 6px;">${formatVal(e.ups?.v?.rs)}</td>
+        <td style="padding:10px 6px;">${formatVal(e.ups?.v?.st)}</td>
+        <td style="padding:10px 6px;">${formatVal(e.ups?.v?.tr)}</td>
+        <td style="padding:10px 6px;">${formatVal(e.ups?.v?.rn)}</td>
+        <td style="padding:10px 6px;">${formatVal(e.ups?.v?.sn)}</td>
+        <td style="padding:10px 6px;">${formatVal(e.ups?.v?.tn)}</td>
+        <td style="padding:10px 6px;">${formatVal(e.ups?.i?.r)}</td>
+        <td style="padding:10px 6px;">${formatVal(e.ups?.i?.s)}</td>
+        <td style="padding:10px 6px;">${formatVal(e.ups?.i?.t)}</td>
       </tr>`;
     }
     
@@ -826,47 +829,127 @@
       <meta charset="UTF-8">
       <title>Laporan Monitoring PLN & UPS - TVRI Tanah Merah</title>
       <style>
-        body { font-family: 'Inter', sans-serif; background: #f0f4f8; margin: 20px; }
-        .container { max-width: 1400px; margin: auto; background: white; border-radius: 24px; padding: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
-        h1 { color: #1e6f5c; border-left: 5px solid #1e6f5c; padding-left: 16px; margin-bottom: 24px; }
-        h2 { background: #eef2f8; padding: 8px 16px; border-radius: 40px; font-size: 1.2rem; color: #0f3b2c; margin-top: 30px; }
-        table { border-collapse: collapse; width: 100%; margin-bottom: 30px; font-size: 13px; }
-        th, td { border: 1px solid #cbd5e1; padding: 8px 6px; text-align: center; vertical-align: middle; }
-        th { background: #1e6f5c; color: white; font-weight: 600; }
-        img { max-width: 55px; border-radius: 8px; cursor: pointer; }
-        .footer { margin-top: 30px; text-align: center; font-size: 11px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 16px; }
-        @media (max-width: 768px) { th, td { font-size: 10px; padding: 4px; } }
+        * {
+          font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        }
+        body {
+          background: #f1f5f9;
+          margin: 20px;
+          padding: 0;
+        }
+        .report-container {
+          max-width: 1400px;
+          margin: 0 auto;
+          background: white;
+          border-radius: 32px;
+          padding: 24px 28px;
+          box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+        }
+        h1 {
+          font-size: 1.8rem;
+          color: #1e6f5c;
+          border-left: 6px solid #1e6f5c;
+          padding-left: 20px;
+          margin-bottom: 20px;
+        }
+        .subhead {
+          color: #475569;
+          margin-bottom: 32px;
+          font-size: 0.9rem;
+          border-bottom: 1px dashed #cbd5e1;
+          padding-bottom: 10px;
+        }
+        .section-title {
+          font-size: 1.4rem;
+          font-weight: 700;
+          background: #eef2ff;
+          display: inline-block;
+          padding: 6px 20px;
+          border-radius: 40px;
+          margin: 28px 0 16px 0;
+          color: #0f3b2c;
+        }
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          background: white;
+          border-radius: 20px;
+          overflow: hidden;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+          margin-bottom: 32px;
+          font-size: 0.75rem;
+        }
+        th {
+          background: #1e6f5c;
+          color: white;
+          font-weight: 600;
+          padding: 12px 6px;
+          font-size: 0.8rem;
+          text-align: center;
+          border: none;
+        }
+        td {
+          border-bottom: 1px solid #e2e8f0;
+          text-align: center;
+          vertical-align: middle;
+        }
+        tr:hover {
+          background: #f8fafc;
+        }
+        .footer {
+          margin-top: 30px;
+          text-align: center;
+          font-size: 0.7rem;
+          color: #5b7c8c;
+          border-top: 1px solid #e2e8f0;
+          padding-top: 18px;
+        }
+        @media (max-width: 800px) {
+          .report-container { padding: 16px; }
+          th, td { font-size: 0.65rem; padding: 6px 3px; }
+          .section-title { font-size: 1.1rem; }
+        }
       </style>
     </head>
     <body>
-    <div class="container">
+    <div class="report-container">
       <h1>📡 TVRI - TX Tanah Merah</h1>
-      <p><strong>Laporan Monitoring PLN & UPS</strong> | Tanggal export: ${new Date().toLocaleString('id-ID')}</p>
+      <div class="subhead">
+        <strong>Laporan Monitoring PLN & UPS</strong> &nbsp;|&nbsp;
+        Tanggal export: ${new Date().toLocaleString('id-ID')} &nbsp;|&nbsp;
+        Total data: ${entries.length} pencatatan
+      </div>
       
-      <h2>🏭 Data Monitoring Sumber PLN</h2>
-      <table>
-        <thead>
-          <tr><th>No</th><th>Tanggal</th><th>Petugas</th><th>Keterangan</th><th>Foto</th>
-            <th>V_RS</th><th>V_ST</th><th>V_TR</th><th>V_RN</th><th>V_SN</th><th>V_TN</th>
-            <th>I_R</th><th>I_S</th><th>I_T</th>
-          </tr>
-        </thead>
-        <tbody>${plnRows}</tbody>
-      20\l
+      <div class="section-title">🏭 Data Monitoring Sumber PLN</div>
+      <div style="overflow-x: auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>No</th><th>Tanggal</th><th>Petugas</th><th>Keterangan</th><th>Foto</th>
+              <th>V_RS</th><th>V_ST</th><th>V_TR</th><th>V_RN</th><th>V_SN</th><th>V_TN</th>
+              <th>I_R</th><th>I_S</th><th>I_T</th>
+            </tr>
+          </thead>
+          <tbody>${plnRows}</tbody>
+        </table>
+      </div>
       
-      <h2>🔋 Data Monitoring Sumber UPS</h2>
-      <table>
-        <thead>
-          <tr><th>No</th><th>Tanggal</th><th>Petugas</th><th>Keterangan</th><th>Foto</th>
-            <th>V_RS</th><th>V_ST</th><th>V_TR</th><th>V_RN</th><th>V_SN</th><th>V_TN</th>
-            <th>I_R</th><th>I_S</th><th>I_T</th>
-          </tr>
-        </thead>
-        <tbody>${upsRows}</tbody>
-      划
+      <div class="section-title">🔋 Data Monitoring Sumber UPS</div>
+      <div style="overflow-x: auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>No</th><th>Tanggal</th><th>Petugas</th><th>Keterangan</th><th>Foto</th>
+              <th>V_RS</th><th>V_ST</th><th>V_TR</th><th>V_RN</th><th>V_SN</th><th>V_TN</th>
+              <th>I_R</th><th>I_S</th><th>I_T</th>
+            </tr>
+          </thead>
+          <tbody>${upsRows}</tbody>
+        </table>
+      </div>
       
       <div class="footer">
-        © TVRI - TX Tanah Merah | Watermark otomatis pada setiap foto | Data tersimpan di Firebase
+        © TVRI - TX Tanah Merah | Watermark otomatis pada setiap foto bukti | Data tersimpan di Firebase & localStorage
       </div>
     </div>
     </body>
