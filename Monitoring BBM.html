@@ -17,7 +17,6 @@
         tailwind.config = { theme: { extend: { colors: { primary: '#1e6f5c', accent: '#0e5a48', secondary: '#f5b042' } } } }
     </script>
     <style>
-        /* Global responsif & sentuhan tambahan */
         .loading-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 999; backdrop-filter: blur(2px); font-family: 'Inter', sans-serif; }
         .table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 0.5rem; }
         @media (max-width: 640px) {
@@ -47,7 +46,8 @@
         <!-- Header Responsif -->
         <div class="text-center mb-6 md:mb-8">
             <div class="inline-flex items-center justify-center bg-gradient-to-r from-primary to-accent p-2 md:p-3 rounded-full shadow-md">
-                <i class="fas fa-diesel text-white text-xl md:text-2xl"></i>
+                <!-- Ikon diperbaiki: fa-gas-pump -->
+                <i class="fas fa-gas-pump text-white text-xl md:text-2xl"></i>
             </div>
             <h1 class="text-xl md:text-4xl font-extrabold text-slate-800 mt-2 md:mt-3">
                 Pencatatan Penggunaan Genset
@@ -206,7 +206,7 @@
             }
         }
 
-        // ==================== DATA & STORAGE (modifikasi) ====================
+        // ==================== DATA & STORAGE ====================
         let dataEntries = [];
         async function saveToLocalAndSync() {
             localStorage.setItem("gensetUsageEntries", JSON.stringify(dataEntries));
@@ -269,7 +269,7 @@
             } else alert("Foto tidak tersedia");
         };
 
-        // ========== GEOLOKASI & WATERMARK (dengan warna hijau) ==========
+        // ========== GEOLOKASI & WATERMARK ==========
         function getCurrentPosition() { 
             return new Promise((resolve)=>{ 
                 if(!navigator.geolocation) resolve(null); 
@@ -475,7 +475,7 @@
         document.getElementById('waktuOff').addEventListener('change', hitungDurasi);
         document.getElementById('tanggal').addEventListener('change', hitungDurasi);
         
-        // ========== FORM SUBMIT (dengan Firebase) ==========
+        // ========== FORM SUBMIT ==========
         const form=document.getElementById('formGenset'), tanggalInput=document.getElementById('tanggal'), waktuOnInput=document.getElementById('waktuOn'), waktuOffInput=document.getElementById('waktuOff');
         const totalLiterInput=document.getElementById('totalLiter'), petugasInput=document.getElementById('petugas'), keteranganInput=document.getElementById('keterangan'), resetBtn=document.getElementById('btnResetForm');
         tanggalInput.value = new Date().toISOString().split('T')[0];
