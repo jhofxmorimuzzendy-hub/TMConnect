@@ -4,8 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <title>Portal Transmisi | Manajemen Shift + Modul + Firebase</title>
-    <!-- Favicon menggunakan logo Portal TM -->
-    <link rel="icon" type="image/png" href="Logo%20PortalTM-noBg.png">
+    
+    <!-- FAVICON: Background bulat hijau gradient solid, teks PT besar, resolusi tinggi untuk tampilan lebih besar -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%231e6f5c'/%3E%3Cstop offset='100%25' stop-color='%230e5a48'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='32' cy='32' r='30' fill='url(%23grad)' stroke='%23f5b042' stroke-width='1.5'/%3E%3Ctext x='32' y='44' font-size='38' text-anchor='middle' fill='white' font-weight='900' font-family='Segoe UI, Roboto, sans-serif'%3EPT%3C/text%3E%3C/svg%3E" sizes="any">
+    <!-- Apple Touch Icon (ukuran lebih besar untuk perangkat iOS, background bulat hijau) -->
+    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Cdefs%3E%3ClinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%231e6f5c'/%3E%3Cstop offset='100%25' stop-color='%230e5a48'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='90' cy='90' r='86' fill='url(%23grad)' stroke='%23f5b042' stroke-width='3'/%3E%3Ctext x='90' y='124' font-size='108' text-anchor='middle' fill='white' font-weight='900' font-family='Segoe UI, Roboto, sans-serif'%3EPT%3C/text%3E%3C/svg%3E">
+    
+    <!-- Fallback PNG ico untuk kompatibilitas maksimal (opsional, tapi lebih aman) -->
+    <link rel="icon" type="image/png" sizes="64x64" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAInSURBVHhe7ZPfS1RhFIdfJF0E3UT9MAKJEDG69l+x+y6CiCCCIOiirgqCIAiCbkK6CoKgmy66CCK6KQhJoZsQwZ+KQrqQoIiCiqTV6ZuzzTgzs+93zqhdHzhwmHnnmffs8+4554w0Go0oiqIoSfjrCLyGd/QD+oGmPwB/0S/wU/gDnMM/2s6F/Di+B98V/Bh+wID3HI7h47hNg+dwBp/DuxhUGC/gXYwwniU+NoZ/gT+CX8D3YB6Bz+EdeMnDn8V/Dj+Lz2KY4lP4N3Dja/gB/M/wLvwIvhS/lLqD3+AL8I/wfXgK3wU3/hf8B/i9+Pn0F7j+AXwYvwQ/ik+ms+Lju/Ae/Bb8I/yz1B38Bp/Dv4u/kp7Bt6VucFb8DH4BLxIPw3/gB/A9+Cn4K/wVeiTzgW/BJ/BFvAS/AM+RwRu/gLfuwe/h4/iL8PeQZ/C38M/wt/BHcDVo+L3wBn4fPv2GZ/Aj+Dn4D/iF9PpU/UrkK/wheBd+B/6OLmvy+b/WF+CD+D/w9/Af4GpY12/wD/gHue+HS+BR/Qb/hJ+X+wA65Tj7id0EP/J/bO9pnzyI47gPxzH8kQHrDy9gH2uP/WTH8Tf41fBJfB/+RidZjx/HuyH8Kf5SvBdX8Hn8H3p4/BBc+3j+FT6KXwOXw89G3MCH5HlCB6MoiqIoKnP+A90Cj2cWpZR5AAAAAElFTkSuQmCC">
+    
     <style>
         * {
             margin: 0;
@@ -43,11 +50,10 @@
         .header-left {
             display: flex;
             align-items: center;
-            gap: 8px; /* <--- DIPERKECIL: dari 16px menjadi 8px (logo & teks semakin dekat) */
+            gap: 8px;
             flex-wrap: wrap;
         }
 
-        /* Logo diperbesar secara signifikan */
         .header-logo {
             height: 110px;
             width: auto;
@@ -67,7 +73,7 @@
             font-weight: 700;
             letter-spacing: 0.5px;
             color: white;
-            margin: 0; /* Hilangkan margin default agar lebih rapat */
+            margin: 0;
         }
 
         .sync-status {
@@ -341,21 +347,12 @@
             font-size: 0.8rem;
         }
 
-        /* Perbaikan ukuran logo untuk HP (lebih besar & tetap dekat dengan teks) */
         @media (max-width: 640px) {
             body { padding: 8px 8px; }
             .header { padding: 14px 16px; }
-            .header-left { 
-                gap: 6px; /* <--- semakin dekat di mobile */
-            }
-            .header-logo { 
-                height: 90px; 
-                max-width: 250px; 
-            }
-            .header h1 { 
-                font-size: 1.2rem; 
-                white-space: normal; 
-            }
+            .header-left { gap: 6px; }
+            .header-logo { height: 90px; max-width: 250px; }
+            .header h1 { font-size: 1.2rem; white-space: normal; }
             .month-picker { padding: 5px 12px; gap: 8px; }
             .shift-today-card { margin: 12px 14px 0 14px; padding: 12px 16px; }
             .shift-item { font-size: 0.75rem; padding: 6px 12px; }
@@ -375,14 +372,9 @@
             .shift-detail { flex-direction: column; gap: 8px; }
             .month-picker select { font-size: 0.75rem; padding: 4px 8px; }
             .badge-status { font-size: 0.65rem; }
-            .header-logo { 
-                height: 80px; 
-                max-width: 210px; 
-            }
+            .header-logo { height: 80px; max-width: 210px; }
             .header h1 { font-size: 1.1rem; }
-            .header-left { 
-                gap: 5px; /* semakin dekat pada layar sangat kecil */
-            }
+            .header-left { gap: 5px; }
         }
 
         button, .module-card, select { touch-action: manipulation; }
@@ -441,18 +433,15 @@
         const statusEl = document.getElementById('firebaseStatus');
         if (statusEl) {
             if (connected) {
-                statusEl.innerHTML = `<i class="fas fa-check-circle text-green-600"></i> ${message}`;
-                statusEl.classList.remove('bg-red-100', 'text-red-700');
-                statusEl.classList.add('bg-green-100', 'text-green-700');
+                statusEl.innerHTML = `<i class="fas fa-check-circle"></i> ${message}`;
+                statusEl.style.background = "rgba(0,0,0,0.2)";
             } else {
-                statusEl.innerHTML = `<i class="fas fa-exclamation-triangle text-amber-600"></i> ${message}`;
-                statusEl.classList.remove('bg-green-100', 'text-green-700');
-                statusEl.classList.add('bg-red-100', 'text-red-700');
+                statusEl.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${message}`;
+                statusEl.style.background = "rgba(220,50,50,0.5)";
             }
         }
     }
 
-    // Sinkronisasi data shift untuk periode tertentu ke Firebase
     async function syncShiftToFirebase(year, month, scheduleObj) {
         if (!isFirebaseReady || !window.db) return false;
         try {
@@ -467,7 +456,6 @@
         }
     }
 
-    // Memuat data shift dari Firebase untuk periode tertentu
     async function loadShiftFromFirebase(year, month) {
         if (!window.db) return null;
         try {
@@ -486,7 +474,6 @@
         }
     }
 
-    // ========== GLOBAL STATE & HELPER ==========
     let selectedYear = new Date().getFullYear();
     let selectedMonth = new Date().getMonth() + 1;
 
@@ -497,7 +484,6 @@
             localStorage.removeItem(test);
             return true;
         } catch (e) {
-            console.warn("localStorage tidak tersedia atau penuh:", e);
             return false;
         }
     }
@@ -521,28 +507,22 @@
         return days[date.getDay()];
     }
 
-    // Fungsi async untuk mengambil jadwal (prioritas Firebase, fallback localStorage)
     async function getCurrentScheduleAsync() {
         if (!storageAvailable) return null;
-        // Coba dari Firebase dulu
         const fbData = await loadShiftFromFirebase(selectedYear, selectedMonth);
         if (fbData && Object.keys(fbData).length > 0) {
-            // Simpan ke localStorage sebagai cache
             localStorage.setItem(getStorageKey(), JSON.stringify(fbData));
             return fbData;
         }
-        // Fallback ke localStorage
         try {
             const raw = localStorage.getItem(getStorageKey());
             if (!raw) return null;
             return JSON.parse(raw);
         } catch (e) {
-            console.error("Gagal baca localStorage:", e);
             return null;
         }
     }
 
-    // Fungsi sinkron untuk keperluan render cepat (pakai cache lokal dulu)
     function getCurrentScheduleSync() {
         if (!storageAvailable) return null;
         try {
@@ -554,10 +534,9 @@
         }
     }
 
-    // Simpan ke localStorage dan Firebase
     async function saveScheduleToLocalAndFirebase(scheduleObj) {
         if (!storageAvailable) {
-            alert("Penyimpanan lokal tidak tersedia. Data tidak dapat disimpan.");
+            alert("Penyimpanan lokal tidak tersedia.");
             return false;
         }
         try {
@@ -568,8 +547,8 @@
             refreshShiftTodayDisplay();
             return true;
         } catch (e) {
-            console.error("Gagal menyimpan:", e);
-            alert("Gagal menyimpan data. Mungkin ruang penyimpanan penuh.");
+            console.error(e);
+            alert("Gagal menyimpan data.");
             return false;
         }
     }
@@ -640,8 +619,7 @@
             </div>
             <div class="shift-table-container">
                 <table class="shift-table">
-                    <thead><tr><th>Tanggal</th><th>Hari</th><th>Shift 1 (00-08)</th><th>Shift 2 (08-16)</th><th>Shift 3 (16-00)</th></tr>
-                    </thead>
+                    <thead><tr><th>Tanggal</th><th>Hari</th><th>Shift 1 (00-08)</th><th>Shift 2 (08-16)</th><th>Shift 3 (16-00)</th></tr></thead>
                     <tbody>
         `;
         for (let d = 1; d <= daysCount; d++) {
@@ -658,15 +636,7 @@
                 </tr>
             `;
         }
-        html += `
-                    </tbody>
-                </table>
-            </div>
-            <div style="display: flex; gap: 16px; margin-top: 20px; flex-wrap: wrap;">
-                <button id="btnUpdateSchedule" class="btn-save"><i class="fas fa-save"></i> 💾 Simpan Perubahan Jadwal</button>
-                <button id="btnCancelManage" class="btn-outline"><i class="fas fa-arrow-left"></i> Batal & Tutup</button>
-            </div>
-        `;
+        html += `</tbody></table></div><div style="display: flex; gap: 16px; margin-top: 20px;"><button id="btnUpdateSchedule" class="btn-save"><i class="fas fa-save"></i> 💾 Simpan Perubahan Jadwal</button><button id="btnCancelManage" class="btn-outline"><i class="fas fa-arrow-left"></i> Batal & Tutup</button></div>`;
         containerElement.innerHTML = html;
         
         const updateBtn = document.getElementById('btnUpdateSchedule');
@@ -690,18 +660,14 @@
                     }
                 }
                 if (hasEmpty) {
-                    if (!confirm("⚠️ Ada shift yang kosong pada beberapa tanggal. Data tetap bisa disimpan, namun shift kosong akan menampilkan '-' di menu utama. Lanjutkan?")) {
-                        return;
-                    }
+                    if (!confirm("⚠️ Ada shift yang kosong pada beberapa tanggal. Data tetap bisa disimpan, namun shift kosong akan menampilkan '-' di menu utama. Lanjutkan?")) return;
                 }
                 const success = await saveScheduleToLocalAndFirebase(newData);
                 if (success) {
                     alert("✅ Jadwal shift berhasil diperbarui dan tersinkron ke Firebase!");
                     await refreshShiftTodayDisplay();
                     closeManagePanel();
-                } else {
-                    alert("❌ Gagal menyimpan jadwal.");
-                }
+                } else alert("❌ Gagal menyimpan jadwal.");
             });
         }
         const cancelBtn = document.getElementById('btnCancelManage');
@@ -719,7 +685,6 @@
         }
     }
     
-    // ========== DAFTAR MODUL ==========
     const modulesList = [
         { name: "Monitoring Suhu", icon: "fas fa-temperature-high", file: "Monitoring Suhu.html", desc: "Suhu ruangan & watermark GPS" },
         { name: "Monitoring Pemancar", icon: "fas fa-broadcast-tower", file: "Monitoring Pemancar.html", desc: "Catat downtime ON/OFF" },
@@ -796,14 +761,12 @@
         await refreshShiftTodayDisplay();
         const statusBadge = document.getElementById('statusBadge');
         if (statusBadge) statusBadge.innerText = `📅 ${selectedYear}-${String(selectedMonth).padStart(2, '0')}`;
-        // Jika panel terbuka, reload isinya
         const dynamicDiv = document.getElementById('dynamicContent');
         if (dynamicDiv && dynamicDiv.style.display === 'block') {
             await renderManageShiftPanel(dynamicDiv);
         }
     }
     
-    // ========== FIREBASE READY & INIT ==========
     function waitForFirebaseAndLoad() {
         if (window.db) {
             isFirebaseReady = true;
@@ -821,9 +784,7 @@
         waitForFirebaseAndLoad();
         if (!storageAvailable) {
             const shiftContainer = document.getElementById('shiftDetailContainer');
-            if (shiftContainer) {
-                shiftContainer.innerHTML = `<div class="warning-message"><i class="fas fa-database"></i> ⚠️ Penyimpanan lokal tidak tersedia. Data shift tidak akan tersimpan. Gunakan browser modern.</div>`;
-            }
+            if (shiftContainer) shiftContainer.innerHTML = `<div class="warning-message"><i class="fas fa-database"></i> ⚠️ Penyimpanan lokal tidak tersedia. Data shift tidak akan tersimpan.</div>`;
         }
     });
 </script>
