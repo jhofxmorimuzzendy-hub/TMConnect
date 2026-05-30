@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <title>Portal Transmisi | Manajemen Shift + Modul + Firebase</title>
-    <link rel="icon" type="image/png" href="Logo20%PortalTM-noBg20%favicon.png">
+    <!-- Perbaikan favicon: menggunakan nama file yang benar -->
+    <link rel="icon" type="image/png" href="favicon%20PortalTM-noBg.png">
     <style>
         * {
             margin: 0;
@@ -381,6 +382,7 @@
 <div class="app-container" id="appRoot">
     <div class="header">
         <div class="header-left">
+            <!-- Perbaikan logo: nama file dengan spasi di-encode %20 -->
             <img src="Logo%20PortalTM-noBg.png" alt="Logo Portal Transmisi" class="header-logo" onerror="this.style.display='none'">
             <h1>Portal Transmisi
                 <span id="firebaseStatus" class="sync-status"><i class="fas fa-cloud-upload-alt"></i> Menghubungkan...</span>
@@ -628,7 +630,7 @@
                 </tr>
             `;
         }
-        html += `</tbody></table></div><div style="display: flex; gap: 16px; margin-top: 20px;"><button id="btnUpdateSchedule" class="btn-save"><i class="fas fa-save"></i> 💾 Simpan Perubahan Jadwal</button><button id="btnCancelManage" class="btn-outline"><i class="fas fa-arrow-left"></i> Batal & Tutup</button></div>`;
+        html += `</tbody>}</div><div style="display: flex; gap: 16px; margin-top: 20px;"><button id="btnUpdateSchedule" class="btn-save"><i class="fas fa-save"></i> 💾 Simpan Perubahan Jadwal</button><button id="btnCancelManage" class="btn-outline"><i class="fas fa-arrow-left"></i> Batal & Tutup</button></div>`;
         containerElement.innerHTML = html;
         
         const updateBtn = document.getElementById('btnUpdateSchedule');
