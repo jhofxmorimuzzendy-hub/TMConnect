@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Pencatatan Suhu | Transmisi Tanah Merah Ch44 (658) + Firebase | Kamera Timestamp</title>
-    <link rel="icon" type="image/png" href="Logo%20PortalTM-noBg.png">
+    <title>Pencatatan Suhu | Transmisi Tanah Merah Ch44 (658) + Firebase</title>
+    <!-- Perbaikan favicon: menggunakan nama file yang benar -->
+    <link rel="icon" type="image/png" href="favicon%20PortalTM-noBg.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;500;600;700;800&display=swap" rel="stylesheet">
@@ -20,9 +21,9 @@
             theme: {
                 extend: {
                     colors: {
-                        primary: '#1e6f5c',
+                        primary: '#1e6f5c',    // hijau tua utama
                         primaryDark: '#0e5a48',
-                        secondary: '#f5b042',
+                        secondary: '#f5b042',   // aksen kuning/oranye
                         accent: '#2c8c74'
                     }
                 }
@@ -47,6 +48,7 @@
         .modal-img { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 2000; cursor: pointer; }
         .modal-img img { max-width: 90%; max-height: 90%; border-radius: 16px; }
         .sync-status { font-size: 0.7rem; padding: 2px 8px; border-radius: 20px; display: inline-block; }
+        /* Custom hijau theme untuk tombol dan hover */
         .btn-hijau {
             background-color: #1e6f5c;
             transition: all 0.2s ease;
@@ -71,11 +73,6 @@
         }
         .card-header {
             background: linear-gradient(135deg, #1e6f5c 0%, #0e5a48 100%);
-        }
-        .info-tip {
-            background: #eef2ff;
-            border-left: 4px solid #1e6f5c;
-            font-size: 0.75rem;
         }
     </style>
 </head>
@@ -112,30 +109,29 @@
                     </div>
                     <div><label class="block text-sm font-medium text-gray-700 mb-1">Keterangan</label><textarea id="keterangan" rows="2" placeholder="Catatan tambahan (opsional)" class="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-primary"></textarea></div>
                     
-                    <!-- Bagian Foto dengan integrasi kamera timestamp langsung -->
                     <div class="border-t border-gray-200 pt-4 mt-2">
-                        <label class="block text-md font-semibold text-gray-800 mb-2"><i class="fas fa-camera-retro text-primary mr-2"></i> Dokumentasi Foto + Watermark Premium</label>
+                        <label class="block text-md font-semibold text-gray-800 mb-2"><i class="fas fa-camera-retro text-primary mr-2"></i> Dokumentasi Foto Ruangan (watermark otomatis)</label>
                         <div class="bg-slate-50 rounded-xl p-4 border border-dashed border-gray-300">
                             <div class="flex flex-col items-center gap-3">
                                 <div class="relative w-36 h-36 md:w-40 md:h-40 rounded-xl overflow-hidden bg-gray-200 border-2 border-gray-300 shadow-sm">
                                     <img id="fotoPreview" src="https://placehold.co/400x400?text=Belum+Ada+Foto" class="w-full h-full object-cover">
                                 </div>
                                 <div class="flex flex-wrap gap-3 justify-center">
-                                    <!-- Tombol Buka Kamera: akan memicu kamera default / aplikasi timestamp, lalu langsung proses watermark dan auto input -->
-                                    <button type="button" id="btnBukaKameraTimestamp" class="btn-hijau text-white px-5 py-2 rounded-xl text-sm shadow-lg"><i class="fas fa-camera mr-2"></i> Buka Kamera (Timestamp Langsung)</button>
-                                    <button type="button" id="btnUploadManual" class="bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2 rounded-xl text-sm shadow"><i class="fas fa-upload mr-1"></i> Upload / Galeri</button>
-                                    <button type="button" id="btnHapusFoto" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-xl text-sm"><i class="fas fa-trash-alt mr-1"></i> Hapus Foto</button>
+                                    <button type="button" id="btnBukaKamera" class="btn-hijau text-white px-4 py-2 rounded-xl text-sm shadow"><i class="fas fa-video mr-1"></i> Buka Kamera</button>
+                                    <button type="button" id="btnCaptureFoto" class="btn-hijau text-white px-4 py-2 rounded-xl disabled:opacity-50 text-sm shadow" disabled><i class="fas fa-camera mr-1"></i> Ambil + Watermark</button>
+                                    <button type="button" id="btnHapusFoto" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-xl text-sm"><i class="fas fa-trash-alt mr-1"></i> Hapus</button>
+                                    <button type="button" id="btnUploadManual" class="bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2 rounded-xl text-sm shadow"><i class="fas fa-upload mr-1"></i> Upload + Watermark</button>
                                 </div>
                             </div>
-                            <div class="mt-3 text-xs text-gray-600 bg-white/70 p-2 rounded-lg info-tip">
-                                <i class="fas fa-info-circle text-primary mr-1"></i> 
-                                <strong>Fitur Kamera Timestamp:</strong> Tekan "Buka Kamera" akan membuka aplikasi kamera default perangkat (bisa kamera bawaan atau aplikasi timestamp seperti "TimeMark Camera"). 
-                                Setelah foto diambil, secara otomatis akan diberi <strong>watermark premium TVRI + informasi Transmisi, petugas, jam GPS, koordinat</strong> dan langsung terintegrasi ke form.
+                            <div id="videoContainer" class="hidden mt-4 rounded-xl overflow-hidden bg-black shadow-md">
+                                <video id="videoCamera" autoplay playsinline class="w-full max-h-64 object-cover"></video>
+                                <div class="flex justify-between p-2 bg-gray-900"><span class="text-white text-xs"><i class="fas fa-info-circle"></i> Izin kamera & lokasi diperlukan</span><button type="button" id="btnTutupKamera" class="text-red-400 text-sm"><i class="fas fa-times-circle"></i> Tutup</button></div>
                             </div>
                             <input type="hidden" id="fotoData64" value="">
                             <input type="hidden" id="fotoJam" value="">
                             <input type="hidden" id="fotoLat" value="">
                             <input type="hidden" id="fotoLng" value="">
+                            <p class="text-xs text-gray-500 mt-3 bg-white/60 p-1 rounded"><i class="fas fa-shield-alt text-green-600"></i> <strong>Watermark premium</strong> : Logo TVRI + kotak informasi (Transmisi Tanah Merah, Petugas, Waktu, Koordinat)</p>
                         </div>
                     </div>
 
@@ -170,11 +166,13 @@
     <script>
         // ======================= KONFIGURASI FIREBASE =======================
         let isFirebaseReady = false;
-        const DB_PATH = 'monitoring/suhu/entries';
+        const DB_PATH = 'monitoring/suhu/entries';   // path di Firebase
 
+        // ======================= DATA GLOBAL =======================
         let dataEntries = [];
         const LOCAL_STORAGE_KEY = "suhuRuanganEntries";
 
+        // Fungsi update status Firebase di UI
         function updateFirebaseStatus(connected, message) {
             const statusEl = document.getElementById('firebaseStatus');
             if (statusEl) {
@@ -190,6 +188,7 @@
             }
         }
 
+        // ======================= SINKRONISASI KE FIREBASE =======================
         async function syncToFirebase() {
             if (!isFirebaseReady || !window.db) {
                 console.warn("Firebase belum siap, data hanya disimpan ke localStorage");
@@ -208,6 +207,7 @@
             }
         }
 
+        // Memuat data dari Firebase, menggabungkan dengan localStorage (prioritas Firebase)
         async function loadFromFirebase() {
             if (!window.db) {
                 console.warn("Firebase tidak tersedia, hanya pakai localStorage");
@@ -221,6 +221,7 @@
                     if (firebaseEntries.length > 0) {
                         firebaseEntries.sort((a,b) => (a.id || 0) - (b.id || 0));
                         dataEntries = firebaseEntries;
+                        // Normalisasi field
                         dataEntries.forEach(e => {
                             if (!e.jamFoto) e.jamFoto = "-";
                             if (e.lat === undefined) e.lat = null;
@@ -231,6 +232,7 @@
                         return true;
                     }
                 }
+                // Jika Firebase kosong, ambil dari localStorage
                 const localStored = localStorage.getItem(LOCAL_STORAGE_KEY);
                 if (localStored) {
                     dataEntries = JSON.parse(localStored);
@@ -239,7 +241,7 @@
                         if (e.lat === undefined) e.lat = null;
                         if (e.lng === undefined) e.lng = null;
                     });
-                    await syncToFirebase();
+                    await syncToFirebase(); // sinkronkan data lokal ke cloud
                     updateFirebaseStatus(true, `Loaded local (${dataEntries.length})`);
                 } else {
                     dataEntries = [];
@@ -255,6 +257,7 @@
             }
         }
 
+        // ======================= FUNGSI UTAMA DATA =======================
         function saveToLocalAndSync() {
             localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(dataEntries));
             renderTable();
@@ -319,7 +322,7 @@
             }
         };
 
-        // ========== GEOLOKASI & WATERMARK (PREMIUM) ==========
+        // ========== GEOLOKASI & WATERMARK ==========
         function getCurrentPosition() {
             return new Promise((resolve) => {
                 if (!navigator.geolocation) resolve(null);
@@ -360,7 +363,7 @@
                     const riWidth = ctx.measureText(riText).width;
                     ctx.fillText(riText, circleX - riWidth / 2, circleY + (riFontSize * 0.38));
 
-                    // Watermark info panel premium
+                    // Watermark info
                     const smallFontSize = Math.max(14, Math.floor(img.width / 32));
                     const padding = 16;
                     const cornerRadius = 20;
@@ -420,7 +423,7 @@
                 alert("⚠️ Isi nama petugas terlebih dahulu sebelum mengambil/upload foto.");
                 return false;
             }
-            showLoading("Memproses watermark transmisi premium...");
+            showLoading("Memproses watermark transmisi...");
             try {
                 const pos = await getCurrentPosition();
                 const watermarked = await applyWatermarkToImage(originalBase64, petugas, pos);
@@ -458,48 +461,49 @@
             if (ld) ld.remove();
         }
 
-        // ========== INTEGRASI KAMERA TIMESTAMP LANGSUNG (CAPTURE + WATERMARK OTOMATIS) ==========
-        // Fungsi ini membuka kamera default perangkat (atau aplikasi timestamp) via input capture
-        // dan setelah foto dipilih, langsung diproses watermark dan masuk ke form.
-        function bukaKameraTimestamp() {
-            const petugas = document.getElementById('petugas').value.trim();
-            if (!petugas) {
-                alert("⚠️ Sebelum membuka kamera, isi nama PETUGAS terlebih dahulu agar tercantum dalam watermark.");
-                return;
-            }
-            // Membuat elemen input file dengan capture (memaksa kamera)
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = 'image/*';
-            input.capture = 'environment'; // 'environment' untuk kamera belakang, 'user' untuk depan. Biarkan default.
-            // Trigger perubahan
-            input.onchange = async (event) => {
-                const file = event.target.files[0];
-                if (!file) return;
-                // Baca file sebagai dataURL
-                const reader = new FileReader();
-                reader.onload = async (e) => {
-                    const rawImage = e.target.result;
-                    const success = await processAndTagFoto(rawImage, petugas);
-                    if (!success) {
-                        alert("Gagal memproses watermark, coba lagi.");
-                    } else {
-                        // Optional: beri notifikasi halus
-                        console.log("Foto dari kamera berhasil diberi watermark dan siap disimpan.");
-                    }
-                };
-                reader.readAsDataURL(file);
-            };
-            input.click();
-        }
+        // ========== KAMERA & CAPTURE ==========
+        let mediaStream = null;
+        const videoEl = document.getElementById('videoCamera'), videoContainer = document.getElementById('videoContainer');
+        const btnBuka = document.getElementById('btnBukaKamera'), btnCapture = document.getElementById('btnCaptureFoto'), btnTutup = document.getElementById('btnTutupKamera');
+        const btnHapus = document.getElementById('btnHapusFoto'), btnUpload = document.getElementById('btnUploadManual');
 
-        // Upload manual dari galeri / file biasa (tanpa paksa kamera)
+        async function bukaKamera() {
+            const petugas = document.getElementById('petugas').value.trim();
+            if (!petugas) { alert("Isi nama petugas terlebih dahulu."); return; }
+            if (mediaStream) tutupKamera();
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                mediaStream = stream;
+                videoEl.srcObject = stream;
+                videoContainer.classList.remove('hidden');
+                btnCapture.disabled = false;
+                await videoEl.play();
+            } catch (e) {
+                alert("Tidak dapat mengakses kamera. Gunakan upload foto.");
+            }
+        }
+        function tutupKamera() {
+            if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
+            videoEl.srcObject = null;
+            videoContainer.classList.add('hidden');
+            btnCapture.disabled = true;
+        }
+        async function captureFromVideo() {
+            if (!mediaStream) { alert("Buka kamera terlebih dahulu"); return; }
+            const petugas = document.getElementById('petugas').value.trim();
+            if (!petugas) { alert("Petugas harus diisi sebelum mengambil foto."); return; }
+            const canvas = document.createElement('canvas');
+            canvas.width = videoEl.videoWidth;
+            canvas.height = videoEl.videoHeight;
+            if (canvas.width === 0) { alert("Video belum siap, coba lagi"); return; }
+            canvas.getContext('2d').drawImage(videoEl, 0, 0);
+            const orig = canvas.toDataURL('image/jpeg', 0.9);
+            const success = await processAndTagFoto(orig, petugas);
+            if (success) tutupKamera();
+        }
         function bukaUploadFile() {
             const petugas = document.getElementById('petugas').value.trim();
-            if (!petugas) {
-                alert("Isi nama petugas sebelum upload foto.");
-                return;
-            }
+            if (!petugas) { alert("Isi nama petugas sebelum upload foto."); return; }
             const input = document.createElement('input');
             input.type = 'file';
             input.accept = 'image/*';
@@ -512,19 +516,20 @@
             };
             input.click();
         }
-
         function hapusFoto() {
             document.getElementById('fotoData64').value = '';
             document.getElementById('fotoJam').value = '';
             document.getElementById('fotoLat').value = '';
             document.getElementById('fotoLng').value = '';
             document.getElementById('fotoPreview').src = "https://placehold.co/400x400?text=Belum+Ada+Foto";
+            if (mediaStream) tutupKamera();
         }
 
-        // Event binding
-        document.getElementById('btnBukaKameraTimestamp').addEventListener('click', bukaKameraTimestamp);
-        document.getElementById('btnUploadManual').addEventListener('click', bukaUploadFile);
-        document.getElementById('btnHapusFoto').addEventListener('click', hapusFoto);
+        btnBuka.addEventListener('click', bukaKamera);
+        btnCapture.addEventListener('click', captureFromVideo);
+        btnTutup.addEventListener('click', tutupKamera);
+        btnHapus.addEventListener('click', hapusFoto);
+        btnUpload.addEventListener('click', bukaUploadFile);
 
         // ========== FORM SUBMIT ==========
         const form = document.getElementById('formSuhu'), tanggalInput = document.getElementById('tanggal'), suhuInput = document.getElementById('suhu');
@@ -536,7 +541,7 @@
             if (!tanggalInput.value.trim() || !suhuInput.value.trim() || isNaN(parseFloat(suhuInput.value)) || !petugasInput.value.trim())
                 return alert("⚠️ Lengkapi semua data wajib: Tanggal, Suhu, Petugas");
             const fotoData = document.getElementById('fotoData64').value;
-            if (!fotoData) return alert("Harap ambil/upload foto dengan watermark terlebih dahulu. Gunakan tombol 'Buka Kamera (Timestamp Langsung)' atau 'Upload / Galeri'.");
+            if (!fotoData) return alert("Harap ambil/upload foto dengan watermark terlebih dahulu.");
             const newId = getNextId();
             const newEntry = {
                 id: newId,
@@ -563,6 +568,7 @@
             keteranganInput.value = '';
             hapusFoto();
             updateNomorOtomatis();
+            if (mediaStream) tutupKamera();
         }
         resetBtn.addEventListener('click', () => { if (confirm("Reset semua field form?")) resetFormInput(); });
 
@@ -606,12 +612,22 @@
                 else fotoCell = "Tidak ada foto";
                 let koordinatTeks = (entry.lat && entry.lng) ? `${entry.lat.toFixed(6)}, ${entry.lng.toFixed(6)}` : "-";
                 exportHtml += `<tr>
-                    <td>${entry.id}</td><td>${entry.tanggal}</td><td>${entry.suhu} °C</td>
-                    <td>${fotoCell}</td><td>${entry.jamFoto || '-'}</td><td>${koordinatTeks}</td>
-                    <td>${(entry.keterangan || '-').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</td><td>${entry.petugas}</td>
+                    <td>${entry.id}</td>
+                    <td>${entry.tanggal}</td>
+                    <td>${entry.suhu} °C</td>
+                    <td>${fotoCell}</td>
+                    <td>${entry.jamFoto || '-'}</td>
+                    <td>${koordinatTeks}</td>
+                    <td>${(entry.keterangan || '-').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</td>
+                    <td>${entry.petugas}</td>
                 </tr>`;
             });
-            exportHtml += `</tbody></table><div class="footer">Laporan otomatis dengan watermark pada setiap foto: Transmisi Tanah Merah, Ch 44, Freq 658 + petugas + waktu + koordinat.</div></div></body></html>`;
+            exportHtml += `</tbody>
+                </table>
+                <div class="footer">Laporan otomatis dengan watermark pada setiap foto: Transmisi Tanah Merah, Ch 44, Freq 658 + petugas + waktu + koordinat.</div>
+            </div>
+            </body>
+            </html>`;
             const blob = new Blob([exportHtml], { type: "text/html" });
             const link = document.createElement("a");
             link.href = URL.createObjectURL(blob);
