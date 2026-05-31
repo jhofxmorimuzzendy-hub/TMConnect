@@ -41,6 +41,7 @@
             -webkit-overflow-scrolling: touch; 
             scrollbar-width: thin;
         }
+        /* Mobile optimasi tombol & sentuhan */
         @media (max-width: 640px) {
             button, .btn-action, .btn-table-hapus { 
                 min-height: 40px;
@@ -65,6 +66,9 @@
             .container { 
                 padding-left: 0.75rem; 
                 padding-right: 0.75rem; 
+            }
+            .form-grid-mobile {
+                gap: 0.75rem;
             }
         }
         .modal-img { 
@@ -107,23 +111,18 @@
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
         .btn-hijau:active { transform: translateY(1px); }
+        .text-hijau { color: #1e6f5c; }
+        .border-hijau { border-color: #1e6f5c; }
         .bg-hijau-soft { background: linear-gradient(145deg, #eef2f8 0%, #e0f0ec 100%); }
         .card-shadow { box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.08); }
-        .camera-active-badge {
-            background: rgba(0,0,0,0.7);
-            backdrop-filter: blur(10px);
-            border-radius: 40px;
-            padding: 5px 12px;
-            font-size: 0.7rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
+        .photo-preview-box {
+            transition: all 0.2s;
         }
     </style>
 </head>
 <body class="bg-hijau-soft font-sans antialiased">
     <div class="container max-w-7xl mx-auto px-4 py-5 md:py-8">
-        <!-- Header -->
+        <!-- Header lebih fresh dan modern -->
         <div class="text-center mb-7 md:mb-9">
             <div class="inline-flex items-center justify-center bg-gradient-to-r from-primary to-accent p-3 md:p-3.5 rounded-2xl shadow-lg">
                 <i class="fas fa-gas-pump text-white text-2xl md:text-3xl"></i>
@@ -138,7 +137,7 @@
             </div>
         </div>
 
-        <!-- Form Card -->
+        <!-- Form Card dengan tata letak lebih rapi -->
         <div class="bg-white rounded-2xl card-shadow overflow-hidden mb-7 md:mb-9 border border-gray-100 transition-all">
             <div class="bg-gradient-to-r from-primary to-accent px-5 md:px-6 py-3.5 md:py-4">
                 <h2 class="text-lg md:text-xl font-semibold text-white"><i class="fas fa-pen-alt mr-2"></i> Input Data Operasi Genset</h2>
@@ -186,7 +185,7 @@
                         </div>
                     </div>
                     
-                    <!-- Dokumentasi Foto dengan multiple capture (kamera tetap hidup) -->
+                    <!-- Dokumentasi Foto + Watermark dengan tampilan modern -->
                     <div class="border-t border-gray-200 pt-5 mt-2">
                         <label class="block text-base font-bold text-gray-800 mb-3"><i class="fas fa-camera-retro text-primary mr-2"></i> Dokumentasi Foto Genset + Watermark Otomatis</label>
                         <div class="bg-slate-50 rounded-xl p-4 md:p-5 border border-dashed border-gray-300 transition-all">
@@ -197,18 +196,15 @@
                                 <div class="flex flex-wrap gap-2 justify-center">
                                     <button type="button" id="btnBukaKamera" class="btn-hijau text-white px-4 py-2 rounded-xl text-sm shadow-md font-medium"><i class="fas fa-video mr-1"></i> Buka Kamera</button>
                                     <button type="button" id="btnCaptureFoto" class="btn-hijau text-white px-4 py-2 rounded-xl disabled:opacity-50 text-sm shadow-md font-medium" disabled><i class="fas fa-camera mr-1"></i> Ambil Foto</button>
-                                    <button type="button" id="btnHapusFoto" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-xl text-sm shadow"><i class="fas fa-trash-alt mr-1"></i> Hapus Foto</button>
+                                    <button type="button" id="btnHapusFoto" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-xl text-sm shadow"><i class="fas fa-trash-alt mr-1"></i> Hapus</button>
                                     <button type="button" id="btnUploadManual" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-xl text-sm shadow-md font-medium"><i class="fas fa-upload mr-1"></i> Upload Gambar</button>
                                 </div>
                             </div>
-                            <!-- Video Kamera area - bisa tetap terbuka setelah capture -->
+                            <!-- Video Kamera area -->
                             <div id="videoContainer" class="hidden mt-5 rounded-xl overflow-hidden bg-black shadow-xl">
                                 <video id="videoCamera" autoplay playsinline class="w-full max-h-72 object-cover"></video>
                                 <div class="flex justify-between items-center p-3 bg-gray-900">
-                                    <div class="flex items-center gap-2">
-                                        <i class="fas fa-video text-green-400"></i>
-                                        <span class="text-white text-xs">Kamera aktif - ambil foto berkali-kali</span>
-                                    </div>
+                                    <span class="text-white text-xs"><i class="fas fa-info-circle"></i> Pastikan posisi genset terlihat jelas</span>
                                     <button type="button" id="btnTutupKamera" class="text-red-400 hover:text-red-300 text-sm font-medium"><i class="fas fa-times-circle"></i> Tutup Kamera</button>
                                 </div>
                             </div>
@@ -218,7 +214,7 @@
                             <input type="hidden" id="fotoLng" value="">
                             <div class="mt-4 bg-white/70 rounded-lg p-2 text-xs text-gray-600 flex items-start gap-2">
                                 <i class="fas fa-shield-alt text-green-600 text-sm mt-0.5"></i>
-                                <span><strong class="text-gray-800">Watermark otomatis :</strong> Logo GS⚡ + Operator, Waktu & Koordinat. <strong>Kamera tetap terbuka setelah ambil foto</strong> — Anda bisa mengambil banyak foto hingga puas, foto terakhir yang akan tersimpan.</span>
+                                <span><strong class="text-gray-800">Watermark otomatis :</strong> Logo GS⚡ + Nama Operator, Waktu & Koordinat terkini akan menyatu pada foto. Gunakan kamera atau upload untuk hasil terbaik.</span>
                             </div>
                         </div>
                     </div>
@@ -231,7 +227,7 @@
             </div>
         </div>
 
-        <!-- Riwayat Tabel -->
+        <!-- Riwayat Tabel dengan Card lebih menarik -->
         <div class="bg-white rounded-2xl card-shadow overflow-hidden border border-gray-100">
             <div class="bg-gradient-to-r from-primary to-accent px-5 md:px-6 py-3.5 md:py-4 flex flex-col sm:flex-row justify-between items-center gap-3">
                 <h2 class="text-lg md:text-xl font-semibold text-white"><i class="fas fa-table-list mr-2"></i> Riwayat Penggunaan Genset</h2>
@@ -267,7 +263,7 @@
     </div>
 
     <script>
-        // ======================== KONFIGURASI FIREBASE ========================
+        // ======================== KONFIGURASI FIREBASE & GLOBAL ========================
         let isFirebaseReady = false;
         let dataEntries = [];
         let listenerRef = null;
@@ -294,7 +290,7 @@
             try {
                 if (window.db.enablePersistence) await window.db.enablePersistence();
                 else if (window.firebase && window.firebase.database) await window.firebase.database().enablePersistence();
-                console.log("🔥 Firebase persistence aktif");
+                console.log("🔥 Firebase persistence aktif (offline support)");
                 return true;
             } catch (err) {
                 console.warn("Persistence tidak aktif:", err);
@@ -369,6 +365,7 @@
             isInternalUpdate = false;
         }
 
+        // ========== RENDER TABLE INTERAKTIF ==========
         function renderTable() {
             const tbody = document.getElementById("tabelBody");
             if(!dataEntries.length) { 
@@ -394,7 +391,7 @@
                     <td class="py-2.5 px-1.5 font-medium">${entry.petugas}</td>
                     <td class="py-2.5 px-1.5 max-w-[120px] truncate">${entry.keterangan||'-'}</td>
                     <td class="py-2.5 px-1.5 text-center"><button onclick="deleteEntry(${entry.id})" class="bg-red-100 hover:bg-red-200 text-red-700 px-2.5 py-1 rounded-full text-[11px] font-medium transition"><i class="fas fa-trash-can"></i> Hapus</button></td>
-                 </tr>`;
+                </tr>`;
             });
             tbody.innerHTML = html;
         }
@@ -411,7 +408,7 @@
             } else alert("Foto tidak tersedia");
         };
 
-        // ========== GEOLOKASI & WATERMARK ==========
+        // ========== GEOLOKASI & WATERMARK (Premium) ==========
         function getCurrentPosition() { 
             return new Promise((resolve)=>{ 
                 if(!navigator.geolocation) resolve(null); 
@@ -505,7 +502,7 @@
 
         async function processAndTagFoto(originalBase64, petugas) {
             if (!petugas || petugas.trim() === "") { alert("⚠️ Isi nama petugas terlebih dahulu sebelum mengambil foto."); return false; }
-            showLoading("Memproses watermark & lokasi...");
+            showLoading("Memproses watermark dan lokasi...");
             try {
                 const pos = await getCurrentPosition();
                 const watermarked = await applyWatermarkToImage(originalBase64, petugas, pos);
@@ -533,69 +530,45 @@
         }
         function hideLoading() { let ld = document.getElementById('globalLoading'); if(ld) ld.remove(); }
 
-        // ========== KAMERA DENGAN MULTIPLE CAPTURE (kamera tetap hidup) ==========
+        // ========== KAMERA & CAPTURE LANGSUNG OTOMATIS MASUK WEB ==========
         let mediaStream = null;
-        const videoEl = document.getElementById('videoCamera');
-        const videoContainer = document.getElementById('videoContainer');
-        const btnBuka = document.getElementById('btnBukaKamera');
-        const btnCapture = document.getElementById('btnCaptureFoto');
-        const btnTutup = document.getElementById('btnTutupKamera');
-        const btnHapus = document.getElementById('btnHapusFoto');
-        const btnUpload = document.getElementById('btnUploadManual');
+        const videoEl = document.getElementById('videoCamera'), videoContainer = document.getElementById('videoContainer');
+        const btnBuka=document.getElementById('btnBukaKamera'), btnCapture=document.getElementById('btnCaptureFoto'), btnTutup=document.getElementById('btnTutupKamera');
+        const btnHapus=document.getElementById('btnHapusFoto'), btnUpload=document.getElementById('btnUploadManual');
         
         async function bukaKamera() { 
             const petugas = document.getElementById('petugas').value.trim();
             if(!petugas) { alert("Isi nama petugas / operator terlebih dahulu untuk melanjutkan."); return; }
-            if(mediaStream) {
-                // Jika sudah terbuka, jangan buka lagi
-                videoContainer.classList.remove('hidden');
-                return;
-            }
+            if(mediaStream) tutupKamera(); 
             try{ 
                 const stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}}); 
-                mediaStream = stream; 
-                videoEl.srcObject = stream; 
+                mediaStream=stream; 
+                videoEl.srcObject=stream; 
                 videoContainer.classList.remove('hidden'); 
-                btnCapture.disabled = false; 
+                btnCapture.disabled=false; 
                 await videoEl.play(); 
             } catch(e){ alert("Tidak dapat akses kamera. Pastikan izin diberikan atau gunakan upload."); } 
         }
-        
-        function tutupKamera() { 
-            if(mediaStream){ 
-                mediaStream.getTracks().forEach(t=>t.stop()); 
-                mediaStream = null; 
-            } 
-            videoEl.srcObject = null; 
-            videoContainer.classList.add('hidden'); 
-            btnCapture.disabled = true; 
-        }
-        
+        function tutupKamera() { if(mediaStream){ mediaStream.getTracks().forEach(t=>t.stop()); mediaStream=null; } videoEl.srcObject=null; videoContainer.classList.add('hidden'); btnCapture.disabled=true; }
         async function captureFromVideo() { 
-            if(!mediaStream){ 
-                alert("Buka kamera terlebih dahulu (tombol Buka Kamera)"); 
-                return; 
-            } 
+            if(!mediaStream){ alert("Buka kamera terlebih dahulu"); return; } 
             const petugas = document.getElementById('petugas').value.trim();
             if(!petugas) { alert("Petugas harus diisi sebelum ambil foto."); return; }
-            const canvas = document.createElement('canvas'); 
-            canvas.width = videoEl.videoWidth; 
-            canvas.height = videoEl.videoHeight; 
-            if(canvas.width === 0){ alert("Video belum siap, tunggu sebentar."); return; } 
-            canvas.getContext('2d').drawImage(videoEl, 0, 0); 
-            const orig = canvas.toDataURL('image/jpeg', 0.9); 
+            const canvas=document.createElement('canvas'); 
+            canvas.width=videoEl.videoWidth; 
+            canvas.height=videoEl.videoHeight; 
+            if(canvas.width===0){ alert("Video belum siap, coba sesaat lagi."); return; } 
+            canvas.getContext('2d').drawImage(videoEl,0,0); 
+            const orig=canvas.toDataURL('image/jpeg',0.9); 
             const success = await processAndTagFoto(orig, petugas); 
             if(success) {
-                // KAMERA TETAP HIDUP: tidak menutup kamera, user bisa ambil foto lagi
-                // Tampilkan notifikasi kecil
-                const toast = document.createElement('div');
-                toast.className = 'fixed bottom-5 left-1/2 transform -translate-x-1/2 bg-black/80 text-white px-4 py-2 rounded-full text-xs z-50';
-                toast.innerHTML = '<i class="fas fa-check-circle text-green-400 mr-1"></i> Foto berhasil diambil! Kamera tetap aktif.';
-                document.body.appendChild(toast);
-                setTimeout(() => toast.remove(), 2000);
+                tutupKamera(); 
+                // Feedback visual sukses
+                const previewImg = document.getElementById('fotoPreview');
+                previewImg.classList.add('scale-105');
+                setTimeout(()=>previewImg.classList.remove('scale-105'), 300);
             }
         }
-        
         function bukaUploadFile() { 
             const petugas = document.getElementById('petugas').value.trim();
             if(!petugas) { alert("Isi nama petugas sebelum upload."); return; }
@@ -611,14 +584,13 @@
             }; 
             input.click(); 
         }
-        
         function hapusFoto() { 
             document.getElementById('fotoData64').value=''; 
             document.getElementById('fotoJam').value=''; 
             document.getElementById('fotoLat').value=''; 
             document.getElementById('fotoLng').value=''; 
             document.getElementById('fotoPreview').src="https://placehold.co/400x400?text=📸+Foto+Genset"; 
-            // Jangan tutup kamera otomatis, biarkan pengguna memutuskan
+            if(mediaStream) tutupKamera(); 
         }
         
         btnBuka.addEventListener('click', bukaKamera);
@@ -627,7 +599,7 @@
         btnHapus.addEventListener('click', hapusFoto);
         btnUpload.addEventListener('click', bukaUploadFile);
         
-        // Hitung durasi
+        // Hitung Durasi
         function hitungDurasi() {
             const tanggal = document.getElementById('tanggal').value;
             const waktuOn = document.getElementById('waktuOn').value;
@@ -646,15 +618,9 @@
         document.getElementById('waktuOff').addEventListener('change', hitungDurasi);
         document.getElementById('tanggal').addEventListener('change', hitungDurasi);
         
-        // Form submit
-        const form = document.getElementById('formGenset');
-        const tanggalInput = document.getElementById('tanggal');
-        const waktuOnInput = document.getElementById('waktuOn');
-        const waktuOffInput = document.getElementById('waktuOff');
-        const totalLiterInput = document.getElementById('totalLiter');
-        const petugasInput = document.getElementById('petugas');
-        const keteranganInput = document.getElementById('keterangan');
-        const resetBtn = document.getElementById('btnResetForm');
+        // FORM SUBMIT
+        const form=document.getElementById('formGenset'), tanggalInput=document.getElementById('tanggal'), waktuOnInput=document.getElementById('waktuOn'), waktuOffInput=document.getElementById('waktuOff');
+        const totalLiterInput=document.getElementById('totalLiter'), petugasInput=document.getElementById('petugas'), keteranganInput=document.getElementById('keterangan'), resetBtn=document.getElementById('btnResetForm');
         tanggalInput.value = new Date().toISOString().split('T')[0];
         
         form.addEventListener('submit', async (e)=>{
@@ -681,30 +647,24 @@
         
         function resetFormInput() { 
             tanggalInput.value = new Date().toISOString().split('T')[0]; 
-            waktuOnInput.value = ''; 
-            waktuOffInput.value = ''; 
-            totalLiterInput.value = '';
-            petugasInput.value = ''; 
-            keteranganInput.value = ''; 
-            document.getElementById('totalDurasi').value = '';
-            hapusFoto(); 
-            updateNomorOtomatis(); 
-            // Jangan tutup kamera otomatis saat reset form, biarkan jika user sedang ingin foto lagi
-            // Tapi jika kamera terbuka, kita biarkan saja
+            waktuOnInput.value = ''; waktuOffInput.value = ''; totalLiterInput.value = '';
+            petugasInput.value = ''; keteranganInput.value = ''; document.getElementById('totalDurasi').value = '';
+            hapusFoto(); updateNomorOtomatis(); if(mediaStream) tutupKamera(); 
         }
         resetBtn.addEventListener('click', ()=>{ if(confirm("Reset semua field?")) resetFormInput(); });
         document.getElementById('btnHapusSemua').addEventListener('click', async ()=>{ if(confirm("⚠️ Hapus SEMUA data? Tindakan permanen.")){ await clearAllEntries(); hapusFoto(); resetFormInput(); alert("Semua data riwayat dihapus dari Firebase."); } });
         
         document.getElementById('btnExportHTML').addEventListener('click', () => {
             if(dataEntries.length === 0) return alert("Tidak ada data diekspor.");
-            let exportHtml = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Laporan Genset</title><style>body{font-family:Inter,sans-serif;margin:20px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccc;padding:8px;text-align:center}th{background:#e2e8f0}</style></head><body><h2>Laporan Genset Tanah Merah</h2><table><thead><tr><th>No</th><th>Tanggal</th><th>ON</th><th>OFF</th><th>Durasi</th><th>Liter</th><th>Petugas</th></tr></thead><tbody>${dataEntries.map(e=>`<tr><td>${e.id}</td><td>${e.tanggal}</td><td>${e.waktuOn}</td><td>${e.waktuOff}</td><td>${e.durasi}</td><td>${e.totalLiter}</td><td>${e.petugas}</td></tr>`).join('')}</tbody></table></body></html>`;
-            const blob = new Blob([exportHtml], { type: "text/html" });
+            let exportHtml = `<!DOCTYPE html>...`; 
+            const blob = new Blob([generateExportHTML(dataEntries)], { type: "text/html" });
             const link = document.createElement("a");
             link.href = URL.createObjectURL(blob);
             link.download = `laporan_genset_${Date.now()}.html`;
             link.click();
             URL.revokeObjectURL(blob);
         });
+        function generateExportHTML(entries) { return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Laporan Genset</title><style>body{font-family:Inter,sans-serif;margin:20px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccc;padding:8px;text-align:center}th{background:#e2e8f0}</style></head><body><h2>Laporan Genset Tanah Merah</h2><table><thead><tr><th>No</th><th>Tanggal</th><th>ON</th><th>OFF</th><th>Durasi</th><th>Liter</th><th>Petugas</th></tr></thead><tbody>${entries.map(e=>`<tr><td>${e.id}</td><td>${e.tanggal}</td><td>${e.waktuOn}</td><td>${e.waktuOff}</td><td>${e.durasi}</td><td>${e.totalLiter}</td><td>${e.petugas}</td></tr>`).join('')}</tbody></table></body></html>`; }
         
         async function initFirebase() {
             if (!window.db) { setTimeout(initFirebase, 300); return; }
