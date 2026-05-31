@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>TVRI Monitoring | Watermark Premium + GPS + Firebase</title>
-    <!-- Perbaikan favicon: menggunakan nama file yang benar -->
+    <title>TVRI Monitoring | Watermark Premium + GPS + Firebase Realtime</title>
     <link rel="icon" type="image/ico" href="favicon.ico">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -12,7 +11,6 @@
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
-    <!-- Konfigurasi Firebase lokal (pastikan file ini ada) -->
     <script src="firebase-config.js"></script>
 
     <style>
@@ -160,7 +158,7 @@
     <h1><i class="fas fa-satellite-dish"></i> TVRI Monitoring <span class="badge-tvri">4 CHANNEL</span>
         <span id="firebaseStatus" class="sync-status"><i class="fas fa-cloud-upload-alt"></i> Menghubungkan...</span>
     </h1>
-    <div class="subhead">Transmisi Tanah Merah, Ch-44, Frequency 658 | Data tersimpan di Firebase + lokal</div>
+    <div class="subhead">Transmisi Tanah Merah, Ch-44, Frequency 658 | Data tersimpan di Firebase (offline-ready)</div>
 
     <div id="overallStatusBanner" class="overall-status"></div>
 
@@ -200,11 +198,27 @@
 </div>
 
 <script>
-    // ======================== KONFIGURASI FIREBASE ========================
+    // ======================== KONFIGURASI FIREBASE (Offline Persistence + Realtime) ========================
     let isFirebaseReady = false;
     const DB_PATH_STATUS = 'monitoring/siaran/status';
     const DB_PATH_LOGS = 'monitoring/siaran/logs';
     const DB_PATH_PETUGAS = 'monitoring/siaran/petugas';
+
+    let channelStatus = { tvri_world: "normal", tvri_sport: "normal", tvri_nasional: "normal", tvri_daerah: "normal" };
+    let logEntries = [];      // array of log objects
+    let currentPetugas = "";
+
+    // Listener references
+    let statusListener = null;
+    let logsListener = null;
+    let petugasListener = null;
+
+    const CHANNELS = [
+        { id: "tvri_world", name: "TVRI WORLD", icon: "fas fa-globe-asia" },
+        { id: "tvri_sport", name: "TVRI Sport", icon: "fas fa-futbol" },
+        { id: "tvri_nasional", name: "TVRI Nasional", icon: "fas fa-landmark" },
+        { id: "tvri_daerah", name: "TVRI Daerah", icon: "fas fa-map-marker-alt" }
+    ];
 
     function updateFirebaseStatus(connected, message) {
         const statusEl = document.getElementById('firebaseStatus');
@@ -221,102 +235,128 @@
         }
     }
 
-    async function syncToFirebase() {
-        if (!isFirebaseReady || !window.db) return false;
-        try {
-            await window.db.ref(DB_PATH_STATUS).set(channelStatus);
-            await window.db.ref(DB_PATH_LOGS).set(logEntries);
-            await window.db.ref(DB_PATH_PETUGAS).set(currentPetugas);
-            updateFirebaseStatus(true, "Tersinkron");
-            return true;
-        } catch (err) {
-            console.error("Gagal sync ke Firebase:", err);
-            updateFirebaseStatus(false, "Gagal sync");
-            return false;
-        }
-    }
-
-    async function loadFromFirebase() {
+    async function enablePersistence() {
         if (!window.db) return false;
         try {
-            const [statusSnap, logsSnap, petugasSnap] = await Promise.all([
-                window.db.ref(DB_PATH_STATUS).once('value'),
-                window.db.ref(DB_PATH_LOGS).once('value'),
-                window.db.ref(DB_PATH_PETUGAS).once('value')
-            ]);
-            let changed = false;
-            if (statusSnap.exists() && statusSnap.val() && typeof statusSnap.val() === 'object') {
-                channelStatus = statusSnap.val();
-                localStorage.setItem(STATUS_KEY, JSON.stringify(channelStatus));
-                changed = true;
+            if (window.db.enablePersistence) {
+                await window.db.enablePersistence();
+                console.log("Firebase persistence aktif");
+            } else if (window.firebase && window.firebase.database) {
+                await window.firebase.database().enablePersistence();
+            } else {
+                console.warn("enablePersistence tidak tersedia");
             }
-            if (logsSnap.exists() && Array.isArray(logsSnap.val())) {
-                logEntries = logsSnap.val().slice(0, 500);
-                // Pastikan setiap log memiliki rawTime
-                logEntries.forEach(log => { if (!log.rawTime) log.rawTime = Date.now(); });
-                localStorage.setItem(LOGS_KEY, JSON.stringify(logEntries));
-                changed = true;
-            }
-            if (petugasSnap.exists() && typeof petugasSnap.val() === 'string' && petugasSnap.val() !== currentPetugas) {
-                currentPetugas = petugasSnap.val();
-                localStorage.setItem(PETUGAS_KEY, currentPetugas);
-                document.getElementById('namaPetugasInput').value = currentPetugas;
-                changed = true;
-            }
-            if (changed) updateFirebaseStatus(true, "Loaded from cloud");
-            else updateFirebaseStatus(true, "Terhubung");
             return true;
         } catch (err) {
-            console.error("Error loadFromFirebase:", err);
-            updateFirebaseStatus(false, "Offline mode");
+            if (err.code === 'failed-precondition') {
+                console.warn("Multiple tab, persistence tidak bisa diaktifkan");
+            } else if (err.code === 'unavailable') {
+                console.warn("Browser tidak support persistence");
+            } else {
+                console.error("Error persistence:", err);
+            }
             return false;
         }
     }
 
-    // ======================== DATA & STORAGE ========================
-    const CHANNELS = [
-        { id: "tvri_world", name: "TVRI WORLD", icon: "fas fa-globe-asia" },
-        { id: "tvri_sport", name: "TVRI Sport", icon: "fas fa-futbol" },
-        { id: "tvri_nasional", name: "TVRI Nasional", icon: "fas fa-landmark" },
-        { id: "tvri_daerah", name: "TVRI Daerah", icon: "fas fa-map-marker-alt" }
-    ];
-
-    let channelStatus = { tvri_world: "normal", tvri_sport: "normal", tvri_nasional: "normal", tvri_daerah: "normal" };
-    let logEntries = [];
-    let currentPetugas = "";
-
-    const STATUS_KEY = "tvri_foto_status_v14";
-    const LOGS_KEY = "tvri_foto_logs_v14";
-    const PETUGAS_KEY = "tvri_petugas";
-
-    async function persistData() {
-        localStorage.setItem(STATUS_KEY, JSON.stringify(channelStatus));
-        if (logEntries.length > 500) logEntries = logEntries.slice(0, 500);
-        localStorage.setItem(LOGS_KEY, JSON.stringify(logEntries));
-        localStorage.setItem(PETUGAS_KEY, currentPetugas);
-        if (isFirebaseReady) await syncToFirebase();
-    }
-
-    function loadLocalData() {
-        const savedStatus = localStorage.getItem(STATUS_KEY);
-        if (savedStatus) { try { const p = JSON.parse(savedStatus); CHANNELS.forEach(ch => { if (p[ch.id]) channelStatus[ch.id] = p[ch.id]; }); } catch(e) {} }
-        const savedLogs = localStorage.getItem(LOGS_KEY);
-        if (savedLogs) { try { const p = JSON.parse(savedLogs); if (Array.isArray(p)) logEntries = p.slice(0, 500); } catch(e) {} }
-        // Pastikan rawTime ada
-        logEntries.forEach(log => { if (!log.rawTime) log.rawTime = Date.now(); });
-        currentPetugas = localStorage.getItem(PETUGAS_KEY) || "";
-        document.getElementById('namaPetugasInput').value = currentPetugas;
-        if (!logEntries.length) {
-            logEntries.push({ 
-                id: Date.now(), channelId: "system", channelName: "Sistem", type: "sistem", 
-                message: "Sistem siap digunakan. Watermark premium otomatis.", 
-                petugas: currentPetugas || "Sistem", timestamp: new Date().toLocaleString('id-ID'), 
-                imageBase64: null, rawTime: Date.now(), edited: false 
-            });
+    // Fungsi untuk mengirim data ke Firebase (overwrite)
+    async function setStatusToFirebase(status) {
+        if (!isFirebaseReady || !window.db) return false;
+        try {
+            await window.db.ref(DB_PATH_STATUS).set(status);
+            return true;
+        } catch (err) {
+            console.error("Gagal set status:", err);
+            updateFirebaseStatus(false, "Gagal simpan status");
+            return false;
         }
     }
 
-    // ========== WATERMARK & KAMERA (DIPERBAIKI) ==========
+    async function setLogsToFirebase(logs) {
+        if (!isFirebaseReady || !window.db) return false;
+        try {
+            await window.db.ref(DB_PATH_LOGS).set(logs);
+            return true;
+        } catch (err) {
+            console.error("Gagal set logs:", err);
+            updateFirebaseStatus(false, "Gagal simpan logs");
+            return false;
+        }
+    }
+
+    async function setPetugasToFirebase(petugas) {
+        if (!isFirebaseReady || !window.db) return false;
+        try {
+            await window.db.ref(DB_PATH_PETUGAS).set(petugas);
+            return true;
+        } catch (err) {
+            console.error("Gagal set petugas:", err);
+            return false;
+        }
+    }
+
+    // Listener realtime
+    function attachRealtimeListeners() {
+        if (!window.db) return;
+        if (statusListener) statusListener.off();
+        if (logsListener) logsListener.off();
+        if (petugasListener) petugasListener.off();
+
+        statusListener = window.db.ref(DB_PATH_STATUS).on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data && typeof data === 'object') {
+                channelStatus = data;
+            } else {
+                // inisialisasi default jika kosong
+                channelStatus = { tvri_world: "normal", tvri_sport: "normal", tvri_nasional: "normal", tvri_daerah: "normal" };
+                setStatusToFirebase(channelStatus);
+            }
+            renderAll();
+        }, (error) => { console.error("Status listener error:", error); updateFirebaseStatus(false, "Error listener status"); });
+
+        logsListener = window.db.ref(DB_PATH_LOGS).on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (Array.isArray(data)) {
+                logEntries = data.slice(0, 500);
+                // pastikan rawTime dan id ada
+                logEntries.forEach(log => { if (!log.rawTime) log.rawTime = Date.now(); if (!log.id) log.id = Date.now() + Math.random(); });
+            } else {
+                logEntries = [];
+            }
+            renderAll();
+        }, (error) => { console.error("Logs listener error:", error); updateFirebaseStatus(false, "Error listener logs"); });
+
+        petugasListener = window.db.ref(DB_PATH_PETUGAS).on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (typeof data === 'string' && data !== currentPetugas) {
+                currentPetugas = data;
+                document.getElementById('namaPetugasInput').value = currentPetugas;
+                renderAll();
+            } else if (data === null && currentPetugas === "") {
+                // biarkan kosong
+            }
+        }, (error) => { console.error("Petugas listener error:", error); });
+    }
+
+    // Update data lokal dan kirim ke Firebase (setelah modifikasi array/object)
+    async function updateStatusLocallyAndSync(newStatus) {
+        channelStatus = newStatus;
+        await setStatusToFirebase(channelStatus);
+        // render sudah dipicu oleh listener
+    }
+
+    async function updateLogsLocallyAndSync(newLogs) {
+        logEntries = newLogs.slice(0, 500);
+        await setLogsToFirebase(logEntries);
+    }
+
+    async function updatePetugasLocallyAndSync(newPetugas) {
+        currentPetugas = newPetugas;
+        await setPetugasToFirebase(currentPetugas);
+        renderAll();
+    }
+
+    // ========== WATERMARK & KAMERA ==========
     function getCurrentPosition() {
         return new Promise((resolve) => {
             if (!navigator.geolocation) { resolve(null); return; }
@@ -331,7 +371,7 @@
     async function applyWatermarkToImage(dataUrl, petugasName, locationCoord) {
         return new Promise((resolve, reject) => {
             const img = new Image();
-            img.crossOrigin = "Anonymous"; // hindari CORS jika perlu
+            img.crossOrigin = "Anonymous";
             img.onload = () => {
                 try {
                     const canvas = document.createElement('canvas');
@@ -548,7 +588,10 @@
             if (reasonText === null) { alert("Penyebab gangguan harus diisi."); return; }
         }
         const targetStatus = reportType === 'normal' ? 'normal' : 'gangguan';
-        if (channelStatus[channelId] !== targetStatus) channelStatus[channelId] = targetStatus;
+        if (channelStatus[channelId] !== targetStatus) {
+            channelStatus[channelId] = targetStatus;
+            await setStatusToFirebase(channelStatus); // langsung update status ke Firebase
+        }
         const now = new Date();
         const timeStr = now.toLocaleString('id-ID', { hour12: false });
         const message = targetStatus === 'normal' ? `📸 LAPORAN NORMAL: ${channel.name} siaran normal.` : `⚠️ LAPORAN GANGGUAN: ${channel.name} mengalami gangguan.`;
@@ -561,15 +604,13 @@
             imageBase64: imageBase64, rawTime: now.getTime(),
             fixed: false, edited: false
         };
-        logEntries.unshift(newLog);
-        await persistData();
-        renderAll();
-        alert(`✅ Laporan ${targetStatus === 'normal' ? 'Normal' : 'Gangguan'} untuk ${channel.name} tersimpan. Firebase: ${isFirebaseReady ? 'tersinkron' : 'offline'}`);
+        const updatedLogs = [newLog, ...logEntries].slice(0, 500);
+        await updateLogsLocallyAndSync(updatedLogs);
+        alert(`✅ Laporan ${targetStatus === 'normal' ? 'Normal' : 'Gangguan'} untuk ${channel.name} tersimpan. Firebase: tersinkron`);
     }
 
-    // EDIT, HAPUS, PERBAIKI (dipastikan bekerja)
     async function editLogEntry(logId) {
-        const log = logEntries.find(l => l.id == logId); // gunakan == untuk konversi tipe
+        const log = logEntries.find(l => l.id == logId);
         if (!log) { alert("Data tidak ditemukan."); return; }
         const newPetugas = prompt("Edit nama petugas:", log.petugas);
         if (newPetugas === null) return;
@@ -587,22 +628,20 @@
         log.message = log.type === 'normal' ? `📸 LAPORAN NORMAL: ${log.channelName} siaran normal.` : `⚠️ LAPORAN GANGGUAN: ${log.channelName} mengalami gangguan.`;
         if (log.reason) log.message += log.type === 'normal' ? ` (Catatan: ${log.reason})` : ` Penyebab: ${log.reason}`;
         log.edited = true;
-        await persistData();
-        renderAll();
+        // Update array logs
+        const index = logEntries.findIndex(l => l.id == logId);
+        if (index !== -1) {
+            logEntries[index] = log;
+            await updateLogsLocallyAndSync(logEntries);
+        }
         alert("Laporan diperbarui.");
     }
 
     async function deleteLogEntry(logId) {
         if (confirm("Hapus laporan ini permanen?")) {
-            const index = logEntries.findIndex(l => l.id == logId);
-            if (index !== -1) {
-                logEntries.splice(index, 1);
-                await persistData();
-                renderAll();
-                alert("Laporan dihapus.");
-            } else {
-                alert("Laporan tidak ditemukan.");
-            }
+            const newLogs = logEntries.filter(l => l.id != logId);
+            await updateLogsLocallyAndSync(newLogs);
+            alert("Laporan dihapus.");
         }
     }
 
@@ -611,7 +650,10 @@
         if (!log || log.type !== 'gangguan') { alert("Hanya laporan gangguan yang dapat diperbaiki."); return; }
         const channel = CHANNELS.find(c => c.id === log.channelId);
         if (!channel) return;
-        if (channelStatus[channel.id] !== 'normal') channelStatus[channel.id] = 'normal';
+        if (channelStatus[channel.id] !== 'normal') {
+            channelStatus[channel.id] = 'normal';
+            await setStatusToFirebase(channelStatus);
+        }
         const fixLog = {
             id: Date.now() + Math.random() * 1000,
             channelId: channel.id, channelName: channel.name,
@@ -621,14 +663,15 @@
             timestamp: new Date().toLocaleString('id-ID', { hour12: false }),
             imageBase64: null, relatedFixLogId: logId, edited: false, rawTime: Date.now()
         };
-        logEntries.unshift(fixLog);
-        log.fixed = true;
-        await persistData();
-        renderAll();
+        const updatedLogs = [fixLog, ...logEntries];
+        // tandai log asli sebagai fixed
+        const originalIndex = updatedLogs.findIndex(l => l.id == logId);
+        if (originalIndex !== -1) updatedLogs[originalIndex].fixed = true;
+        await updateLogsLocallyAndSync(updatedLogs);
         alert(`Channel ${channel.name} telah diperbaiki. Status NORMAL.`);
     }
 
-    // RENDER
+    // RENDER FUNCTIONS (sama seperti sebelumnya)
     function renderOverallStatus() {
         const banner = document.getElementById('overallStatusBanner');
         const hasGangguan = Object.values(channelStatus).some(s => s === 'gangguan');
@@ -682,25 +725,6 @@
         }).join('');
     }
 
-    function renderDailyTable() {
-        const container = document.getElementById('dailyTableContainer');
-        const dailyData = buildDailyReportLastOnly();
-        if (dailyData.length === 0) { container.innerHTML = '<div style="padding:20px; text-align:center;">Belum ada data laporan harian.</div>'; return; }
-        let html = `<table class="daily-table"><thead><tr><th>Tanggal</th><th>Channel</th><th>Status</th><th>Penyebab</th><th>Petugas</th><th>Foto</th><th>Waktu</th></tr></thead><tbody>`;
-        for (let day of dailyData) {
-            const dateDisplay = day.date.split('-').reverse().join('/');
-            for (let report of day.reports) {
-                const statusBadge = report.type === 'normal' ? '<span class="badge-small badge-normal">✅ Normal</span>' : '<span class="badge-small badge-gangguan">⚠️ Gangguan</span>';
-                const reasonHtml = report.reason ? `<i class="fas fa-comment"></i> ${escapeHtml(report.reason)}` : '-';
-                let photoHtml = '-';
-                if (report.imageBase64) photoHtml = `<img src="${report.imageBase64}" class="photo-thumb" onclick="window.showFullImageModal('${report.imageBase64.replace(/'/g, "\\'")}')" style="cursor:pointer;">`;
-                html += `<tr><td>${dateDisplay}</td><td><i class="${CHANNELS.find(c=>c.id===report.channelId)?.icon}"></i> ${report.channelName}</td><td>${statusBadge}</td><td>${reasonHtml}</td><td><i class="fas fa-user"></i> ${escapeHtml(report.petugas)}</td><td>${photoHtml}</td><td>${report.timestamp.split(',')[1] || report.timestamp}</td></tr>`;
-            }
-        }
-        html += `</tbody></table>`;
-        container.innerHTML = html;
-    }
-
     function buildDailyReportLastOnly() {
         const reportsByDate = new Map();
         logEntries.forEach(log => {
@@ -743,50 +767,31 @@
         return sortedDates.map(date => ({ date, reports: reportsByDate.get(date) }));
     }
 
-    function exportHTMLRekapOnly() {
-        const allReports = buildAllReportsByDate();
-        let rows = '';
-        for (let day of allReports) {
-            const dateDisplay = day.date.split('-').reverse().join('/');
-            for (let r of day.reports) {
-                const statusBadge = r.type === 'normal' ? '<span class="badge-small badge-normal">✅ Normal</span>' : '<span class="badge-small badge-gangguan">⚠️ Gangguan</span>';
-                const reasonHtml = r.reason ? escapeHtml(r.reason) : '-';
-                let photoHtml = '-';
-                if (r.imageBase64) photoHtml = `<img src="${r.imageBase64}" style="max-width:70px; border-radius:8px;">`;
-                rows += `<tr><td>${dateDisplay}</td><td>${r.channelName}</td><td>${statusBadge}</td><td>${reasonHtml}</td><td>${escapeHtml(r.petugas)}</td><td>${photoHtml}</td><td>${r.timestamp}</td></tr>`;
-            }
-        }
-        const htmlContent = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Rekap TVRI</title><style>body{font-family:Inter,sans-serif;padding:20px;} table{border-collapse:collapse;width:100%} th,td{border:1px solid #ccc;padding:8px}</style></head><body><h1>Rekap Laporan TVRI</h1><table border="1"><thead><tr><th>Tanggal</th><th>Channel</th><th>Status</th><th>Penyebab</th><th>Petugas</th><th>Foto</th><th>Waktu</th></tr></thead><tbody>${rows}</tbody></table></body></html>`;
-        const blob = new Blob([htmlContent], {type: "text/html"});
-        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `tvri_rekap_${Date.now()}.html`; a.click(); URL.revokeObjectURL(blob);
-    }
-
-    function exportDailyToCSV() {
+    function renderDailyTable() {
+        const container = document.getElementById('dailyTableContainer');
         const dailyData = buildDailyReportLastOnly();
-        const rows = [["Tanggal","Channel","Status","Penyebab","Petugas","Foto","Waktu"]];
+        if (dailyData.length === 0) { container.innerHTML = '<div style="padding:20px; text-align:center;">Belum ada data laporan harian.</div>'; return; }
+        let html = `<table class="daily-table"><thead><tr><th>Tanggal</th><th>Channel</th><th>Status</th><th>Penyebab</th><th>Petugas</th><th>Foto</th><th>Waktu</th></tr></thead><tbody>`;
         for (let day of dailyData) {
             const dateDisplay = day.date.split('-').reverse().join('/');
-            for (let r of day.reports) {
-                rows.push([dateDisplay, r.channelName, r.type==='normal'?'Normal':'Gangguan', r.reason||'', r.petugas, r.imageBase64?'Ya':'Tidak', r.timestamp]);
+            for (let report of day.reports) {
+                const statusBadge = report.type === 'normal' ? '<span class="badge-small badge-normal">✅ Normal</span>' : '<span class="badge-small badge-gangguan">⚠️ Gangguan</span>';
+                const reasonHtml = report.reason ? `<i class="fas fa-comment"></i> ${escapeHtml(report.reason)}` : '-';
+                let photoHtml = '-';
+                if (report.imageBase64) photoHtml = `<img src="${report.imageBase64}" class="photo-thumb" onclick="window.showFullImageModal('${report.imageBase64.replace(/'/g, "\\'")}')" style="cursor:pointer;">`;
+                html += `<tr>
+                    <td>${dateDisplay}</td>
+                    <td><i class="${CHANNELS.find(c=>c.id===report.channelId)?.icon}"></i> ${report.channelName}</td>
+                    <td>${statusBadge}</td>
+                    <td>${reasonHtml}</td>
+                    <td><i class="fas fa-user"></i> ${escapeHtml(report.petugas)}</td>
+                    <td>${photoHtml}</td>
+                    <td>${report.timestamp.split(',')[1] || report.timestamp}</td>
+                </tr>`;
             }
         }
-        const csv = rows.map(row => row.map(cell => `"${cell}"`).join(",")).join("\n");
-        const blob = new Blob(["\uFEFF" + csv], {type: "text/csv"});
-        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `tvri_daily_${new Date().toISOString().slice(0,10)}.csv`; a.click(); URL.revokeObjectURL(blob);
-    }
-
-    async function resetAllChannels() {
-        if (confirm("Reset semua channel ke NORMAL? Data laporan tidak dihapus.")) {
-            let changed = false;
-            for (let ch of CHANNELS) {
-                if (channelStatus[ch.id] === 'gangguan') { channelStatus[ch.id] = 'normal'; changed = true; }
-            }
-            const sysLog = { id: Date.now(), channelId: "system", channelName: "Sistem", type: "sistem", message: "🔧 RESET MANUAL: Semua channel ke NORMAL.", reason: null, petugas: currentPetugas || "Sistem", timestamp: new Date().toLocaleString('id-ID'), imageBase64: null, edited: false, rawTime: Date.now() };
-            logEntries.unshift(sysLog);
-            await persistData();
-            renderAll();
-            alert(changed ? "Status semua channel direset ke NORMAL." : "Semua channel sudah NORMAL.");
-        }
+        html += `</tbody></table>`;
+        container.innerHTML = html;
     }
 
     function updateStats() {
@@ -838,45 +843,87 @@
     }
 
     function bindUiButtons() {
-        document.getElementById('resetAllBtn').addEventListener('click', resetAllChannels);
+        document.getElementById('resetAllBtn').addEventListener('click', async () => {
+            if (confirm("Reset semua channel ke NORMAL? Data laporan tidak dihapus.")) {
+                let newStatus = { ...channelStatus };
+                let changed = false;
+                for (let ch of CHANNELS) {
+                    if (newStatus[ch.id] === 'gangguan') { newStatus[ch.id] = 'normal'; changed = true; }
+                }
+                if (changed) {
+                    await setStatusToFirebase(newStatus);
+                    const sysLog = {
+                        id: Date.now() + Math.random(),
+                        channelId: "system", channelName: "Sistem", type: "sistem",
+                        message: "🔧 RESET MANUAL: Semua channel ke NORMAL.",
+                        reason: null, petugas: currentPetugas || "Sistem",
+                        timestamp: new Date().toLocaleString('id-ID'), imageBase64: null, edited: false, rawTime: Date.now()
+                    };
+                    const newLogs = [sysLog, ...logEntries].slice(0, 500);
+                    await updateLogsLocallyAndSync(newLogs);
+                    alert("Status semua channel direset ke NORMAL.");
+                } else {
+                    alert("Semua channel sudah NORMAL.");
+                }
+            }
+        });
         document.getElementById('exportDailyCsvBtn').addEventListener('click', exportDailyToCSV);
         document.getElementById('exportHtmlRekapOnlyBtn').addEventListener('click', exportHTMLRekapOnly);
         document.getElementById('simpanPetugasBtn').addEventListener('click', async () => {
             const nama = document.getElementById('namaPetugasInput').value.trim();
             if (!nama) return alert("Nama petugas tidak boleh kosong.");
-            currentPetugas = nama;
-            await persistData();
+            await updatePetugasLocallyAndSync(nama);
             alert(`Petugas: ${currentPetugas}`);
-            renderAll();
         });
     }
 
-    // INISIALISASI
-    async function init() {
-        loadLocalData();
-        renderAll();
-        bindUiButtons();
-        bindGlobalEvents();
-
-        if (window.db) {
-            isFirebaseReady = true;
-            await loadFromFirebase();
-            renderAll();
-            updateFirebaseStatus(true, "Terhubung");
-        } else {
-            setTimeout(async () => {
-                if (window.db) {
-                    isFirebaseReady = true;
-                    await loadFromFirebase();
-                    renderAll();
-                    updateFirebaseStatus(true, "Terhubung");
-                } else {
-                    updateFirebaseStatus(false, "Firebase tidak tersedia");
-                }
-            }, 500);
+    function exportDailyToCSV() {
+        const dailyData = buildDailyReportLastOnly();
+        const rows = [["Tanggal","Channel","Status","Penyebab","Petugas","Foto","Waktu"]];
+        for (let day of dailyData) {
+            const dateDisplay = day.date.split('-').reverse().join('/');
+            for (let r of day.reports) {
+                rows.push([dateDisplay, r.channelName, r.type==='normal'?'Normal':'Gangguan', r.reason||'', r.petugas, r.imageBase64?'Ya':'Tidak', r.timestamp]);
+            }
         }
+        const csv = rows.map(row => row.map(cell => `"${cell}"`).join(",")).join("\n");
+        const blob = new Blob(["\uFEFF" + csv], {type: "text/csv"});
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `tvri_daily_${new Date().toISOString().slice(0,10)}.csv`; a.click(); URL.revokeObjectURL(blob);
     }
-    init();
+
+    function exportHTMLRekapOnly() {
+        const allReports = buildAllReportsByDate();
+        let rows = '';
+        for (let day of allReports) {
+            const dateDisplay = day.date.split('-').reverse().join('/');
+            for (let r of day.reports) {
+                const statusBadge = r.type === 'normal' ? '<span class="badge-small badge-normal">✅ Normal</span>' : '<span class="badge-small badge-gangguan">⚠️ Gangguan</span>';
+                const reasonHtml = r.reason ? escapeHtml(r.reason) : '-';
+                let photoHtml = '-';
+                if (r.imageBase64) photoHtml = `<img src="${r.imageBase64}" style="max-width:70px; border-radius:8px;">`;
+                rows += `<tr><td>${dateDisplay}</td><td>${r.channelName}</td><td>${statusBadge}</td><td>${reasonHtml}</td><td>${escapeHtml(r.petugas)}</td><td>${photoHtml}</td><td>${r.timestamp}</td></tr>`;
+            }
+        }
+        const htmlContent = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Rekap TVRI</title><style>body{font-family:Inter,sans-serif;padding:20px;} table{border-collapse:collapse;width:100%} th,td{border:1px solid #ccc;padding:8px}</style></head><body><h1>Rekap Laporan TVRI</h1><table border="1"><thead><tr><th>Tanggal</th><th>Channel</th><th>Status</th><th>Penyebab</th><th>Petugas</th><th>Foto</th><th>Waktu</th></tr></thead><tbody>${rows}</tbody></table></body></html>`;
+        const blob = new Blob([htmlContent], {type: "text/html"});
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `tvri_rekap_${Date.now()}.html`; a.click(); URL.revokeObjectURL(blob);
+    }
+
+    // INISIALISASI FIREBASE
+    async function initFirebase() {
+        if (!window.db) {
+            setTimeout(initFirebase, 300);
+            return;
+        }
+        isFirebaseReady = true;
+        await enablePersistence();
+        attachRealtimeListeners();
+        updateFirebaseStatus(true, "Terhubung (realtime)");
+    }
+
+    initFirebase();
+    bindUiButtons();
+    bindGlobalEvents();
 </script>
 </body>
 </html>
