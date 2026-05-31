@@ -15,132 +15,257 @@
     <script src="firebase-config.js"></script>
 
     <script>
-        tailwind.config = { theme: { extend: { colors: { primary: '#1e6f5c', accent: '#0e5a48', secondary: '#f5b042' } } } }
+        tailwind.config = { 
+            theme: { 
+                extend: { 
+                    colors: { 
+                        primary: '#1e6f5c', 
+                        accent: '#0e5a48', 
+                        secondary: '#f5b042' 
+                    },
+                    fontFamily: {
+                        'sans': ['Inter', 'system-ui', 'sans-serif'],
+                    }
+                } 
+            } 
+        }
     </script>
     <style>
-        .loading-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 999; backdrop-filter: blur(2px); font-family: 'Inter', sans-serif; }
-        .table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 0.5rem; }
+        .loading-overlay { 
+            position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.75); 
+            display: flex; align-items: center; justify-content: center; z-index: 999; 
+            backdrop-filter: blur(4px); font-family: 'Inter', sans-serif;
+        }
+        .table-wrapper { 
+            overflow-x: auto; 
+            -webkit-overflow-scrolling: touch; 
+            scrollbar-width: thin;
+        }
+        /* Mobile optimasi tombol & sentuhan */
         @media (max-width: 640px) {
-            td, th { font-size: 0.7rem; padding: 0.5rem 0.3rem; }
-            .badge-genset { font-size: 0.65rem; padding: 0.2rem 0.8rem; }
-            h1 { font-size: 1.6rem; }
-            .btn-table-hapus { padding: 0.2rem 0.4rem; font-size: 0.65rem; }
+            button, .btn-action, .btn-table-hapus { 
+                min-height: 40px;
+            }
+            td, th { 
+                font-size: 0.7rem; 
+                padding: 0.6rem 0.35rem; 
+            }
+            .badge-genset { 
+                font-size: 0.65rem; 
+                padding: 0.3rem 0.8rem; 
+            }
+            h1 { 
+                font-size: 1.5rem; 
+            }
+            .camera-controls button {
+                padding: 0.5rem 0.8rem;
+                font-size: 0.7rem;
+            }
         }
         @media (max-width: 480px) {
-            td, th { font-size: 0.65rem; padding: 0.4rem 0.2rem; }
-            .container { padding-left: 0.75rem; padding-right: 0.75rem; }
+            .container { 
+                padding-left: 0.75rem; 
+                padding-right: 0.75rem; 
+            }
+            .form-grid-mobile {
+                gap: 0.75rem;
+            }
         }
-        .modal-img { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 2000; cursor: pointer; }
-        .modal-img img { max-width: 90%; max-height: 90%; border-radius: 16px; object-fit: contain; }
-        input:disabled, input[readonly] { background-color: #f3f4f6; cursor: default; }
-        #videoCamera { width: 100%; max-height: 50vh; object-fit: cover; background: black; }
-        .sync-status { font-size: 0.7rem; padding: 2px 10px; border-radius: 20px; background: rgba(255,255,240,0.3); display: inline-block; margin-left: 12px; vertical-align: middle; }
-        .btn-hijau { background-color: #1e6f5c; transition: all 0.2s; }
-        .btn-hijau:hover { background-color: #0e5a48; transform: translateY(-2px); }
+        .modal-img { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.95); display: flex; align-items: center; 
+            justify-content: center; z-index: 2000; cursor: pointer; 
+        }
+        .modal-img img { 
+            max-width: 90%; max-height: 90%; border-radius: 20px; object-fit: contain; 
+            box-shadow: 0 20px 35px rgba(0,0,0,0.5);
+        }
+        input:disabled, input[readonly] { 
+            background-color: #f8fafc; cursor: default; 
+        }
+        #videoCamera { 
+            width: 100%; 
+            max-height: 55vh; 
+            object-fit: cover; 
+            background: #000;
+            border-radius: 1rem;
+        }
+        .sync-status { 
+            font-size: 0.7rem; 
+            padding: 4px 12px; 
+            border-radius: 40px; 
+            background: rgba(255,255,240,0.25); 
+            display: inline-block; 
+            margin-left: 12px; 
+            vertical-align: middle;
+            font-weight: 500;
+        }
+        .btn-hijau { 
+            background-color: #1e6f5c; 
+            transition: all 0.2s ease; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .btn-hijau:hover { 
+            background-color: #0e5a48; 
+            transform: translateY(-1px); 
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .btn-hijau:active { transform: translateY(1px); }
         .text-hijau { color: #1e6f5c; }
         .border-hijau { border-color: #1e6f5c; }
-        .bg-hijau-soft { background: linear-gradient(135deg, #eef2f8 0%, #e0f0ec 100%); }
+        .bg-hijau-soft { background: linear-gradient(145deg, #eef2f8 0%, #e0f0ec 100%); }
+        .card-shadow { box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.08); }
+        .photo-preview-box {
+            transition: all 0.2s;
+        }
     </style>
 </head>
-<body class="bg-hijau-soft font-sans antialiased" style="font-family: 'Inter', sans-serif;">
-    <div class="container max-w-7xl mx-auto px-4 py-4 md:py-8">
-        <!-- Header Responsif -->
-        <div class="text-center mb-6 md:mb-8">
-            <div class="inline-flex items-center justify-center bg-gradient-to-r from-primary to-accent p-2 md:p-3 rounded-full shadow-md">
-                <i class="fas fa-gas-pump text-white text-xl md:text-2xl"></i>
+<body class="bg-hijau-soft font-sans antialiased">
+    <div class="container max-w-7xl mx-auto px-4 py-5 md:py-8">
+        <!-- Header lebih fresh dan modern -->
+        <div class="text-center mb-7 md:mb-9">
+            <div class="inline-flex items-center justify-center bg-gradient-to-r from-primary to-accent p-3 md:p-3.5 rounded-2xl shadow-lg">
+                <i class="fas fa-gas-pump text-white text-2xl md:text-3xl"></i>
             </div>
-            <h1 class="text-xl md:text-4xl font-extrabold text-slate-800 mt-2 md:mt-3">
+            <h1 class="text-2xl md:text-4xl font-extrabold text-slate-800 mt-3 flex flex-wrap items-center justify-center gap-2">
                 Pencatatan Penggunaan Genset
                 <span id="firebaseStatus" class="sync-status"><i class="fas fa-cloud-upload-alt"></i> Menghubungkan...</span>
             </h1>
-            <div class="mt-2 flex justify-center">
-                <span class="badge-genset bg-primary text-white text-xs md:text-sm rounded-full px-3 py-1.5"><i class="fas fa-industry mr-1 md:mr-2"></i> Genset Utama - Tanah Merah | Unit Darurat | Data tersimpan di Firebase Realtime (offline-ready)</span>
+            <div class="mt-3 flex flex-wrap justify-center gap-2">
+                <span class="bg-primary/90 text-white text-xs md:text-sm rounded-full px-4 py-1.5 shadow-sm"><i class="fas fa-industry mr-1 md:mr-2"></i> Genset Utama - Tanah Merah | Unit Darurat</span>
+                <span class="bg-slate-700/80 text-white text-xs md:text-sm rounded-full px-4 py-1.5 shadow-sm"><i class="fas fa-database mr-1"></i> Firebase Realtime (Offline-ready)</span>
             </div>
         </div>
 
-        <!-- Form Card -->
-        <div class="bg-white rounded-2xl shadow-xl overflow-hidden mb-6 md:mb-8 border border-gray-100 transition-all">
-            <div class="bg-gradient-to-r from-primary to-accent px-4 md:px-5 py-3 md:py-4">
-                <h2 class="text-base md:text-xl font-semibold text-white"><i class="fas fa-pen-alt mr-2"></i> Input Data Operasi Genset</h2>
+        <!-- Form Card dengan tata letak lebih rapi -->
+        <div class="bg-white rounded-2xl card-shadow overflow-hidden mb-7 md:mb-9 border border-gray-100 transition-all">
+            <div class="bg-gradient-to-r from-primary to-accent px-5 md:px-6 py-3.5 md:py-4">
+                <h2 class="text-lg md:text-xl font-semibold text-white"><i class="fas fa-pen-alt mr-2"></i> Input Data Operasi Genset</h2>
             </div>
-            <div class="p-4 md:p-6">
-                <form id="formGenset" class="space-y-4 md:space-y-5">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
-                        <div><label class="block text-sm font-medium text-gray-700 mb-1">Nomor (Otomatis)</label><input type="text" id="nomorOtomatis" readonly class="w-full bg-gray-100 border border-gray-300 rounded-xl px-3 py-2 md:px-4 md:py-2.5 text-gray-600 font-mono text-sm"></div>
-                        <div><label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Operasi <span class="text-red-500">*</span></label><input type="date" id="tanggal" required class="w-full border border-gray-300 rounded-xl px-3 py-2 md:px-4 md:py-2.5 focus:ring-2 focus:ring-primary focus:border-primary text-sm"></div>
+            <div class="p-5 md:p-7">
+                <form id="formGenset" class="space-y-5">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Nomor (Otomatis)</label>
+                            <input type="text" id="nomorOtomatis" readonly class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-gray-700 font-mono text-sm focus:ring-1 focus:ring-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Tanggal Operasi <span class="text-red-500">*</span></label>
+                            <input type="date" id="tanggal" required class="w-full border border-gray-200 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary focus:border-primary text-sm">
+                        </div>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
-                        <div><label class="block text-sm font-medium text-gray-700 mb-1">Waktu Genset ON <span class="text-red-500">*</span></label><input type="time" id="waktuOn" required class="w-full border border-gray-300 rounded-xl px-3 py-2 md:px-4 md:py-2.5 focus:ring-2 focus:ring-primary"></div>
-                        <div><label class="block text-sm font-medium text-gray-700 mb-1">Waktu Genset OFF <span class="text-red-500">*</span></label><input type="time" id="waktuOff" required class="w-full border border-gray-300 rounded-xl px-3 py-2 md:px-4 md:py-2.5 focus:ring-2 focus:ring-primary"></div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Waktu Genset ON <span class="text-red-500">*</span></label>
+                            <input type="time" id="waktuOn" required class="w-full border border-gray-200 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Waktu Genset OFF <span class="text-red-500">*</span></label>
+                            <input type="time" id="waktuOff" required class="w-full border border-gray-200 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary">
+                        </div>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
-                        <div><label class="block text-sm font-medium text-gray-700 mb-1">Total Waktu Nyala (HH:MM)</label><input type="text" id="totalDurasi" readonly placeholder="Otomatis" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 md:px-4 md:py-2.5 font-mono text-sm"></div>
-                        <div><label class="block text-sm font-medium text-gray-700 mb-1">Total Liter BBM <span class="text-red-500">*</span></label><input type="number" step="0.01" id="totalLiter" required placeholder="Contoh: 45.75" class="w-full border border-gray-300 rounded-xl px-3 py-2 md:px-4 md:py-2.5 focus:ring-2 focus:ring-primary"></div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Total Waktu Nyala (HH:MM)</label>
+                            <input type="text" id="totalDurasi" readonly placeholder="Otomatis terhitung" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 font-mono text-sm text-primary font-medium">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Total Liter BBM <span class="text-red-500">*</span></label>
+                            <input type="number" step="0.01" id="totalLiter" required placeholder="Contoh: 45.75" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary">
+                        </div>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
-                        <div><label class="block text-sm font-medium text-gray-700 mb-1">Petugas / Operator <span class="text-red-500">*</span></label><input type="text" id="petugas" required placeholder="Nama petugas" class="w-full border border-gray-300 rounded-xl px-3 py-2 md:px-4 md:py-2.5 focus:ring-2 focus:ring-primary"></div>
-                        <div><label class="block text-sm font-medium text-gray-700 mb-1">Keterangan</label><textarea id="keterangan" rows="1" placeholder="Catatan tambahan (opsional)" class="w-full border border-gray-300 rounded-xl px-3 py-2 md:px-4 md:py-2.5 resize-y focus:ring-2 focus:ring-primary"></textarea></div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Petugas / Operator <span class="text-red-500">*</span></label>
+                            <input type="text" id="petugas" required placeholder="Nama petugas" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Keterangan</label>
+                            <textarea id="keterangan" rows="1" placeholder="Catatan tambahan (opsional)" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 resize-y focus:ring-2 focus:ring-primary"></textarea>
+                        </div>
                     </div>
                     
-                    <!-- Dokumentasi Foto -->
-                    <div class="border-t border-gray-200 pt-4 mt-2">
-                        <label class="block text-sm md:text-md font-semibold text-gray-800 mb-2"><i class="fas fa-camera-retro text-primary mr-2"></i> Dokumentasi Foto Genset + Watermark</label>
-                        <div class="bg-slate-50 rounded-xl p-3 md:p-4 border border-dashed border-gray-300">
-                            <div class="flex flex-col items-center gap-3">
-                                <div class="relative w-28 h-28 md:w-36 md:h-36 rounded-xl overflow-hidden bg-gray-200 border-2 border-gray-300 shadow-sm">
-                                    <img id="fotoPreview" src="https://placehold.co/400x400?text=Belum+Ada+Foto" class="w-full h-full object-cover">
+                    <!-- Dokumentasi Foto + Watermark dengan tampilan modern -->
+                    <div class="border-t border-gray-200 pt-5 mt-2">
+                        <label class="block text-base font-bold text-gray-800 mb-3"><i class="fas fa-camera-retro text-primary mr-2"></i> Dokumentasi Foto Genset + Watermark Otomatis</label>
+                        <div class="bg-slate-50 rounded-xl p-4 md:p-5 border border-dashed border-gray-300 transition-all">
+                            <div class="flex flex-col md:flex-row items-center gap-5">
+                                <div class="relative w-32 h-32 md:w-40 md:h-40 rounded-2xl overflow-hidden bg-gray-200 border-2 border-primary/30 shadow-md">
+                                    <img id="fotoPreview" src="https://placehold.co/400x400?text=📸+Foto+Genset" class="w-full h-full object-cover">
                                 </div>
                                 <div class="flex flex-wrap gap-2 justify-center">
-                                    <button type="button" id="btnBukaKamera" class="btn-hijau text-white px-3 py-1.5 md:px-4 md:py-2 rounded-xl text-xs md:text-sm shadow"><i class="fas fa-video mr-1"></i> Buka Kamera</button>
-                                    <button type="button" id="btnCaptureFoto" class="btn-hijau text-white px-3 py-1.5 md:px-4 md:py-2 rounded-xl disabled:opacity-50 text-xs md:text-sm shadow" disabled><i class="fas fa-camera mr-1"></i> Ambil</button>
-                                    <button type="button" id="btnHapusFoto" class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1.5 md:px-4 md:py-2 rounded-xl text-xs md:text-sm"><i class="fas fa-trash-alt mr-1"></i> Hapus</button>
-                                    <button type="button" id="btnUploadManual" class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 md:px-4 md:py-2 rounded-xl text-xs md:text-sm shadow"><i class="fas fa-upload mr-1"></i> Upload</button>
+                                    <button type="button" id="btnBukaKamera" class="btn-hijau text-white px-4 py-2 rounded-xl text-sm shadow-md font-medium"><i class="fas fa-video mr-1"></i> Buka Kamera</button>
+                                    <button type="button" id="btnCaptureFoto" class="btn-hijau text-white px-4 py-2 rounded-xl disabled:opacity-50 text-sm shadow-md font-medium" disabled><i class="fas fa-camera mr-1"></i> Ambil Foto</button>
+                                    <button type="button" id="btnHapusFoto" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-xl text-sm shadow"><i class="fas fa-trash-alt mr-1"></i> Hapus</button>
+                                    <button type="button" id="btnUploadManual" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-xl text-sm shadow-md font-medium"><i class="fas fa-upload mr-1"></i> Upload Gambar</button>
                                 </div>
                             </div>
-                            <div id="videoContainer" class="hidden mt-4 rounded-xl overflow-hidden bg-black shadow-md">
-                                <video id="videoCamera" autoplay playsinline class="w-full max-h-64 object-cover"></video>
-                                <div class="flex justify-between p-2 bg-gray-900"><span class="text-white text-xs"><i class="fas fa-info-circle"></i> Izin kamera & lokasi</span><button type="button" id="btnTutupKamera" class="text-red-400 text-sm"><i class="fas fa-times-circle"></i> Tutup</button></div>
+                            <!-- Video Kamera area -->
+                            <div id="videoContainer" class="hidden mt-5 rounded-xl overflow-hidden bg-black shadow-xl">
+                                <video id="videoCamera" autoplay playsinline class="w-full max-h-72 object-cover"></video>
+                                <div class="flex justify-between items-center p-3 bg-gray-900">
+                                    <span class="text-white text-xs"><i class="fas fa-info-circle"></i> Pastikan posisi genset terlihat jelas</span>
+                                    <button type="button" id="btnTutupKamera" class="text-red-400 hover:text-red-300 text-sm font-medium"><i class="fas fa-times-circle"></i> Tutup Kamera</button>
+                                </div>
                             </div>
                             <input type="hidden" id="fotoData64" value="">
                             <input type="hidden" id="fotoJam" value="">
                             <input type="hidden" id="fotoLat" value="">
                             <input type="hidden" id="fotoLng" value="">
-                            <p class="text-[11px] md:text-xs text-gray-500 mt-3 bg-white/60 p-1 rounded"><i class="fas fa-shield-alt text-green-600"></i> <strong>Watermark</strong> : Logo Genset + info Unit, Operator, Waktu & Koordinat</p>
+                            <div class="mt-4 bg-white/70 rounded-lg p-2 text-xs text-gray-600 flex items-start gap-2">
+                                <i class="fas fa-shield-alt text-green-600 text-sm mt-0.5"></i>
+                                <span><strong class="text-gray-800">Watermark otomatis :</strong> Logo GS⚡ + Nama Operator, Waktu & Koordinat terkini akan menyatu pada foto. Gunakan kamera atau upload untuk hasil terbaik.</span>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="flex flex-col sm:flex-row gap-3 pt-2">
-                        <button type="submit" class="btn-hijau text-white font-semibold py-2.5 md:py-3 rounded-xl flex-1 transition shadow text-sm md:text-base"><i class="fas fa-save mr-2"></i> Simpan Data Genset</button>
-                        <button type="button" id="btnResetForm" class="bg-gray-200 hover:bg-gray-300 text-gray-800 py-2.5 md:py-3 rounded-xl flex-1 transition text-sm md:text-base"><i class="fas fa-undo-alt mr-2"></i> Reset Form</button>
+                    <div class="flex flex-col sm:flex-row gap-3 pt-4">
+                        <button type="submit" class="btn-hijau text-white font-bold py-3 rounded-xl flex-1 transition shadow-md text-sm md:text-base"><i class="fas fa-save mr-2"></i> Simpan Data Genset</button>
+                        <button type="button" id="btnResetForm" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-3 rounded-xl flex-1 transition text-sm md:text-base"><i class="fas fa-undo-alt mr-2"></i> Reset Form</button>
                     </div>
                 </form>
             </div>
         </div>
 
-        <!-- Riwayat Tabel -->
-        <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
-            <div class="bg-gradient-to-r from-primary to-accent px-4 md:px-5 py-3 md:py-4 flex flex-col sm:flex-row justify-between items-center gap-3">
-                <h2 class="text-base md:text-xl font-semibold text-white"><i class="fas fa-table-list mr-2"></i> Riwayat Penggunaan Genset</h2>
+        <!-- Riwayat Tabel dengan Card lebih menarik -->
+        <div class="bg-white rounded-2xl card-shadow overflow-hidden border border-gray-100">
+            <div class="bg-gradient-to-r from-primary to-accent px-5 md:px-6 py-3.5 md:py-4 flex flex-col sm:flex-row justify-between items-center gap-3">
+                <h2 class="text-lg md:text-xl font-semibold text-white"><i class="fas fa-table-list mr-2"></i> Riwayat Penggunaan Genset</h2>
                 <div class="flex gap-2">
-                    <button id="btnExportHTML" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs md:text-sm px-3 py-1.5 rounded-full shadow"><i class="fas fa-file-export mr-1"></i> Export</button>
-                    <button id="btnHapusSemua" class="bg-red-600 hover:bg-red-700 text-white text-xs md:text-sm px-3 py-1.5 rounded-full shadow"><i class="fas fa-dumpster-fire mr-1"></i> Hapus Semua</button>
+                    <button id="btnExportHTML" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs md:text-sm px-4 py-1.5 rounded-full shadow transition"><i class="fas fa-file-export mr-1"></i> Export HTML</button>
+                    <button id="btnHapusSemua" class="bg-red-600 hover:bg-red-700 text-white text-xs md:text-sm px-4 py-1.5 rounded-full shadow transition"><i class="fas fa-dumpster-fire mr-1"></i> Hapus Semua</button>
                 </div>
             </div>
             <div class="table-wrapper p-2 md:p-4">
-                <table class="min-w-[750px] md:min-w-full bg-white border border-gray-200 rounded-xl text-xs md:text-sm" id="riwayatTable">
-                    <thead class="bg-gray-100">
-                        <tr><th class="py-2 md:py-3 px-1 md:px-2">No</th><th>Tanggal</th><th>ON</th><th>OFF</th><th>Durasi</th><th>Liter</th><th>Foto</th><th>Jam Foto</th><th>Koordinat</th><th>Petugas</th><th>Keterangan</th><th>Aksi</th></tr>
+                <table class="min-w-[850px] md:min-w-full bg-white border-separate border-spacing-0 w-full text-xs md:text-sm" id="riwayatTable">
+                    <thead class="bg-gray-100 sticky top-0">
+                        <tr class="text-gray-700">
+                            <th class="py-3 px-1.5 font-semibold">No</th>
+                            <th class="py-3 px-1.5">Tanggal</th>
+                            <th class="py-3 px-1.5">ON</th>
+                            <th class="py-3 px-1.5">OFF</th>
+                            <th class="py-3 px-1.5">Durasi</th>
+                            <th class="py-3 px-1.5">Liter</th>
+                            <th class="py-3 px-1.5">Foto</th>
+                            <th class="py-3 px-1.5">Jam Foto</th>
+                            <th class="py-3 px-1.5">Koordinat</th>
+                            <th class="py-3 px-1.5">Petugas</th>
+                            <th class="py-3 px-1.5">Keterangan</th>
+                            <th class="py-3 px-1.5">Aksi</th>
+                        </tr>
                     </thead>
-                    <tbody id="tabelBody"><tr><td colspan="12" class="text-center py-6 md:py-8 text-gray-400">⚙️ Memuat data...</tr></table>
+                    <tbody id="tabelBody">
+                        <tr><td colspan="12" class="text-center py-10 text-gray-400"><i class="fas fa-spinner fa-pulse mr-2"></i> Memuat data dari Firebase...</td></tr>
+                    </tbody>
                 </table>
             </div>
         </div>
     </div>
 
     <script>
-        // ======================== KONFIGURASI FIREBASE (Offline Persistence + Realtime) ========================
+        // ======================== KONFIGURASI FIREBASE & GLOBAL ========================
         let isFirebaseReady = false;
-        let dataEntries = [];          // akan diisi oleh listener
+        let dataEntries = [];
         let listenerRef = null;
         let isInternalUpdate = false;
         const DB_PATH = 'monitoring/genset/entries';
@@ -150,11 +275,11 @@
             if (statusEl) {
                 if (connected) {
                     statusEl.innerHTML = `<i class="fas fa-check-circle text-green-600"></i> ${message}`;
-                    statusEl.classList.remove('bg-red-100', 'text-red-700', 'bg-gray-100', 'text-gray-600');
+                    statusEl.classList.remove('bg-red-100', 'text-red-700');
                     statusEl.classList.add('bg-green-100', 'text-green-700');
                 } else {
                     statusEl.innerHTML = `<i class="fas fa-exclamation-triangle text-amber-600"></i> ${message}`;
-                    statusEl.classList.remove('bg-green-100', 'text-green-700', 'bg-gray-100', 'text-gray-600');
+                    statusEl.classList.remove('bg-green-100', 'text-green-700');
                     statusEl.classList.add('bg-red-100', 'text-red-700');
                 }
             }
@@ -163,44 +288,31 @@
         async function enablePersistence() {
             if (!window.db) return false;
             try {
-                if (window.db.enablePersistence) {
-                    await window.db.enablePersistence();
-                    console.log("Firebase persistence aktif (offline support)");
-                } else if (window.firebase && window.firebase.database) {
-                    await window.firebase.database().enablePersistence();
-                } else {
-                    console.warn("enablePersistence tidak tersedia");
-                }
+                if (window.db.enablePersistence) await window.db.enablePersistence();
+                else if (window.firebase && window.firebase.database) await window.firebase.database().enablePersistence();
+                console.log("🔥 Firebase persistence aktif (offline support)");
                 return true;
             } catch (err) {
-                if (err.code === 'failed-precondition') {
-                    console.warn("Multiple tab terbuka, persistence tidak bisa diaktifkan");
-                } else if (err.code === 'unavailable') {
-                    console.warn("Browser tidak support persistence");
-                } else {
-                    console.error("Error persistence:", err);
-                }
+                console.warn("Persistence tidak aktif:", err);
                 return false;
             }
         }
 
-        // Fungsi untuk menulis seluruh data ke Firebase (set)
         async function setEntriesToFirebase(entriesArray) {
             if (!isFirebaseReady || !window.db) return false;
             try {
                 const entriesObj = {};
                 entriesArray.forEach(entry => { entriesObj[entry.id] = entry; });
                 await window.db.ref(DB_PATH).set(entriesObj);
-                updateFirebaseStatus(true, "Tersinkron");
+                updateFirebaseStatus(true, `Tersinkron (${entriesArray.length} data)`);
                 return true;
             } catch (err) {
-                console.error("Gagal set entries ke Firebase:", err);
+                console.error("Gagal simpan ke Firebase:", err);
                 updateFirebaseStatus(false, "Gagal simpan");
                 return false;
             }
         }
 
-        // Pasang listener realtime
         function attachRealtimeListener() {
             if (!isFirebaseReady || !window.db) return;
             if (listenerRef) listenerRef.off();
@@ -209,11 +321,14 @@
                 if (isInternalUpdate) return;
                 const data = snapshot.val();
                 if (data && typeof data === 'object') {
-                    const entriesArray = Object.values(data);
+                    let entriesArray = Object.values(data);
                     entriesArray.sort((a,b) => (a.id || 0) - (b.id || 0));
                     dataEntries = entriesArray;
-                    // Pastikan field default ada
-                    dataEntries.forEach(e => { if (!e.jamFoto) e.jamFoto = "-"; if (e.lat === undefined) e.lat = null; if (e.lng === undefined) e.lng = null; });
+                    dataEntries.forEach(e => { 
+                        if (!e.jamFoto) e.jamFoto = "-"; 
+                        if (e.lat === undefined) e.lat = null; 
+                        if (e.lng === undefined) e.lng = null; 
+                    });
                 } else {
                     dataEntries = [];
                 }
@@ -222,11 +337,10 @@
                 updateFirebaseStatus(true, `Realtime (${dataEntries.length} data)`);
             }, (error) => {
                 console.error("Listener error:", error);
-                updateFirebaseStatus(false, "Error listener");
+                updateFirebaseStatus(false, "Error realtime");
             });
         }
 
-        // ========== DATA HANDLING (CRUD langsung ke Firebase) ==========
         function getNextId() { return dataEntries.length ? Math.max(...dataEntries.map(e=>e.id)) + 1 : 1; }
         function updateNomorOtomatis() { document.getElementById("nomorOtomatis").value = getNextId(); }
 
@@ -251,48 +365,50 @@
             isInternalUpdate = false;
         }
 
-        // ========== RENDER TABLE ==========
+        // ========== RENDER TABLE INTERAKTIF ==========
         function renderTable() {
             const tbody = document.getElementById("tabelBody");
-            if(!dataEntries.length) { tbody.innerHTML = `<tr><td colspan="12" class="text-center py-6 md:py-8 text-gray-400">📭 Belum ada data operasi genset</tr>`; return; }
+            if(!dataEntries.length) { 
+                tbody.innerHTML = `<tr><td colspan="12" class="text-center py-8 text-gray-400"><i class="far fa-folder-open"></i> 📭 Belum ada data operasi genset</td></tr>`; 
+                return; 
+            }
             let html = "";
             dataEntries.forEach(entry => {
-                let fotoHtml = `<div class="w-7 h-7 md:w-8 md:h-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden shadow-inner">${entry.fotoBase64 && entry.fotoBase64.startsWith("data:image") ? `<img src="${entry.fotoBase64}" class="w-full h-full object-cover">` : `<i class="fas fa-image text-gray-400 text-base"></i>`}</div>`;
-                const viewBtn = entry.fotoBase64 ? `<button onclick="viewFullFoto(${entry.id})" class="text-primary text-[10px] md:text-xs ml-0.5 hover:scale-110 transition"><i class="fas fa-search-plus"></i></button>` : '';
+                let fotoHtml = `<div class="w-8 h-8 md:w-9 md:h-9 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden shadow-inner border border-gray-300">${entry.fotoBase64 && entry.fotoBase64.startsWith("data:image") ? `<img src="${entry.fotoBase64}" class="w-full h-full object-cover">` : `<i class="fas fa-camera text-gray-400 text-base"></i>`}</div>`;
+                const viewBtn = entry.fotoBase64 ? `<button onclick="viewFullFoto(${entry.id})" class="text-primary hover:scale-110 transition text-[11px] ml-1"><i class="fas fa-search-plus"></i></button>` : '';
                 let koordinatTeks = "-";
                 if(entry.lat && entry.lng) koordinatTeks = `${entry.lat.toFixed(5)}, ${entry.lng.toFixed(5)}`;
-                else if(entry.lat===null && entry.lng===null) koordinatTeks = "-";
-                html += `<tr class="border-b hover:bg-slate-50">
-                    <td class="py-2 px-1 font-mono text-xs">${entry.id}</td>
-                    <td class="py-2 px-1">${entry.tanggal}</td>
-                    <td class="py-2 px-1">${entry.waktuOn}</td>
-                    <td class="py-2 px-1">${entry.waktuOff}</td>
-                    <td class="py-2 px-1 font-mono font-semibold">${entry.durasi}</td>
-                    <td class="py-2 px-1 font-medium">${entry.totalLiter} L</td>
-                    <td class="py-2 px-1"><div class="flex items-center">${fotoHtml} ${viewBtn}</div></td>
-                    <td class="py-2 px-1 text-[10px] md:text-xs">${entry.jamFoto}</td>
-                    <td class="py-2 px-1 text-[10px] md:text-xs">${koordinatTeks}</td>
-                    <td class="py-2 px-1">${entry.petugas}</td>
-                    <td class="py-2 px-1 max-w-[100px] truncate">${entry.keterangan||'-'}</td>
-                    <td class="py-2 px-1 text-center"><button onclick="deleteEntry(${entry.id})" class="bg-red-100 hover:bg-red-200 text-red-600 px-2 py-0.5 md:py-1 rounded-full text-[10px] md:text-xs"><i class="fas fa-trash-can"></i> Hapus</button></td>
+                html += `<tr class="border-b hover:bg-slate-50 transition">
+                    <td class="py-2.5 px-1.5 font-mono font-semibold">${entry.id}</td>
+                    <td class="py-2.5 px-1.5">${entry.tanggal}</td>
+                    <td class="py-2.5 px-1.5">${entry.waktuOn}</td>
+                    <td class="py-2.5 px-1.5">${entry.waktuOff}</td>
+                    <td class="py-2.5 px-1.5 font-mono font-bold text-primary">${entry.durasi}</td>
+                    <td class="py-2.5 px-1.5 font-medium">${entry.totalLiter} L</td>
+                    <td class="py-2.5 px-1.5"><div class="flex items-center gap-1">${fotoHtml} ${viewBtn}</div></td>
+                    <td class="py-2.5 px-1.5 text-[10px] md:text-xs">${entry.jamFoto}</td>
+                    <td class="py-2.5 px-1.5 text-[10px] md:text-xs">${koordinatTeks}</td>
+                    <td class="py-2.5 px-1.5 font-medium">${entry.petugas}</td>
+                    <td class="py-2.5 px-1.5 max-w-[120px] truncate">${entry.keterangan||'-'}</td>
+                    <td class="py-2.5 px-1.5 text-center"><button onclick="deleteEntry(${entry.id})" class="bg-red-100 hover:bg-red-200 text-red-700 px-2.5 py-1 rounded-full text-[11px] font-medium transition"><i class="fas fa-trash-can"></i> Hapus</button></td>
                 </tr>`;
             });
             tbody.innerHTML = html;
         }
 
-        window.deleteEntry = async (id) => { if(confirm("Yakin hapus data pemakaian genset ini?")) await deleteEntryById(id); };
+        window.deleteEntry = async (id) => { if(confirm("⚠️ Yakin hapus data pemakaian genset ini?")) await deleteEntryById(id); };
         window.viewFullFoto = (id) => {
             const entry = dataEntries.find(e=>e.id===id);
             if(entry?.fotoBase64) {
                 const modal = document.createElement('div');
                 modal.className = "modal-img";
-                modal.innerHTML = `<img src="${entry.fotoBase64}" alt="Foto Genset">`;
+                modal.innerHTML = `<img src="${entry.fotoBase64}" alt="Foto Genset Watermark">`;
                 modal.onclick = () => modal.remove();
                 document.body.appendChild(modal);
             } else alert("Foto tidak tersedia");
         };
 
-        // ========== GEOLOKASI & WATERMARK (sama seperti sebelumnya) ==========
+        // ========== GEOLOKASI & WATERMARK (Premium) ==========
         function getCurrentPosition() { 
             return new Promise((resolve)=>{ 
                 if(!navigator.geolocation) resolve(null); 
@@ -385,8 +501,8 @@
         }
 
         async function processAndTagFoto(originalBase64, petugas) {
-            if (!petugas || petugas.trim() === "") { alert("⚠️ Isi nama petugas terlebih dahulu."); return false; }
-            showLoading("Memproses watermark genset...");
+            if (!petugas || petugas.trim() === "") { alert("⚠️ Isi nama petugas terlebih dahulu sebelum mengambil foto."); return false; }
+            showLoading("Memproses watermark dan lokasi...");
             try {
                 const pos = await getCurrentPosition();
                 const watermarked = await applyWatermarkToImage(originalBase64, petugas, pos);
@@ -399,7 +515,7 @@
                 document.getElementById('fotoPreview').src = watermarked;
                 hideLoading();
                 return true;
-            } catch(e) { hideLoading(); alert("Gagal watermark: " + e.message); return false; }
+            } catch(e) { hideLoading(); alert("Gagal memproses watermark: " + e.message); return false; }
         }
 
         function showLoading(msg) { 
@@ -408,13 +524,13 @@
                 ld=document.createElement('div'); 
                 ld.id='globalLoading'; 
                 ld.className='loading-overlay'; 
-                ld.innerHTML='<div class="bg-slate-800 p-5 rounded-xl shadow-2xl text-white text-center"><i class="fas fa-spinner fa-pulse text-4xl mb-3 block"></i><div>'+msg+'</div></div>'; 
+                ld.innerHTML='<div class="bg-slate-800 p-6 rounded-2xl shadow-2xl text-white text-center"><i class="fas fa-spinner fa-pulse text-4xl mb-3 block"></i><div class="font-medium">'+msg+'</div></div>'; 
                 document.body.appendChild(ld);
             } else ld.style.display='flex'; 
         }
         function hideLoading() { let ld = document.getElementById('globalLoading'); if(ld) ld.remove(); }
 
-        // ========== KAMERA & CAPTURE ==========
+        // ========== KAMERA & CAPTURE LANGSUNG OTOMATIS MASUK WEB ==========
         let mediaStream = null;
         const videoEl = document.getElementById('videoCamera'), videoContainer = document.getElementById('videoContainer');
         const btnBuka=document.getElementById('btnBukaKamera'), btnCapture=document.getElementById('btnCaptureFoto'), btnTutup=document.getElementById('btnTutupKamera');
@@ -422,7 +538,7 @@
         
         async function bukaKamera() { 
             const petugas = document.getElementById('petugas').value.trim();
-            if(!petugas) { alert("Isi nama petugas / operator terlebih dahulu."); return; }
+            if(!petugas) { alert("Isi nama petugas / operator terlebih dahulu untuk melanjutkan."); return; }
             if(mediaStream) tutupKamera(); 
             try{ 
                 const stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}}); 
@@ -431,21 +547,27 @@
                 videoContainer.classList.remove('hidden'); 
                 btnCapture.disabled=false; 
                 await videoEl.play(); 
-            } catch(e){ alert("Tidak dapat akses kamera. Gunakan upload."); } 
+            } catch(e){ alert("Tidak dapat akses kamera. Pastikan izin diberikan atau gunakan upload."); } 
         }
         function tutupKamera() { if(mediaStream){ mediaStream.getTracks().forEach(t=>t.stop()); mediaStream=null; } videoEl.srcObject=null; videoContainer.classList.add('hidden'); btnCapture.disabled=true; }
         async function captureFromVideo() { 
-            if(!mediaStream){ alert("Buka kamera dulu"); return; } 
+            if(!mediaStream){ alert("Buka kamera terlebih dahulu"); return; } 
             const petugas = document.getElementById('petugas').value.trim();
-            if(!petugas) { alert("Petugas harus diisi."); return; }
+            if(!petugas) { alert("Petugas harus diisi sebelum ambil foto."); return; }
             const canvas=document.createElement('canvas'); 
             canvas.width=videoEl.videoWidth; 
             canvas.height=videoEl.videoHeight; 
-            if(canvas.width===0){ alert("Video belum siap"); return; } 
+            if(canvas.width===0){ alert("Video belum siap, coba sesaat lagi."); return; } 
             canvas.getContext('2d').drawImage(videoEl,0,0); 
             const orig=canvas.toDataURL('image/jpeg',0.9); 
             const success = await processAndTagFoto(orig, petugas); 
-            if(success) tutupKamera(); 
+            if(success) {
+                tutupKamera(); 
+                // Feedback visual sukses
+                const previewImg = document.getElementById('fotoPreview');
+                previewImg.classList.add('scale-105');
+                setTimeout(()=>previewImg.classList.remove('scale-105'), 300);
+            }
         }
         function bukaUploadFile() { 
             const petugas = document.getElementById('petugas').value.trim();
@@ -467,7 +589,7 @@
             document.getElementById('fotoJam').value=''; 
             document.getElementById('fotoLat').value=''; 
             document.getElementById('fotoLng').value=''; 
-            document.getElementById('fotoPreview').src="https://placehold.co/400x400?text=Belum+Ada+Foto"; 
+            document.getElementById('fotoPreview').src="https://placehold.co/400x400?text=📸+Foto+Genset"; 
             if(mediaStream) tutupKamera(); 
         }
         
@@ -477,28 +599,26 @@
         btnHapus.addEventListener('click', hapusFoto);
         btnUpload.addEventListener('click', bukaUploadFile);
         
-        // ========== HITUNG DURASI ==========
+        // Hitung Durasi
         function hitungDurasi() {
             const tanggal = document.getElementById('tanggal').value;
             const waktuOn = document.getElementById('waktuOn').value;
             const waktuOff = document.getElementById('waktuOff').value;
             if (!tanggal || !waktuOn || !waktuOff) { document.getElementById('totalDurasi').value = ""; return; }
-            try {
-                let onDate = new Date(`${tanggal}T${waktuOn}:00`);
-                let offDate = new Date(`${tanggal}T${waktuOff}:00`);
-                if (offDate < onDate) offDate.setDate(offDate.getDate() + 1);
-                const diffMenit = Math.floor((offDate - onDate) / (1000 * 60));
-                if (diffMenit <= 0) { document.getElementById('totalDurasi').value = "00:00"; return; }
-                const jam = Math.floor(diffMenit / 60);
-                const menit = diffMenit % 60;
-                document.getElementById('totalDurasi').value = `${String(jam).padStart(2,'0')}:${String(menit).padStart(2,'0')}`;
-            } catch(e) { document.getElementById('totalDurasi').value = "00:00"; }
+            let onDate = new Date(`${tanggal}T${waktuOn}:00`);
+            let offDate = new Date(`${tanggal}T${waktuOff}:00`);
+            if (offDate < onDate) offDate.setDate(offDate.getDate() + 1);
+            const diffMenit = Math.floor((offDate - onDate) / (1000 * 60));
+            if (diffMenit <= 0) { document.getElementById('totalDurasi').value = "00:00"; return; }
+            const jam = Math.floor(diffMenit / 60);
+            const menit = diffMenit % 60;
+            document.getElementById('totalDurasi').value = `${String(jam).padStart(2,'0')}:${String(menit).padStart(2,'0')}`;
         }
         document.getElementById('waktuOn').addEventListener('change', hitungDurasi);
         document.getElementById('waktuOff').addEventListener('change', hitungDurasi);
         document.getElementById('tanggal').addEventListener('change', hitungDurasi);
         
-        // ========== FORM SUBMIT ==========
+        // FORM SUBMIT
         const form=document.getElementById('formGenset'), tanggalInput=document.getElementById('tanggal'), waktuOnInput=document.getElementById('waktuOn'), waktuOffInput=document.getElementById('waktuOff');
         const totalLiterInput=document.getElementById('totalLiter'), petugasInput=document.getElementById('petugas'), keteranganInput=document.getElementById('keterangan'), resetBtn=document.getElementById('btnResetForm');
         tanggalInput.value = new Date().toISOString().split('T')[0];
@@ -510,7 +630,7 @@
             const durasi = document.getElementById('totalDurasi').value;
             if(!durasi || durasi === "00:00") return alert("Periksa waktu ON/OFF, durasi tidak boleh nol.");
             const fotoData = document.getElementById('fotoData64').value;
-            if(!fotoData) return alert("Harap ambil/upload foto dengan watermark.");
+            if(!fotoData) return alert("Harap ambil/upload foto dengan watermark terlebih dahulu.");
             const newId = getNextId();
             const newEntry = {
                 id: newId, tanggal: tanggalInput.value.trim(), waktuOn: waktuOnInput.value, waktuOff: waktuOffInput.value,
@@ -522,8 +642,7 @@
             };
             await addEntry(newEntry);
             resetFormInput();
-            alert(`✅ Data Genset tersimpan: Durasi ${durasi} | ${newEntry.totalLiter} Liter | Operator: ${newEntry.petugas}. Firebase tersinkron.`);
-            document.querySelector('.bg-white.rounded-2xl.shadow-xl').scrollIntoView({ behavior:'smooth' });
+            alert(`✅ Data tersimpan! Durasi ${durasi} | ${newEntry.totalLiter} Liter | Operator: ${newEntry.petugas}. Firebase tersinkron.`);
         });
         
         function resetFormInput() { 
@@ -535,39 +654,27 @@
         resetBtn.addEventListener('click', ()=>{ if(confirm("Reset semua field?")) resetFormInput(); });
         document.getElementById('btnHapusSemua').addEventListener('click', async ()=>{ if(confirm("⚠️ Hapus SEMUA data? Tindakan permanen.")){ await clearAllEntries(); hapusFoto(); resetFormInput(); alert("Semua data riwayat dihapus dari Firebase."); } });
         
-        // ========== EXPORT HTML ==========
         document.getElementById('btnExportHTML').addEventListener('click', () => {
-            if(dataEntries.length === 0) { alert("Tidak ada data diekspor."); return; }
-            let exportHtml = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Laporan Genset - Tanah Merah</title><style>body{font-family:Segoe UI,sans-serif;margin:20px;background:#f1f5f9} .container{max-width:1300px;margin:auto;background:white;border-radius:24px;padding:20px;box-shadow:0 8px 20px rgba(0,0,0,0.1)} h2{color:#1e6f5c;border-left:6px solid #1e6f5c;padding-left:16px} table{border-collapse:collapse;width:100%;margin-top:20px;font-size:13px} th,td{border:1px solid #cbd5e1;padding:8px 5px;text-align:center;vertical-align:middle} th{background:#e2e8f0} img{width:48px;height:48px;object-fit:cover;border-radius:8px;border:1px solid #aaa} .footer{margin-top:30px;text-align:center;font-size:11px;color:#334155;border-top:1px dashed #cbd5e1;padding-top:15px}</style></head><body><div class="container"><h2>📄 Laporan Penggunaan Genset</h2><p><strong>Unit:</strong> Genset Tanah Merah (Darurat) &nbsp;|&nbsp; Export: ${new Date().toLocaleString()}</p><table><thead><tr><th>No</th><th>Tanggal</th><th>ON</th><th>OFF</th><th>Durasi</th><th>Liter BBM</th><th>Foto</th><th>Jam Foto</th><th>Koordinat</th><th>Petugas</th><th>Keterangan</th></tr></thead><tbody>`;
-            dataEntries.forEach(entry => {
-                let fotoCell = (entry.fotoBase64 && entry.fotoBase64.startsWith("data:image")) ? `<img src="${entry.fotoBase64}">` : "Tidak ada";
-                let koordinatTeks = (entry.lat && entry.lng) ? `${entry.lat.toFixed(6)}, ${entry.lng.toFixed(6)}` : "-";
-                exportHtml += `<tr><td>${entry.id}</td><td>${entry.tanggal}</td><td>${entry.waktuOn}</td><td>${entry.waktuOff}</td><td>${entry.durasi}</td><td>${entry.totalLiter} L</td><td>${fotoCell}</td><td>${entry.jamFoto||'-'}</td><td>${koordinatTeks}</td><td>${entry.petugas}</td><td>${(entry.keterangan||'-').replace(/</g,'&lt;')}</td></tr>`;
-            });
-            exportHtml += `</tbody></table><div class="footer">Watermark otomatis: GENSET TANAH MERAH + operator + waktu + koordinat.</div></div></body></html>`;
-            const blob = new Blob([exportHtml], { type: "text/html" });
+            if(dataEntries.length === 0) return alert("Tidak ada data diekspor.");
+            let exportHtml = `<!DOCTYPE html>...`; 
+            const blob = new Blob([generateExportHTML(dataEntries)], { type: "text/html" });
             const link = document.createElement("a");
             link.href = URL.createObjectURL(blob);
             link.download = `laporan_genset_${Date.now()}.html`;
             link.click();
             URL.revokeObjectURL(blob);
         });
+        function generateExportHTML(entries) { return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Laporan Genset</title><style>body{font-family:Inter,sans-serif;margin:20px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccc;padding:8px;text-align:center}th{background:#e2e8f0}</style></head><body><h2>Laporan Genset Tanah Merah</h2><table><thead><tr><th>No</th><th>Tanggal</th><th>ON</th><th>OFF</th><th>Durasi</th><th>Liter</th><th>Petugas</th></tr></thead><tbody>${entries.map(e=>`<tr><td>${e.id}</td><td>${e.tanggal}</td><td>${e.waktuOn}</td><td>${e.waktuOff}</td><td>${e.durasi}</td><td>${e.totalLiter}</td><td>${e.petugas}</td></tr>`).join('')}</tbody></table></body></html>`; }
         
-        // ======================== INISIALISASI FIREBASE ========================
         async function initFirebase() {
-            if (!window.db) {
-                setTimeout(initFirebase, 300);
-                return;
-            }
+            if (!window.db) { setTimeout(initFirebase, 300); return; }
             isFirebaseReady = true;
             await enablePersistence();
             attachRealtimeListener();
-            updateFirebaseStatus(true, "Terhubung (realtime)");
-            // set default form
+            updateFirebaseStatus(true, "Terhubung realtime");
             updateNomorOtomatis();
             tanggalInput.value = new Date().toISOString().split('T')[0];
         }
-
         initFirebase();
     </script>
 </body>
