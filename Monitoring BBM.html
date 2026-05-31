@@ -3,20 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Pencatatan Genset | Tanah Merah - Unit Darurat + Firebase</title>
-    <!-- Perbaikan favicon: menggunakan nama file yang benar -->
+    <title>Pencatatan Genset | Tanah Merah - Unit Darurat + Firebase Realtime</title>
     <link rel="icon" type="image/ico" href="favicon.ico">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
-    <script src="firebase-config.js"></script>
-    <!-- ... (seluruh konten selanjutnya sama seperti kode hijau yang sudah diberikan sebelumnya) ... -->
-</head>
-...
-</html>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;500;600;700;800&display=swap" rel="stylesheet">
@@ -59,7 +47,6 @@
         <!-- Header Responsif -->
         <div class="text-center mb-6 md:mb-8">
             <div class="inline-flex items-center justify-center bg-gradient-to-r from-primary to-accent p-2 md:p-3 rounded-full shadow-md">
-                <!-- Ikon diperbaiki: fa-gas-pump -->
                 <i class="fas fa-gas-pump text-white text-xl md:text-2xl"></i>
             </div>
             <h1 class="text-xl md:text-4xl font-extrabold text-slate-800 mt-2 md:mt-3">
@@ -67,7 +54,7 @@
                 <span id="firebaseStatus" class="sync-status"><i class="fas fa-cloud-upload-alt"></i> Menghubungkan...</span>
             </h1>
             <div class="mt-2 flex justify-center">
-                <span class="badge-genset bg-primary text-white text-xs md:text-sm rounded-full px-3 py-1.5"><i class="fas fa-industry mr-1 md:mr-2"></i> Genset Utama - Tanah Merah | Unit Darurat | Data tersimpan di Firebase</span>
+                <span class="badge-genset bg-primary text-white text-xs md:text-sm rounded-full px-3 py-1.5"><i class="fas fa-industry mr-1 md:mr-2"></i> Genset Utama - Tanah Merah | Unit Darurat | Data tersimpan di Firebase Realtime (offline-ready)</span>
             </div>
         </div>
 
@@ -144,15 +131,18 @@
                     <thead class="bg-gray-100">
                         <tr><th class="py-2 md:py-3 px-1 md:px-2">No</th><th>Tanggal</th><th>ON</th><th>OFF</th><th>Durasi</th><th>Liter</th><th>Foto</th><th>Jam Foto</th><th>Koordinat</th><th>Petugas</th><th>Keterangan</th><th>Aksi</th></tr>
                     </thead>
-                    <tbody id="tabelBody"><tr><td colspan="12" class="text-center py-6 md:py-8 text-gray-400">⚙️ Memuat data...</td></tr></tbody>
+                    <tbody id="tabelBody"><tr><td colspan="12" class="text-center py-6 md:py-8 text-gray-400">⚙️ Memuat data...</tr></table>
                 </table>
             </div>
         </div>
     </div>
 
     <script>
-        // ======================== KONFIGURASI FIREBASE ========================
+        // ======================== KONFIGURASI FIREBASE (Offline Persistence + Realtime) ========================
         let isFirebaseReady = false;
+        let dataEntries = [];          // akan diisi oleh listener
+        let listenerRef = null;
+        let isInternalUpdate = false;
         const DB_PATH = 'monitoring/genset/entries';
 
         function updateFirebaseStatus(connected, message) {
@@ -170,82 +160,101 @@
             }
         }
 
-        async function syncToFirebase() {
+        async function enablePersistence() {
+            if (!window.db) return false;
+            try {
+                if (window.db.enablePersistence) {
+                    await window.db.enablePersistence();
+                    console.log("Firebase persistence aktif (offline support)");
+                } else if (window.firebase && window.firebase.database) {
+                    await window.firebase.database().enablePersistence();
+                } else {
+                    console.warn("enablePersistence tidak tersedia");
+                }
+                return true;
+            } catch (err) {
+                if (err.code === 'failed-precondition') {
+                    console.warn("Multiple tab terbuka, persistence tidak bisa diaktifkan");
+                } else if (err.code === 'unavailable') {
+                    console.warn("Browser tidak support persistence");
+                } else {
+                    console.error("Error persistence:", err);
+                }
+                return false;
+            }
+        }
+
+        // Fungsi untuk menulis seluruh data ke Firebase (set)
+        async function setEntriesToFirebase(entriesArray) {
             if (!isFirebaseReady || !window.db) return false;
             try {
                 const entriesObj = {};
-                dataEntries.forEach(entry => { entriesObj[entry.id] = entry; });
+                entriesArray.forEach(entry => { entriesObj[entry.id] = entry; });
                 await window.db.ref(DB_PATH).set(entriesObj);
                 updateFirebaseStatus(true, "Tersinkron");
                 return true;
             } catch (err) {
-                console.error("Gagal sync ke Firebase:", err);
-                updateFirebaseStatus(false, "Gagal sync");
+                console.error("Gagal set entries ke Firebase:", err);
+                updateFirebaseStatus(false, "Gagal simpan");
                 return false;
             }
         }
 
-        async function loadFromFirebase() {
-            if (!window.db) return false;
-            try {
-                const snapshot = await window.db.ref(DB_PATH).once('value');
-                const firebaseData = snapshot.val();
-                if (firebaseData && typeof firebaseData === 'object') {
-                    const fbEntries = Object.values(firebaseData);
-                    if (fbEntries.length > 0) {
-                        fbEntries.sort((a,b) => (a.id || 0) - (b.id || 0));
-                        dataEntries = fbEntries;
-                        localStorage.setItem("gensetUsageEntries", JSON.stringify(dataEntries));
-                        updateFirebaseStatus(true, `Loaded ${dataEntries.length} data`);
-                        return true;
-                    }
-                }
-                const stored = localStorage.getItem("gensetUsageEntries");
-                if (stored) {
-                    dataEntries = JSON.parse(stored);
-                    updateFirebaseStatus(true, "Loaded local");
-                    if (dataEntries.length) await syncToFirebase();
+        // Pasang listener realtime
+        function attachRealtimeListener() {
+            if (!isFirebaseReady || !window.db) return;
+            if (listenerRef) listenerRef.off();
+            const ref = window.db.ref(DB_PATH);
+            listenerRef = ref.on('value', (snapshot) => {
+                if (isInternalUpdate) return;
+                const data = snapshot.val();
+                if (data && typeof data === 'object') {
+                    const entriesArray = Object.values(data);
+                    entriesArray.sort((a,b) => (a.id || 0) - (b.id || 0));
+                    dataEntries = entriesArray;
+                    // Pastikan field default ada
+                    dataEntries.forEach(e => { if (!e.jamFoto) e.jamFoto = "-"; if (e.lat === undefined) e.lat = null; if (e.lng === undefined) e.lng = null; });
                 } else {
                     dataEntries = [];
                 }
-                return true;
-            } catch (err) {
-                console.error("Error loadFromFirebase:", err);
-                updateFirebaseStatus(false, "Offline mode");
-                const stored = localStorage.getItem("gensetUsageEntries");
-                if (stored) dataEntries = JSON.parse(stored);
-                else dataEntries = [];
-                return false;
-            }
+                renderTable();
+                updateNomorOtomatis();
+                updateFirebaseStatus(true, `Realtime (${dataEntries.length} data)`);
+            }, (error) => {
+                console.error("Listener error:", error);
+                updateFirebaseStatus(false, "Error listener");
+            });
         }
 
-        // ==================== DATA & STORAGE ====================
-        let dataEntries = [];
-        async function saveToLocalAndSync() {
-            localStorage.setItem("gensetUsageEntries", JSON.stringify(dataEntries));
-            renderTable();
-            updateNomorOtomatis();
-            if (isFirebaseReady) await syncToFirebase();
-        }
-
-        function loadLocalData() {
-            const stored = localStorage.getItem("gensetUsageEntries");
-            if(stored) { 
-                dataEntries = JSON.parse(stored); 
-                dataEntries.forEach(e=>{ if(!e.jamFoto) e.jamFoto="-"; if(e.lat===undefined) e.lat=null; if(e.lng===undefined) e.lng=null; }); 
-            }
-            else dataEntries = [];
-            dataEntries.sort((a,b)=>a.id-b.id);
-            renderTable();
-            updateNomorOtomatis();
-        }
-
-        function getNextId() { return dataEntries.length ? Math.max(...dataEntries.map(e=>e.id))+1 : 1; }
+        // ========== DATA HANDLING (CRUD langsung ke Firebase) ==========
+        function getNextId() { return dataEntries.length ? Math.max(...dataEntries.map(e=>e.id)) + 1 : 1; }
         function updateNomorOtomatis() { document.getElementById("nomorOtomatis").value = getNextId(); }
-        
+
+        async function addEntry(newEntry) {
+            const updated = [...dataEntries, newEntry];
+            updated.sort((a,b) => a.id - b.id);
+            isInternalUpdate = true;
+            await setEntriesToFirebase(updated);
+            isInternalUpdate = false;
+        }
+
+        async function deleteEntryById(id) {
+            const updated = dataEntries.filter(e => e.id !== id);
+            isInternalUpdate = true;
+            await setEntriesToFirebase(updated);
+            isInternalUpdate = false;
+        }
+
+        async function clearAllEntries() {
+            isInternalUpdate = true;
+            await setEntriesToFirebase([]);
+            isInternalUpdate = false;
+        }
+
+        // ========== RENDER TABLE ==========
         function renderTable() {
             const tbody = document.getElementById("tabelBody");
-            if(!dataEntries.length) { tbody.innerHTML = `<tr><td colspan="12" class="text-center py-6 md:py-8 text-gray-400">📭 Belum ada data operasi genset</td></tr>`; return; }
+            if(!dataEntries.length) { tbody.innerHTML = `<tr><td colspan="12" class="text-center py-6 md:py-8 text-gray-400">📭 Belum ada data operasi genset</tr>`; return; }
             let html = "";
             dataEntries.forEach(entry => {
                 let fotoHtml = `<div class="w-7 h-7 md:w-8 md:h-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden shadow-inner">${entry.fotoBase64 && entry.fotoBase64.startsWith("data:image") ? `<img src="${entry.fotoBase64}" class="w-full h-full object-cover">` : `<i class="fas fa-image text-gray-400 text-base"></i>`}</div>`;
@@ -270,7 +279,8 @@
             });
             tbody.innerHTML = html;
         }
-        window.deleteEntry = async (id) => { if(confirm("Yakin hapus data pemakaian genset ini?")) { dataEntries = dataEntries.filter(e=>e.id!==id); await saveToLocalAndSync(); } };
+
+        window.deleteEntry = async (id) => { if(confirm("Yakin hapus data pemakaian genset ini?")) await deleteEntryById(id); };
         window.viewFullFoto = (id) => {
             const entry = dataEntries.find(e=>e.id===id);
             if(entry?.fotoBase64) {
@@ -282,7 +292,7 @@
             } else alert("Foto tidak tersedia");
         };
 
-        // ========== GEOLOKASI & WATERMARK ==========
+        // ========== GEOLOKASI & WATERMARK (sama seperti sebelumnya) ==========
         function getCurrentPosition() { 
             return new Promise((resolve)=>{ 
                 if(!navigator.geolocation) resolve(null); 
@@ -510,10 +520,9 @@
                 lat: document.getElementById('fotoLat').value ? parseFloat(document.getElementById('fotoLat').value) : null,
                 lng: document.getElementById('fotoLng').value ? parseFloat(document.getElementById('fotoLng').value) : null
             };
-            dataEntries.push(newEntry);
-            await saveToLocalAndSync();
+            await addEntry(newEntry);
             resetFormInput();
-            alert(`✅ Data Genset tersimpan: Durasi ${durasi} | ${newEntry.totalLiter} Liter | Operator: ${newEntry.petugas}. Firebase: ${isFirebaseReady ? 'tersinkron' : 'offline'}`);
+            alert(`✅ Data Genset tersimpan: Durasi ${durasi} | ${newEntry.totalLiter} Liter | Operator: ${newEntry.petugas}. Firebase tersinkron.`);
             document.querySelector('.bg-white.rounded-2xl.shadow-xl').scrollIntoView({ behavior:'smooth' });
         });
         
@@ -524,7 +533,7 @@
             hapusFoto(); updateNomorOtomatis(); if(mediaStream) tutupKamera(); 
         }
         resetBtn.addEventListener('click', ()=>{ if(confirm("Reset semua field?")) resetFormInput(); });
-        document.getElementById('btnHapusSemua').addEventListener('click', async ()=>{ if(confirm("⚠️ Hapus SEMUA data? Tindakan permanen.")){ dataEntries=[]; await saveToLocalAndSync(); hapusFoto(); resetFormInput(); alert("Semua data riwayat dihapus."); } });
+        document.getElementById('btnHapusSemua').addEventListener('click', async ()=>{ if(confirm("⚠️ Hapus SEMUA data? Tindakan permanen.")){ await clearAllEntries(); hapusFoto(); resetFormInput(); alert("Semua data riwayat dihapus dari Firebase."); } });
         
         // ========== EXPORT HTML ==========
         document.getElementById('btnExportHTML').addEventListener('click', () => {
@@ -544,28 +553,22 @@
             URL.revokeObjectURL(blob);
         });
         
-        // ======================== INISIALISASI ========================
-        async function init() {
-            loadLocalData();
-            if (window.db) {
-                isFirebaseReady = true;
-                await loadFromFirebase();
-                renderTable();
-                updateNomorOtomatis();
-                updateFirebaseStatus(true, "Terhubung");
-            } else {
-                setTimeout(() => {
-                    if (window.db) {
-                        isFirebaseReady = true;
-                        loadFromFirebase().then(() => { renderTable(); updateNomorOtomatis(); });
-                        updateFirebaseStatus(true, "Terhubung");
-                    } else {
-                        updateFirebaseStatus(false, "Firebase tidak tersedia");
-                    }
-                }, 500);
+        // ======================== INISIALISASI FIREBASE ========================
+        async function initFirebase() {
+            if (!window.db) {
+                setTimeout(initFirebase, 300);
+                return;
             }
+            isFirebaseReady = true;
+            await enablePersistence();
+            attachRealtimeListener();
+            updateFirebaseStatus(true, "Terhubung (realtime)");
+            // set default form
+            updateNomorOtomatis();
+            tanggalInput.value = new Date().toISOString().split('T')[0];
         }
-        init();
+
+        initFirebase();
     </script>
 </body>
 </html>
