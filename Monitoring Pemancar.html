@@ -3,9 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-  <title>Monitoring Pemancar | Catat Downtime & Status ON/OFF (Lintas Hari) + Firebase</title>
-  <!-- Perbaikan favicon: menggunakan nama file yang benar -->
-    <link rel="icon" type="image/ico" href="favicon.ico.png">
+  <title>Monitoring Pemancar | Catat Downtime & Status ON/OFF (Lintas Hari) + Firebase Realtime</title>
+  <link rel="icon" type="image/ico" href="favicon.ico.png">
   <!-- Tailwind + Font Awesome -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -13,7 +12,6 @@
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
-  <!-- Konfigurasi Firebase lokal (pastikan file ini ada) -->
   <script src="firebase-config.js"></script>
 
   <style>
@@ -23,7 +21,6 @@
     .ongoing-row { background-color: #fff8e7; border-left: 4px solid #f5b042; }
     .btn-action:active { transform: scale(0.96); }
     .sync-status { font-size: 0.7rem; padding: 2px 10px; border-radius: 20px; background: rgba(255,255,240,0.3); display: inline-block; margin-left: 12px; }
-    /* Tema hijau custom */
     .btn-hijau { background-color: #1e6f5c; transition: all 0.2s; }
     .btn-hijau:hover { background-color: #0e5a48; transform: translateY(-2px); }
     .border-hijau { border-color: #1e6f5c; }
@@ -44,7 +41,7 @@
         Monitoring Pemancar
         <span id="firebaseStatus" class="sync-status"><i class="fas fa-cloud-upload-alt"></i> Menghubungkan...</span>
       </h1>
-      <p class="text-gray-500 text-sm">Catat kapan pemancar OFF → nanti update waktu ON (otomatis deteksi beda hari) | Data tersimpan di Firebase + lokal</p>
+      <p class="text-gray-500 text-sm">Catat kapan pemancar OFF → nanti update waktu ON (otomatis deteksi beda hari) | Data tersimpan di Firebase (offline-ready)</p>
     </div>
     <div class="flex gap-2 mt-2 sm:mt-0">
       <button id="exportHtmlBtn" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg shadow-sm text-sm font-medium flex items-center gap-1 transition">
@@ -59,7 +56,7 @@
     </div>
   </div>
 
-  <!-- Statistik ringkasan dengan tema hijau -->
+  <!-- Statistik ringkasan -->
   <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
     <div class="bg-white rounded-2xl shadow p-4 flex justify-between items-center border-l-8 border-hijau card-hover">
       <div><p class="text-gray-500 text-xs uppercase font-semibold">Total Kejadian</p><p id="totalEvents" class="text-2xl font-extrabold">0</p></div>
@@ -79,7 +76,7 @@
     </div>
   </div>
 
-  <!-- Form CATAT OFFLINE (hijau) -->
+  <!-- Form CATAT OFFLINE -->
   <div class="bg-white rounded-2xl shadow-md p-5 mb-8 border border-gray-100">
     <h2 class="text-xl font-semibold text-gray-700 mb-4 flex items-center gap-2"><i class="fas fa-power-off text-red-500"></i> Catat Pemancar OFF (Belum ON)</h2>
     <form id="offlineForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -109,7 +106,7 @@
     </form>
   </div>
 
-  <!-- Form UPDATE (hijau gradien) -->
+  <!-- Form UPDATE -->
   <div class="bg-gradient-to-r from-teal-50 to-emerald-50 rounded-2xl shadow-md p-5 mb-8 border border-emerald-100">
     <h2 class="text-lg font-semibold text-hijau flex items-center gap-2"><i class="fas fa-check-circle"></i> Selesaikan Kejadian Aktif (Masukkan Waktu ON)</h2>
     <p class="text-sm text-gray-600 mb-3">Pilih kejadian yang masih OFF dari tabel, lalu isi waktu ON. <strong>Jika waktu ON lebih kecil dari waktu OFF, otomatis dianggap keesokan harinya.</strong></p>
@@ -149,76 +146,21 @@
         <thead class="bg-gray-50">
           <tr><th class="px-4 py-3 text-left font-semibold text-gray-600">NO</th><th>TANGGAL OFF</th><th>Waktu OFF</th><th>Waktu ON</th><th>TOTAL WAKTU</th><th>DESKRIPSI</th><th>PETUGAS</th><th>ALASAN OFF</th><th>STATUS</th><th>AKSI</th></tr>
         </thead>
-        <tbody id="tableBody"><tr><td colspan="10" class="text-center py-8 text-gray-400">Memuat data dari Firebase...</td></tr></tbody>
+        <tbody id="tableBody"><tr><td colspan="10" class="text-center py-8 text-gray-400">Memuat data dari Firebase......</td></tr</tbody>
       </table>
     </div>
   </div>
   <div class="text-xs text-gray-400 text-center mt-6">
-    <i class="fas fa-info-circle"></i> Fitur: jika waktu ON dimasukkan lebih kecil dari waktu OFF, sistem akan menganggap ON terjadi keesokan hari (durasi dihitung otomatis). Data tersimpan di Firebase dan lokal.
+    <i class="fas fa-info-circle"></i> Fitur: jika waktu ON dimasukkan lebih kecil dari waktu OFF, sistem akan menganggap ON terjadi keesokan hari (durasi dihitung otomatis). Data tersimpan di Firebase Realtime (offline ready).
   </div>
 </div>
 
 <script>
-  // ======================== KONFIGURASI FIREBASE ========================
+  // ======================== KONFIGURASI FIREBASE (Offline Persistence + Realtime) ========================
   let isFirebaseReady = false;
-  const DB_PATH = 'monitoring/pemancar/logs';   // path di Firebase Realtime Database
-
-  // ======================== FUNGSI SINKRONISASI ========================
-  async function syncToFirebase() {
-    if (!isFirebaseReady || !window.db) {
-      console.warn("Firebase belum siap, hanya ke localStorage");
-      updateFirebaseStatus(false, "Offline mode");
-      return false;
-    }
-    try {
-      const logsObj = {};
-      logs.forEach(log => { logsObj[log.id] = log; });
-      await window.db.ref(DB_PATH).set(logsObj);
-      updateFirebaseStatus(true, "Tersinkron");
-      return true;
-    } catch (err) {
-      console.error("Gagal sync ke Firebase:", err);
-      updateFirebaseStatus(false, "Gagal sync");
-      return false;
-    }
-  }
-
-  async function loadFromFirebase() {
-    if (!window.db) {
-      console.warn("Firebase tidak tersedia");
-      return false;
-    }
-    try {
-      const snapshot = await window.db.ref(DB_PATH).once('value');
-      const firebaseData = snapshot.val();
-      if (firebaseData && typeof firebaseData === 'object') {
-        const firebaseLogs = Object.values(firebaseData);
-        if (firebaseLogs.length > 0) {
-          firebaseLogs.sort((a,b) => (a.id || '').localeCompare(b.id || ''));
-          logs = firebaseLogs;
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
-          updateFirebaseStatus(true, `Loaded ${logs.length} data`);
-          return true;
-        }
-      }
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        logs = JSON.parse(stored);
-        updateFirebaseStatus(true, "Loaded local");
-        await syncToFirebase();
-      } else {
-        logs = [];
-      }
-      return true;
-    } catch(err) {
-      console.error("Error loadFromFirebase:", err);
-      updateFirebaseStatus(false, "Offline mode");
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) logs = JSON.parse(stored);
-      else logs = [];
-      return false;
-    }
-  }
+  const DB_PATH = 'monitoring/pemancar/logs';
+  let logs = [];                // akan diisi oleh listener
+  let listenerRef = null;       // referensi listener
 
   function updateFirebaseStatus(connected, message) {
     const statusEl = document.getElementById('firebaseStatus');
@@ -235,10 +177,32 @@
     }
   }
 
-  // ======================== DATA & STORAGE ========================
-  const STORAGE_KEY = "transmitter_advanced_logs";
-  let logs = [];
+  // Aktifkan offline persistence
+  async function enablePersistence() {
+    if (!window.db) return false;
+    try {
+      if (window.db.enablePersistence) {
+        await window.db.enablePersistence();
+        console.log("Firebase persistence aktif");
+      } else if (window.firebase && window.firebase.database) {
+        await window.firebase.database().enablePersistence();
+      } else {
+        console.warn("enablePersistence tidak tersedia");
+      }
+      return true;
+    } catch (err) {
+      if (err.code === 'failed-precondition') {
+        console.warn("Multiple tab terbuka, persistence tidak bisa diaktifkan");
+      } else if (err.code === 'unavailable') {
+        console.warn("Browser tidak support persistence");
+      } else {
+        console.error("Error persistence:", err);
+      }
+      return false;
+    }
+  }
 
+  // Helper: hitung durasi dalam menit
   function calculateDurationMinutes(offTimeStr, onTimeStr) {
     if (!offTimeStr || !onTimeStr) return null;
     const [offHour, offMin] = offTimeStr.split(":").map(Number);
@@ -262,33 +226,129 @@
     return str.trim();
   }
 
-  async function persistAndRender() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
-    renderTable();
-    updateStatsAndDropdown();
-    if (isFirebaseReady) {
-      await syncToFirebase();
+  // Pasang listener realtime
+  function attachRealtimeListener() {
+    if (!isFirebaseReady || !window.db) return;
+    if (listenerRef) listenerRef.off();
+    const ref = window.db.ref(DB_PATH);
+    listenerRef = ref.on('value', (snapshot) => {
+      const data = snapshot.val();
+      if (data && typeof data === 'object') {
+        // Konversi object { id: {...} } menjadi array
+        const logsArray = Object.values(data);
+        logsArray.sort((a,b) => (a.id || '').localeCompare(b.id || ''));
+        logs = logsArray.map(log => {
+          // Pastikan field-field yang diperlukan ada
+          if (!log.status) log.status = log.onTime ? 'completed' : 'ongoing';
+          if (log.status === 'completed' && log.totalWaktuMinutes === undefined && log.onTime) {
+            const mins = calculateDurationMinutes(log.offTime, log.onTime);
+            if (mins) { log.totalWaktuMinutes = mins; log.totalWaktuStr = formatDuration(mins); }
+          }
+          return log;
+        });
+      } else {
+        logs = [];
+      }
+      renderTable();
+      updateStatsAndDropdown();
+      updateFirebaseStatus(true, `Tersinkron (${logs.length} data)`);
+    }, (error) => {
+      console.error("Listener error:", error);
+      updateFirebaseStatus(false, "Error listener");
+    });
+  }
+
+  // Fungsi untuk menulis data ke Firebase (set seluruh object)
+  async function setLogsToFirebase(logsArray) {
+    if (!isFirebaseReady || !window.db) return false;
+    try {
+      const logsObj = {};
+      logsArray.forEach(log => { logsObj[log.id] = log; });
+      await window.db.ref(DB_PATH).set(logsObj);
+      return true;
+    } catch (err) {
+      console.error("Gagal set logs ke Firebase:", err);
+      updateFirebaseStatus(false, "Gagal simpan");
+      return false;
     }
   }
 
-  function updateStatsAndDropdown() {
-    const totalEvents = logs.length;
-    const ongoingEvents = logs.filter(l => l.status === 'ongoing').length;
-    const completedLogs = logs.filter(l => l.status === 'completed' && l.totalWaktuMinutes != null);
-    const totalMinutes = completedLogs.reduce((sum, l) => sum + (l.totalWaktuMinutes || 0), 0);
-    const avgMinutes = completedLogs.length > 0 ? Math.round(totalMinutes / completedLogs.length) : 0;
-    document.getElementById("totalEvents").innerText = totalEvents;
-    document.getElementById("ongoingCount").innerText = ongoingEvents;
-    document.getElementById("totalDowntime").innerHTML = `${(totalMinutes / 60).toFixed(1)} jam <span class="text-xs">(${totalMinutes} menit)</span>`;
-    document.getElementById("avgDowntime").innerHTML = `${avgMinutes} menit`;
-    const selectEl = document.getElementById("selectOngoingEvent");
-    if (selectEl) {
-      const ongoingList = logs.filter(l => l.status === 'ongoing');
-      selectEl.innerHTML = '<option value="">-- Pilih kejadian aktif --</option>' + 
-        ongoingList.map(log => `<option value="${log.id}">${log.tanggalOff} ${log.offTime} - ${log.alasanOff || 'Tanpa alasan'} (Petugas: ${log.petugas || '-'})</option>`).join('');
+  // Operasi CRUD langsung ke Firebase (tanpa manipulasi array lokal karena listener akan update)
+  async function addOngoingEvent(tanggal, offTime, petugas, alasanSementara, deskripsiAwal) {
+    const newId = Date.now() + '-' + Math.random().toString(36).substring(2, 8);
+    const newLog = {
+      id: newId,
+      tanggalOff: tanggal,
+      offTime: offTime,
+      onTime: null,
+      petugas: petugas || "",
+      alasanOff: alasanSementara || "",
+      deskripsi: deskripsiAwal || "",
+      status: 'ongoing',
+      totalWaktuMinutes: null,
+      totalWaktuStr: null,
+      alasanFinal: null,
+      deskripsiFinal: null,
+    };
+    // Baca data saat ini dari Firebase, lalu tambahkan
+    if (!window.db) return false;
+    const snapshot = await window.db.ref(DB_PATH).once('value');
+    const current = snapshot.val() || {};
+    current[newId] = newLog;
+    await window.db.ref(DB_PATH).set(current);
+    return true;
+  }
+
+  async function completeEvent(eventId, onTime, alasanFinal, deskripsiFinal) {
+    if (!window.db) return false;
+    const snapshot = await window.db.ref(DB_PATH).once('value');
+    const current = snapshot.val();
+    if (!current || !current[eventId]) { alert("Data tidak ditemukan"); return false; }
+    const log = current[eventId];
+    if (log.status !== 'ongoing') { alert("Kejadian sudah selesai!"); return false; }
+    if (!onTime) { alert("Waktu ON harus diisi!"); return false; }
+    const minutesDiff = calculateDurationMinutes(log.offTime, onTime);
+    if (minutesDiff === null || minutesDiff <= 0) {
+      alert(`Durasi tidak valid. OFF ${log.offTime} - ON ${onTime}`);
+      return false;
+    }
+    const [offHour, offMin] = log.offTime.split(":").map(Number);
+    const [onHour, onMin] = onTime.split(":").map(Number);
+    let infoLintasHari = "";
+    if ((onHour*60+onMin) <= (offHour*60+offMin)) infoLintasHari = " (waktu ON lebih kecil => keesokan hari)";
+    const durationStr = formatDuration(minutesDiff);
+    log.onTime = onTime;
+    log.status = 'completed';
+    log.totalWaktuMinutes = minutesDiff;
+    log.totalWaktuStr = durationStr;
+    log.alasanFinal = alasanFinal || log.alasanOff;
+    log.deskripsiFinal = deskripsiFinal || log.deskripsi;
+    current[eventId] = log;
+    await window.db.ref(DB_PATH).set(current);
+    alert(`Kejadian selesai! Durasi OFF: ${durationStr}${infoLintasHari}`);
+    return true;
+  }
+
+  async function deleteLog(id) {
+    if (!confirm("Hapus data ini secara permanen?")) return;
+    if (!window.db) return;
+    const snapshot = await window.db.ref(DB_PATH).once('value');
+    const current = snapshot.val();
+    if (current && current[id]) {
+      delete current[id];
+      await window.db.ref(DB_PATH).set(current);
     }
   }
 
+  async function clearAllData() {
+    if (logs.length === 0) return;
+    if (confirm("PERINGATAN: Semua data riwayat pemancar (termasuk yang aktif) akan dihapus permanen! Lanjutkan?")) {
+      await window.db.ref(DB_PATH).set({});
+      alert("Semua data telah dihapus dari Firebase.");
+    }
+  }
+
+  // Render UI berdasarkan data logs (dipanggil oleh listener)
   function renderTable() {
     const tbody = document.getElementById("tableBody");
     if (!logs.length) {
@@ -334,69 +394,31 @@
           ${isOngoing ? `<button onclick="openCompleteModal('${item.id}')" class="text-green-600 hover:text-green-800 bg-green-50 p-1.5 rounded-md mx-1 btn-action" title="Selesaikan (isi waktu ON)"><i class="fas fa-check-double"></i></button>` : ''}
           <button onclick="deleteLog('${item.id}')" class="text-red-600 hover:text-red-800 bg-red-50 p-1.5 rounded-md mx-1 btn-action"><i class="fas fa-trash-alt"></i></button>
         </td>
-       </tr>`;
+      </tr>`;
     });
     tbody.innerHTML = html;
   }
 
-  function generateId() {
-    return Date.now() + '-' + Math.random().toString(36).substring(2, 8);
-  }
-
-  function addOngoingEvent(tanggal, offTime, petugas, alasanSementara, deskripsiAwal) {
-    const newId = generateId();
-    const newLog = {
-      id: newId,
-      tanggalOff: tanggal,
-      offTime: offTime,
-      onTime: null,
-      petugas: petugas || "",
-      alasanOff: alasanSementara || "",
-      deskripsi: deskripsiAwal || "",
-      status: 'ongoing',
-      totalWaktuMinutes: null,
-      totalWaktuStr: null,
-      alasanFinal: null,
-      deskripsiFinal: null,
-    };
-    logs.push(newLog);
-    persistAndRender();
-  }
-
-  function completeEvent(eventId, onTime, alasanFinal, deskripsiFinal) {
-    const index = logs.findIndex(l => l.id === eventId);
-    if (index === -1) return false;
-    const log = logs[index];
-    if (log.status !== 'ongoing') { alert("Kejadian sudah selesai!"); return false; }
-    if (!onTime) { alert("Waktu ON harus diisi!"); return false; }
-    const minutesDiff = calculateDurationMinutes(log.offTime, onTime);
-    if (minutesDiff === null || minutesDiff <= 0) {
-      alert(`Durasi tidak valid. OFF ${log.offTime} - ON ${onTime}`);
-      return false;
+  function updateStatsAndDropdown() {
+    const totalEvents = logs.length;
+    const ongoingEvents = logs.filter(l => l.status === 'ongoing').length;
+    const completedLogs = logs.filter(l => l.status === 'completed' && l.totalWaktuMinutes != null);
+    const totalMinutes = completedLogs.reduce((sum, l) => sum + (l.totalWaktuMinutes || 0), 0);
+    const avgMinutes = completedLogs.length > 0 ? Math.round(totalMinutes / completedLogs.length) : 0;
+    document.getElementById("totalEvents").innerText = totalEvents;
+    document.getElementById("ongoingCount").innerText = ongoingEvents;
+    document.getElementById("totalDowntime").innerHTML = `${(totalMinutes / 60).toFixed(1)} jam <span class="text-xs">(${totalMinutes} menit)</span>`;
+    document.getElementById("avgDowntime").innerHTML = `${avgMinutes} menit`;
+    const selectEl = document.getElementById("selectOngoingEvent");
+    if (selectEl) {
+      const ongoingList = logs.filter(l => l.status === 'ongoing');
+      selectEl.innerHTML = '<option value="">-- Pilih kejadian aktif --</option>' + 
+        ongoingList.map(log => `<option value="${log.id}">${log.tanggalOff} ${log.offTime} - ${log.alasanOff || 'Tanpa alasan'} (Petugas: ${log.petugas || '-'})</option>`).join('');
     }
-    const [offHour, offMin] = log.offTime.split(":").map(Number);
-    const [onHour, onMin] = onTime.split(":").map(Number);
-    let infoLintasHari = "";
-    if ((onHour*60+onMin) <= (offHour*60+offMin)) infoLintasHari = " (waktu ON lebih kecil => keesokan hari)";
-    const durationStr = formatDuration(minutesDiff);
-    log.onTime = onTime;
-    log.status = 'completed';
-    log.totalWaktuMinutes = minutesDiff;
-    log.totalWaktuStr = durationStr;
-    log.alasanFinal = alasanFinal || log.alasanOff;
-    log.deskripsiFinal = deskripsiFinal || log.deskripsi;
-    persistAndRender();
-    alert(`Kejadian selesai! Durasi OFF: ${durationStr}${infoLintasHari}`);
-    return true;
   }
 
-  window.deleteLog = function(id) {
-    if (confirm("Hapus data ini secara permanen?")) {
-      logs = logs.filter(l => l.id !== id);
-      persistAndRender();
-    }
-  };
-
+  // Expose functions ke global agar bisa dipanggil dari tombol onclick
+  window.deleteLog = deleteLog;
   window.openCompleteModal = function(eventId) {
     const event = logs.find(l => l.id === eventId);
     if (!event) return;
@@ -407,7 +429,7 @@
     document.querySelector(".bg-gradient-to-r").scrollIntoView({ behavior: "smooth" });
   };
 
-  function processCompleteFromUI() {
+  async function processCompleteFromUI() {
     const selectEl = document.getElementById("selectOngoingEvent");
     const selectedId = selectEl.value;
     if (!selectedId) { alert("Pilih kejadian aktif terlebih dahulu."); return; }
@@ -415,20 +437,12 @@
     if (!onTime) { alert("Masukkan Waktu Pemancar ON."); return; }
     const alasanFinal = document.getElementById("updateAlasanFinal").value.trim();
     const deskripsi = document.getElementById("updateDeskripsi").value.trim();
-    const success = completeEvent(selectedId, onTime, alasanFinal, deskripsi);
+    const success = await completeEvent(selectedId, onTime, alasanFinal, deskripsi);
     if (success) {
       document.getElementById("updateOnTime").value = "";
       document.getElementById("updateAlasanFinal").value = "";
       document.getElementById("updateDeskripsi").value = "";
       selectEl.value = "";
-    }
-  }
-
-  function clearAllData() {
-    if (logs.length === 0) return;
-    if (confirm("PERINGATAN: Semua data riwayat pemancar (termasuk yang aktif) akan dihapus permanen! Lanjutkan?")) {
-      logs = [];
-      persistAndRender();
     }
   }
 
@@ -481,7 +495,7 @@
       }
       tableRows += `<tr><td>${idx+1}</td><td>${log.tanggalOff}</td><td>${log.offTime}</td><td>${onTimeDisplay}</td><td>${totalDisplay}</td><td>${deskDisplay}</td><td>${log.petugas||'-'}</td><td>${alasanDisplay}</td><td>${statusText}</td></tr>`;
     });
-    const exportHtml = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Laporan Monitoring Pemancar</title><style>body{font-family:sans-serif;margin:20px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccc;padding:8px}th{background:#f1f5f9}</style></head><body><h1>Laporan Monitoring Pemancar</h1><p>Dicetak: ${new Date().toLocaleString()}</p><div class="stats">Total Kejadian: ${totalEvents} | Aktif: ${ongoingEvents} | Total downtime: ${totalDowntimeHours} jam | Rata-rata: ${avgMinutes} menit</div><table><thead><tr><th>No</th><th>Tgl OFF</th><th>Waktu OFF</th><th>Waktu ON</th><th>Total</th><th>Deskripsi</th><th>Petugas</th><th>Alasan</th><th>Status</th></tr></thead><tbody>${tableRows}</tbody></table></body></html>`;
+    const exportHtml = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Laporan Monitoring Pemancar</title><style>body{font-family:sans-serif;margin:20px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccc;padding:8px}th{background:#f1f5f9}</style></head><body><h1>Laporan Monitoring Pemancar</h1><p>Dicetak: ${new Date().toLocaleString()}</p><div class="stats">Total Kejadian: ${totalEvents} | Aktif: ${ongoingEvents} | Total downtime: ${totalDowntimeHours} jam | Rata-rata: ${avgMinutes} menit</div><table border="1"><thead><tr><th>No</th><th>Tgl OFF</th><th>Waktu OFF</th><th>Waktu ON</th><th>Total</th><th>Deskripsi</th><th>Petugas</th><th>Alasan</th><th>Status</th></tr></thead><tbody>${tableRows}</tbody></table></body></html>`;
     const blob = new Blob([exportHtml], {type: "text/html"});
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
@@ -490,40 +504,23 @@
     URL.revokeObjectURL(link.href);
   }
 
-  // ======================== INISIALISASI ========================
-  async function init() {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      logs = JSON.parse(stored);
-      logs = logs.map(l => {
-        if (!l.status) l.status = l.onTime ? 'completed' : 'ongoing';
-        if (l.status === 'completed' && l.totalWaktuMinutes === undefined && l.onTime) {
-          const mins = calculateDurationMinutes(l.offTime, l.onTime);
-          if (mins) { l.totalWaktuMinutes = mins; l.totalWaktuStr = formatDuration(mins); }
-        }
-        return l;
-      });
-      renderTable();
-      updateStatsAndDropdown();
+  // INISIALISASI
+  async function initFirebase() {
+    if (!window.db) {
+      setTimeout(initFirebase, 300);
+      return;
     }
-    if (window.db) {
-      isFirebaseReady = true;
-      await loadFromFirebase();
-      renderTable();
-      updateStatsAndDropdown();
-    } else {
-      setTimeout(() => {
-        if (window.db) {
-          isFirebaseReady = true;
-          loadFromFirebase().then(() => { renderTable(); updateStatsAndDropdown(); });
-        } else {
-          updateFirebaseStatus(false, "Firebase tidak terdeteksi");
-        }
-      }, 500);
-    }
+    isFirebaseReady = true;
+    await enablePersistence();
+    attachRealtimeListener();
+    updateFirebaseStatus(true, "Terhubung (realtime)");
+  }
+
+  // Event binding setelah DOM ready
+  document.addEventListener('DOMContentLoaded', () => {
     const today = new Date().toISOString().split('T')[0];
     document.getElementById("offTanggal").value = today;
-    document.getElementById("offlineForm").addEventListener("submit", (e) => {
+    document.getElementById("offlineForm").addEventListener("submit", async (e) => {
       e.preventDefault();
       const tanggal = document.getElementById("offTanggal").value;
       const offTime = document.getElementById("offWaktu").value;
@@ -531,7 +528,7 @@
       const alasan = document.getElementById("offAlasan").value;
       const deskripsi = document.getElementById("offDeskripsi").value;
       if (!tanggal || !offTime) { alert("Tanggal dan Waktu OFF harus diisi!"); return; }
-      addOngoingEvent(tanggal, offTime, petugas, alasan, deskripsi);
+      await addOngoingEvent(tanggal, offTime, petugas, alasan, deskripsi);
       document.getElementById("offWaktu").value = "";
       document.getElementById("offPetugas").value = "";
       document.getElementById("offAlasan").value = "";
@@ -542,9 +539,8 @@
     document.getElementById("clearAllBtn").addEventListener("click", clearAllData);
     document.getElementById("exportCsvBtn").addEventListener("click", exportToCSV);
     document.getElementById("exportHtmlBtn").addEventListener("click", exportToHTML);
-  }
-
-  init();
+    initFirebase();
+  });
 </script>
 </body>
 </html>
