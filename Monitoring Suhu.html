@@ -106,12 +106,15 @@
                     </div>
                     <div><label class="block text-sm font-medium text-gray-700 mb-1">Keterangan</label><textarea id="keterangan" rows="2" placeholder="Catatan tambahan (opsional)" class="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-primary"></textarea></div>
                     
-                    <!-- Bagian Foto: Tanpa watermark, menggunakan file picker biasa (pilih kamera/galeri) -->
+                    <!-- Bagian Foto: Menggunakan file picker biasa -->
                     <div class="border-t border-gray-200 pt-4 mt-2">
                         <label class="block text-md font-semibold text-gray-800 mb-2"><i class="fas fa-camera-retro text-primary mr-2"></i> Dokumentasi Foto Ruangan</label>
                         <div class="instruction-note mb-3 flex items-start gap-2">
                             <i class="fas fa-info-circle text-amber-600 mt-0.5"></i>
-                            <span><strong>📱 Pilih aplikasi kamera dengan fitur timestamp (contoh: Timemark, Timestamp Camera).</strong> Saat menekan tombol "Buka Kamera", akan muncul dialog pilih aplikasi. Pilih kamera favorit Anda yang sudah menyematkan watermark waktu & lokasi. Foto langsung disimpan tanpa diproses ulang oleh sistem.</span>
+                            <span><strong>📱 Cara menggunakan aplikasi kamera dengan timestamp (misal Timemark):</strong><br>
+                            1. Tekan tombol <strong>"📸 Buka Kamera (Pilih Aplikasi)"</strong> → pilih <strong>Kamera</strong> di dialog.<br>
+                            2. Jika aplikasi kamera favorit tidak muncul, buka aplikasi tersebut secara manual, ambil foto, lalu gunakan tombol <strong>"Upload dari Galeri"</strong>.<br>
+                            3. Pastikan foto yang dihasilkan sudah mencantumkan timestamp (waktu & lokasi) dari aplikasi kamera. Website tidak menambahkan watermark apapun.</span>
                         </div>
                         <div class="bg-slate-50 rounded-xl p-4 border border-dashed border-gray-300">
                             <div class="flex flex-col items-center gap-3">
@@ -119,16 +122,15 @@
                                     <img id="fotoPreview" src="https://placehold.co/400x400?text=Belum+Ada+Foto" class="w-full h-full object-cover">
                                 </div>
                                 <div class="flex flex-wrap gap-3 justify-center">
-                                    <!-- Input file biasa, tanpa capture, agar muncul pilihan aplikasi -->
-                                    <input type="file" id="fileInput" accept="image/*" style="display: none;">
-                                    <button type="button" id="btnBukaKamera" class="btn-hijau text-white px-4 py-2 rounded-xl text-sm shadow"><i class="fas fa-camera mr-1"></i> Buka Kamera (Pilih Aplikasi)</button>
+                                    <input type="file" id="cameraFileInput" accept="image/*" style="display: none;">
+                                    <button type="button" id="btnBukaKamera" class="btn-hijau text-white px-4 py-2 rounded-xl text-sm shadow"><i class="fas fa-camera mr-1"></i> 📸 Buka Kamera (Pilih Aplikasi)</button>
                                     <button type="button" id="btnUploadManual" class="bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2 rounded-xl text-sm shadow"><i class="fas fa-upload mr-1"></i> Upload dari Galeri</button>
                                     <button type="button" id="btnHapusFoto" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-xl text-sm"><i class="fas fa-trash-alt mr-1"></i> Hapus</button>
                                 </div>
                             </div>
                             <input type="hidden" id="fotoData64" value="">
                             <input type="hidden" id="fotoJam" value="">
-                            <p class="text-xs text-gray-500 mt-3 bg-white/60 p-1 rounded"><i class="fas fa-shield-alt text-green-600"></i> <strong>Catatan:</strong> Website tidak menambahkan watermark apapun. Pastikan aplikasi kamera yang Anda pilih sudah menyematkan timestamp (waktu/lokasi) agar dokumentasi sesuai standar transmisi.</p>
+                            <p class="text-xs text-gray-500 mt-3 bg-white/60 p-1 rounded"><i class="fas fa-shield-alt text-green-600"></i> <strong>Catatan:</strong> Website <u>tidak menambahkan watermark</u>. Foto langsung disimpan apa adanya. Pastikan aplikasi kamera Anda menyematkan timestamp sebelum mengambil gambar.</p>
                         </div>
                     </div>
 
@@ -299,7 +301,7 @@
             }
         };
 
-        // ========== FUNGSI FOTO SEDERHANA (Tanpa Watermark) ==========
+        // ========== FUNGSI FOTO ==========
         function showLoading(msg) {
             let ld = document.getElementById('globalLoading');
             if (!ld) {
@@ -317,7 +319,6 @@
             if (ld) ld.remove();
         }
 
-        // Proses foto yang didapat dari file (tanpa watermark tambahan)
         async function prosesFoto(file) {
             const petugas = document.getElementById('petugas').value.trim();
             if (!petugas) {
@@ -351,32 +352,29 @@
             }
         }
 
-        // ========== KAMERA EKSTERNAL (File Picker biar bisa pilih aplikasi) ==========
-        const fileInput = document.getElementById('fileInput');
+        // ========== ELEMEN & EVENT ==========
+        const cameraFileInput = document.getElementById('cameraFileInput');
         const btnBukaKamera = document.getElementById('btnBukaKamera');
         const btnUploadManual = document.getElementById('btnUploadManual');
         const btnHapusFoto = document.getElementById('btnHapusFoto');
 
-        // Tombol "Buka Kamera": trigger file picker (tanpa capture, muncul pilihan aplikasi)
+        // Tombol Buka Kamera: memicu file picker (tanpa capture, agar muncul dialog pilih sumber termasuk Kamera)
         btnBukaKamera.addEventListener('click', () => {
             const petugas = document.getElementById('petugas').value.trim();
             if (!petugas) {
                 alert("Isi nama petugas terlebih dahulu sebelum membuka kamera.");
                 return;
             }
-            // Reset input agar memicu change untuk file baru
-            fileInput.value = '';
-            fileInput.click();
+            cameraFileInput.value = '';
+            cameraFileInput.click();
         });
 
-        // Ketika pengguna memilih file dari kamera atau galeri
-        fileInput.addEventListener('change', async (event) => {
+        cameraFileInput.addEventListener('change', async (event) => {
             const file = event.target.files[0];
             if (!file) return;
             await prosesFoto(file);
         });
 
-        // Upload dari galeri manual (opsional, sama saja dengan file picker)
         btnUploadManual.addEventListener('click', () => {
             const petugas = document.getElementById('petugas').value.trim();
             if (!petugas) {
@@ -398,7 +396,7 @@
             document.getElementById('fotoData64').value = '';
             document.getElementById('fotoJam').value = '';
             document.getElementById('fotoPreview').src = "https://placehold.co/400x400?text=Belum+Ada+Foto";
-            if (fileInput) fileInput.value = '';
+            cameraFileInput.value = '';
         }
         btnHapusFoto.addEventListener('click', hapusFoto);
 
