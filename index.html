@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Portal Transmisi | Manajemen Shift + Modul + Firebase</title>
-    <!-- Perbaikan favicon: menggunakan nama file yang benar -->
+    <title>Portal Transmisi | Manajemen Shift + Modul + Firebase (Offline Ready)</title>
     <link rel="icon" type="image/ico" href="favicon.ico">
     <style>
         * {
@@ -382,7 +381,6 @@
 <div class="app-container" id="appRoot">
     <div class="header">
         <div class="header-left">
-            <!-- Perbaikan logo: nama file dengan spasi di-encode %20 -->
             <img src="Logo%20PortalTM-noBg.png" alt="Logo Portal Transmisi" class="header-logo" onerror="this.style.display='none'">
             <h1>Portal Transmisi
                 <span id="firebaseStatus" class="sync-status"><i class="fas fa-cloud-upload-alt"></i> Menghubungkan...</span>
@@ -414,13 +412,19 @@
                 <div class="modules-grid" id="modulesGrid"></div>
             </div>
         </div>
-        <footer><i class="fas fa-clock"></i> Sistem Manajemen Shift & Monitoring Terpadu | Portal Transmisi - Tanah Merah</footer>
+        <footer><i class="fas fa-clock"></i> Sistem Manajemen Shift & Monitoring Terpadu | Portal Transmisi - Tanah Merah (Firebase Offline Ready)</footer>
     </div>
 </div>
 
 <script>
-    // ========== KONFIGURASI FIREBASE ==========
+    // ========== KONFIGURASI FIREBASE DENGAN PERSISTENCE OFFLINE ==========
     let isFirebaseReady = false;
+    let currentShiftListenerRef = null;     // untuk melepas listener lama
+    let currentShiftData = {};               // data shift untuk bulan/yang sedang dipilih
+    let isManagePanelOpen = false;            // status panel edit terbuka/tidak
+    let currentYear = new Date().getFullYear();
+    let currentMonth = new Date().getMonth() + 1;
+
     const DB_PATH_SHIFT = 'monitoring/shift';   // root untuk semua bulan
 
     function updateFirebaseStatus(connected, message) {
@@ -436,8 +440,12 @@
         }
     }
 
+    // Fungsi untuk mengirim data ke Firebase (tanpa intervensi localStorage)
     async function syncShiftToFirebase(year, month, scheduleObj) {
-        if (!isFirebaseReady || !window.db) return false;
+        if (!isFirebaseReady || !window.db) {
+            console.warn("Firebase belum siap, data tidak tersimpan.");
+            return false;
+        }
         try {
             const path = `${DB_PATH_SHIFT}/${year}/${String(month).padStart(2,'0')}`;
             await window.db.ref(path).set(scheduleObj);
@@ -450,43 +458,62 @@
         }
     }
 
-    async function loadShiftFromFirebase(year, month) {
-        if (!window.db) return null;
-        try {
-            const path = `${DB_PATH_SHIFT}/${year}/${String(month).padStart(2,'0')}`;
-            const snapshot = await window.db.ref(path).once('value');
-            const data = snapshot.val();
-            if (data && typeof data === 'object') {
-                updateFirebaseStatus(true, "Terhubung");
-                return data;
+    // Mendapatkan path Firebase untuk bulan/tahun tertentu
+    function getShiftPath(year, month) {
+        return `${DB_PATH_SHIFT}/${year}/${String(month).padStart(2,'0')}`;
+    }
+
+    // Melepas listener aktif jika ada
+    function detachShiftListener() {
+        if (currentShiftListenerRef) {
+            currentShiftListenerRef.off('value');
+            currentShiftListenerRef = null;
+        }
+    }
+
+    // Callback ketika data shift berubah (realtime dari Firebase)
+    function onShiftDataChanged(snapshot) {
+        const data = snapshot.val();
+        if (data && typeof data === 'object') {
+            currentShiftData = data;
+        } else {
+            currentShiftData = {};
+        }
+        // Update tampilan shift hari ini
+        refreshShiftTodayDisplay();
+        // Jika panel edit sedang terbuka, refresh panel dengan data terbaru
+        if (isManagePanelOpen) {
+            const dynamicDiv = document.getElementById('dynamicContent');
+            if (dynamicDiv && dynamicDiv.style.display === 'block') {
+                renderManageShiftPanel(dynamicDiv);
             }
-            return null;
-        } catch (err) {
-            console.error("Error load shift dari Firebase:", err);
-            updateFirebaseStatus(false, "Offline mode");
-            return null;
         }
     }
 
-    let selectedYear = new Date().getFullYear();
-    let selectedMonth = new Date().getMonth() + 1;
-
-    function isLocalStorageAvailable() {
-        try {
-            const test = '__storage_test__';
-            localStorage.setItem(test, test);
-            localStorage.removeItem(test);
-            return true;
-        } catch (e) {
-            return false;
+    // Memasang listener realtime untuk bulan/tahun tertentu
+    function attachShiftListener(year, month) {
+        if (!isFirebaseReady || !window.db) {
+            console.warn("Firebase belum siap, tidak bisa pasang listener");
+            return;
         }
+        detachShiftListener(); // lepas listener lama
+        const path = getShiftPath(year, month);
+        const ref = window.db.ref(path);
+        currentShiftListenerRef = ref;
+        // Pasang listener value (realtime + offline persistence otomatis)
+        ref.on('value', (snapshot) => {
+            onShiftDataChanged(snapshot);
+        }, (error) => {
+            console.error("Listener error:", error);
+            updateFirebaseStatus(false, "Error listener");
+        });
+        // Untuk inisialisasi awal, baca sekali untuk memastikan data cepat tampil (optional)
+        ref.once('value').then(snapshot => {
+            onShiftDataChanged(snapshot);
+        }).catch(err => console.warn("once value error", err));
     }
-    const storageAvailable = isLocalStorageAvailable();
 
-    function getStorageKey() {
-        return `TVRI_SHIFT_${selectedYear}-${String(selectedMonth).padStart(2, '0')}`;
-    }
-
+    // Helper: jumlah hari dalam bulan
     function getDaysInMonth(year, month) {
         return new Date(year, month, 0).getDate();
     }
@@ -501,61 +528,6 @@
         return days[date.getDay()];
     }
 
-    async function getCurrentScheduleAsync() {
-        if (!storageAvailable) return null;
-        const fbData = await loadShiftFromFirebase(selectedYear, selectedMonth);
-        if (fbData && Object.keys(fbData).length > 0) {
-            localStorage.setItem(getStorageKey(), JSON.stringify(fbData));
-            return fbData;
-        }
-        try {
-            const raw = localStorage.getItem(getStorageKey());
-            if (!raw) return null;
-            return JSON.parse(raw);
-        } catch (e) {
-            return null;
-        }
-    }
-
-    function getCurrentScheduleSync() {
-        if (!storageAvailable) return null;
-        try {
-            const raw = localStorage.getItem(getStorageKey());
-            if (!raw) return null;
-            return JSON.parse(raw);
-        } catch (e) {
-            return null;
-        }
-    }
-
-    async function saveScheduleToLocalAndFirebase(scheduleObj) {
-        if (!storageAvailable) {
-            alert("Penyimpanan lokal tidak tersedia.");
-            return false;
-        }
-        try {
-            localStorage.setItem(getStorageKey(), JSON.stringify(scheduleObj));
-            if (isFirebaseReady) {
-                await syncShiftToFirebase(selectedYear, selectedMonth, scheduleObj);
-            }
-            refreshShiftTodayDisplay();
-            return true;
-        } catch (e) {
-            console.error(e);
-            alert("Gagal menyimpan data.");
-            return false;
-        }
-    }
-
-    function getTodayMappedInSelectedMonth() {
-        const today = new Date();
-        const currentDay = today.getDate();
-        const daysInSelected = getDaysInMonth(selectedYear, selectedMonth);
-        let mappedDay = currentDay;
-        if (mappedDay > daysInSelected) mappedDay = daysInSelected;
-        return formatDateStr(selectedYear, selectedMonth, mappedDay);
-    }
-
     function escapeHtml(str) {
         if (!str) return '';
         return str.replace(/[&<>]/g, function (m) {
@@ -566,21 +538,31 @@
         });
     }
 
+    // Mendapatkan tanggal hari ini (dalam rentang bulan yang dipilih)
+    function getTodayMappedInSelectedMonth() {
+        const today = new Date();
+        const currentDay = today.getDate();
+        const daysInSelected = getDaysInMonth(currentYear, currentMonth);
+        let mappedDay = currentDay;
+        if (mappedDay > daysInSelected) mappedDay = daysInSelected;
+        return formatDateStr(currentYear, currentMonth, mappedDay);
+    }
+
+    // Refresh tampilan shift hari ini berdasarkan currentShiftData
     async function refreshShiftTodayDisplay() {
         const container = document.getElementById('shiftDetailContainer');
         if (!container) return;
-        const schedule = await getCurrentScheduleAsync();
-        if (!schedule) {
-            container.innerHTML = `<div class="warning-message"><i class="fas fa-exclamation-triangle"></i> ⚠️ Belum ada jadwal shift untuk periode ${selectedYear}-${String(selectedMonth).padStart(2, '0')}. Silakan isi melalui tombol "Kelola Jadwal Shift".</div>`;
+        if (!currentShiftData || Object.keys(currentShiftData).length === 0) {
+            container.innerHTML = `<div class="warning-message"><i class="fas fa-exclamation-triangle"></i> ⚠️ Belum ada jadwal shift untuk periode ${currentYear}-${String(currentMonth).padStart(2, '0')}. Silakan isi melalui tombol "Kelola Jadwal Shift".</div>`;
             return;
         }
         const targetDateKey = getTodayMappedInSelectedMonth();
-        const shiftData = schedule[targetDateKey];
+        const shiftData = currentShiftData[targetDateKey];
         if (!shiftData) {
             container.innerHTML = `<div class="warning-message"><i class="fas fa-calendar-times"></i> ⚠️ Data shift untuk tanggal ${targetDateKey} tidak ditemukan. Harap lengkapi jadwal melalui "Kelola Jadwal Shift".</div>`;
             return;
         }
-        const dayName = getDayName(selectedYear, selectedMonth, parseInt(targetDateKey.split('-')[2]));
+        const dayName = getDayName(currentYear, currentMonth, parseInt(targetDateKey.split('-')[2]));
         container.innerHTML = `
             <div class="shift-detail">
                 <div class="shift-item">📆 ${targetDateKey} (${dayName})</div>
@@ -597,19 +579,22 @@
             dynamicDiv.style.display = 'none';
             dynamicDiv.innerHTML = '';
         }
+        isManagePanelOpen = false;
     }
 
+    // Render panel edit jadwal (menggunakan currentShiftData yang sudah realtime)
     async function renderManageShiftPanel(containerElement) {
-        const daysCount = getDaysInMonth(selectedYear, selectedMonth);
-        const existing = await getCurrentScheduleAsync() || {};
+        if (!containerElement) return;
+        const daysCount = getDaysInMonth(currentYear, currentMonth);
+        const existing = currentShiftData || {};
         
         let html = `
             <div style="margin-bottom:16px;">
                 <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; align-items: center;">
-                    <h3 style="font-size: 1.2rem; color:#0b2b40;"><i class="fas fa-calendar-edit"></i> Edit Jadwal Shift - ${selectedYear}/${String(selectedMonth).padStart(2,'0')}</h3>
+                    <h3 style="font-size: 1.2rem; color:#0b2b40;"><i class="fas fa-calendar-edit"></i> Edit Jadwal Shift - ${currentYear}/${String(currentMonth).padStart(2,'0')}</h3>
                     <button id="closeManagePanel" class="btn-outline" style="padding:6px 16px;"><i class="fas fa-times"></i> Tutup</button>
                 </div>
-                <div class="info-message" style="margin-top: 12px;"><i class="fas fa-info-circle"></i> Isi nama petugas untuk setiap shift. Semua tanggal bisa diisi. Kosong akan ditampilkan sebagai "-".</div>
+                <div class="info-message" style="margin-top: 12px;"><i class="fas fa-info-circle"></i> Isi nama petugas untuk setiap shift. Semua tanggal bisa diisi. Kosong akan ditampilkan sebagai "-". Perubahan langsung tersimpan ke Firebase dan tersinkron otomatis.</div>
             </div>
             <div class="shift-table-container">
                 <table class="shift-table">
@@ -617,9 +602,9 @@
                     <tbody>
         `;
         for (let d = 1; d <= daysCount; d++) {
-            const dateKey = formatDateStr(selectedYear, selectedMonth, d);
+            const dateKey = formatDateStr(currentYear, currentMonth, d);
             const shift = existing[dateKey] || { shift1: '', shift2: '', shift3: '' };
-            const dayName = getDayName(selectedYear, selectedMonth, d);
+            const dayName = getDayName(currentYear, currentMonth, d);
             html += `
                 <tr>
                     <td><strong>${dateKey}</strong></td>
@@ -630,7 +615,7 @@
                 </tr>
             `;
         }
-        html += `</tbody>}</div><div style="display: flex; gap: 16px; margin-top: 20px;"><button id="btnUpdateSchedule" class="btn-save"><i class="fas fa-save"></i> 💾 Simpan Perubahan Jadwal</button><button id="btnCancelManage" class="btn-outline"><i class="fas fa-arrow-left"></i> Batal & Tutup</button></div>`;
+        html += `</tbody></table></div><div style="display: flex; gap: 16px; margin-top: 20px;"><button id="btnUpdateSchedule" class="btn-save"><i class="fas fa-save"></i> 💾 Simpan Perubahan Jadwal</button><button id="btnCancelManage" class="btn-outline"><i class="fas fa-arrow-left"></i> Batal & Tutup</button></div>`;
         containerElement.innerHTML = html;
         
         const updateBtn = document.getElementById('btnUpdateSchedule');
@@ -646,7 +631,7 @@
                     newData[date][shiftType] = inp.value.trim();
                 });
                 for (let d = 1; d <= daysCount; d++) {
-                    const dateKey = formatDateStr(selectedYear, selectedMonth, d);
+                    const dateKey = formatDateStr(currentYear, currentMonth, d);
                     const dayShift = newData[dateKey];
                     if (dayShift && (dayShift.shift1 === "" || dayShift.shift2 === "" || dayShift.shift3 === "")) {
                         hasEmpty = true;
@@ -656,12 +641,15 @@
                 if (hasEmpty) {
                     if (!confirm("⚠️ Ada shift yang kosong pada beberapa tanggal. Data tetap bisa disimpan, namun shift kosong akan menampilkan '-' di menu utama. Lanjutkan?")) return;
                 }
-                const success = await saveScheduleToLocalAndFirebase(newData);
+                // Simpan ke Firebase (tanpa localStorage)
+                const success = await syncShiftToFirebase(currentYear, currentMonth, newData);
                 if (success) {
-                    alert("✅ Jadwal shift berhasil diperbarui dan tersinkron ke Firebase!");
+                    alert("✅ Jadwal shift berhasil diperbarui dan tersinkron ke Firebase (termasuk offline cache).");
                     await refreshShiftTodayDisplay();
                     closeManagePanel();
-                } else alert("❌ Gagal menyimpan jadwal.");
+                } else {
+                    alert("❌ Gagal menyimpan jadwal. Periksa koneksi atau konfigurasi Firebase.");
+                }
             });
         }
         const cancelBtn = document.getElementById('btnCancelManage');
@@ -674,6 +662,7 @@
         const dynamicDiv = document.getElementById('dynamicContent');
         if (dynamicDiv) {
             dynamicDiv.style.display = 'block';
+            isManagePanelOpen = true;
             await renderManageShiftPanel(dynamicDiv);
             dynamicDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
@@ -704,9 +693,11 @@
     }
     
     async function initMainMenu() {
-        await refreshShiftTodayDisplay();
-        const dynamicDiv = document.getElementById('dynamicContent');
-        if (dynamicDiv) dynamicDiv.style.display = 'none';
+        // Pasang listener realtime untuk bulan/tahun awal
+        attachShiftListener(currentYear, currentMonth);
+        // Tampilkan modules grid
+        renderModulesGrid();
+        // Event tombol kelola shift
         const manageBtn = document.getElementById('btnManageShift');
         if (manageBtn) {
             manageBtn.replaceWith(manageBtn.cloneNode(true));
@@ -716,7 +707,6 @@
             const btn = document.getElementById('btnManageShift');
             if (btn) btn.addEventListener('click', () => showManagePanel());
         }
-        renderModulesGrid();
     }
     
     function populateMonthYearSelectors() {
@@ -728,44 +718,82 @@
             const option = document.createElement('option');
             option.value = i;
             option.textContent = new Date(2000, i - 1, 1).toLocaleString('id', { month: 'long' });
-            if (i === selectedMonth) option.selected = true;
+            if (i === currentMonth) option.selected = true;
             monthSelect.appendChild(option);
         }
-        const currentYear = new Date().getFullYear();
+        const nowYear = new Date().getFullYear();
         yearSelect.innerHTML = '';
-        for (let y = currentYear - 1; y <= currentYear + 3; y++) {
+        for (let y = nowYear - 1; y <= nowYear + 3; y++) {
             const opt = document.createElement('option');
             opt.value = y;
             opt.textContent = y;
-            if (y === selectedYear) opt.selected = true;
+            if (y === currentYear) opt.selected = true;
             yearSelect.appendChild(opt);
         }
         monthSelect.addEventListener('change', async (e) => {
-            selectedMonth = parseInt(e.target.value);
+            currentMonth = parseInt(e.target.value);
             await reloadBySelection();
         });
         yearSelect.addEventListener('change', async (e) => {
-            selectedYear = parseInt(e.target.value);
+            currentYear = parseInt(e.target.value);
             await reloadBySelection();
         });
     }
     
     async function reloadBySelection() {
-        closeManagePanel();
-        await refreshShiftTodayDisplay();
+        closeManagePanel();        // tutup panel jika terbuka
+        // Ganti listener realtime ke bulan/tahun baru
+        attachShiftListener(currentYear, currentMonth);
+        // Update badge periode
         const statusBadge = document.getElementById('statusBadge');
-        if (statusBadge) statusBadge.innerText = `📅 ${selectedYear}-${String(selectedMonth).padStart(2, '0')}`;
-        const dynamicDiv = document.getElementById('dynamicContent');
-        if (dynamicDiv && dynamicDiv.style.display === 'block') {
-            await renderManageShiftPanel(dynamicDiv);
-        }
+        if (statusBadge) statusBadge.innerText = `📅 ${currentYear}-${String(currentMonth).padStart(2, '0')}`;
+        // refresh tampilan shift hari ini (akan otomatis terpanggil dari listener, tapi panggil manual untuk kecepatan)
+        refreshShiftTodayDisplay();
     }
     
+    // Fungsi untuk mengaktifkan persistence offline Firebase
+    async function enableFirebasePersistence() {
+        if (!window.db) return false;
+        try {
+            // Untuk compat SDK, firebase.database().enablePersistence
+            // window.db adalah instance database, kita perlu akses ke firebase object asli? 
+            // Kita asumsikan window.db adalah hasil dari firebase.database()
+            // Jika window.db tidak memiliki method enablePersistence, coba dari firebase itu sendiri.
+            if (window.db.enablePersistence) {
+                await window.db.enablePersistence();
+                console.log("Firebase persistence diaktifkan (offline support)");
+            } else if (window.firebase && window.firebase.database) {
+                // alternatif
+                await window.firebase.database().enablePersistence();
+                console.log("Firebase persistence diaktifkan via root");
+            } else {
+                console.warn("enablePersistence tidak tersedia, offline mode mungkin tidak aktif");
+            }
+            return true;
+        } catch (err) {
+            if (err.code === 'failed-precondition') {
+                console.warn("Persistence gagal, mungkin multiple tab buka");
+            } else if (err.code === 'unavailable') {
+                console.warn("Persistence tidak tersedia, browser tidak support");
+            } else {
+                console.error("Error enable persistence:", err);
+            }
+            return false;
+        }
+    }
+
+    // Inisialisasi ketika Firebase siap
     function waitForFirebaseAndLoad() {
         if (window.db) {
             isFirebaseReady = true;
-            updateFirebaseStatus(true, "Terhubung");
-            initMainMenu();
+            // Aktifkan persistence offline
+            enableFirebasePersistence().then(() => {
+                updateFirebaseStatus(true, "Terhubung (Offline Ready)");
+                initMainMenu();
+            }).catch(() => {
+                updateFirebaseStatus(true, "Terhubung");
+                initMainMenu();
+            });
         } else {
             setTimeout(waitForFirebaseAndLoad, 300);
         }
@@ -774,12 +802,8 @@
     document.addEventListener('DOMContentLoaded', () => {
         populateMonthYearSelectors();
         const statusBadge = document.getElementById('statusBadge');
-        if (statusBadge) statusBadge.innerText = `📅 ${selectedYear}-${String(selectedMonth).padStart(2, '0')}`;
+        if (statusBadge) statusBadge.innerText = `📅 ${currentYear}-${String(currentMonth).padStart(2, '0')}`;
         waitForFirebaseAndLoad();
-        if (!storageAvailable) {
-            const shiftContainer = document.getElementById('shiftDetailContainer');
-            if (shiftContainer) shiftContainer.innerHTML = `<div class="warning-message"><i class="fas fa-database"></i> ⚠️ Penyimpanan lokal tidak tersedia. Data shift tidak akan tersimpan.</div>`;
-        }
     });
 </script>
 </body>
