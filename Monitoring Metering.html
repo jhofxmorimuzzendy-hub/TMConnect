@@ -1,611 +1,630 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-  <title>TVRI - TX Tanah Merah | Monitoring PLN & UPS + Multi Foto (Max 5) + Flip Kamera</title>
-  <link rel="icon" type="image/ico" href="favicon.ico">
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
-    body { background: linear-gradient(135deg, #eef2f8 0%, #e0f0ec 100%); padding: 20px 16px; }
-    .container { max-width: 1600px; margin: 0 auto; }
-    .card { background: white; border-radius: 32px; box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08); padding: 1.5rem 1.2rem; margin-bottom: 2rem; }
-    h1 { font-size: 1.6rem; font-weight: 700; color: #1e2a3e; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 0.5rem; }
-    h1 small { font-size: 0.7rem; background: #e6f7f0; color: #1e6f5c; padding: 4px 12px; border-radius: 40px; }
-    h2 { font-size: 1.3rem; font-weight: 600; color: #1e6f5c; border-left: 5px solid #1e6f5c; padding-left: 16px; margin: 1rem 0 1rem 0; }
-    h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; gap: 10px; background: #f1f5f9; padding: 8px 16px; border-radius: 60px; color: #1e6f5c; }
-    .form-row { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; align-items: flex-end; }
-    .field-group { flex: 1 1 160px; min-width: 140px; }
-    .field-group label { font-weight: 600; font-size: 0.7rem; text-transform: uppercase; color: #4a627a; display: block; margin-bottom: 6px; }
-    input, textarea, select { width: 100%; padding: 10px 12px; border: 1.5px solid #e2e8f0; border-radius: 20px; font-size: 0.85rem; transition: 0.2s; background: white; }
-    input:focus, textarea:focus, select:focus { border-color: #1e6f5c; outline: none; box-shadow: 0 0 0 2px rgba(30,111,92,0.2); }
-    .double-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; margin-top: 12px; }
-    .meas-panel { background: #f9fafc; border-radius: 24px; padding: 1rem 1.2rem; border: 1px solid #eef2f8; }
-    .param-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 12px 14px; margin: 12px 0 18px 0; }
-    .param-item { display: flex; flex-direction: column; }
-    .param-item label { font-size: 0.65rem; font-weight: 600; color: #4b6b8f; text-transform: uppercase; }
-    .param-item input { padding: 6px 8px; font-size: 0.8rem; border-radius: 14px; margin-top: 4px; }
-    .subtitle { font-weight: 700; margin-top: 8px; margin-bottom: 6px; color: #1e6f5c; border-bottom: 2px dashed #cbd5e1; display: inline-block; font-size: 0.85rem; }
-    .foto-thumb-list { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
-    .thumb-item { width: 42px; height: 42px; border-radius: 10px; overflow: hidden; border: 1px solid #ccc; cursor: pointer; background: #f1f5f9; flex-shrink: 0; }
-    .thumb-item img { width: 100%; height: 100%; object-fit: cover; }
-    .foto-preview-grid { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 12px; justify-content: center; }
-    .preview-card { position: relative; width: 85px; height: 85px; border-radius: 14px; overflow: hidden; border: 2px solid #1e6f5c; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
-    .preview-card img { width: 100%; height: 100%; object-fit: cover; }
-    .preview-card .remove-btn { position: absolute; top: -8px; right: -8px; background: #ef4444; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; border: 2px solid white; }
-    .modal-img { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); display:flex; align-items:center; justify-content:center; z-index:2000; cursor:pointer; flex-direction: column; }
-    .modal-img img { max-width:92%; max-height:85%; border-radius:20px; object-fit:contain; }
-    .modal-caption { background: rgba(0,0,0,0.7); color: white; padding: 8px 16px; border-radius: 40px; margin-top: 16px; font-size: 14px; text-align: center; max-width: 90%; }
-    .btn-group { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 28px; justify-content: flex-start; }
-    .btn { padding: 10px 20px; border-radius: 40px; border: none; font-weight: 600; cursor: pointer; transition: 0.2s; font-size: 0.85rem; }
-    .btn-primary { background: #1e6f5c; color: white; }
-    .btn-primary:hover { background: #0e5a48; transform: translateY(-2px); }
-    .btn-secondary { background: #e9ecef; color: #2c3e50; }
-    .btn-secondary:hover { background: #dee2e6; }
-    .btn-camera { background: #1e6f5c; color: white; }
-    .btn-camera:hover { background: #0e5a48; transform: translateY(-2px); }
-    .btn-danger { background: #fee2e2; color: #b91c1c; }
-    .btn-danger:hover { background: #fecaca; }
-    .btn-excel { background: #1e6f5c; color: white; }
-    .btn-excel:hover { background: #0e5a48; transform: translateY(-2px); }
-    .btn-info { background: #e0f2fe; color: #0f3b2c; }
-    .btn-info:hover { background: #bae6fd; }
-    .entries-container { display: flex; flex-direction: column; gap: 20px; }
-    .entry-card { background: white; border-radius: 28px; padding: 1.2rem; box-shadow: 0 6px 14px rgba(0, 0, 0, 0.05); border: 1px solid #eef2f0; }
-    .entry-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 10px; border-bottom: 1px solid #e2edf2; padding-bottom: 10px; margin-bottom: 14px; }
-    .entry-photos { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 16px; align-items: center; }
-    .evidence-img { width: 70px; height: 70px; border-radius: 16px; object-fit: cover; border: 1px solid #cbd5e6; cursor: pointer; }
-    .data-row { display: flex; flex-wrap: wrap; gap: 20px; justify-content: space-between; }
-    .data-row > div { flex: 1; min-width: 200px; }
-    @media (max-width: 640px) {
-      body { padding: 12px; }
-      .card { padding: 1rem; }
-      .preview-card { width: 70px; height: 70px; }
-      .thumb-item { width: 36px; height: 36px; }
-      .btn-group { justify-content: center; }
-    }
-    footer { text-align: center; font-size: 0.65rem; margin-top: 1.5rem; color: #5b7c8c; }
-    .sync-status { font-size: 0.7rem; padding: 2px 8px; border-radius: 20px; display: inline-block; margin-left: 12px; background: rgba(255,255,240,0.3); }
-    .loading-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 999; backdrop-filter: blur(2px); }
-    .flip-btn { transition: all 0.2s ease; }
-    .flip-btn:active { transform: scale(0.96); }
-    .hidden { display: none; }
-  </style>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
-  <script src="firebase-config.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>TVRI - TX Tanah Merah | Monitoring PLN & UPS + Multi Foto + Flip Kamera</title>
+    <link rel="icon" type="image/ico" href="favicon.ico">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { primary: '#1e6f5c', secondary: '#f5b042', accent: '#0e5a48' },
+                    screens: { 'xs': '480px', 'sm': '640px', 'md': '768px', 'lg': '1024px', 'xl': '1280px' }
+                }
+            }
+        }
+    </script>
+    <style>
+        * { -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #eef2f8 0%, #e0f0ec 100%); }
+        .loading-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 999; backdrop-filter: blur(2px); }
+        .table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
+        .foto-thumb-list { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+        .thumb-item { width: 42px; height: 42px; border-radius: 10px; overflow: hidden; border: 1px solid #ccc; cursor: pointer; background: #f1f5f9; flex-shrink: 0; }
+        .thumb-item img { width: 100%; height: 100%; object-fit: cover; }
+        .foto-preview-grid { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 12px; justify-content: center; }
+        .preview-card { position: relative; width: 85px; height: 85px; border-radius: 14px; overflow: hidden; border: 2px solid #1e6f5c; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+        .preview-card img { width: 100%; height: 100%; object-fit: cover; }
+        .preview-card .remove-btn { position: absolute; top: -8px; right: -8px; background: #ef4444; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; border: 2px solid white; }
+        .modal-img { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: flex; align-items: center; justify-content: center; z-index: 2000; cursor: pointer; flex-direction: column; }
+        .modal-img img { max-width: 92%; max-height: 85%; border-radius: 20px; object-fit: contain; }
+        .modal-caption { background: rgba(0,0,0,0.7); color: white; padding: 8px 16px; border-radius: 40px; margin-top: 16px; font-size: 14px; text-align: center; max-width: 90%; }
+        @media (max-width: 640px) {
+            td, th { font-size: 0.7rem; padding: 0.5rem 0.25rem; }
+            .preview-card { width: 70px; height: 70px; }
+            .thumb-item { width: 36px; height: 36px; }
+            button { font-size: 0.75rem; padding: 0.5rem 0.75rem; }
+            h1 { font-size: 1.6rem; }
+            .param-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        input, select, textarea { font-size: 16px !important; }
+        .sync-status { font-size: 0.7rem; padding: 2px 10px; border-radius: 20px; background: rgba(255,255,240,0.3); display: inline-block; margin-left: 12px; vertical-align: middle; }
+        .flip-btn { transition: all 0.2s ease; }
+        .flip-btn:active { transform: scale(0.96); }
+        .param-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 0.5rem; }
+    </style>
 </head>
 <body>
-<div class="container">
-  <div class="card">
-    <h1>📡 TVRI - TX Tanah Merah <small>PLN & UPS + Multi Foto (Max 5) + Flip Kamera</small>
-      <span id="firebaseStatus" class="sync-status"><i class="fas fa-cloud-upload-alt"></i> Menghubungkan...</span>
-    </h1>
-    <p style="margin-bottom: 12px; font-size: 0.85rem;">✅ Multi foto (maks 5) dengan watermark TVRI, kamera belakang otomatis + flip. Data tersimpan di Firebase (offline-ready).</p>
-
-    <div class="form-row">
-      <div class="field-group"><label>No. Entry</label><input type="text" id="entryNo" readonly style="background:#f9f9f9;"></div>
-      <div class="field-group"><label>Tanggal</label><input type="date" id="entryDate"></div>
-      <div class="field-group"><label>Petugas</label><input type="text" id="petugas" placeholder="Nama"></div>
-      <div class="field-group"><label>Keterangan</label><input type="text" id="keterangan" placeholder="Lokasi / kondisi"></div>
-    </div>
-
-    <!-- Zona Multi Foto (sistem seperti Monitoring Kerusakan) -->
-    <div class="camera-zone" style="background: linear-gradient(135deg, #f5f9ff 0%, #eef2fa 100%); border-radius: 32px; padding: 18px; margin: 20px 0; border: 1px solid #cbdff2;">
-      <h3 style="margin:0 0 12px 0;"><i class="fas fa-camera-retro"></i> Dokumentasi Foto (Max 5, watermark otomatis)</h3>
-      <div class="bg-slate-50 rounded-xl p-3 md:p-4 border border-dashed border-gray-300">
-        <div class="flex flex-wrap gap-2 justify-center">
-          <button type="button" id="btnBukaKamera" class="bg-primary hover:bg-accent text-white px-3 py-2 rounded-xl text-xs md:text-sm shadow transition"><i class="fas fa-video mr-1"></i> Buka Kamera (Belakang)</button>
-          <button type="button" id="btnCaptureFoto" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-xl disabled:opacity-50 text-xs md:text-sm shadow transition" disabled><i class="fas fa-camera mr-1"></i> Ambil + WM</button>
-          <button type="button" id="btnUploadManual" class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-xl text-xs md:text-sm shadow transition"><i class="fas fa-upload mr-1"></i> Upload + WM</button>
-        </div>
-        <div id="videoContainer" class="hidden mt-3 rounded-xl overflow-hidden bg-black shadow-lg" style="position:relative;">
-          <video id="videoCamera" autoplay playsinline class="w-full max-h-56 object-cover"></video>
-          <div class="flex justify-between items-center p-2 bg-gray-900 flex-wrap gap-2">
-            <span class="text-white text-xs"><i class="fas fa-info-circle"></i> Kamera aktif | <span id="cameraModeLabel">📷 BELAKANG</span></span>
-            <div class="flex gap-2">
-              <button type="button" id="btnFlipCamera" class="flip-btn bg-gray-700 hover:bg-gray-600 text-white text-xs px-3 py-1.5 rounded-full shadow transition"><i class="fas fa-sync-alt mr-1"></i> Balik Kamera</button>
-              <button type="button" id="btnTutupKamera" class="text-red-400 hover:text-red-300 text-xs bg-gray-800 px-3 py-1.5 rounded-full"><i class="fas fa-times-circle mr-1"></i> Tutup</button>
+    <div class="container max-w-7xl mx-auto px-3 sm:px-4 md:px-5 py-4 md:py-6">
+        <!-- Header -->
+        <div class="text-center mb-5 md:mb-7">
+            <div class="inline-flex items-center justify-center bg-gradient-to-r from-primary to-accent p-3 rounded-full shadow-md">
+                <i class="fas fa-tv text-white text-xl md:text-2xl"></i>
             </div>
-          </div>
+            <h1 class="text-xl sm:text-2xl md:text-4xl font-extrabold text-slate-800 mt-2 md:mt-3 leading-tight">
+                Monitoring PLN & UPS - TX Tanah Merah
+                <span id="firebaseStatus" class="sync-status"><i class="fas fa-cloud-upload-alt"></i> Menghubungkan...</span>
+            </h1>
+            <div class="mt-2 flex justify-center px-2">
+                <span class="badge-perbaikan bg-primary text-white text-xs md:text-sm rounded-full py-1 px-3 md:px-4 font-semibold"><i class="fas fa-camera-retro mr-1 md:mr-2"></i> Multi Foto (Max 5) | Kamera Belakang + Flip | Firebase Realtime</span>
+            </div>
         </div>
-        <div id="fotoPreviewList" class="foto-preview-grid mt-3"></div>
-        <p id="fotoCounter" class="text-xs text-gray-500 mt-2 text-center">0 dari 5 foto</p>
-        <input type="hidden" id="fotoDataArray" value="[]">
-        <p class="text-[11px] md:text-xs text-gray-500 mt-3 bg-white/70 p-2 rounded text-center"><i class="fas fa-shield-alt text-green-600"></i> <strong>Watermark otomatis</strong> : Logo TVRI, petugas, waktu, koordinat GPS</p>
-      </div>
+
+        <!-- Form Card -->
+        <div class="bg-white rounded-2xl shadow-xl overflow-hidden mb-6 md:mb-8 border border-gray-100">
+            <div class="bg-gradient-to-r from-primary to-accent px-4 py-3 md:px-5 md:py-4">
+                <h2 class="text-base md:text-xl font-semibold text-white"><i class="fas fa-clipboard-list mr-2"></i> Form Pencatatan Metering</h2>
+            </div>
+            <div class="p-4 sm:p-5 md:p-6">
+                <form id="formMetering" class="space-y-4 md:space-y-5">
+                    <div class="grid grid-cols-1 xs:grid-cols-3 gap-3 md:gap-5">
+                        <div><label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Nomor</label><input type="text" id="nomorOtomatis" readonly class="w-full bg-gray-100 border border-gray-300 rounded-xl px-3 py-2 md:py-2.5 text-gray-600 font-mono text-sm"></div>
+                        <div><label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Tanggal <span class="text-red-500">*</span></label><input type="date" id="tanggal" required class="w-full border border-gray-300 rounded-xl px-3 py-2 md:py-2.5 text-sm focus:ring-2 focus:ring-primary focus:border-primary"></div>
+                        <div><label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Petugas <span class="text-red-500">*</span></label><input type="text" id="petugas" required placeholder="Nama petugas" class="w-full border border-gray-300 rounded-xl px-3 py-2 md:py-2.5 text-sm focus:ring-2 focus:ring-primary"></div>
+                    </div>
+                    <div><label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Keterangan / Lokasi</label><textarea id="keterangan" rows="2" placeholder="Catatan tambahan, lokasi meter, dll..." class="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-primary"></textarea></div>
+
+                    <!-- Panel PLN dan UPS dengan gaya grid -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                        <!-- PLN Panel -->
+                        <div class="bg-slate-50 rounded-xl p-4 border border-gray-200">
+                            <h3 class="font-bold text-primary mb-3 flex items-center gap-2"><i class="fas fa-bolt"></i> SUMBER PLN</h3>
+                            <div><span class="text-xs font-semibold text-gray-600">⚡ Tegangan (Volt)</span></div>
+                            <div class="param-grid mt-1 mb-3">
+                                <div><label class="text-[10px] font-medium">RS</label><input type="number" step="any" id="vPLN_rs" class="w-full border rounded-lg px-2 py-1 text-sm"></div>
+                                <div><label class="text-[10px] font-medium">ST</label><input type="number" step="any" id="vPLN_st" class="w-full border rounded-lg px-2 py-1 text-sm"></div>
+                                <div><label class="text-[10px] font-medium">TR</label><input type="number" step="any" id="vPLN_tr" class="w-full border rounded-lg px-2 py-1 text-sm"></div>
+                                <div><label class="text-[10px] font-medium">RN</label><input type="number" step="any" id="vPLN_rn" class="w-full border rounded-lg px-2 py-1 text-sm"></div>
+                                <div><label class="text-[10px] font-medium">SN</label><input type="number" step="any" id="vPLN_sn" class="w-full border rounded-lg px-2 py-1 text-sm"></div>
+                                <div><label class="text-[10px] font-medium">TN</label><input type="number" step="any" id="vPLN_tn" class="w-full border rounded-lg px-2 py-1 text-sm"></div>
+                            </div>
+                            <div><span class="text-xs font-semibold text-gray-600">🔁 Arus (Ampere)</span></div>
+                            <div class="param-grid mt-1">
+                                <div><label class="text-[10px] font-medium">R</label><input type="number" step="any" id="iPLN_r" class="w-full border rounded-lg px-2 py-1 text-sm"></div>
+                                <div><label class="text-[10px] font-medium">S</label><input type="number" step="any" id="iPLN_s" class="w-full border rounded-lg px-2 py-1 text-sm"></div>
+                                <div><label class="text-[10px] font-medium">T</label><input type="number" step="any" id="iPLN_t" class="w-full border rounded-lg px-2 py-1 text-sm"></div>
+                            </div>
+                        </div>
+                        <!-- UPS Panel -->
+                        <div class="bg-slate-50 rounded-xl p-4 border border-gray-200">
+                            <h3 class="font-bold text-primary mb-3 flex items-center gap-2"><i class="fas fa-battery-full"></i> SUMBER UPS</h3>
+                            <div><span class="text-xs font-semibold text-gray-600">⚡ Tegangan (Volt)</span></div>
+                            <div class="param-grid mt-1 mb-3">
+                                <div><label class="text-[10px] font-medium">RS</label><input type="number" step="any" id="vUPS_rs" class="w-full border rounded-lg px-2 py-1 text-sm"></div>
+                                <div><label class="text-[10px] font-medium">ST</label><input type="number" step="any" id="vUPS_st" class="w-full border rounded-lg px-2 py-1 text-sm"></div>
+                                <div><label class="text-[10px] font-medium">TR</label><input type="number" step="any" id="vUPS_tr" class="w-full border rounded-lg px-2 py-1 text-sm"></div>
+                                <div><label class="text-[10px] font-medium">RN</label><input type="number" step="any" id="vUPS_rn" class="w-full border rounded-lg px-2 py-1 text-sm"></div>
+                                <div><label class="text-[10px] font-medium">SN</label><input type="number" step="any" id="vUPS_sn" class="w-full border rounded-lg px-2 py-1 text-sm"></div>
+                                <div><label class="text-[10px] font-medium">TN</label><input type="number" step="any" id="vUPS_tn" class="w-full border rounded-lg px-2 py-1 text-sm"></div>
+                            </div>
+                            <div><span class="text-xs font-semibold text-gray-600">🔁 Arus (Ampere)</span></div>
+                            <div class="param-grid mt-1">
+                                <div><label class="text-[10px] font-medium">R</label><input type="number" step="any" id="iUPS_r" class="w-full border rounded-lg px-2 py-1 text-sm"></div>
+                                <div><label class="text-[10px] font-medium">S</label><input type="number" step="any" id="iUPS_s" class="w-full border rounded-lg px-2 py-1 text-sm"></div>
+                                <div><label class="text-[10px] font-medium">T</label><input type="number" step="any" id="iUPS_t" class="w-full border rounded-lg px-2 py-1 text-sm"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dokumentasi Foto Multi (sama persis dengan Monitoring Kerusakan) -->
+                    <div class="border-t border-gray-200 pt-4 mt-2">
+                        <label class="block text-sm md:text-md font-semibold text-gray-800 mb-2"><i class="fas fa-camera-retro text-primary mr-2"></i> Dokumentasi Foto (Max 5, watermark otomatis)</label>
+                        <div class="bg-slate-50 rounded-xl p-3 md:p-4 border border-dashed border-gray-300">
+                            <div class="flex flex-wrap gap-2 justify-center">
+                                <button type="button" id="btnBukaKamera" class="bg-primary hover:bg-accent text-white px-3 py-2 rounded-xl text-xs md:text-sm shadow transition"><i class="fas fa-video mr-1"></i> Buka Kamera (Belakang)</button>
+                                <button type="button" id="btnCaptureFoto" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-xl disabled:opacity-50 text-xs md:text-sm shadow transition" disabled><i class="fas fa-camera mr-1"></i> Ambil + WM</button>
+                                <button type="button" id="btnUploadManual" class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-xl text-xs md:text-sm shadow transition"><i class="fas fa-upload mr-1"></i> Upload + WM</button>
+                            </div>
+                            <div id="videoContainer" class="hidden mt-3 rounded-xl overflow-hidden bg-black shadow-lg">
+                                <video id="videoCamera" autoplay playsinline class="w-full max-h-56 object-cover"></video>
+                                <div class="flex justify-between items-center p-2 bg-gray-900 flex-wrap gap-2">
+                                    <span class="text-white text-xs"><i class="fas fa-info-circle"></i> Kamera aktif | <span id="cameraModeLabel">📷 BELAKANG</span></span>
+                                    <div class="flex gap-2">
+                                        <button type="button" id="btnFlipCamera" class="flip-btn bg-gray-700 hover:bg-gray-600 text-white text-xs px-3 py-1.5 rounded-full shadow transition"><i class="fas fa-sync-alt mr-1"></i> Balik Kamera</button>
+                                        <button type="button" id="btnTutupKamera" class="text-red-400 hover:text-red-300 text-xs bg-gray-800 px-3 py-1.5 rounded-full"><i class="fas fa-times-circle mr-1"></i> Tutup</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="fotoPreviewList" class="foto-preview-grid mt-3"></div>
+                            <p id="fotoCounter" class="text-xs text-gray-500 mt-2 text-center">0 dari 5 foto</p>
+                            <input type="hidden" id="fotoDataArray" value="[]">
+                            <p class="text-[11px] md:text-xs text-gray-500 mt-3 bg-white/70 p-2 rounded text-center"><i class="fas fa-shield-alt text-green-600"></i> <strong>Watermark otomatis</strong> : Logo TVRI, petugas, waktu, koordinat GPS</p>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row gap-3 pt-2">
+                        <button type="submit" class="bg-primary hover:bg-accent text-white font-semibold py-2.5 md:py-3 rounded-xl flex-1 transition shadow text-sm md:text-base"><i class="fas fa-save mr-2"></i> Simpan Laporan</button>
+                        <button type="button" id="btnResetForm" class="bg-gray-200 hover:bg-gray-300 text-gray-800 py-2.5 md:py-3 rounded-xl flex-1 transition text-sm md:text-base"><i class="fas fa-undo-alt mr-2"></i> Reset Form</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Daftar Riwayat -->
+        <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
+            <div class="bg-gradient-to-r from-primary to-accent px-4 py-3 md:px-5 md:py-4 flex justify-between items-center flex-wrap gap-2">
+                <h2 class="text-base md:text-xl font-semibold text-white"><i class="fas fa-history mr-2"></i> Riwayat Pencatatan</h2>
+                <div class="flex gap-2">
+                    <button id="btnExportHTML" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs md:text-sm px-3 py-1.5 rounded-full shadow transition"><i class="fas fa-file-export mr-1"></i> Export</button>
+                    <button id="btnHapusSemua" class="bg-red-600 hover:bg-red-700 text-white text-xs md:text-sm px-3 py-1.5 rounded-full shadow transition"><i class="fas fa-dumpster-fire mr-1"></i> Hapus Semua</button>
+                </div>
+            </div>
+            <div class="table-wrapper p-2 md:p-4">
+                <table class="min-w-[800px] md:min-w-full bg-white border border-gray-200 rounded-xl text-xs md:text-sm">
+                    <thead class="bg-gray-100">
+                        <tr><th class="py-2 px-1">No</th><th>Tgl</th><th>Petugas</th><th>Keterangan</th><th>PLN (V/I)</th><th>UPS (V/I)</th><th>Foto</th><th>Aksi</th></tr>
+                    </thead>
+                    <tbody id="tabelBody"><tr><td colspan="8" class="text-center py-6 text-gray-400">⚡ Memuat data...</td></tr>
+                </tbody>
+            </table>
+            </div>
+        </div>
     </div>
 
-    <!-- PARAMETER PLN & UPS (tetap sama) -->
-    <div class="double-grid">
-      <div class="meas-panel"><h3>🏭 SUMBER PLN</h3>
-        <div><strong class="subtitle">⚡ Tegangan (Volt)</strong></div>
-        <div class="param-grid">
-          <div class="param-item"><label>RS (V)</label><input type="number" step="any" id="vPLN_rs"></div>
-          <div class="param-item"><label>ST (V)</label><input type="number" step="any" id="vPLN_st"></div>
-          <div class="param-item"><label>TR (V)</label><input type="number" step="any" id="vPLN_tr"></div>
-          <div class="param-item"><label>RN (V)</label><input type="number" step="any" id="vPLN_rn"></div>
-          <div class="param-item"><label>SN (V)</label><input type="number" step="any" id="vPLN_sn"></div>
-          <div class="param-item"><label>TN (V)</label><input type="number" step="any" id="vPLN_tn"></div>
-        </div>
-        <div><strong class="subtitle">🔁 Arus (Ampere)</strong></div>
-        <div class="param-grid"><div class="param-item"><label>R (A)</label><input type="number" step="any" id="iPLN_r"></div>
-          <div class="param-item"><label>S (A)</label><input type="number" step="any" id="iPLN_s"></div>
-          <div class="param-item"><label>T (A)</label><input type="number" step="any" id="iPLN_t"></div></div>
-      </div>
-      <div class="meas-panel"><h3>🔋 SUMBER UPS</h3>
-        <div><strong class="subtitle">⚡ Tegangan (Volt)</strong></div>
-        <div class="param-grid">
-          <div class="param-item"><label>RS (V)</label><input type="number" step="any" id="vUPS_rs"></div>
-          <div class="param-item"><label>ST (V)</label><input type="number" step="any" id="vUPS_st"></div>
-          <div class="param-item"><label>TR (V)</label><input type="number" step="any" id="vUPS_tr"></div>
-          <div class="param-item"><label>RN (V)</label><input type="number" step="any" id="vUPS_rn"></div>
-          <div class="param-item"><label>SN (V)</label><input type="number" step="any" id="vUPS_sn"></div>
-          <div class="param-item"><label>TN (V)</label><input type="number" step="any" id="vUPS_tn"></div>
-        </div>
-        <div><strong class="subtitle">🔁 Arus (Ampere)</strong></div>
-        <div class="param-grid"><div class="param-item"><label>R (A)</label><input type="number" step="any" id="iUPS_r"></div>
-          <div class="param-item"><label>S (A)</label><input type="number" step="any" id="iUPS_s"></div>
-          <div class="param-item"><label>T (A)</label><input type="number" step="any" id="iUPS_t"></div></div>
-      </div>
-    </div>
+    <script>
+        // ======================== KONFIGURASI FIREBASE (Offline Persistence + Realtime) ========================
+        let isFirebaseReady = false;
+        let dataEntries = [];
+        let listenerRef = null;
+        let isInternalUpdate = false;
+        const DB_PATH = 'monitoring/metering/entries';
 
-    <div class="btn-group">
-      <button class="btn btn-primary" id="saveWithPhotoBtn">💾 SIMPAN ENTRY (dengan foto)</button>
-      <button class="btn btn-secondary" id="resetFormBtn">⟳ Reset Form + Hapus Foto</button>
-      <button class="btn btn-excel" id="exportHtmlBtn">📄 Export HTML</button>
-      <button class="btn btn-danger" id="clearAllBtn">🗑 Hapus Semua Data</button>
-    </div>
-  </div>
+        function updateFirebaseStatus(connected, message) {
+            const statusEl = document.getElementById('firebaseStatus');
+            if (statusEl) {
+                if (connected) {
+                    statusEl.innerHTML = `<i class="fas fa-check-circle text-green-600"></i> ${message}`;
+                    statusEl.classList.remove('bg-red-100', 'text-red-700');
+                    statusEl.classList.add('bg-green-100', 'text-green-700');
+                } else {
+                    statusEl.innerHTML = `<i class="fas fa-exclamation-triangle text-amber-600"></i> ${message}`;
+                    statusEl.classList.remove('bg-green-100', 'text-green-700');
+                    statusEl.classList.add('bg-red-100', 'text-red-700');
+                }
+            }
+        }
 
-  <div class="card">
-    <h2>📋 RIWAYAT PENCATATAN + FOTO BUKTI</h2>
-    <div id="entriesList" class="entries-container">📭 Memuat data...</div>
-  </div>
-  <footer>© TVRI - TX Tanah Merah | Watermark per foto | Data sinkron Firebase (offline-ready)</footer>
-</div>
+        async function enablePersistence() {
+            if (!window.db) return false;
+            try {
+                if (window.db.enablePersistence) await window.db.enablePersistence();
+                else if (window.firebase?.database) await window.firebase.database().enablePersistence();
+                return true;
+            } catch (err) { return false; }
+        }
 
-<script>
-  // ======================== KONFIGURASI FIREBASE ========================
-  let isFirebaseReady = false;
-  const DB_PATH = 'monitoring/pln_ups_multifoto/entries';
-  let entries = [];
-  let listenerRef = null;
-  let isInternalUpdate = false;
+        async function setEntriesToFirebase(entriesArray) {
+            if (!isFirebaseReady || !window.db) return false;
+            try {
+                const entriesObj = {};
+                entriesArray.forEach(entry => { entriesObj[entry.id] = entry; });
+                await window.db.ref(DB_PATH).set(entriesObj);
+                updateFirebaseStatus(true, "Tersinkron");
+                return true;
+            } catch (err) {
+                updateFirebaseStatus(false, "Gagal simpan");
+                return false;
+            }
+        }
 
-  function updateFirebaseStatus(connected, message) {
-    const statusEl = document.getElementById('firebaseStatus');
-    if (statusEl) {
-      if (connected) {
-        statusEl.innerHTML = `<i class="fas fa-check-circle"></i> ${message}`;
-        statusEl.style.background = "#d1fae5"; statusEl.style.color = "#065f46";
-      } else {
-        statusEl.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${message}`;
-        statusEl.style.background = "#fee2e2"; statusEl.style.color = "#991b1b";
-      }
-    }
-  }
+        function attachRealtimeListener() {
+            if (!isFirebaseReady || !window.db) return;
+            if (listenerRef) listenerRef.off();
+            const ref = window.db.ref(DB_PATH);
+            listenerRef = ref.on('value', (snapshot) => {
+                if (isInternalUpdate) return;
+                const data = snapshot.val();
+                if (data && typeof data === 'object') {
+                    const entriesArray = Object.values(data);
+                    entriesArray.sort((a,b) => (b.id || 0) - (a.id || 0));
+                    dataEntries = entriesArray;
+                } else dataEntries = [];
+                renderTable();
+                updateNomorOtomatis();
+                updateFirebaseStatus(true, `Realtime (${dataEntries.length} data)`);
+            }, (error) => updateFirebaseStatus(false, "Error listener"));
+        }
 
-  async function enablePersistence() {
-    if (!window.db) return false;
-    try {
-      if (window.db.enablePersistence) await window.db.enablePersistence();
-      else if (window.firebase?.database) await window.firebase.database().enablePersistence();
-      else console.warn("enablePersistence tidak tersedia");
-      return true;
-    } catch (err) {
-      console.warn("Persistence error:", err);
-      return false;
-    }
-  }
+        function getNextId() { return dataEntries.length ? Math.max(...dataEntries.map(e=>e.id))+1 : 1; }
+        function updateNomorOtomatis() { document.getElementById("nomorOtomatis").value = getNextId(); }
 
-  async function setEntriesToFirebase(entriesArray) {
-    if (!isFirebaseReady || !window.db) return false;
-    try {
-      const entriesObj = {};
-      entriesArray.forEach(entry => { entriesObj[entry.id] = entry; });
-      await window.db.ref(DB_PATH).set(entriesObj);
-      updateFirebaseStatus(true, `Tersinkron (${entriesArray.length} data)`);
-      return true;
-    } catch (err) {
-      console.error(err);
-      updateFirebaseStatus(false, "Gagal simpan");
-      return false;
-    }
-  }
+        async function addEntry(newEntry) {
+            const updated = [newEntry, ...dataEntries];
+            updated.sort((a,b) => b.id - a.id);
+            isInternalUpdate = true;
+            await setEntriesToFirebase(updated);
+            isInternalUpdate = false;
+        }
+        async function deleteEntryById(id) {
+            const updated = dataEntries.filter(e => e.id !== id);
+            isInternalUpdate = true;
+            await setEntriesToFirebase(updated);
+            isInternalUpdate = false;
+        }
+        async function clearAllEntries() {
+            isInternalUpdate = true;
+            await setEntriesToFirebase([]);
+            isInternalUpdate = false;
+        }
 
-  function attachRealtimeListener() {
-    if (!isFirebaseReady || !window.db) return;
-    if (listenerRef) listenerRef.off();
-    const ref = window.db.ref(DB_PATH);
-    listenerRef = ref.on('value', (snapshot) => {
-      if (isInternalUpdate) return;
-      const data = snapshot.val();
-      if (data && typeof data === 'object') {
-        let arr = Object.values(data);
-        arr.sort((a,b) => (b.id || 0) - (a.id || 0));
-        entries = arr;
-      } else entries = [];
-      renderEntries();
-      updateEntryNoField();
-    }, (error) => console.error(error));
-  }
+        // ========== KAMERA MULTI FOTO (SAMA DENGAN KERUSAKAN) ==========
+        let currentFotoList = [];
+        let mediaStream = null;
+        let currentFacingMode = 'environment';
+        const videoEl = document.getElementById('videoCamera');
+        const videoContainer = document.getElementById('videoContainer');
+        const btnBuka = document.getElementById('btnBukaKamera');
+        const btnCapture = document.getElementById('btnCaptureFoto');
+        const btnTutup = document.getElementById('btnTutupKamera');
+        const btnFlip = document.getElementById('btnFlipCamera');
+        const btnUpload = document.getElementById('btnUploadManual');
+        const fotoPreviewDiv = document.getElementById('fotoPreviewList');
+        const fotoCounterSpan = document.getElementById('fotoCounter');
+        const fotoDataArrayHidden = document.getElementById('fotoDataArray');
+        const cameraModeLabel = document.getElementById('cameraModeLabel');
 
-  function getNextNumber() {
-    if (!entries.length) return "001";
-    let max = 0;
-    entries.forEach(e => {
-      let match = e.no.match(/\d+/);
-      if (match) max = Math.max(max, parseInt(match[0], 10));
-    });
-    return (max + 1).toString().padStart(3, '0');
-  }
-  function updateEntryNoField() { document.getElementById("entryNo").value = getNextNumber(); }
+        function updateCameraModeLabel() {
+            if (cameraModeLabel) cameraModeLabel.innerHTML = currentFacingMode === 'environment' ? '📷 BELAKANG' : '🤳 DEPAN';
+        }
 
-  async function addEntry(newEntry) {
-    const updated = [newEntry, ...entries];
-    isInternalUpdate = true;
-    await setEntriesToFirebase(updated);
-    isInternalUpdate = false;
-  }
-  async function deleteEntryById(id) {
-    const updated = entries.filter(e => e.id !== id);
-    isInternalUpdate = true;
-    await setEntriesToFirebase(updated);
-    isInternalUpdate = false;
-  }
-  async function clearAllEntries() {
-    isInternalUpdate = true;
-    await setEntriesToFirebase([]);
-    isInternalUpdate = false;
-  }
+        async function bukaKamera(desiredMode = currentFacingMode) {
+            const petugas = document.getElementById('petugas').value.trim();
+            if (!petugas) { alert("Isi nama petugas dulu."); return; }
+            if (mediaStream) tutupKamera();
+            try {
+                const constraints = { video: { facingMode: { exact: desiredMode } } };
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                mediaStream = stream;
+                videoEl.srcObject = stream;
+                videoContainer.classList.remove('hidden');
+                btnCapture.disabled = false;
+                await videoEl.play();
+                currentFacingMode = desiredMode;
+                updateCameraModeLabel();
+            } catch (exactErr) {
+                try {
+                    const fallbackConstraints = { video: { facingMode: desiredMode } };
+                    const stream = await navigator.mediaDevices.getUserMedia(fallbackConstraints);
+                    mediaStream = stream;
+                    videoEl.srcObject = stream;
+                    videoContainer.classList.remove('hidden');
+                    btnCapture.disabled = false;
+                    await videoEl.play();
+                    currentFacingMode = desiredMode;
+                    updateCameraModeLabel();
+                } catch (fallbackErr) {
+                    try {
+                        const defaultStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                        mediaStream = defaultStream;
+                        videoEl.srcObject = defaultStream;
+                        videoContainer.classList.remove('hidden');
+                        btnCapture.disabled = false;
+                        await videoEl.play();
+                        currentFacingMode = 'unknown';
+                        updateCameraModeLabel();
+                        alert("⚠️ Kamera default digunakan.");
+                    } catch (finalErr) { alert("Tidak dapat akses kamera: "+finalErr.message); }
+                }
+            }
+        }
 
-  // ========== SISTEM KAMERA MULTI FOTO (SAMA SEPERTI MONITORING KERUSAKAN) ==========
-  let currentFotoList = [];
-  let mediaStream = null;
-  let currentFacingMode = 'environment';
-  const videoEl = document.getElementById('videoCamera');
-  const videoContainer = document.getElementById('videoContainer');
-  const btnBuka = document.getElementById('btnBukaKamera');
-  const btnCapture = document.getElementById('btnCaptureFoto');
-  const btnTutup = document.getElementById('btnTutupKamera');
-  const btnFlip = document.getElementById('btnFlipCamera');
-  const btnUpload = document.getElementById('btnUploadManual');
-  const fotoPreviewDiv = document.getElementById('fotoPreviewList');
-  const fotoCounterSpan = document.getElementById('fotoCounter');
-  const fotoDataArrayHidden = document.getElementById('fotoDataArray');
-  const cameraModeLabel = document.getElementById('cameraModeLabel');
+        function tutupKamera() {
+            if (mediaStream) { mediaStream.getTracks().forEach(t=>t.stop()); mediaStream=null; }
+            videoEl.srcObject = null;
+            videoContainer.classList.add('hidden');
+            btnCapture.disabled = true;
+        }
 
-  function updateCameraModeLabel() {
-    if (cameraModeLabel) cameraModeLabel.innerHTML = currentFacingMode === 'environment' ? '📷 BELAKANG' : '🤳 DEPAN';
-  }
+        async function flipCamera() {
+            if (!videoContainer.classList.contains('hidden') && mediaStream) {
+                const newMode = currentFacingMode === 'environment' ? 'user' : 'environment';
+                await bukaKamera(newMode);
+            } else alert("Kamera belum aktif.");
+        }
 
-  async function bukaKamera(desiredMode = currentFacingMode) {
-    const petugas = document.getElementById('petugas').value.trim();
-    if (!petugas) { alert("Isi nama petugas dulu sebelum membuka kamera."); return; }
-    if (mediaStream) tutupKamera();
-    try {
-      const constraints = { video: { facingMode: { exact: desiredMode } } };
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
-      mediaStream = stream;
-      videoEl.srcObject = stream;
-      videoContainer.classList.remove('hidden');
-      btnCapture.disabled = false;
-      await videoEl.play();
-      currentFacingMode = desiredMode;
-      updateCameraModeLabel();
-    } catch (exactErr) {
-      try {
-        const fallbackConstraints = { video: { facingMode: desiredMode } };
-        const stream = await navigator.mediaDevices.getUserMedia(fallbackConstraints);
-        mediaStream = stream;
-        videoEl.srcObject = stream;
-        videoContainer.classList.remove('hidden');
-        btnCapture.disabled = false;
-        await videoEl.play();
-        currentFacingMode = desiredMode;
-        updateCameraModeLabel();
-      } catch (fallbackErr) {
-        try {
-          const defaultStream = await navigator.mediaDevices.getUserMedia({ video: true });
-          mediaStream = defaultStream;
-          videoEl.srcObject = defaultStream;
-          videoContainer.classList.remove('hidden');
-          btnCapture.disabled = false;
-          await videoEl.play();
-          currentFacingMode = 'unknown';
-          updateCameraModeLabel();
-          alert("⚠️ Kamera default digunakan (tidak dapat memilih belakang/depan).");
-        } catch (finalErr) { alert("Tidak dapat akses kamera: " + finalErr.message); }
-      }
-    }
-  }
+        async function captureFromVideo() {
+            if (!mediaStream) { alert("Buka kamera dulu."); return; }
+            if (videoEl.videoWidth === 0) { alert("Video belum siap."); return; }
+            const canvas = document.createElement('canvas');
+            canvas.width = videoEl.videoWidth;
+            canvas.height = videoEl.videoHeight;
+            canvas.getContext('2d').drawImage(videoEl, 0, 0);
+            const originalDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+            await addFotoFromSource(originalDataUrl);
+        }
 
-  function tutupKamera() {
-    if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
-    videoEl.srcObject = null;
-    videoContainer.classList.add('hidden');
-    btnCapture.disabled = true;
-  }
+        async function addFotoFromSource(sourceBase64) {
+            const petugas = document.getElementById('petugas').value.trim();
+            if (!petugas) { alert("Isi nama petugas dulu."); return false; }
+            if (currentFotoList.length >= 5) { alert("Maksimal 5 foto."); return false; }
+            showLoading("Memproses watermark & lokasi...");
+            try {
+                const fotoObj = await processSingleFoto(sourceBase64, petugas);
+                currentFotoList.push(fotoObj);
+                updatePreviewUI();
+                updateHiddenArray();
+                hideLoading();
+                return true;
+            } catch(e) { hideLoading(); alert("Gagal: "+e.message); return false; }
+        }
 
-  async function flipCamera() {
-    if (!videoContainer.classList.contains('hidden') && mediaStream) {
-      const newMode = currentFacingMode === 'environment' ? 'user' : 'environment';
-      await bukaKamera(newMode);
-    } else alert("Kamera belum aktif. Buka kamera terlebih dahulu.");
-  }
+        function updatePreviewUI() {
+            fotoPreviewDiv.innerHTML = '';
+            currentFotoList.forEach((foto, idx) => {
+                const card = document.createElement('div');
+                card.className = 'preview-card';
+                card.innerHTML = `<img src="${foto.base64}"><div class="remove-btn" data-idx="${idx}"><i class="fas fa-times"></i></div>`;
+                fotoPreviewDiv.appendChild(card);
+            });
+            document.querySelectorAll('.remove-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const idx = parseInt(btn.dataset.idx);
+                    currentFotoList.splice(idx, 1);
+                    updatePreviewUI();
+                    updateHiddenArray();
+                });
+            });
+            fotoCounterSpan.innerText = `${currentFotoList.length} dari 5 foto`;
+        }
+        function updateHiddenArray() { fotoDataArrayHidden.value = JSON.stringify(currentFotoList.map(f => ({ base64: f.base64, jamFoto: f.jamFoto, lat: f.lat, lng: f.lng }))); }
 
-  async function captureFromVideo() {
-    if (!mediaStream) { alert("Kamera belum terbuka."); return; }
-    if (videoEl.videoWidth === 0) { alert("Video belum siap."); return; }
-    const canvas = document.createElement('canvas');
-    canvas.width = videoEl.videoWidth;
-    canvas.height = videoEl.videoHeight;
-    canvas.getContext('2d').drawImage(videoEl, 0, 0);
-    const originalDataUrl = canvas.toDataURL('image/jpeg', 0.9);
-    await addFotoFromSource(originalDataUrl);
-  }
+        function getCurrentPosition() {
+            return new Promise(resolve => {
+                if (!navigator.geolocation) resolve(null);
+                else navigator.geolocation.getCurrentPosition(pos => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }), () => resolve(null), { timeout: 7000 });
+            });
+        }
 
-  async function addFotoFromSource(sourceBase64) {
-    const petugas = document.getElementById('petugas').value.trim();
-    if (!petugas) { alert("Isi nama petugas dulu."); return false; }
-    if (currentFotoList.length >= 5) { alert("Maksimal 5 foto."); return false; }
-    showLoading("Memproses watermark & lokasi...");
-    try {
-      const fotoObj = await processSingleFoto(sourceBase64, petugas);
-      currentFotoList.push(fotoObj);
-      updatePreviewUI();
-      updateHiddenArray();
-      hideLoading();
-      return true;
-    } catch(e) { hideLoading(); alert("Gagal: "+e.message); return false; }
-  }
+        async function applyWatermarkTVRI(dataUrl, petugasName, locationCoord, waktuStr) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width; canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    const scale = Math.min(0.28, Math.max(0.18, img.width / 550));
+                    const tvFontSize = Math.floor(58 * scale);
+                    const riFontSize = Math.floor(52 * scale);
+                    const radius = Math.floor(48 * scale);
+                    ctx.font = `800 ${tvFontSize}px "Inter"`;
+                    ctx.fillStyle = "#1E3A8F";
+                    ctx.fillText("TV", 22, 22 + tvFontSize);
+                    const tvW = ctx.measureText("TV").width;
+                    const circleX = 22 + tvW + radius + 3;
+                    const circleY = 22 + tvFontSize - radius * 0.65;
+                    ctx.beginPath(); ctx.arc(circleX, circleY, radius, 0, 2*Math.PI);
+                    ctx.fillStyle = "#1E3A8F"; ctx.fill();
+                    ctx.font = `800 ${riFontSize}px "Inter"`;
+                    ctx.fillStyle = "#FFFFFF";
+                    const riText = "RI";
+                    ctx.fillText(riText, circleX - ctx.measureText(riText).width/2, circleY + (riFontSize*0.38));
+                    const small = Math.max(14, Math.floor(img.width / 32));
+                    const lines = [`📡 TVRI - TX Tanah Merah`, `👤 ${petugasName}`, `🕒 ${waktuStr}`, `📍 ${locationCoord ? `${Math.abs(locationCoord.lat).toFixed(6)}°${locationCoord.lat>=0?'LU':'LS'}, ${Math.abs(locationCoord.lng).toFixed(6)}°${locationCoord.lng>=0?'BT':'BB'}` : "Lokasi -"}`];
+                    ctx.font = `${small}px "Inter"`;
+                    let maxW = 0; lines.forEach(l => maxW = Math.max(maxW, ctx.measureText(l).width));
+                    const pad = 16, bgW = maxW + pad*2, lineH = small+6, bgH = lines.length*lineH + pad;
+                    const posX = img.width - bgW - 16, posY = img.height - bgH - 16;
+                    ctx.save(); ctx.globalAlpha = 0.88; ctx.fillStyle = "#0A0F1C"; ctx.shadowBlur = 8;
+                    ctx.beginPath(); ctx.moveTo(posX+16, posY); ctx.lineTo(posX+bgW-16, posY); ctx.quadraticCurveTo(posX+bgW, posY, posX+bgW, posY+16);
+                    ctx.lineTo(posX+bgW, posY+bgH-16); ctx.quadraticCurveTo(posX+bgW, posY+bgH, posX+bgW-16, posY+bgH);
+                    ctx.lineTo(posX+16, posY+bgH); ctx.quadraticCurveTo(posX, posY+bgH, posX, posY+bgH-16);
+                    ctx.lineTo(posX, posY+16); ctx.quadraticCurveTo(posX, posY, posX+16, posY); ctx.fill();
+                    ctx.globalAlpha=1; ctx.strokeStyle="#f5b042"; ctx.lineWidth=2; ctx.stroke();
+                    ctx.fillStyle = "#FFFFFF"; ctx.shadowBlur=2;
+                    lines.forEach((l,i) => ctx.fillText(l, posX+pad, posY+pad + (i+1)*lineH - 4));
+                    ctx.restore();
+                    resolve(canvas.toDataURL('image/jpeg', 0.88));
+                };
+                img.onerror = reject;
+                img.src = dataUrl;
+            });
+        }
 
-  function updatePreviewUI() {
-    fotoPreviewDiv.innerHTML = '';
-    currentFotoList.forEach((foto, idx) => {
-      const card = document.createElement('div');
-      card.className = 'preview-card';
-      card.innerHTML = `<img src="${foto.base64}" alt="foto ${idx+1}"><div class="remove-btn" data-idx="${idx}"><i class="fas fa-times"></i></div>`;
-      fotoPreviewDiv.appendChild(card);
-    });
-    document.querySelectorAll('.remove-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const idx = parseInt(btn.dataset.idx);
-        currentFotoList.splice(idx, 1);
-        updatePreviewUI();
-        updateHiddenArray();
-      });
-    });
-    fotoCounterSpan.innerText = `${currentFotoList.length} dari 5 foto`;
-  }
-  function updateHiddenArray() { fotoDataArrayHidden.value = JSON.stringify(currentFotoList.map(f => ({ base64: f.base64, jamFoto: f.jamFoto, lat: f.lat, lng: f.lng }))); }
+        async function processSingleFoto(originalBase64, petugas) {
+            if (!petugas) throw new Error("Petugas belum diisi");
+            const pos = await getCurrentPosition();
+            const now = new Date();
+            const waktuStr = now.toLocaleString('id-ID', { hour12: false, day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit', second:'2-digit' });
+            const watermarked = await applyWatermarkTVRI(originalBase64, petugas, pos, waktuStr);
+            return { base64: watermarked, jamFoto: waktuStr, lat: pos?.lat || null, lng: pos?.lng || null };
+        }
 
-  function getCurrentPosition() {
-    return new Promise(resolve => {
-      if (!navigator.geolocation) resolve(null);
-      else navigator.geolocation.getCurrentPosition(pos => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }), () => resolve(null), { timeout: 7000 });
-    });
-  }
+        function uploadManual() {
+            const inp = document.createElement('input');
+            inp.type = 'file'; inp.accept = 'image/*';
+            inp.onchange = async(e) => {
+                if(e.target.files[0]){
+                    const reader = new FileReader();
+                    reader.onload = async ev => await addFotoFromSource(ev.target.result);
+                    reader.readAsDataURL(e.target.files[0]);
+                }
+            };
+            inp.click();
+        }
 
-  // Watermark TVRI (sama seperti sebelumnya)
-  async function applyWatermarkTVRI(dataUrl, petugasName, locationCoord, waktuStr) {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width; canvas.height = img.height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0);
-        const logoScale = Math.min(0.28, Math.max(0.18, img.width / 550));
-        const tvFontSize = Math.floor(58 * logoScale);
-        const riFontSize = Math.floor(52 * logoScale);
-        const circleRadius = Math.floor(48 * logoScale);
-        const startX = 22, startY = 22 + tvFontSize;
-        ctx.font = `800 ${tvFontSize}px "Inter", sans-serif`;
-        ctx.fillStyle = "#1E3A8F";
-        ctx.fillText("TV", startX, startY);
-        const tvWidth = ctx.measureText("TV").width;
-        const circleX = startX + tvWidth + circleRadius + 3;
-        const circleY = startY - (circleRadius * 0.65);
-        ctx.beginPath(); ctx.arc(circleX, circleY, circleRadius, 0, Math.PI*2);
-        ctx.fillStyle = "#1E3A8F"; ctx.fill();
-        ctx.font = `800 ${riFontSize}px "Inter", sans-serif`;
-        ctx.fillStyle = "#FFFFFF";
-        const riText = "RI";
-        const riWidth = ctx.measureText(riText).width;
-        ctx.fillText(riText, circleX - riWidth/2, circleY + (riFontSize*0.38));
-        const smallFontSize = Math.max(14, Math.floor(img.width / 32));
-        const padding = 16;
-        let coordStr = locationCoord ? `${Math.abs(locationCoord.lat).toFixed(6)}°${locationCoord.lat>=0?'LU':'LS'}, ${Math.abs(locationCoord.lng).toFixed(6)}°${locationCoord.lng>=0?'BT':'BB'}` : "Lokasi tidak tersedia";
-        const lines = [`📡 TVRI - TX Tanah Merah`,`👤 Petugas: ${petugasName || "Tidak diketahui"}`,`🕒 ${waktuStr}`,`📍 ${coordStr}`];
-        ctx.font = `${smallFontSize}px "Inter", sans-serif`;
-        let maxWidth = 0;
-        lines.forEach(line => { let w = ctx.measureText(line).width; if(w>maxWidth) maxWidth=w; });
-        const bgWidth = maxWidth + padding*2;
-        const lineHeight = smallFontSize+6;
-        const bgHeight = (lines.length * lineHeight) + padding;
-        const posX = img.width - bgWidth - 16, posY = img.height - bgHeight - 16;
-        ctx.save(); ctx.globalAlpha = 0.88; ctx.fillStyle = "#0A0F1C"; ctx.shadowBlur = 8;
-        ctx.beginPath(); ctx.moveTo(posX+16, posY); ctx.lineTo(posX+bgWidth-16, posY); ctx.quadraticCurveTo(posX+bgWidth, posY, posX+bgWidth, posY+16);
-        ctx.lineTo(posX+bgWidth, posY+bgHeight-16); ctx.quadraticCurveTo(posX+bgWidth, posY+bgHeight, posX+bgWidth-16, posY+bgHeight);
-        ctx.lineTo(posX+16, posY+bgHeight); ctx.quadraticCurveTo(posX, posY+bgHeight, posX, posY+bgHeight-16);
-        ctx.lineTo(posX, posY+16); ctx.quadraticCurveTo(posX, posY, posX+16, posY); ctx.closePath(); ctx.fill();
-        ctx.globalAlpha=1; ctx.strokeStyle="#f5b042"; ctx.lineWidth=1.8; ctx.stroke();
-        ctx.font = `${smallFontSize}px "Inter", sans-serif`; ctx.fillStyle = "#FFFFFF"; ctx.shadowBlur=2;
-        for(let i=0;i<lines.length;i++) ctx.fillText(lines[i], posX+padding, posY+padding+(i+1)*lineHeight-4);
-        ctx.restore();
-        resolve(canvas.toDataURL("image/jpeg", 0.88));
-      };
-      img.onerror = reject;
-      img.src = dataUrl;
-    });
-  }
+        btnBuka.addEventListener('click', () => bukaKamera('environment'));
+        btnCapture.addEventListener('click', captureFromVideo);
+        btnTutup.addEventListener('click', tutupKamera);
+        btnFlip.addEventListener('click', flipCamera);
+        btnUpload.addEventListener('click', uploadManual);
 
-  async function processSingleFoto(originalBase64, petugas) {
-    if (!petugas) throw new Error("Petugas belum diisi");
-    const pos = await getCurrentPosition();
-    const now = new Date();
-    const waktuStr = now.toLocaleString('id-ID', { hour12: false, day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit', second:'2-digit' });
-    const watermarked = await applyWatermarkTVRI(originalBase64, petugas, pos, waktuStr);
-    return { base64: watermarked, jamFoto: waktuStr, lat: pos?.lat || null, lng: pos?.lng || null };
-  }
+        // ========== RENDER TABEL RIWAYAT ==========
+        function formatVal(v) { return (v!==null && v!==undefined) ? parseFloat(v).toFixed(1) : "-"; }
+        function escapeHtml(s) { if(!s) return ""; return s.replace(/[&<>]/g, m=>m==='&'?'&amp;':m==='<'?'&lt;':'&gt;'); }
 
-  function uploadManual() {
-    const inp = document.createElement('input');
-    inp.type = 'file';
-    inp.accept = 'image/*';
-    inp.onchange = async(e) => {
-      if(e.target.files[0]){
-        const reader = new FileReader();
-        reader.onload = async ev => await addFotoFromSource(ev.target.result);
-        reader.readAsDataURL(e.target.files[0]);
-      }
-    };
-    inp.click();
-  }
+        window.viewAllFoto = (fotoList, startIdx) => {
+            if(!fotoList?.length) return;
+            let current = startIdx || 0;
+            const modal = document.createElement('div'); modal.className = "modal-img";
+            modal.innerHTML = `<img src="${fotoList[current].base64}"><div class="modal-caption">Foto ${current+1} dari ${fotoList.length}<br>${fotoList[current].jamFoto||''}</div><div style="position:absolute; bottom:10px; left:0; right:0; text-align:center; display:flex; justify-content:center; gap:20px;"><button id="prevFoto" class="bg-black/60 px-3 py-1 rounded-full text-white">◀ Prev</button><button id="nextFoto" class="bg-black/60 px-3 py-1 rounded-full text-white">Next ▶</button></div>`;
+            document.body.appendChild(modal);
+            const update = (newIdx) => {
+                if(newIdx>=0 && newIdx<fotoList.length){
+                    current = newIdx;
+                    modal.querySelector('img').src = fotoList[current].base64;
+                    modal.querySelector('.modal-caption').innerHTML = `Foto ${current+1} dari ${fotoList.length}<br>${fotoList[current].jamFoto||''}`;
+                }
+            };
+            modal.querySelector('#prevFoto').onclick = (e) => { e.stopPropagation(); update(current-1); };
+            modal.querySelector('#nextFoto').onclick = (e) => { e.stopPropagation(); update(current+1); };
+            modal.onclick = (e) => { if(e.target===modal) modal.remove(); };
+        };
 
-  btnBuka.addEventListener('click', () => bukaKamera('environment'));
-  btnCapture.addEventListener('click', captureFromVideo);
-  btnTutup.addEventListener('click', tutupKamera);
-  btnFlip.addEventListener('click', flipCamera);
-  btnUpload.addEventListener('click', uploadManual);
+        function renderTable() {
+            const tbody = document.getElementById("tabelBody");
+            if(!dataEntries.length){ tbody.innerHTML=`<tr><td colspan="8" class="text-center py-6 text-gray-400">📭 Kosong</td></tr>`; return; }
+            let html = "";
+            dataEntries.forEach(entry => {
+                const fotoCount = entry.fotoList?.length || 0;
+                let thumbs = "";
+                if(fotoCount>0){
+                    thumbs = `<div class="foto-thumb-list">${entry.fotoList.slice(0,2).map((f,i)=>`<div class="thumb-item" onclick="viewAllFoto(entry.fotoList, ${i})"><img src="${f.base64}"></div>`).join('')}${fotoCount>2?`<span class="text-[10px] bg-gray-200 px-1 rounded-full">+${fotoCount-2}</span>`:''}</div>`;
+                }
+                const fotoCell = `<div class="flex flex-col items-center gap-1"><div class="flex justify-center">${thumbs}</div><button type="button" onclick="viewAllFoto(entry.fotoList, 0)" class="text-primary text-[10px] md:text-xs hover:underline"><i class="fas fa-images"></i> ${fotoCount} foto</button></div>`;
+                const plnStr = `V:${formatVal(entry.pln?.v?.rs)}/${formatVal(entry.pln?.v?.st)}/${formatVal(entry.pln?.v?.tr)} I:${formatVal(entry.pln?.i?.r)}/${formatVal(entry.pln?.i?.s)}/${formatVal(entry.pln?.i?.t)}`;
+                const upsStr = `V:${formatVal(entry.ups?.v?.rs)}/${formatVal(entry.ups?.v?.st)}/${formatVal(entry.ups?.v?.tr)} I:${formatVal(entry.ups?.i?.r)}/${formatVal(entry.ups?.i?.s)}/${formatVal(entry.ups?.i?.t)}`;
+                html += `<tr class="border-b hover:bg-slate-50">
+                    <td class="py-2 px-1 font-mono">${entry.no||entry.id}</td>
+                    <td class="py-2 px-1">${entry.tanggal}</td>
+                    <td class="py-2 px-1">${escapeHtml(entry.petugas)}</td>
+                    <td class="py-2 px-1 max-w-[120px] truncate">${escapeHtml(entry.keterangan||'-')}</td>
+                    <td class="py-2 px-1 text-[10px]">${plnStr}</td>
+                    <td class="py-2 px-1 text-[10px]">${upsStr}</td>
+                    <td class="py-2 px-1 text-center">${fotoCell}</td>
+                    <td class="py-2 px-1"><button onclick="deleteEntry(${entry.id})" class="bg-red-100 text-red-600 px-2 py-1 rounded-full text-[10px]"><i class="fas fa-trash-can"></i> Hapus</button></td>
+                </tr>`;
+            });
+            tbody.innerHTML = html;
+            window.entryForView = dataEntries; // untuk akses dari onclick
+        }
+        window.deleteEntry = async (id) => { if(confirm("Hapus data?")) await deleteEntryById(id); };
 
-  // ========== CRUD & RENDER ==========
-  function parseFloatOrNull(v) { return (v===""||v===null)?null:(isNaN(parseFloat(v))?null:parseFloat(v)); }
-  function getFormValues() {
-    return {
-      pln: { v: { rs: parseFloatOrNull(vPLN_rs.value), st: parseFloatOrNull(vPLN_st.value), tr: parseFloatOrNull(vPLN_tr.value), rn: parseFloatOrNull(vPLN_rn.value), sn: parseFloatOrNull(vPLN_sn.value), tn: parseFloatOrNull(vPLN_tn.value) }, i: { r: parseFloatOrNull(iPLN_r.value), s: parseFloatOrNull(iPLN_s.value), t: parseFloatOrNull(iPLN_t.value) } },
-      ups: { v: { rs: parseFloatOrNull(vUPS_rs.value), st: parseFloatOrNull(vUPS_st.value), tr: parseFloatOrNull(vUPS_tr.value), rn: parseFloatOrNull(vUPS_rn.value), sn: parseFloatOrNull(vUPS_sn.value), tn: parseFloatOrNull(vUPS_tn.value) }, i: { r: parseFloatOrNull(iUPS_r.value), s: parseFloatOrNull(iUPS_s.value), t: parseFloatOrNull(iUPS_t.value) } }
-    };
-  }
+        // ========== FORM HANDLING ==========
+        const form = document.getElementById('formMetering');
+        const tanggalInput = document.getElementById('tanggal');
+        const petugasInput = document.getElementById('petugas');
+        const keteranganInput = document.getElementById('keterangan');
+        const resetBtn = document.getElementById('btnResetForm');
+        tanggalInput.value = new Date().toISOString().split('T')[0];
 
-  function resetFormInput() {
-    document.querySelectorAll("input[type='number']").forEach(inp => inp.value = "");
-    document.getElementById("petugas").value = "";
-    document.getElementById("keterangan").value = "";
-    currentFotoList = [];
-    updatePreviewUI();
-    updateHiddenArray();
-    document.getElementById("entryDate").value = new Date().toISOString().slice(0,10);
-    updateEntryNoField();
-    if(mediaStream) tutupKamera();
-  }
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const no = document.getElementById('nomorOtomatis').value.trim();
+            const tgl = tanggalInput.value;
+            const petugas = petugasInput.value.trim();
+            if(!no || !tgl || !petugas) return alert("Lengkapi nomor, tanggal, petugas!");
+            if(currentFotoList.length === 0) return alert("Minimal 1 foto dokumentasi.");
+            const pln = {
+                v: {
+                    rs: parseFloat(document.getElementById('vPLN_rs').value) || null,
+                    st: parseFloat(document.getElementById('vPLN_st').value) || null,
+                    tr: parseFloat(document.getElementById('vPLN_tr').value) || null,
+                    rn: parseFloat(document.getElementById('vPLN_rn').value) || null,
+                    sn: parseFloat(document.getElementById('vPLN_sn').value) || null,
+                    tn: parseFloat(document.getElementById('vPLN_tn').value) || null
+                },
+                i: {
+                    r: parseFloat(document.getElementById('iPLN_r').value) || null,
+                    s: parseFloat(document.getElementById('iPLN_s').value) || null,
+                    t: parseFloat(document.getElementById('iPLN_t').value) || null
+                }
+            };
+            const ups = {
+                v: {
+                    rs: parseFloat(document.getElementById('vUPS_rs').value) || null,
+                    st: parseFloat(document.getElementById('vUPS_st').value) || null,
+                    tr: parseFloat(document.getElementById('vUPS_tr').value) || null,
+                    rn: parseFloat(document.getElementById('vUPS_rn').value) || null,
+                    sn: parseFloat(document.getElementById('vUPS_sn').value) || null,
+                    tn: parseFloat(document.getElementById('vUPS_tn').value) || null
+                },
+                i: {
+                    r: parseFloat(document.getElementById('iUPS_r').value) || null,
+                    s: parseFloat(document.getElementById('iUPS_s').value) || null,
+                    t: parseFloat(document.getElementById('iUPS_t').value) || null
+                }
+            };
+            const newId = getNextId();
+            const newEntry = {
+                id: newId,
+                no: no,
+                tanggal: tgl,
+                petugas: petugas,
+                keterangan: keteranganInput.value.trim(),
+                pln: pln,
+                ups: ups,
+                fotoList: [...currentFotoList],
+                createdAt: new Date().toISOString()
+            };
+            await addEntry(newEntry);
+            resetFormInput();
+            alert(`✅ Tersimpan dengan ${currentFotoList.length} foto.`);
+        });
 
-  document.getElementById("saveWithPhotoBtn").onclick = async () => {
-    const no = document.getElementById("entryNo").value.trim();
-    const tgl = document.getElementById("entryDate").value;
-    const petugas = document.getElementById("petugas").value.trim();
-    if(!no || !tgl || !petugas) { alert("No, Tanggal, Petugas wajib diisi."); return; }
-    if(currentFotoList.length === 0) { alert("Minimal 1 foto dokumentasi."); return; }
-    const formData = getFormValues();
-    const newEntry = {
-      id: Date.now(),
-      no: no,
-      tanggal: tgl,
-      petugas: petugas,
-      keterangan: document.getElementById("keterangan").value.trim(),
-      fotoList: [...currentFotoList],
-      ...formData,
-      createdAt: new Date().toISOString()
-    };
-    await addEntry(newEntry);
-    resetFormInput();
-    alert(`✅ Data tersimpan dengan ${currentFotoList.length} foto. Firebase tersinkron.`);
-  };
+        function resetFormInput() {
+            tanggalInput.value = new Date().toISOString().split('T')[0];
+            petugasInput.value = '';
+            keteranganInput.value = '';
+            document.querySelectorAll('input[type="number"]').forEach(inp => inp.value = '');
+            currentFotoList = [];
+            updatePreviewUI();
+            updateHiddenArray();
+            updateNomorOtomatis();
+            if(mediaStream) tutupKamera();
+        }
+        resetBtn.addEventListener('click', () => { if(confirm("Reset form?")) resetFormInput(); });
+        document.getElementById('btnHapusSemua').addEventListener('click', async () => { if(confirm("Hapus SEMUA data?")){ await clearAllEntries(); resetFormInput(); alert("Semua data dihapus."); } });
 
-  document.getElementById("resetFormBtn").onclick = () => { if(confirm("Reset form dan hapus foto?")) resetFormInput(); };
-  document.getElementById("clearAllBtn").onclick = async () => { if(confirm("Hapus semua data?")) { await clearAllEntries(); resetFormInput(); } };
+        // ========== EXPORT HTML ==========
+        document.getElementById('btnExportHTML').addEventListener('click', () => {
+            if(!dataEntries.length) return alert("Tidak ada data");
+            let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Laporan Metering TVRI</title><style>body{font-family:Inter,sans-serif;margin:20px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #aaa;padding:6px;vertical-align:top}th{background:#1e6f5c;color:white}.foto-grid{display:flex;gap:6px;flex-wrap:wrap}img{width:60px;height:60px;object-fit:cover;border-radius:8px}</style></head><body><h2>Monitoring PLN & UPS - TX Tanah Merah</h2><p>Export: ${new Date().toLocaleString()}</p><table border="1"><thead><tr><th>No</th><th>Tgl</th><th>Petugas</th><th>Keterangan</th><th>PLN (V RS/ST/TR, I R/S/T)</th><th>UPS (V RS/ST/TR, I R/S/T)</th><th>Foto</th></tr></thead><tbody>`;
+            dataEntries.forEach(e => {
+                let fotoHtml = `<div class="foto-grid">${(e.fotoList||[]).map(f=>`<img src="${f.base64}" title="${f.jamFoto}">`).join('')}</div>`;
+                let plnV = `${formatVal(e.pln?.v?.rs)}/${formatVal(e.pln?.v?.st)}/${formatVal(e.pln?.v?.tr)}`;
+                let plnI = `${formatVal(e.pln?.i?.r)}/${formatVal(e.pln?.i?.s)}/${formatVal(e.pln?.i?.t)}`;
+                let upsV = `${formatVal(e.ups?.v?.rs)}/${formatVal(e.ups?.v?.st)}/${formatVal(e.ups?.v?.tr)}`;
+                let upsI = `${formatVal(e.ups?.i?.r)}/${formatVal(e.ups?.i?.s)}/${formatVal(e.ups?.i?.t)}`;
+                html += `<tr><td>${e.no||e.id}</td><td>${e.tanggal}</td><td>${escapeHtml(e.petugas)}</td><td>${escapeHtml(e.keterangan||'-')}</td><td>V:${plnV}<br>I:${plnI}</td><td>V:${upsV}<br>I:${upsI}</td><td>${fotoHtml}</td></tr>`;
+            });
+            html += `</tbody></table><p><em>Watermark: TVRI, petugas, waktu, koordinat</em></p></body></html>`;
+            const blob = new Blob([html], {type:"text/html"}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`laporan_metering_${Date.now()}.html`; a.click(); URL.revokeObjectURL(blob);
+        });
 
-  function formatVal(v) { return (v!==null && v!==undefined) ? parseFloat(v).toFixed(1) : "-"; }
-  function escapeHtml(s) { if(!s) return ""; return s.replace(/[&<>]/g, m=>m==='&'?'&amp;':m==='<'?'&lt;':'&gt;'); }
+        function showLoading(msg) { let ld = document.getElementById('globalLoading'); if(!ld){ ld=document.createElement('div'); ld.id='globalLoading'; ld.className='loading-overlay'; ld.innerHTML=`<div class="bg-black/80 text-white p-4 rounded-xl">${msg}</div>`; document.body.appendChild(ld); } else ld.style.display='flex'; }
+        function hideLoading() { let ld = document.getElementById('globalLoading'); if(ld) ld.remove(); }
 
-  window.viewFullFoto = (fotoList, startIdx) => {
-    if(!fotoList.length) return;
-    let currentIndex = startIdx || 0;
-    const modal = document.createElement('div'); modal.className = "modal-img";
-    modal.innerHTML = `<img src="${fotoList[currentIndex].base64}" style="max-width:92%; max-height:80%;"><div class="modal-caption">Foto ${currentIndex+1} dari ${fotoList.length}<br>${fotoList[currentIndex].jamFoto || ''}</div><div style="position:absolute; bottom:10px; left:0; right:0; text-align:center; color:white; display:flex; justify-content:center; gap:20px;"><button id="prevFoto" style="background:rgba(0,0,0,0.6); padding:8px 16px; border-radius:30px;">◀ Sebelumnya</button><button id="nextFoto" style="background:rgba(0,0,0,0.6); padding:8px 16px; border-radius:30px;">Selanjutnya ▶</button></div>`;
-    document.body.appendChild(modal);
-    const nextBtn = modal.querySelector('#nextFoto'), prevBtn = modal.querySelector('#prevFoto');
-    const updateImg = (newIdx) => {
-      if(newIdx>=0 && newIdx<fotoList.length) {
-        currentIndex = newIdx;
-        modal.querySelector('img').src = fotoList[currentIndex].base64;
-        modal.querySelector('.modal-caption').innerHTML = `Foto ${currentIndex+1} dari ${fotoList.length}<br>${fotoList[currentIndex].jamFoto||''}`;
-      }
-    };
-    nextBtn.onclick = (e) => { e.stopPropagation(); updateImg(currentIndex+1); };
-    prevBtn.onclick = (e) => { e.stopPropagation(); updateImg(currentIndex-1); };
-    modal.onclick = (e) => { if(e.target===modal) modal.remove(); };
-  };
-
-  function renderEntries() {
-    const container = document.getElementById("entriesList");
-    if(!entries.length){ container.innerHTML='<div style="text-align:center;padding:2rem;">📭 Belum ada pencatatan.</div>'; return; }
-    container.innerHTML = "";
-    entries.forEach(entry => {
-      const fotoCount = entry.fotoList?.length || 0;
-      let thumbs = "";
-      if(fotoCount>0) {
-        thumbs = `<div class="foto-thumb-list">${entry.fotoList.slice(0,2).map((f,i)=>`<div class="thumb-item" onclick="viewFullFoto(entry.fotoList, ${i})"><img src="${f.base64}"></div>`).join('')}${fotoCount>2?`<span class="text-[10px] bg-gray-200 px-1 rounded-full">+${fotoCount-2}</span>`:''}</div>`;
-      }
-      const fotoCell = `<div class="flex flex-col items-center gap-1"><div class="flex justify-center">${thumbs}</div><button type="button" class="text-primary text-[10px] md:text-xs hover:underline" onclick="viewFullFoto(entry.fotoList, 0)"><i class="fas fa-images"></i> ${fotoCount} foto</button></div>`;
-      const card = document.createElement("div"); card.className = "entry-card";
-      card.innerHTML = `<div class="entry-header"><div>📄 No: ${escapeHtml(entry.no)} | ${escapeHtml(entry.tanggal)}</div><div><span>👤 ${escapeHtml(entry.petugas)}</span><span>📝 ${escapeHtml(entry.keterangan||'-')}</span><button class="btn-danger" style="margin-left:12px;padding:4px 12px;" data-id="${entry.id}">✖ Hapus</button></div></div>
-        <div class="data-row"><div><strong>🏭 PLN</strong><br>Teg: RS:${formatVal(entry.pln?.v?.rs)} ST:${formatVal(entry.pln?.v?.st)} TR:${formatVal(entry.pln?.v?.tr)} RN:${formatVal(entry.pln?.v?.rn)} SN:${formatVal(entry.pln?.v?.sn)} TN:${formatVal(entry.pln?.v?.tn)}<br>Arus: R:${formatVal(entry.pln?.i?.r)} S:${formatVal(entry.pln?.i?.s)} T:${formatVal(entry.pln?.i?.t)}</div>
-        <div><strong>🔋 UPS</strong><br>Teg: RS:${formatVal(entry.ups?.v?.rs)} ST:${formatVal(entry.ups?.v?.st)} TR:${formatVal(entry.ups?.v?.tr)} RN:${formatVal(entry.ups?.v?.rn)} SN:${formatVal(entry.ups?.v?.sn)} TN:${formatVal(entry.ups?.v?.tn)}<br>Arus: R:${formatVal(entry.ups?.i?.r)} S:${formatVal(entry.ups?.i?.s)} T:${formatVal(entry.ups?.i?.t)}</div></div>
-        <div class="entry-photos"><strong>📸 Foto (${fotoCount})</strong> ${fotoCell}</div>`;
-      container.appendChild(card);
-    });
-    document.querySelectorAll(".btn-danger[data-id]").forEach(btn => {
-      btn.onclick = async () => { if(confirm("Hapus entry ini?")) await deleteEntryById(parseInt(btn.getAttribute('data-id'))); };
-    });
-    // Attach global function untuk viewAllFoto
-    window.viewAllFotoForEntry = (fotoList, startIdx) => window.viewFullFoto(fotoList, startIdx);
-  }
-
-  // ========== EXPORT HTML ==========
-  document.getElementById("exportHtmlBtn").onclick = () => {
-    if(!entries.length) { alert("Tidak ada data."); return; }
-    let exportHtml = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Laporan PLN & UPS Multi Foto</title><style>body{font-family:Inter,sans-serif;background:#f1f5f9;margin:20px}.container{max-width:1400px;margin:auto;background:white;border-radius:28px;padding:24px;box-shadow:0 12px 30px rgba(0,0,0,0.1)}h1{color:#1e6f5c;border-left:6px solid #1e6f5c;padding-left:20px}.section-title{background:#eef2ff;display:inline-block;padding:6px 24px;border-radius:40px;margin:24px 0 16px;font-weight:700}table{border-collapse:collapse;width:100%;margin-bottom:30px;font-size:0.75rem}th{background:#1e6f5c;color:white;padding:10px 6px}td{border:1px solid #cbd5e1;text-align:center}.foto-grid{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}img{width:50px;height:50px;object-fit:cover;border-radius:8px}.footer{margin-top:30px;text-align:center;font-size:0.7rem;color:#5b7c8c}</style></head><body><div class="container"><h1>📡 TVRI - TX Tanah Merah</h1><div><strong>Laporan PLN & UPS (Multi Foto)</strong> | ${new Date().toLocaleString('id-ID')} | Total: ${entries.length}</div><div class="section-title">🏭 PLN</div><div style="overflow-x:auto;"><table><thead><tr><th>No</th><th>Tgl</th><th>Petugas</th><th>Keterangan</th><th>Foto</th><th>V_RS</th><th>V_ST</th><th>V_TR</th><th>V_RN</th><th>V_SN</th><th>V_TN</th><th>I_R</th><th>I_S</th><th>I_T</th></tr></thead><tbody>`;
-    entries.forEach(e => {
-      let fotoHtml = `<div class="foto-grid">${(e.fotoList||[]).map(f=>`<img src="${f.base64}" title="${f.jamFoto}">`).join('')}</div>`;
-      exportHtml += `<tr><td>${escapeHtml(e.no)}</td><td>${escapeHtml(e.tanggal)}</td><td>${escapeHtml(e.petugas)}</td><td>${escapeHtml(e.keterangan||'-')}</td><td>${fotoHtml}</td><td>${formatVal(e.pln?.v?.rs)}</td><td>${formatVal(e.pln?.v?.st)}</td><td>${formatVal(e.pln?.v?.tr)}</td><td>${formatVal(e.pln?.v?.rn)}</td><td>${formatVal(e.pln?.v?.sn)}</td><td>${formatVal(e.pln?.v?.tn)}</td><td>${formatVal(e.pln?.i?.r)}</td><td>${formatVal(e.pln?.i?.s)}</td><td>${formatVal(e.pln?.i?.t)}</td></tr>`;
-    });
-    exportHtml += `</tbody></table></div><div class="section-title">🔋 UPS</div><div style="overflow-x:auto;"><table><thead><tr><th>No</th><th>Tgl</th><th>Petugas</th><th>Keterangan</th><th>Foto</th><th>V_RS</th><th>V_ST</th><th>V_TR</th><th>V_RN</th><th>V_SN</th><th>V_TN</th><th>I_R</th><th>I_S</th><th>I_T</th></tr></thead><tbody>`;
-    entries.forEach(e => {
-      let fotoHtml = `<div class="foto-grid">${(e.fotoList||[]).map(f=>`<img src="${f.base64}" title="${f.jamFoto}">`).join('')}</div>`;
-      exportHtml += `<tr><td>${escapeHtml(e.no)}</td><td>${escapeHtml(e.tanggal)}</td><td>${escapeHtml(e.petugas)}</td><td>${escapeHtml(e.keterangan||'-')}</td><td>${fotoHtml}</td><td>${formatVal(e.ups?.v?.rs)}</td><td>${formatVal(e.ups?.v?.st)}</td><td>${formatVal(e.ups?.v?.tr)}</td><td>${formatVal(e.ups?.v?.rn)}</td><td>${formatVal(e.ups?.v?.sn)}</td><td>${formatVal(e.ups?.v?.tn)}</td><td>${formatVal(e.ups?.i?.r)}</td><td>${formatVal(e.ups?.i?.s)}</td><td>${formatVal(e.ups?.i?.t)}</td></tr>`;
-    });
-    exportHtml += `</tbody></table></div><div class="footer">© TVRI - TX Tanah Merah | Watermark otomatis | Multi foto per entry</div></div></body></html>`;
-    const blob = new Blob([exportHtml], { type: "text/html" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `laporan_pln_ups_multifoto_${Date.now()}.html`;
-    link.click();
-    URL.revokeObjectURL(blob);
-  };
-
-  function showLoading(msg) {
-    let ld = document.getElementById('globalLoading');
-    if(!ld){ ld=document.createElement('div'); ld.id='globalLoading'; ld.className='loading-overlay'; ld.innerHTML=`<div class="bg-black/80 text-white p-4 rounded-xl text-center">${msg}</div>`; document.body.appendChild(ld); }
-    else ld.style.display='flex';
-  }
-  function hideLoading() { let ld = document.getElementById('globalLoading'); if(ld) ld.remove(); }
-
-  // Inisialisasi
-  async function initFirebase() {
-    if (!window.db) { setTimeout(initFirebase, 300); return; }
-    isFirebaseReady = true;
-    await enablePersistence();
-    attachRealtimeListener();
-    updateFirebaseStatus(true, "Terhubung (realtime)");
-    document.getElementById("entryDate").value = new Date().toISOString().slice(0,10);
-    updateEntryNoField();
-    updateCameraModeLabel();
-  }
-  initFirebase();
-</script>
+        async function initFirebase() {
+            if (!window.db) { setTimeout(initFirebase, 300); return; }
+            isFirebaseReady = true;
+            await enablePersistence();
+            attachRealtimeListener();
+            updateFirebaseStatus(true, "Terhubung (realtime)");
+            updateNomorOtomatis();
+            updateCameraModeLabel();
+        }
+        initFirebase();
+    </script>
 </body>
 </html>
