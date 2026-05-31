@@ -3,9 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-  <title>Monitoring kWh Meter | TVRI Papua + Firebase (Realtime)</title>
-  <!-- Perbaikan favicon: menggunakan nama file yang benar -->
-    <link rel="icon" type="image/ico" href="favicon.ico">
+  <title>Monitoring kWh Meter | TVRI Papua + Firebase Realtime</title>
+  <link rel="icon" type="image/ico" href="favicon.ico">
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -44,7 +43,7 @@
         <i class="fas fa-charging-station text-hijau"></i> Monitoring kWh Meter TVRI Papua
         <span id="firebaseStatus" class="sync-status"><i class="fas fa-cloud-upload-alt"></i> Menghubungkan...</span>
       </h1>
-      <p class="text-slate-500 text-sm">Pencatatan tanpa batas tanggal • Foto watermark • Data tersimpan realtime di Firebase + lokal</p>
+      <p class="text-slate-500 text-sm">Pencatatan tanpa batas tanggal • Foto watermark • Data tersimpan realtime di Firebase (offline-ready)</p>
     </div>
     <div class="flex gap-2">
       <button id="printReportBtn" class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded-xl shadow text-sm"><i class="fas fa-print"></i> Cetak</button>
@@ -127,9 +126,11 @@
 </div>
 
 <script>
-  // ======================== KONFIGURASI FIREBASE ========================
+  // ======================== KONFIGURASI FIREBASE (Offline Persistence + Realtime) ========================
   let isFirebaseReady = false;
-  let isInternalUpdate = false;  // menghindari loop saat menerima perubahan dari Firebase
+  let isInternalUpdate = false;  // menghindari loop saat update dari Firebase
+  let monitoringData = [];       // akan diisi oleh listener
+  let listenerRef = null;
   const DB_PATH = 'monitoring/kwh/entries';
 
   function updateFirebaseStatus(connected, message) {
@@ -147,96 +148,82 @@
     }
   }
 
-  // Sinkronisasi manual (push seluruh data ke Firebase)
-  async function syncToFirebase() {
-    if (!isFirebaseReady || !window.db) {
-      console.warn("Firebase belum siap, hanya localStorage");
-      updateFirebaseStatus(false, "Offline mode - tidak tersimpan ke cloud");
+  async function enablePersistence() {
+    if (!window.db) return false;
+    try {
+      if (window.db.enablePersistence) {
+        await window.db.enablePersistence();
+        console.log("Firebase persistence aktif (offline support)");
+      } else if (window.firebase && window.firebase.database) {
+        await window.firebase.database().enablePersistence();
+      } else {
+        console.warn("enablePersistence tidak tersedia");
+      }
+      return true;
+    } catch (err) {
+      if (err.code === 'failed-precondition') {
+        console.warn("Multiple tab terbuka, persistence tidak bisa diaktifkan");
+      } else if (err.code === 'unavailable') {
+        console.warn("Browser tidak support persistence");
+      } else {
+        console.error("Error persistence:", err);
+      }
       return false;
     }
+  }
+
+  // Fungsi untuk menulis seluruh data ke Firebase (set)
+  async function setEntriesToFirebase(entriesArray) {
+    if (!isFirebaseReady || !window.db) return false;
     try {
-      const dataObj = {};
-      monitoringData.forEach(entry => { dataObj[entry.id] = entry; });
-      await window.db.ref(DB_PATH).set(dataObj);
+      const entriesObj = {};
+      entriesArray.forEach(entry => { entriesObj[entry.id] = entry; });
+      await window.db.ref(DB_PATH).set(entriesObj);
       updateFirebaseStatus(true, "Tersinkron");
       return true;
     } catch (err) {
-      console.error("Gagal sync ke Firebase:", err);
-      let errorMsg = err.message || "";
-      if (errorMsg.includes("PERMISSION_DENIED")) {
-        updateFirebaseStatus(false, "PERMISSION DENIED: Periksa aturan keamanan Firebase");
-        Swal.fire("Gagal sync", "Aturan keamanan Firebase menolak write. Hubungi admin.", "error");
-      } else if (errorMsg.includes("databaseURL")) {
-        updateFirebaseStatus(false, "URL database salah. Periksa firebase-config.js");
-        Swal.fire("Gagal sync", "URL Firebase tidak valid. Pastikan region sesuai.", "error");
-      } else {
-        updateFirebaseStatus(false, "Gagal sync: " + errorMsg.substring(0, 50));
-      }
+      console.error("Gagal set entries ke Firebase:", err);
+      updateFirebaseStatus(false, "Gagal simpan");
       return false;
     }
   }
 
-  // Memasang listener realtime Firebase
-  function setupFirebaseListener() {
-    if (!window.db) {
-      console.warn("Firebase tidak tersedia, tidak bisa pasang listener");
-      return;
-    }
-    const dbRef = window.db.ref(DB_PATH);
-    dbRef.on('value', (snapshot) => {
+  // Pasang listener realtime
+  function attachRealtimeListener() {
+    if (!isFirebaseReady || !window.db) return;
+    if (listenerRef) listenerRef.off();
+    const ref = window.db.ref(DB_PATH);
+    listenerRef = ref.on('value', (snapshot) => {
       if (isInternalUpdate) return; // hindari loop
-      const firebaseData = snapshot.val();
-      if (firebaseData && typeof firebaseData === 'object') {
-        const fbEntries = Object.values(firebaseData);
-        if (fbEntries.length > 0) {
-          fbEntries.sort((a,b) => new Date(a.date) - new Date(b.date));
-          monitoringData = fbEntries;
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(monitoringData));
-          renderTable();
-          console.log("Data diperbarui dari Firebase (realtime)");
-          updateFirebaseStatus(true, `Realtime: ${monitoringData.length} data`);
-        }
+      const data = snapshot.val();
+      if (data && typeof data === 'object') {
+        const entriesArray = Object.values(data);
+        entriesArray.sort((a,b) => new Date(a.date) - new Date(b.date));
+        monitoringData = entriesArray;
       } else {
-        // Firebase kosong, biarkan data lokal tidak diubah
-        console.log("Firebase kosong, tidak mengubah data lokal");
+        monitoringData = [];
+      }
+      renderTable();               // update UI
+      updateDateStatus();         // update badge tanggal
+      if (monitoringData.length) {
+        updateFirebaseStatus(true, `Realtime (${monitoringData.length} data)`);
+      } else {
+        updateFirebaseStatus(true, "Realtime aktif (belum ada data)");
       }
     }, (error) => {
       console.error("Firebase listener error:", error);
-      updateFirebaseStatus(false, "Gagal mendengarkan perubahan");
+      updateFirebaseStatus(false, "Error listener");
     });
   }
 
-  // ========== DATA & STORAGE ==========
-  const STORAGE_KEY = "kwh_tvri_monitoring";
-  let monitoringData = [];
-
+  // ========== DATA HANDLING (CRUD langsung ke Firebase) ==========
   function getDateFromMonthYear(m) { if(!m) return null; const [y,mo]=m.split("-"); return `${y}-${mo}-23`; }
   function formatTanggalIndonesia(d) { if(!d) return "-"; const t=new Date(d); if(isNaN(t)) return d; const bln=["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"]; return `${t.getDate()} ${bln[t.getMonth()]} ${t.getFullYear()}`; }
   
-  // Hapus pembatasan tanggal 23
   function updateDateStatus() {
     const t = new Date();
     const txt = `${t.getDate()} ${["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"][t.getMonth()]} ${t.getFullYear()}`;
     document.getElementById("todayDateText").innerHTML = `<span class="text-green-700">${txt}</span> ✓ (bebas input)`;
-    const btn = document.getElementById("simpanBtn");
-    if (btn) { btn.disabled = false; btn.classList.remove("opacity-60"); }
-  }
-
-  async function saveDataAndSync(showSuccessToast = true) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(monitoringData));
-    renderTable();
-    isInternalUpdate = true; // agar listener Firebase tidak memicu loop
-    if (isFirebaseReady) {
-      const syncOk = await syncToFirebase();
-      if (syncOk && showSuccessToast) {
-        Swal.fire({ icon: 'success', title: 'Tersimpan', text: 'Data sudah disimpan ke cloud', toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
-      } else if (!syncOk && showSuccessToast) {
-        Swal.fire({ icon: 'warning', title: 'Tersimpan lokal', text: 'Gagal sync ke cloud, data aman di browser ini', toast: true, position: 'top-end', timer: 3000 });
-      }
-    } else {
-      if (showSuccessToast) Swal.fire({ icon: 'info', title: 'Tersimpan lokal', text: 'Firebase tidak terhubung', toast: true, timer: 2000 });
-    }
-    isInternalUpdate = false;
   }
 
   function isDuplicate(month, exclude=null) {
@@ -254,13 +241,12 @@
   }
   
   async function addRecord(month, awal, total, petugas, photo) {
-    // Hapus pengecekan isTodayTwentyThird() - bisa input kapan saja
     if (!month || !awal || awal < 0) throw new Error("Awal kWh harus positif");
     if (!petugas.trim()) throw new Error("Petugas wajib");
     if (isDuplicate(month)) throw new Error("Bulan sudah ada (hanya satu kali per bulan)");
     const fullDate = getDateFromMonthYear(month);
     const newId = Date.now() + '-' + Math.random().toString(36).substring(2, 8);
-    monitoringData.push({
+    const newEntry = {
       id: newId,
       date: fullDate,
       displayDate: formatTanggalIndonesia(fullDate),
@@ -268,9 +254,12 @@
       totalTagihan: parseFloat(total),
       petugas: petugas.trim(),
       lampiran: photo
-    });
-    monitoringData.sort((a,b) => new Date(a.date) - new Date(b.date));
-    await saveDataAndSync(true);
+    };
+    const updated = [...monitoringData, newEntry];
+    updated.sort((a,b) => new Date(a.date) - new Date(b.date));
+    isInternalUpdate = true;
+    await setEntriesToFirebase(updated);
+    isInternalUpdate = false;
   }
   
   async function editRecord(id, month, awal, total, petugas, photo, removeFlag) {
@@ -282,7 +271,8 @@
     let finalLampiran = old.lampiran;
     if (removeFlag) finalLampiran = null;
     if (photo) finalLampiran = photo;
-    monitoringData[idx] = {
+    const updated = [...monitoringData];
+    updated[idx] = {
       ...old,
       date: newDate,
       displayDate: formatTanggalIndonesia(newDate),
@@ -291,18 +281,17 @@
       petugas: petugas.trim(),
       lampiran: finalLampiran
     };
-    monitoringData.sort((a,b) => new Date(a.date) - new Date(b.date));
-    await saveDataAndSync(true);
+    updated.sort((a,b) => new Date(a.date) - new Date(b.date));
+    isInternalUpdate = true;
+    await setEntriesToFirebase(updated);
+    isInternalUpdate = false;
   }
   
-  function deleteRecord(id) {
-    Swal.fire({ title: "Hapus?", icon: "warning", showCancelButton: true, confirmButtonColor: "#d33", confirmButtonText: "Ya" }).then(async res => {
-      if (res.isConfirmed) {
-        monitoringData = monitoringData.filter(i => i.id !== id);
-        await saveDataAndSync(true);
-        Swal.fire("Terhapus");
-      }
-    });
+  async function deleteRecord(id) {
+    const updated = monitoringData.filter(i => i.id !== id);
+    isInternalUpdate = true;
+    await setEntriesToFirebase(updated);
+    isInternalUpdate = false;
   }
   
   function renderTable() {
@@ -327,12 +316,19 @@
     });
     tbody.innerHTML = html;
     document.querySelectorAll('.editBtn').forEach(btn => btn.addEventListener('click', () => openEditModal(btn.dataset.id)));
-    document.querySelectorAll('.deleteBtn').forEach(btn => btn.addEventListener('click', () => deleteRecord(btn.dataset.id)));
+    document.querySelectorAll('.deleteBtn').forEach(btn => btn.addEventListener('click', () => { 
+      Swal.fire({ title: "Hapus?", icon: "warning", showCancelButton: true, confirmButtonColor: "#d33", confirmButtonText: "Ya" }).then(async res => {
+        if (res.isConfirmed) {
+          await deleteRecord(btn.dataset.id);
+          Swal.fire("Terhapus");
+        }
+      });
+    }));
   }
   
   function escapeHtml(s) { if(!s) return ''; return s.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); }
 
-  // ========== WATERMARK & KAMERA (sama seperti asli, hanya sedikit modifikasi) ==========
+  // ========== WATERMARK & KAMERA (sama seperti asli) ==========
   function showLoading(msg) { let ld = document.getElementById('globalLoading'); if(!ld) { ld = document.createElement('div'); ld.id='globalLoading'; ld.className='loading-overlay'; ld.innerHTML = `<div><i class="fas fa-spinner fa-pulse text-3xl mb-2"></i><div>${msg}</div></div>`; document.body.appendChild(ld); } else ld.style.display = 'flex'; }
   function hideLoading() { let ld = document.getElementById('globalLoading'); if(ld) ld.remove(); }
   function getCurrentPosition() { return new Promise(resolve => { if(!navigator.geolocation) resolve(null); else navigator.geolocation.getCurrentPosition(p => resolve({lat:p.coords.latitude,lng:p.coords.longitude}), () => resolve(null), {timeout:5000}); }); }
@@ -432,7 +428,6 @@
   document.getElementById("lampiranFile").addEventListener("change",async(e)=>{ if(e.target.files.length){ const file=e.target.files[0]; const reader=new FileReader(); reader.onload=async(ev)=>{ await handleNewPhoto(ev.target.result); }; reader.readAsDataURL(file); }else{ document.getElementById("previewLampiran").innerHTML=""; window.tempPhotoFile=null; currentWatermarked=null; } });
   document.getElementById("resetFormBtn").addEventListener("click",()=>{ document.getElementById("awalKwh").value=""; document.getElementById("petugas").value=""; document.getElementById("lampiranFile").value=""; document.getElementById("previewLampiran").innerHTML=""; document.getElementById("totalTagihan").value="0"; document.getElementById("monthYear").value=`${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`; window.tempPhotoFile=null; currentWatermarked=null; refreshAuto(); });
   document.getElementById("simpanBtn").addEventListener("click",async()=>{ 
-    // Hapus pengecekan tanggal 23
     const month = document.getElementById("monthYear").value;
     const awal = parseFloat(document.getElementById("awalKwh").value);
     const total = parseFloat(document.getElementById("totalTagihan").value);
@@ -469,50 +464,28 @@
   document.getElementById("editTakePhotoBtn").addEventListener("click",()=>{ if(!document.getElementById("editPetugas").value.trim()){ Swal.fire("Isi petugas dulu"); return; } openCamera(handleEditPhoto); });
   document.getElementById("editLampiranFile").addEventListener("change",async(e)=>{ if(e.target.files.length){ const file=e.target.files[0]; const reader=new FileReader(); reader.onload=async(ev)=>{ await handleEditPhoto(ev.target.result); }; reader.readAsDataURL(file); } });
   document.getElementById("removeEditImageBtn").addEventListener("click",()=>{ editWatermarked=null; editRemoveFlag=true; document.getElementById("editPreviewContainer").innerHTML='<span class="text-gray-500">Akan dihapus</span>'; });
-  document.getElementById("confirmEditBtn").addEventListener("click",async()=>{ const month=document.getElementById("editMonthYear").value, awal=parseFloat(document.getElementById("editAwalKwh").value), total=parseFloat(document.getElementById("editTotalTagihan").value), petugas=document.getElementById("editPetugas").value; if(isNaN(awal)||awal<0) return Swal.fire("Error","Awal kWh harus positif"); if(!petugas.trim()) return Swal.fire("Error","Petugas wajib"); let newPhoto=null; if(editWatermarked) newPhoto={name:`edit_wm.jpg`,base64:editWatermarked}; else if(!editRemoveFlag && editTempPhoto) newPhoto=editTempPhoto; try{ await editRecord(currentEditId,month,awal,total,petugas,newPhoto,editRemoveFlag); Swal.fire("Sukses","Data diperbarui","success"); document.getElementById("editModal").classList.add("hidden"); renderTable(); }catch(err){ Swal.fire("Gagal",err.message,"error"); } });
+  document.getElementById("confirmEditBtn").addEventListener("click",async()=>{ const month=document.getElementById("editMonthYear").value, awal=parseFloat(document.getElementById("editAwalKwh").value), total=parseFloat(document.getElementById("editTotalTagihan").value), petugas=document.getElementById("editPetugas").value; if(isNaN(awal)||awal<0) return Swal.fire("Error","Awal kWh harus positif"); if(!petugas.trim()) return Swal.fire("Error","Petugas wajib"); let newPhoto=null; if(editWatermarked) newPhoto={name:`edit_wm.jpg`,base64:editWatermarked}; else if(!editRemoveFlag && editTempPhoto) newPhoto=editTempPhoto; try{ await editRecord(currentEditId,month,awal,total,petugas,newPhoto,editRemoveFlag); Swal.fire("Sukses","Data diperbarui","success"); document.getElementById("editModal").classList.add("hidden"); }catch(err){ Swal.fire("Gagal",err.message,"error"); } });
   document.getElementById("closeModalBtn").addEventListener("click",()=>document.getElementById("editModal").classList.add("hidden"));
   document.getElementById("cancelEditBtn").addEventListener("click",()=>document.getElementById("editModal").classList.add("hidden"));
   document.getElementById("editAutoCalcBtn").addEventListener("click",()=>{ const m=document.getElementById("editMonthYear").value, a=parseFloat(document.getElementById("editAwalKwh").value); if(m&&!isNaN(a)){ const other=monitoringData.filter(i=>i.id!==currentEditId); const cur=getDateFromMonthYear(m); const prev=other.filter(i=>i.date<cur).sort((x,y)=>new Date(y.date)-new Date(x.date)); let diff=0; if(prev.length) diff=a-prev[0].awalReading; if(diff<0) diff=0; document.getElementById("editTotalTagihan").value=diff.toFixed(2); } });
 
-  // ======================== INISIALISASI ========================
-  async function init() {
-    // Muat data dari localStorage terlebih dahulu
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      monitoringData = JSON.parse(stored);
-      renderTable();
+  // ======================== INISIALISASI FIREBASE ========================
+  async function initFirebase() {
+    if (!window.db) {
+      setTimeout(initFirebase, 300);
+      return;
     }
-    updateDateStatus();
+    isFirebaseReady = true;
+    await enablePersistence();
+    attachRealtimeListener();
+    updateFirebaseStatus(true, "Terhubung (realtime)");
+    // set default form
     document.getElementById("monthYear").value = `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`;
     refreshAuto();
-
-    if (window.db) {
-      isFirebaseReady = true;
-      // Pasang listener realtime
-      setupFirebaseListener();
-      // Lalu sinkronkan data awal (jika Firebase lebih baru, listener akan update)
-      // Untuk memastikan data lokal tidak lebih baru, kita bisa juga panggil syncToFirebase untuk upload data lokal
-      // Tapi biarkan listener bekerja, dan kita akan upload data lokal jika Firebase kosong
-      const snapshot = await window.db.ref(DB_PATH).once('value');
-      if (!snapshot.exists() && monitoringData.length > 0) {
-        // Firebase kosong, upload data lokal
-        await syncToFirebase();
-      }
-      updateFirebaseStatus(true, "Realtime aktif");
-    } else {
-      setTimeout(() => {
-        if (window.db) {
-          isFirebaseReady = true;
-          setupFirebaseListener();
-          updateFirebaseStatus(true, "Realtime aktif");
-        } else {
-          updateFirebaseStatus(false, "Firebase tidak terdeteksi. Periksa file firebase-config.js");
-        }
-      }, 500);
-    }
+    updateDateStatus();
   }
 
-  init();
+  initFirebase();
 </script>
 </body>
 </html>
