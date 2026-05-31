@@ -3,9 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-  <title>TVRI - TX Tanah Merah | Monitoring PLN & UPS + 2 Foto + Firebase</title>
-  <!-- Perbaikan favicon: menggunakan nama file yang benar -->
-    <link rel="icon" type="image/ico" href="favicon.ico">
+  <title>TVRI - TX Tanah Merah | Monitoring PLN & UPS + 2 Foto + Firebase Realtime</title>
+  <link rel="icon" type="image/ico" href="favicon.ico">
   <style>
     * {
       margin: 0;
@@ -346,6 +345,8 @@
     .modal-img img { max-width:90%; max-height:90%; border-radius:16px; }
     .hidden { display: none; }
   </style>
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
   <script src="firebase-config.js"></script>
@@ -353,10 +354,10 @@
 <body>
 <div class="container">
   <div class="card">
-    <h1>📡 TVRI - TX Tanah Merah <small>PLN & UPS + 2 Foto + Firebase</small>
+    <h1>📡 TVRI - TX Tanah Merah <small>PLN & UPS + 2 Foto + Firebase Realtime</small>
       <span id="firebaseStatus" class="sync-status"><i class="fas fa-cloud-upload-alt"></i> Menghubungkan...</span>
     </h1>
-    <p style="margin-bottom: 12px; font-size: 0.85rem;">✅ Dua foto bukti (depan & belakang/sisi) + watermark GPS & petugas. Data tersimpan di Firebase dan lokal.</p>
+    <p style="margin-bottom: 12px; font-size: 0.85rem;">✅ Dua foto bukti (depan & belakang/sisi) + watermark GPS & petugas. Data tersimpan di Firebase (offline-ready).</p>
 
     <div class="form-row">
       <div class="field-group"><label>No. Entry</label><input type="text" id="entryNo" readonly style="background:#f9f9f9;"></div>
@@ -402,7 +403,7 @@
       </div>
     </div>
 
-    <!-- PARAMETER PLN & UPS (sama seperti sebelumnya) -->
+    <!-- PARAMETER PLN & UPS -->
     <div class="double-grid">
       <div class="meas-panel"><h3>🏭 SUMBER PLN</h3>
         <div><strong class="subtitle">⚡ Tegangan (Volt)</strong></div>
@@ -448,13 +449,15 @@
     <h2>📋 RIWAYAT PENCATATAN + FOTO BUKTI</h2>
     <div id="entriesList" class="entries-container">📭 Memuat data...</div>
   </div>
-  <footer>© TVRI - TX Tanah Merah | Watermark per foto | Data sinkron Firebase + localStorage</footer>
+  <footer>© TVRI - TX Tanah Merah | Watermark per foto | Data sinkron Firebase (offline-ready)</footer>
 </div>
 
 <script>
-  // ======================== FIREBASE KONFIGURASI ========================
+  // ======================== KONFIGURASI FIREBASE (Offline Persistence + Realtime) ========================
   let isFirebaseReady = false;
   const DB_PATH = 'monitoring/pln_ups_2foto/entries';
+  let entries = [];          // akan diisi oleh listener
+  let listenerRef = null;
 
   function updateFirebaseStatus(connected, message) {
     const statusEl = document.getElementById('firebaseStatus');
@@ -469,73 +472,99 @@
     }
   }
 
-  async function syncToFirebase(entries) {
-    if (!isFirebaseReady || !window.db) return false;
+  async function enablePersistence() {
+    if (!window.db) return false;
     try {
-      const entriesObj = {};
-      entries.forEach(entry => { entriesObj[entry.id] = entry; });
-      await window.db.ref(DB_PATH).set(entriesObj);
-      updateFirebaseStatus(true, "Tersinkron");
+      if (window.db.enablePersistence) {
+        await window.db.enablePersistence();
+        console.log("Firebase persistence aktif");
+      } else if (window.firebase && window.firebase.database) {
+        await window.firebase.database().enablePersistence();
+      } else {
+        console.warn("enablePersistence tidak tersedia");
+      }
       return true;
     } catch (err) {
-      console.error(err);
-      updateFirebaseStatus(false, "Gagal sync");
+      if (err.code === 'failed-precondition') {
+        console.warn("Multiple tab terbuka, persistence tidak bisa diaktifkan");
+      } else if (err.code === 'unavailable') {
+        console.warn("Browser tidak support persistence");
+      } else {
+        console.error("Error persistence:", err);
+      }
       return false;
     }
   }
 
-  async function loadFromFirebase() {
-    if (!window.db) return false;
+  // Pasang listener realtime
+  function attachRealtimeListener() {
+    if (!isFirebaseReady || !window.db) return;
+    if (listenerRef) listenerRef.off();
+    const ref = window.db.ref(DB_PATH);
+    listenerRef = ref.on('value', (snapshot) => {
+      const data = snapshot.val();
+      if (data && typeof data === 'object') {
+        const entriesArray = Object.values(data);
+        entriesArray.sort((a,b) => (b.id || 0) - (a.id || 0));
+        entries = entriesArray;
+      } else {
+        entries = [];
+      }
+      renderEntries();           // update UI
+      updateEntryNoField();      // update nomor otomatis
+      updateFirebaseStatus(true, `Tersinkron (${entries.length} data)`);
+    }, (error) => {
+      console.error("Listener error:", error);
+      updateFirebaseStatus(false, "Error listener");
+    });
+  }
+
+  // Fungsi untuk menulis seluruh data ke Firebase (set)
+  async function setEntriesToFirebase(entriesArray) {
+    if (!isFirebaseReady || !window.db) return false;
     try {
-      const snapshot = await window.db.ref(DB_PATH).once('value');
-      const firebaseData = snapshot.val();
-      if (firebaseData && typeof firebaseData === 'object') {
-        const fbEntries = Object.values(firebaseData);
-        if (fbEntries.length) {
-          fbEntries.sort((a,b) => (b.id || 0) - (a.id || 0));
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(fbEntries));
-          updateFirebaseStatus(true, `Loaded ${fbEntries.length} data`);
-          return fbEntries;
-        }
-      }
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const localEntries = JSON.parse(stored);
-        updateFirebaseStatus(true, "Loaded local");
-        if (localEntries.length) await syncToFirebase(localEntries);
-        return localEntries;
-      }
-      return [];
-    } catch(err) {
-      console.error(err);
-      updateFirebaseStatus(false, "Offline mode");
-      const stored = localStorage.getItem(STORAGE_KEY);
-      return stored ? JSON.parse(stored) : [];
+      const entriesObj = {};
+      entriesArray.forEach(entry => { entriesObj[entry.id] = entry; });
+      await window.db.ref(DB_PATH).set(entriesObj);
+      return true;
+    } catch (err) {
+      console.error("Gagal set entries ke Firebase:", err);
+      updateFirebaseStatus(false, "Gagal simpan");
+      return false;
     }
   }
 
-  const STORAGE_KEY = "pln_ups_tanah_merah_2foto";
-  let mediaStream = null;
-  let activeTarget = 1; // 1 atau 2 untuk foto mana yang sedang diambil
+  // Operasi CRUD langsung ke Firebase (setelah modifikasi, panggil setEntriesToFirebase)
+  async function addEntry(newEntry) {
+    const updated = [newEntry, ...entries];
+    await setEntriesToFirebase(updated);
+  }
 
-  // Foto 1 elements
-  const foto1Preview = document.getElementById('previewFoto1');
-  const foto1Data = document.getElementById('foto1Data64');
-  const foto1Jam = document.getElementById('foto1Jam');
-  const foto1Lat = document.getElementById('foto1Lat');
-  const foto1Lng = document.getElementById('foto1Lng');
-  // Foto 2 elements
-  const foto2Preview = document.getElementById('previewFoto2');
-  const foto2Data = document.getElementById('foto2Data64');
-  const foto2Jam = document.getElementById('foto2Jam');
-  const foto2Lat = document.getElementById('foto2Lat');
-  const foto2Lng = document.getElementById('foto2Lng');
+  async function deleteEntryById(id) {
+    const updated = entries.filter(entry => entry.id !== id);
+    await setEntriesToFirebase(updated);
+  }
 
-  const videoEl = document.getElementById('videoCamera');
-  const videoContainer = document.getElementById('videoContainer');
-  const btnTutupKamera = document.getElementById('btnTutupKamera');
+  async function clearAllEntries() {
+    await setEntriesToFirebase([]);
+  }
 
-  // Helper watermark (sama seperti sebelumnya)
+  // Helper untuk nomor urut otomatis (berdasarkan entries terbaru)
+  function getNextNumber() {
+    if (!entries.length) return "001";
+    let max = 0;
+    entries.forEach(e => {
+      let match = e.no.match(/\d+/);
+      if (match) max = Math.max(max, parseInt(match[0], 10));
+    });
+    return (max + 1).toString().padStart(3, '0');
+  }
+
+  function updateEntryNoField() {
+    document.getElementById("entryNo").value = getNextNumber();
+  }
+
+  // ========== WATERMARK & KAMERA (sama seperti sebelumnya) ==========
   async function getGPSandTime() {
     return new Promise((resolve) => {
       if (!navigator.geolocation) resolve({ lat: -6.2, lng: 106.8, alt: 0, timestamp: new Date().toLocaleString('id-ID') });
@@ -609,23 +638,29 @@
       const gps = await getGPSandTime();
       const watermarked = await applyWatermarkTanahMerah(rawDataUrl, petugas, gps.lat, gps.lng, gps.alt, gps.timestamp);
       if (targetFoto === 1) {
-        foto1Preview.src = watermarked;
-        foto1Data.value = watermarked;
-        foto1Jam.value = gps.timestamp;
-        foto1Lat.value = gps.lat;
-        foto1Lng.value = gps.lng;
+        document.getElementById('previewFoto1').src = watermarked;
+        document.getElementById('foto1Data64').value = watermarked;
+        document.getElementById('foto1Jam').value = gps.timestamp;
+        document.getElementById('foto1Lat').value = gps.lat;
+        document.getElementById('foto1Lng').value = gps.lng;
       } else {
-        foto2Preview.src = watermarked;
-        foto2Data.value = watermarked;
-        foto2Jam.value = gps.timestamp;
-        foto2Lat.value = gps.lat;
-        foto2Lng.value = gps.lng;
+        document.getElementById('previewFoto2').src = watermarked;
+        document.getElementById('foto2Data64').value = watermarked;
+        document.getElementById('foto2Jam').value = gps.timestamp;
+        document.getElementById('foto2Lat').value = gps.lat;
+        document.getElementById('foto2Lng').value = gps.lng;
       }
       return true;
     } catch(e) { alert("Gagal memproses watermark: "+e.message); return false; }
   }
 
   // Kamera
+  let mediaStream = null;
+  let activeTarget = 1;
+  const videoEl = document.getElementById('videoCamera');
+  const videoContainer = document.getElementById('videoContainer');
+  const btnTutupKamera = document.getElementById('btnTutupKamera');
+
   async function bukaKamera(target) {
     activeTarget = target;
     const petugas = document.getElementById("petugas").value.trim();
@@ -672,21 +707,21 @@
   }
   function hapusFoto(target) {
     if (target === 1) {
-      foto1Preview.src = "https://placehold.co/400x400?text=Foto+1";
-      foto1Data.value = "";
-      foto1Jam.value = "";
-      foto1Lat.value = "";
-      foto1Lng.value = "";
+      document.getElementById('previewFoto1').src = "https://placehold.co/400x400?text=Foto+1";
+      document.getElementById('foto1Data64').value = "";
+      document.getElementById('foto1Jam').value = "";
+      document.getElementById('foto1Lat').value = "";
+      document.getElementById('foto1Lng').value = "";
     } else {
-      foto2Preview.src = "https://placehold.co/400x400?text=Foto+2";
-      foto2Data.value = "";
-      foto2Jam.value = "";
-      foto2Lat.value = "";
-      foto2Lng.value = "";
+      document.getElementById('previewFoto2').src = "https://placehold.co/400x400?text=Foto+2";
+      document.getElementById('foto2Data64').value = "";
+      document.getElementById('foto2Jam').value = "";
+      document.getElementById('foto2Lat').value = "";
+      document.getElementById('foto2Lng').value = "";
     }
   }
 
-  // Event listeners untuk tombol foto
+  // Event listener untuk tombol foto
   document.querySelectorAll('[data-target]').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const target = btn.getAttribute('data-target');
@@ -700,7 +735,7 @@
   });
   btnTutupKamera.addEventListener('click', tutupKamera);
 
-  // Simpan tombol capture dari video (tambahkan tombol capture di video container)
+  // Tambahkan tombol capture di video container
   const captureBtn = document.createElement('button');
   captureBtn.textContent = '📸 Ambil Foto';
   captureBtn.className = 'btn btn-primary btn-small';
@@ -713,26 +748,7 @@
   videoContainer.style.position = 'relative';
   videoContainer.appendChild(captureBtn);
 
-  // ======================== CRUD ENTRIES ========================
-  async function saveEntriesToLocalAndFirebase(entries) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
-    if (isFirebaseReady) await syncToFirebase(entries);
-    renderEntries();
-    updateEntryNoField();
-  }
-  function loadEntriesFromStorage() {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored) : [];
-  }
-  function getNextNumber(entries) {
-    if(!entries.length) return "001";
-    let max=0; entries.forEach(e=>{ let m=e.no.match(/\d+/); if(m) max=Math.max(max,parseInt(m[0],10)); });
-    return (max+1).toString().padStart(3,'0');
-  }
-  function updateEntryNoField() {
-    const entries = loadEntriesFromStorage();
-    document.getElementById("entryNo").value = getNextNumber(entries);
-  }
+  // ========== CRUD UI ==========
   function parseFloatOrNull(v) { return (v===""||v===null)?null:(isNaN(parseFloat(v))?null:parseFloat(v)); }
   function getFormValues() {
     return {
@@ -744,33 +760,7 @@
       ups: { v: { rs: parseFloatOrNull(vUPS_rs.value), st: parseFloatOrNull(vUPS_st.value), tr: parseFloatOrNull(vUPS_tr.value), rn: parseFloatOrNull(vUPS_rn.value), sn: parseFloatOrNull(vUPS_sn.value), tn: parseFloatOrNull(vUPS_tn.value) }, i: { r: parseFloatOrNull(iUPS_r.value), s: parseFloatOrNull(iUPS_s.value), t: parseFloatOrNull(iUPS_t.value) } }
     };
   }
-  function applyEntryDataToForm(entry) {
-    if (!entry) return;
-    document.getElementById("petugas").value = entry.petugas || "";
-    document.getElementById("keterangan").value = entry.keterangan || "";
-    const set = (id,val) => { let el=document.getElementById(id); if(el) el.value = (val!==null&&val!==undefined)?val:""; };
-    set("vPLN_rs", entry.pln?.v?.rs); set("vPLN_st", entry.pln?.v?.st); set("vPLN_tr", entry.pln?.v?.tr);
-    set("vPLN_rn", entry.pln?.v?.rn); set("vPLN_sn", entry.pln?.v?.sn); set("vPLN_tn", entry.pln?.v?.tn);
-    set("iPLN_r", entry.pln?.i?.r); set("iPLN_s", entry.pln?.i?.s); set("iPLN_t", entry.pln?.i?.t);
-    set("vUPS_rs", entry.ups?.v?.rs); set("vUPS_st", entry.ups?.v?.st); set("vUPS_tr", entry.ups?.v?.tr);
-    set("vUPS_rn", entry.ups?.v?.rn); set("vUPS_sn", entry.ups?.v?.sn); set("vUPS_tn", entry.ups?.v?.tn);
-    set("iUPS_r", entry.ups?.i?.r); set("iUPS_s", entry.ups?.i?.s); set("iUPS_t", entry.ups?.i?.t);
-    // isi foto
-    if (entry.photo1Base64) {
-      foto1Preview.src = entry.photo1Base64;
-      foto1Data.value = entry.photo1Base64;
-      foto1Jam.value = entry.foto1Jam || "";
-      foto1Lat.value = entry.foto1Lat || "";
-      foto1Lng.value = entry.foto1Lng || "";
-    } else { hapusFoto(1); }
-    if (entry.photo2Base64) {
-      foto2Preview.src = entry.photo2Base64;
-      foto2Data.value = entry.photo2Base64;
-      foto2Jam.value = entry.foto2Jam || "";
-      foto2Lat.value = entry.foto2Lat || "";
-      foto2Lng.value = entry.foto2Lng || "";
-    } else { hapusFoto(2); }
-  }
+
   function resetFormFields() {
     document.querySelectorAll("input[type='number']").forEach(inp => inp.value = "");
     document.getElementById("petugas").value = "";
@@ -780,77 +770,44 @@
     updateEntryNoField();
     if(mediaStream) tutupKamera();
   }
-  function applyLastEntryOrReset() {
-    const entries = loadEntriesFromStorage();
-    if (entries.length > 0) {
-      const lastEntry = entries[0];
-      applyEntryDataToForm(lastEntry);
-      updateEntryNoField();
-      document.getElementById("entryDate").value = new Date().toISOString().slice(0,10);
-    } else {
-      resetFormFields();
-    }
-  }
+
+  // Simpan entry baru
   document.getElementById("saveWithPhotoBtn").onclick = async () => {
     const no = document.getElementById("entryNo").value.trim();
     const tgl = document.getElementById("entryDate").value;
     const petugas = document.getElementById("petugas").value.trim();
     if(!no || !tgl || !petugas) { alert("No, Tanggal, Petugas wajib diisi."); return; }
-    if(!foto1Data.value && !foto2Data.value) { alert("Harap ambil minimal satu foto (Foto 1 atau Foto 2)."); return; }
+    const foto1Data = document.getElementById('foto1Data64').value;
+    const foto2Data = document.getElementById('foto2Data64').value;
+    if(!foto1Data && !foto2Data) { alert("Harap ambil minimal satu foto (Foto 1 atau Foto 2)."); return; }
     const formData = getFormValues();
     const newEntry = { 
       id: Date.now(), 
       ...formData, 
-      photo1Base64: foto1Data.value || null,
-      photo2Base64: foto2Data.value || null,
-      foto1Jam: foto1Jam.value,
-      foto2Jam: foto2Jam.value,
-      foto1Lat: foto1Lat.value ? parseFloat(foto1Lat.value) : null,
-      foto1Lng: foto1Lng.value ? parseFloat(foto1Lng.value) : null,
-      foto2Lat: foto2Lat.value ? parseFloat(foto2Lat.value) : null,
-      foto2Lng: foto2Lng.value ? parseFloat(foto2Lng.value) : null,
+      photo1Base64: foto1Data || null,
+      photo2Base64: foto2Data || null,
+      foto1Jam: document.getElementById('foto1Jam').value,
+      foto2Jam: document.getElementById('foto2Jam').value,
+      foto1Lat: document.getElementById('foto1Lat').value ? parseFloat(document.getElementById('foto1Lat').value) : null,
+      foto1Lng: document.getElementById('foto1Lng').value ? parseFloat(document.getElementById('foto1Lng').value) : null,
+      foto2Lat: document.getElementById('foto2Lat').value ? parseFloat(document.getElementById('foto2Lat').value) : null,
+      foto2Lng: document.getElementById('foto2Lng').value ? parseFloat(document.getElementById('foto2Lng').value) : null,
       createdAt: new Date().toISOString() 
     };
-    const entries = loadEntriesFromStorage();
-    entries.unshift(newEntry);
-    await saveEntriesToLocalAndFirebase(entries);
+    await addEntry(newEntry);
     resetFormFields();
-    applyLastEntryOrReset(); // agar form terisi dengan data terbaru (kosongkan foto)
-    alert("Data tersimpan dengan foto. Firebase: " + (isFirebaseReady ? "tersinkron" : "offline"));
+    alert("Data tersimpan dengan foto. Firebase: tersinkron.");
   };
-  document.getElementById("resetFormBtn").onclick = () => { if(confirm("Reset form dan hapus foto?")) resetFormFields(); };
-  document.getElementById("clearAllBtn").onclick = async () => { if(confirm("Hapus semua data?")) { await saveEntriesToLocalAndFirebase([]); resetFormFields(); } };
 
-  // Export HTML dengan 2 foto
-  function generateFullReportHTML() {
-    const entries = loadEntriesFromStorage();
-    if (!entries.length) return "<p>Tidak ada data untuk diekspor.</p>";
-    const formatVal = (v) => (v !== null && v !== undefined) ? parseFloat(v).toFixed(1) : "-";
-    const escapeHtml = (s) => s ? s.replace(/[&<>]/g, m=> m==='&'?'&amp;': m==='<'?'&lt;':'&gt;') : "";
-    let plnRows = "", upsRows = "";
-    for (let e of entries) {
-      const foto1Thumb = e.photo1Base64 ? `<img src="${e.photo1Base64}" style="width:50px; height:50px; object-fit:cover; border-radius:6px;" onclick="window.open(this.src)">` : "-";
-      const foto2Thumb = e.photo2Base64 ? `<img src="${e.photo2Base64}" style="width:50px; height:50px; object-fit:cover; border-radius:6px;" onclick="window.open(this.src)">` : "-";
-      const fotoCombine = `<div style="display:flex; gap:5px; justify-content:center;">Foto1: ${foto1Thumb}<br>Foto2: ${foto2Thumb}</div>`;
-      plnRows += `<tr><td style="border:1px solid #cbd5e1; padding:8px;">${escapeHtml(e.no)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${escapeHtml(e.tanggal)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${escapeHtml(e.petugas)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${escapeHtml(e.keterangan||'-')}</td><td style="border:1px solid #cbd5e1; padding:8px;">${fotoCombine}</td><td style="border:1px solid #cbd5e1; padding:8px;">${formatVal(e.pln?.v?.rs)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${formatVal(e.pln?.v?.st)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${formatVal(e.pln?.v?.tr)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${formatVal(e.pln?.v?.rn)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${formatVal(e.pln?.v?.sn)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${formatVal(e.pln?.v?.tn)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${formatVal(e.pln?.i?.r)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${formatVal(e.pln?.i?.s)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${formatVal(e.pln?.i?.t)}</td></tr>`;
-      upsRows += `<tr><td style="border:1px solid #cbd5e1; padding:8px;">${escapeHtml(e.no)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${escapeHtml(e.tanggal)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${escapeHtml(e.petugas)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${escapeHtml(e.keterangan||'-')}</td><td style="border:1px solid #cbd5e1; padding:8px;">${fotoCombine}</td><td style="border:1px solid #cbd5e1; padding:8px;">${formatVal(e.ups?.v?.rs)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${formatVal(e.ups?.v?.st)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${formatVal(e.ups?.v?.tr)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${formatVal(e.ups?.v?.rn)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${formatVal(e.ups?.v?.sn)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${formatVal(e.ups?.v?.tn)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${formatVal(e.ups?.i?.r)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${formatVal(e.ups?.i?.s)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${formatVal(e.ups?.i?.t)}</td></tr>`;
-    }
-    return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Laporan PLN & UPS 2 Foto</title><style>body{font-family:Inter,sans-serif;background:#f1f5f9;margin:20px}.container{max-width:1400px;margin:auto;background:white;border-radius:28px;padding:24px;box-shadow:0 12px 30px rgba(0,0,0,0.1)}h1{color:#1e6f5c;border-left:6px solid #1e6f5c;padding-left:20px}.section-title{background:#eef2ff;display:inline-block;padding:6px 24px;border-radius:40px;margin:24px 0 16px;font-weight:700}table{border-collapse:collapse;width:100%;margin-bottom:30px;font-size:0.75rem}th{background:#1e6f5c;color:white;padding:10px 6px;border:1px solid #1a5f4e}td{border:1px solid #cbd5e1;text-align:center}img{max-width:50px;border-radius:6px}.footer{margin-top:30px;text-align:center;font-size:0.7rem;color:#5b7c8c;border-top:1px solid #e2e8f0;padding-top:18px}</style></head><body><div class="container"><h1>📡 TVRI - TX Tanah Merah</h1><div><strong>Laporan PLN & UPS (2 Foto)</strong> | ${new Date().toLocaleString('id-ID')} | Total: ${entries.length}</div><div class="section-title">🏭 PLN</div><div style="overflow-x:auto;"><table><thead><tr><th>No</th><th>Tgl</th><th>Petugas</th><th>Keterangan</th><th>Foto 1 & 2</th><th>V_RS</th><th>V_ST</th><th>V_TR</th><th>V_RN</th><th>V_SN</th><th>V_TN</th><th>I_R</th><th>I_S</th><th>I_T</th></tr></thead><tbody>${plnRows}</tbody></table></div><div class="section-title">🔋 UPS</div><div style="overflow-x:auto;"><table><thead><tr><th>No</th><th>Tgl</th><th>Petugas</th><th>Keterangan</th><th>Foto 1 & 2</th><th>V_RS</th><th>V_ST</th><th>V_TR</th><th>V_RN</th><th>V_SN</th><th>V_TN</th><th>I_R</th><th>I_S</th><th>I_T</th></tr></thead><tbody>${upsRows}</tbody></table></div><div class="footer">© TVRI - TX Tanah Merah | Watermark otomatis | 2 foto per entry</div></div></body></html>`;
-  }
-  document.getElementById("exportHtmlBtn").onclick = () => {
-    if (!loadEntriesFromStorage().length) { alert("Tidak ada data."); return; }
-    const blob = new Blob([generateFullReportHTML()], { type: "text/html" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `laporan_2foto_${Date.now()}.html`;
-    link.click();
-    URL.revokeObjectURL(blob);
-  };
+  document.getElementById("resetFormBtn").onclick = () => { if(confirm("Reset form dan hapus foto?")) resetFormFields(); };
+  document.getElementById("clearAllBtn").onclick = async () => { if(confirm("Hapus semua data?")) { await clearAllEntries(); resetFormFields(); } };
+
+  // Render entries dari variable `entries` (diupdate oleh listener)
   function formatVal(v) { return (v!==null && v!==undefined) ? parseFloat(v).toFixed(1) : "-"; }
   function escapeHtml(s) { if(!s) return ""; return s.replace(/[&<>]/g, m=>m==='&'?'&amp;':m==='<'?'&lt;':'&gt;'); }
   window.viewFullFoto = (url) => { if(url && url!="#"){ const m=document.createElement('div'); m.className="modal-img"; m.innerHTML=`<img src="${url}">`; m.onclick=()=>m.remove(); document.body.appendChild(m); } };
+
   function renderEntries() {
-    const entries = loadEntriesFromStorage();
     const container = document.getElementById("entriesList");
     if(!entries.length){ container.innerHTML='<div style="text-align:center;padding:2rem;">📭 Belum ada pencatatan.</div>'; return; }
     container.innerHTML="";
@@ -858,20 +815,62 @@
       const foto1Html = e.photo1Base64 ? `<img src="${e.photo1Base64}" class="evidence-img" onclick="viewFullFoto('${e.photo1Base64}')">` : '<span>Tidak ada</span>';
       const foto2Html = e.photo2Base64 ? `<img src="${e.photo2Base64}" class="evidence-img" onclick="viewFullFoto('${e.photo2Base64}')">` : '<span>Tidak ada</span>';
       const card = document.createElement("div"); card.className="entry-card";
-      card.innerHTML = `<div class="entry-header"><div>📄 No: ${escapeHtml(e.no)} | ${escapeHtml(e.tanggal)}</div><div><span>👤 ${escapeHtml(e.petugas)}</span><span>📝 ${escapeHtml(e.keterangan||'-')}</span><button class="btn-danger" style="margin-left:12px;padding:4px 12px;" data-idx="${idx}">✖ Hapus</button></div></div>
+      card.innerHTML = `<div class="entry-header"><div>📄 No: ${escapeHtml(e.no)} | ${escapeHtml(e.tanggal)}</div><div><span>👤 ${escapeHtml(e.petugas)}</span><span>📝 ${escapeHtml(e.keterangan||'-')}</span><button class="btn-danger" style="margin-left:12px;padding:4px 12px;" data-id="${e.id}">✖ Hapus</button></div></div>
         <div class="data-row"><div><strong>🏭 PLN</strong><br>Teg: RS:${formatVal(e.pln?.v?.rs)} ST:${formatVal(e.pln?.v?.st)} TR:${formatVal(e.pln?.v?.tr)} RN:${formatVal(e.pln?.v?.rn)} SN:${formatVal(e.pln?.v?.sn)} TN:${formatVal(e.pln?.v?.tn)}<br>Arus: R:${formatVal(e.pln?.i?.r)} S:${formatVal(e.pln?.i?.s)} T:${formatVal(e.pln?.i?.t)}</div>
         <div><strong>🔋 UPS</strong><br>Teg: RS:${formatVal(e.ups?.v?.rs)} ST:${formatVal(e.ups?.v?.st)} TR:${formatVal(e.ups?.v?.tr)} RN:${formatVal(e.ups?.v?.rn)} SN:${formatVal(e.ups?.v?.sn)} TN:${formatVal(e.ups?.v?.tn)}<br>Arus: R:${formatVal(e.ups?.i?.r)} S:${formatVal(e.ups?.i?.s)} T:${formatVal(e.ups?.i?.t)}</div></div>
         <div class="entry-photos"><strong>📸 Foto 1:</strong> ${foto1Html} &nbsp;&nbsp;<strong>Foto 2:</strong> ${foto2Html}</div>`;
       container.appendChild(card);
     });
-    document.querySelectorAll("[data-idx]").forEach(btn=>btn.onclick=async()=>{ let arr=loadEntriesFromStorage(); arr.splice(parseInt(btn.dataset.idx),1); await saveEntriesToLocalAndFirebase(arr); });
+    // Pasang event listener hapus
+    document.querySelectorAll(".btn-danger[data-id]").forEach(btn => {
+      btn.onclick = async () => {
+        const id = parseInt(btn.getAttribute('data-id'));
+        if (confirm("Hapus entry ini?")) await deleteEntryById(id);
+      };
+    });
   }
-  async function init() {
-    resetFormFields();
-    if(window.db){ isFirebaseReady=true; const fb=await loadFromFirebase(); if(fb&&fb.length){ localStorage.setItem(STORAGE_KEY,JSON.stringify(fb)); renderEntries(); updateEntryNoField(); applyLastEntryOrReset(); } else{ const local=loadEntriesFromStorage(); if(local.length) applyLastEntryOrReset(); else resetFormFields(); } updateFirebaseStatus(true,"Terhubung"); }
-    else{ setTimeout(()=>{ if(window.db){ isFirebaseReady=true; loadFromFirebase().then(fb=>{ if(fb?.length){ localStorage.setItem(STORAGE_KEY,JSON.stringify(fb)); renderEntries(); updateEntryNoField(); applyLastEntryOrReset(); } else{ const local=loadEntriesFromStorage(); if(local.length) applyLastEntryOrReset(); else resetFormFields(); } updateFirebaseStatus(true,"Terhubung"); }); } else{ updateFirebaseStatus(false,"Firebase tidak tersedia"); const local=loadEntriesFromStorage(); if(local.length){ renderEntries(); updateEntryNoField(); applyLastEntryOrReset(); } } },500); }
+
+  // Export HTML (menggunakan data `entries` terbaru)
+  function generateFullReportHTML() {
+    if (!entries.length) return "<p>Tidak ada data untuk diekspor.</p>";
+    const formatValExp = (v) => (v !== null && v !== undefined) ? parseFloat(v).toFixed(1) : "-";
+    let plnRows = "", upsRows = "";
+    for (let e of entries) {
+      const foto1Thumb = e.photo1Base64 ? `<img src="${e.photo1Base64}" style="width:50px; height:50px; object-fit:cover; border-radius:6px;" onclick="window.open(this.src)">` : "-";
+      const foto2Thumb = e.photo2Base64 ? `<img src="${e.photo2Base64}" style="width:50px; height:50px; object-fit:cover; border-radius:6px;" onclick="window.open(this.src)">` : "-";
+      const fotoCombine = `<div style="display:flex; gap:5px; justify-content:center;">Foto1: ${foto1Thumb}<br>Foto2: ${foto2Thumb}</div>`;
+      plnRows += `<tr><td style="border:1px solid #cbd5e1; padding:8px;">${escapeHtml(e.no)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${escapeHtml(e.tanggal)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${escapeHtml(e.petugas)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${escapeHtml(e.keterangan||'-')}</td><td style="border:1px solid #cbd5e1; padding:8px;">${fotoCombine}</td><td style="border:1px solid #cbd5e1; padding:8px;">${formatValExp(e.pln?.v?.rs)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${formatValExp(e.pln?.v?.st)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${formatValExp(e.pln?.v?.tr)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${formatValExp(e.pln?.v?.rn)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${formatValExp(e.pln?.v?.sn)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${formatValExp(e.pln?.v?.tn)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${formatValExp(e.pln?.i?.r)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${formatValExp(e.pln?.i?.s)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${formatValExp(e.pln?.i?.t)}</td></tr>`;
+      upsRows += `<tr><td style="border:1px solid #cbd5e1; padding:8px;">${escapeHtml(e.no)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${escapeHtml(e.tanggal)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${escapeHtml(e.petugas)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${escapeHtml(e.keterangan||'-')}</td><td style="border:1px solid #cbd5e1; padding:8px;">${fotoCombine}</td><td style="border:1px solid #cbd5e1; padding:8px;">${formatValExp(e.ups?.v?.rs)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${formatValExp(e.ups?.v?.st)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${formatValExp(e.ups?.v?.tr)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${formatValExp(e.ups?.v?.rn)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${formatValExp(e.ups?.v?.sn)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${formatValExp(e.ups?.v?.tn)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${formatValExp(e.ups?.i?.r)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${formatValExp(e.ups?.i?.s)}</td><td style="border:1px solid #cbd5e1; padding:8px;">${formatValExp(e.ups?.i?.t)}</td></tr>`;
+    }
+    return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Laporan PLN & UPS 2 Foto</title><style>body{font-family:Inter,sans-serif;background:#f1f5f9;margin:20px}.container{max-width:1400px;margin:auto;background:white;border-radius:28px;padding:24px;box-shadow:0 12px 30px rgba(0,0,0,0.1)}h1{color:#1e6f5c;border-left:6px solid #1e6f5c;padding-left:20px}.section-title{background:#eef2ff;display:inline-block;padding:6px 24px;border-radius:40px;margin:24px 0 16px;font-weight:700}table{border-collapse:collapse;width:100%;margin-bottom:30px;font-size:0.75rem}th{background:#1e6f5c;color:white;padding:10px 6px;border:1px solid #1a5f4e}td{border:1px solid #cbd5e1;text-align:center}img{max-width:50px;border-radius:6px}.footer{margin-top:30px;text-align:center;font-size:0.7rem;color:#5b7c8c;border-top:1px solid #e2e8f0;padding-top:18px}</style></head><body><div class="container"><h1>📡 TVRI - TX Tanah Merah</h1><div><strong>Laporan PLN & UPS (2 Foto)</strong> | ${new Date().toLocaleString('id-ID')} | Total: ${entries.length}</div><div class="section-title">🏭 PLN</div><div style="overflow-x:auto;"><table><thead><tr><th>No</th><th>Tgl</th><th>Petugas</th><th>Keterangan</th><th>Foto 1 & 2</th><th>V_RS</th><th>V_ST</th><th>V_TR</th><th>V_RN</th><th>V_SN</th><th>V_TN</th><th>I_R</th><th>I_S</th><th>I_T</th></tr></thead><tbody>${plnRows}</tbody></table></div><div class="section-title">🔋 UPS</div><div style="overflow-x:auto;"><table><thead><tr><th>No</th><th>Tgl</th><th>Petugas</th><th>Keterangan</th><th>Foto 1 & 2</th><th>V_RS</th><th>V_ST</th><th>V_TR</th><th>V_RN</th><th>V_SN</th><th>V_TN</th><th>I_R</th><th>I_S</th><th>I_T</th></tr></thead><tbody>${upsRows}</tbody></table></div><div class="footer">© TVRI - TX Tanah Merah | Watermark otomatis | 2 foto per entry | Data realtime Firebase</div></div></body></html>`;
   }
-  init();
+
+  document.getElementById("exportHtmlBtn").onclick = () => {
+    if (!entries.length) { alert("Tidak ada data."); return; }
+    const blob = new Blob([generateFullReportHTML()], { type: "text/html" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `laporan_2foto_${Date.now()}.html`;
+    link.click();
+    URL.revokeObjectURL(blob);
+  };
+
+  // Inisialisasi Firebase
+  async function initFirebase() {
+    if (!window.db) {
+      setTimeout(initFirebase, 300);
+      return;
+    }
+    isFirebaseReady = true;
+    await enablePersistence();
+    attachRealtimeListener();
+    updateFirebaseStatus(true, "Terhubung (realtime)");
+    // set tanggal default
+    document.getElementById("entryDate").value = new Date().toISOString().slice(0,10);
+    updateEntryNoField();
+  }
+
+  initFirebase();
 </script>
 </body>
 </html>
