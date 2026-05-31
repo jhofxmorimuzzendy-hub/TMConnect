@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Pencatatan Kerusakan & Perbaikan | Multi Foto + Status + Firebase Realtime</title>
+    <title>Pencatatan Kerusakan & Perbaikan | Multi Foto + Kamera Belakang Otomatis + Flip</title>
     <link rel="icon" type="image/ico" href="favicon.ico">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -53,6 +53,8 @@
         }
         input, select, textarea { font-size: 16px !important; }
         .sync-status { font-size: 0.7rem; padding: 2px 10px; border-radius: 20px; background: rgba(255,255,240,0.3); display: inline-block; margin-left: 12px; vertical-align: middle; }
+        .flip-btn { transition: all 0.2s ease; }
+        .flip-btn:active { transform: scale(0.96); }
     </style>
 </head>
 <body>
@@ -67,7 +69,7 @@
                 <span id="firebaseStatus" class="sync-status"><i class="fas fa-cloud-upload-alt"></i> Menghubungkan...</span>
             </h1>
             <div class="mt-2 flex justify-center px-2">
-                <span class="badge-perbaikan bg-primary text-white text-xs md:text-sm rounded-full py-1 px-3 md:px-4 font-semibold"><i class="fas fa-images mr-1 md:mr-2"></i> Multi Foto (Maks 5) | Status Alat | Data tersimpan di Firebase Realtime (offline-ready)</span>
+                <span class="badge-perbaikan bg-primary text-white text-xs md:text-sm rounded-full py-1 px-3 md:px-4 font-semibold"><i class="fas fa-camera-retro mr-1 md:mr-2"></i> Kamera Belakang Otomatis + Flip | Multi Foto (Max 5) | Firebase Realtime</span>
             </div>
         </div>
 
@@ -102,21 +104,27 @@
                     </div>
 
                     <div class="border-t border-gray-200 pt-4 mt-2">
-                        <label class="block text-sm md:text-md font-semibold text-gray-800 mb-2"><i class="fas fa-camera-retro text-primary mr-2"></i> Dokumentasi Foto (Max 5, masing-masing watermark)</label>
+                        <label class="block text-sm md:text-md font-semibold text-gray-800 mb-2"><i class="fas fa-camera-retro text-primary mr-2"></i> Dokumentasi Foto (Max 5, watermark otomatis)</label>
                         <div class="bg-slate-50 rounded-xl p-3 md:p-4 border border-dashed border-gray-300">
                             <div class="flex flex-wrap gap-2 justify-center">
-                                <button type="button" id="btnBukaKamera" class="bg-primary hover:bg-accent text-white px-3 py-2 rounded-xl text-xs md:text-sm shadow transition"><i class="fas fa-video mr-1"></i> Buka Kamera</button>
+                                <button type="button" id="btnBukaKamera" class="bg-primary hover:bg-accent text-white px-3 py-2 rounded-xl text-xs md:text-sm shadow transition"><i class="fas fa-video mr-1"></i> Buka Kamera (Belakang)</button>
                                 <button type="button" id="btnCaptureFoto" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-xl disabled:opacity-50 text-xs md:text-sm shadow transition" disabled><i class="fas fa-camera mr-1"></i> Ambil + WM</button>
                                 <button type="button" id="btnUploadManual" class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-xl text-xs md:text-sm shadow transition"><i class="fas fa-upload mr-1"></i> Upload + WM</button>
                             </div>
-                            <div id="videoContainer" class="hidden mt-3 rounded-xl overflow-hidden bg-black">
+                            <div id="videoContainer" class="hidden mt-3 rounded-xl overflow-hidden bg-black shadow-lg">
                                 <video id="videoCamera" autoplay playsinline class="w-full max-h-56 object-cover"></video>
-                                <div class="flex justify-between items-center p-2 bg-gray-900 flex-wrap gap-1"><span class="text-white text-xs"><i class="fas fa-info-circle"></i> Izin kamera & lokasi</span><button type="button" id="btnTutupKamera" class="text-red-400 text-xs"><i class="fas fa-times-circle"></i> Tutup</button></div>
+                                <div class="flex justify-between items-center p-2 bg-gray-900 flex-wrap gap-2">
+                                    <span class="text-white text-xs"><i class="fas fa-info-circle"></i> Kamera aktif | <span id="cameraModeLabel">🔴 BELAKANG</span></span>
+                                    <div class="flex gap-2">
+                                        <button type="button" id="btnFlipCamera" class="flip-btn bg-gray-700 hover:bg-gray-600 text-white text-xs px-3 py-1.5 rounded-full shadow transition"><i class="fas fa-sync-alt mr-1"></i> Balik Kamera</button>
+                                        <button type="button" id="btnTutupKamera" class="text-red-400 hover:text-red-300 text-xs bg-gray-800 px-3 py-1.5 rounded-full"><i class="fas fa-times-circle mr-1"></i> Tutup</button>
+                                    </div>
+                                </div>
                             </div>
                             <div id="fotoPreviewList" class="foto-preview-grid mt-3"></div>
                             <p id="fotoCounter" class="text-xs text-gray-500 mt-2 text-center">0 dari 5 foto</p>
                             <input type="hidden" id="fotoDataArray" value="[]">
-                            <p class="text-[11px] md:text-xs text-gray-500 mt-3 bg-white/70 p-2 rounded text-center"><i class="fas fa-shield-alt text-green-600"></i> <strong>Watermark otomatis</strong> : Logo, petugas, waktu, koordinat</p>
+                            <p class="text-[11px] md:text-xs text-gray-500 mt-3 bg-white/70 p-2 rounded text-center"><i class="fas fa-shield-alt text-green-600"></i> <strong>Watermark otomatis</strong> : Logo, petugas, waktu, koordinat GPS</p>
                         </div>
                     </div>
 
@@ -142,7 +150,8 @@
                     <thead class="bg-gray-100">
                         <tr><th class="py-2 px-1 md:py-3 md:px-2">No</th><th>Tgl</th><th>Jam</th><th>Kerusakan</th><th>Solusi</th><th>Status</th><th>Foto</th><th>Petugas</th><th>Aksi</th></tr>
                     </thead>
-                    <tbody id="tabelBody"><tr><td colspan="9" class="text-center py-6 text-gray-400">🔧 Memuat data......</td></tr></tbody>
+                    <tbody id="tabelBody"><tr><td colspan="9" class="text-center py-6 text-gray-400">🔧 Memuat data...</td></tr>
+                </tbody>
                 </table>
             </div>
         </div>
@@ -151,9 +160,9 @@
     <script>
         // ======================== KONFIGURASI FIREBASE (Offline Persistence + Realtime) ========================
         let isFirebaseReady = false;
-        let dataEntries = [];          // akan diisi oleh listener
+        let dataEntries = [];          
         let listenerRef = null;
-        let isInternalUpdate = false;   // menghindari loop
+        let isInternalUpdate = false;   
         const DB_PATH = 'monitoring/kerusakan/entries';
 
         function updateFirebaseStatus(connected, message) {
@@ -195,7 +204,6 @@
             }
         }
 
-        // Fungsi untuk menulis seluruh data ke Firebase (set)
         async function setEntriesToFirebase(entriesArray) {
             if (!isFirebaseReady || !window.db) return false;
             try {
@@ -211,13 +219,12 @@
             }
         }
 
-        // Pasang listener realtime
         function attachRealtimeListener() {
             if (!isFirebaseReady || !window.db) return;
             if (listenerRef) listenerRef.off();
             const ref = window.db.ref(DB_PATH);
             listenerRef = ref.on('value', (snapshot) => {
-                if (isInternalUpdate) return; // hindari loop
+                if (isInternalUpdate) return;
                 const data = snapshot.val();
                 if (data && typeof data === 'object') {
                     const entriesArray = Object.values(data);
@@ -235,7 +242,6 @@
             });
         }
 
-        // ========== DATA HANDLING (CRUD langsung ke Firebase) ==========
         function getNextId() { return dataEntries.length ? Math.max(...dataEntries.map(e=>e.id))+1 : 1; }
         function updateNomorOtomatis() { document.getElementById("nomorOtomatis").value = getNextId(); }
 
@@ -260,15 +266,134 @@
             isInternalUpdate = false;
         }
 
-        // ========== KAMERA & WATERMARK (sama seperti sebelumnya) ==========
+        // ========== KAMERA DENGAN FACING MODE (REAR DEFAULT) + FLIP ==========
         let currentFotoList = [];
         let mediaStream = null;
-        const videoEl = document.getElementById('videoCamera'), videoContainer = document.getElementById('videoContainer');
-        const btnBuka = document.getElementById('btnBukaKamera'), btnCapture = document.getElementById('btnCaptureFoto'), btnTutup = document.getElementById('btnTutupKamera');
+        let currentFacingMode = 'environment';   // 'environment' = kamera belakang, 'user' = depan
+        const videoEl = document.getElementById('videoCamera');
+        const videoContainer = document.getElementById('videoContainer');
+        const btnBuka = document.getElementById('btnBukaKamera');
+        const btnCapture = document.getElementById('btnCaptureFoto');
+        const btnTutup = document.getElementById('btnTutupKamera');
+        const btnFlip = document.getElementById('btnFlipCamera');
         const btnUpload = document.getElementById('btnUploadManual');
         const fotoPreviewDiv = document.getElementById('fotoPreviewList');
         const fotoCounterSpan = document.getElementById('fotoCounter');
         const fotoDataArrayHidden = document.getElementById('fotoDataArray');
+        const cameraModeLabel = document.getElementById('cameraModeLabel');
+
+        function updateCameraModeLabel() {
+            if (cameraModeLabel) {
+                cameraModeLabel.innerHTML = currentFacingMode === 'environment' ? '📷 BELAKANG' : '🤳 DEPAN';
+            }
+        }
+
+        async function bukaKamera(desiredMode = currentFacingMode) {
+            const petugas = document.getElementById('petugas').value.trim();
+            if (!petugas) {
+                alert("Isi nama petugas dulu sebelum membuka kamera.");
+                return;
+            }
+            // Tutup stream sebelumnya jika ada
+            if (mediaStream) {
+                tutupKamera();
+            }
+            // Coba dengan mode yang diinginkan (exact dulu)
+            try {
+                const constraints = { video: { facingMode: { exact: desiredMode } } };
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                mediaStream = stream;
+                videoEl.srcObject = stream;
+                videoContainer.classList.remove('hidden');
+                btnCapture.disabled = false;
+                await videoEl.play();
+                currentFacingMode = desiredMode;
+                updateCameraModeLabel();
+                console.log(`Kamera berhasil dibuka dengan mode: ${desiredMode}`);
+            } catch (exactErr) {
+                console.warn("Exact facingMode gagal, coba fallback tanpa exact:", exactErr);
+                try {
+                    const fallbackConstraints = { video: { facingMode: desiredMode } };
+                    const stream = await navigator.mediaDevices.getUserMedia(fallbackConstraints);
+                    mediaStream = stream;
+                    videoEl.srcObject = stream;
+                    videoContainer.classList.remove('hidden');
+                    btnCapture.disabled = false;
+                    await videoEl.play();
+                    currentFacingMode = desiredMode;
+                    updateCameraModeLabel();
+                } catch (fallbackErr) {
+                    console.error("Fallback juga gagal, coba default:", fallbackErr);
+                    try {
+                        const defaultStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                        mediaStream = defaultStream;
+                        videoEl.srcObject = defaultStream;
+                        videoContainer.classList.remove('hidden');
+                        btnCapture.disabled = false;
+                        await videoEl.play();
+                        currentFacingMode = 'unknown';
+                        updateCameraModeLabel();
+                        alert("⚠️ Kamera default digunakan (tidak dapat memilih belakang/depan spesifik).");
+                    } catch (finalErr) {
+                        alert("Tidak dapat mengakses kamera: " + finalErr.message);
+                        console.error(finalErr);
+                    }
+                }
+            }
+        }
+
+        function tutupKamera() {
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(track => track.stop());
+                mediaStream = null;
+            }
+            videoEl.srcObject = null;
+            videoContainer.classList.add('hidden');
+            btnCapture.disabled = true;
+        }
+
+        async function flipCamera() {
+            if (!videoContainer.classList.contains('hidden') && mediaStream) {
+                const newMode = currentFacingMode === 'environment' ? 'user' : 'environment';
+                await bukaKamera(newMode);
+            } else {
+                alert("Kamera belum aktif. Buka kamera terlebih dahulu.");
+            }
+        }
+
+        async function captureFromVideo() {
+            if (!mediaStream) {
+                alert("Kamera belum terbuka. Buka kamera dulu.");
+                return;
+            }
+            if (videoEl.videoWidth === 0) {
+                alert("Video belum siap, coba sesaat lagi.");
+                return;
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = videoEl.videoWidth;
+            canvas.height = videoEl.videoHeight;
+            canvas.getContext('2d').drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+            const originalDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+            await addFotoFromSource(originalDataUrl);
+            // Tutup kamera setelah capture? biarkan agar bisa ambil lagi, tapi user bisa manual tutup atau tetap buka
+            // Tidak langsung tutup, agar bisa lanjut foto lagi.
+        }
+
+        async function addFotoFromSource(sourceBase64) {
+            const petugas = document.getElementById('petugas').value.trim();
+            if (!petugas) { alert("Isi nama petugas dulu."); return false; }
+            if (currentFotoList.length >= 5) { alert("Maksimal 5 foto."); return false; }
+            showLoading("Memproses watermark & lokasi...");
+            try {
+                const fotoObj = await processSingleFoto(sourceBase64, petugas);
+                currentFotoList.push(fotoObj);
+                updatePreviewUI();
+                updateHiddenArray();
+                hideLoading();
+                return true;
+            } catch(e) { hideLoading(); alert("Gagal: "+e.message); return false; }
+        }
 
         function updatePreviewUI() {
             fotoPreviewDiv.innerHTML = '';
@@ -291,6 +416,7 @@
         function updateHiddenArray() { fotoDataArrayHidden.value = JSON.stringify(currentFotoList.map(f => ({ base64: f.base64, jamFoto: f.jamFoto, lat: f.lat, lng: f.lng }))); }
 
         function getCurrentPosition() { return new Promise(resolve => { if (!navigator.geolocation) resolve(null); else navigator.geolocation.getCurrentPosition(pos => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }), () => resolve(null), { timeout: 7000 }); }); }
+        
         async function applyWatermarkToImage(dataUrl, petugasName, locationCoord, waktuStr) {
             return new Promise((resolve, reject) => {
                 const img = new Image();
@@ -326,6 +452,9 @@
                     ctx.fillStyle = "#1F1A17";
                     ctx.shadowBlur = 6;
                     ctx.beginPath();
+                    if (!CanvasRenderingContext2D.prototype.roundRect) {
+                        CanvasRenderingContext2D.prototype.roundRect = function(x,y,w,h,r) { if (w<2*r) r=w/2; if (h<2*r) r=h/2; this.moveTo(x+r,y); this.lineTo(x+w-r,y); this.quadraticCurveTo(x+w,y,x+w,y+r); this.lineTo(x+w,y+h-r); this.quadraticCurveTo(x+w,y+h,x+w-r,y+h); this.lineTo(x+r,y+h); this.quadraticCurveTo(x,y+h,x,y+h-r); this.lineTo(x,y+r); this.quadraticCurveTo(x,y,x+r,y); return this; };
+                    }
                     ctx.roundRect(posX, posY, bgW, bgH, 14);
                     ctx.fill();
                     ctx.globalAlpha = 1;
@@ -342,9 +471,6 @@
                 img.src = dataUrl;
             });
         }
-        if (!CanvasRenderingContext2D.prototype.roundRect) {
-            CanvasRenderingContext2D.prototype.roundRect = function(x,y,w,h,r) { if (w<2*r) r=w/2; if (h<2*r) r=h/2; this.moveTo(x+r,y); this.lineTo(x+w-r,y); this.quadraticCurveTo(x+w,y,x+w,y+r); this.lineTo(x+w,y+h-r); this.quadraticCurveTo(x+w,y+h,x+w-r,y+h); this.lineTo(x+r,y+h); this.quadraticCurveTo(x,y+h,x,y+h-r); this.lineTo(x,y+r); this.quadraticCurveTo(x,y,x+r,y); return this; };
-        }
 
         async function processSingleFoto(originalBase64, petugas) {
             if (!petugas) throw new Error("Petugas belum diisi");
@@ -355,35 +481,30 @@
             return { base64: watermarked, jamFoto: waktuStr, lat: pos?.lat || null, lng: pos?.lng || null };
         }
 
-        async function addFotoFromSource(sourceBase64) {
-            const petugas = document.getElementById('petugas').value.trim();
-            if (!petugas) { alert("Isi nama petugas dulu."); return false; }
-            if (currentFotoList.length >= 5) { alert("Maksimal 5 foto."); return false; }
-            showLoading("Memproses watermark...");
-            try {
-                const fotoObj = await processSingleFoto(sourceBase64, petugas);
-                currentFotoList.push(fotoObj);
-                updatePreviewUI();
-                updateHiddenArray();
-                hideLoading();
-                return true;
-            } catch(e) { hideLoading(); alert("Gagal: "+e.message); return false; }
+        function uploadManual() { 
+            const inp = document.createElement('input'); 
+            inp.type = 'file'; 
+            inp.accept = 'image/*'; 
+            inp.onchange = async(e) => { 
+                if(e.target.files[0]){ 
+                    const reader = new FileReader(); 
+                    reader.onload = async ev => { 
+                        await addFotoFromSource(ev.target.result); 
+                    }; 
+                    reader.readAsDataURL(e.target.files[0]); 
+                } 
+            }; 
+            inp.click(); 
         }
 
-        async function bukaKamera() {
-            if (!document.getElementById('petugas').value.trim()) { alert("Isi nama petugas dulu."); return; }
-            if (mediaStream) tutupKamera();
-            try { const stream = await navigator.mediaDevices.getUserMedia({ video: true }); mediaStream = stream; videoEl.srcObject = stream; videoContainer.classList.remove('hidden'); btnCapture.disabled = false; await videoEl.play(); } catch(e) { alert("Tidak bisa akses kamera."); }
-        }
-        function tutupKamera() { if(mediaStream){ mediaStream.getTracks().forEach(t=>t.stop()); mediaStream=null; } videoEl.srcObject=null; videoContainer.classList.add('hidden'); btnCapture.disabled=true; }
-        async function captureFromVideo() { if(!mediaStream){ alert("Buka kamera dulu"); return; } const canvas=document.createElement('canvas'); canvas.width=videoEl.videoWidth; canvas.height=videoEl.videoHeight; if(canvas.width===0){ alert("Video belum siap"); return; } canvas.getContext('2d').drawImage(videoEl,0,0); const orig=canvas.toDataURL('image/jpeg',0.9); await addFotoFromSource(orig); tutupKamera(); }
-        function uploadManual() { const inp=document.createElement('input'); inp.type='file'; inp.accept='image/*'; inp.onchange=async(e)=>{ if(e.target.files[0]){ const reader=new FileReader(); reader.onload=async ev=>{ await addFotoFromSource(ev.target.result); }; reader.readAsDataURL(e.target.files[0]); } }; inp.click(); }
-        btnBuka.addEventListener('click', bukaKamera);
+        // Event binding
+        btnBuka.addEventListener('click', () => bukaKamera('environment')); // default rear
         btnCapture.addEventListener('click', captureFromVideo);
         btnTutup.addEventListener('click', tutupKamera);
+        btnFlip.addEventListener('click', flipCamera);
         btnUpload.addEventListener('click', uploadManual);
 
-        // ========== RENDER TABLE ==========
+        // Render tabel riwayat
         function renderTable() {
             const tbody = document.getElementById("tabelBody");
             if(!dataEntries.length){ tbody.innerHTML=`<tr><td colspan="9" class="text-center py-6 text-gray-400">📭 Kosong</td></tr>`; return; }
@@ -398,7 +519,7 @@
                 else if(entry.statusAlat.includes("Catatan")||entry.statusAlat.includes("Pengawasan")) statusClass="status-pengawasan";
                 else if(entry.statusAlat.includes("Rusak")||entry.statusAlat.includes("Tidak")) statusClass="status-rusak";
                 else statusClass="status-lain";
-                html += `<tr class="border-b hover:bg-slate-50"><td class="py-2 px-1 font-mono">${entry.id}</td><td class="py-2 px-1">${entry.tanggal}</td><td class="py-2 px-1">${entry.waktuKerusakan}</td><td class="py-2 px-1 max-w-[120px] truncate" title="${entry.kerusakan.replace(/"/g,'&quot;')}">${entry.kerusakan.substring(0,25)}${entry.kerusakan.length>25?'...':''}</td><td class="py-2 px-1 max-w-[120px] truncate">${entry.solusi.substring(0,25)}${entry.solusi.length>25?'...':''}</td><td class="py-2 px-1"><span class="status-badge ${statusClass} text-[10px] md:text-xs whitespace-normal">${entry.statusAlat.length>18?entry.statusAlat.substring(0,15)+'...':entry.statusAlat}</span></td><td class="py-2 px-1 text-center">${fotoCell}</td><td class="py-2 px-1 text-xs">${entry.petugas}</td><td class="py-2 px-1"><button onclick="deleteEntry(${entry.id})" class="bg-red-100 text-red-600 px-2 py-1 rounded-full text-[10px] md:text-xs"><i class="fas fa-trash-can"></i> Hapus</button></td></tr>`;
+                html += `<tr class="border-b hover:bg-slate-50"><td class="py-2 px-1 font-mono">${entry.id}<td class="py-2 px-1">${entry.tanggal}<td class="py-2 px-1">${entry.waktuKerusakan}<td class="py-2 px-1 max-w-[120px] truncate" title="${entry.kerusakan.replace(/"/g,'&quot;')}">${entry.kerusakan.substring(0,25)}${entry.kerusakan.length>25?'...':''}<td class="py-2 px-1 max-w-[120px] truncate">${entry.solusi.substring(0,25)}${entry.solusi.length>25?'...':''}<td class="py-2 px-1"><span class="status-badge ${statusClass} text-[10px] md:text-xs whitespace-normal">${entry.statusAlat.length>18?entry.statusAlat.substring(0,15)+'...':entry.statusAlat}</span><td class="py-2 px-1 text-center">${fotoCell}<td class="py-2 px-1 text-xs">${entry.petugas}<td class="py-2 px-1"><button onclick="deleteEntry(${entry.id})" class="bg-red-100 text-red-600 px-2 py-1 rounded-full text-[10px] md:text-xs"><i class="fas fa-trash-can"></i> Hapus</button></tr>`;
             });
             tbody.innerHTML = html;
         }
@@ -421,7 +542,7 @@
             showModal(0);
         };
 
-        // Form submit
+        // Form handling
         const form = document.getElementById('formKerusakan'), tanggalInput=document.getElementById('tanggal'), waktuInput=document.getElementById('waktuKerusakan');
         const kerusakanInput=document.getElementById('kerusakan'), solusiInput=document.getElementById('solusi'), statusAlatSelect=document.getElementById('statusAlat'), petugasInput=document.getElementById('petugas');
         const resetBtn=document.getElementById('btnResetForm');
@@ -458,7 +579,7 @@
         document.getElementById('btnExportHTML').addEventListener('click',()=>{
             if(!dataEntries.length) return alert("Tidak ada data");
             let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Laporan Kerusakan Multi Foto</title><style>body{font-family:sans-serif;margin:15px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #aaa;padding:8px;vertical-align:top}th{background:#1e6f5c;color:white}.foto-grid{display:flex;gap:6px;flex-wrap:wrap}img{width:70px;height:70px;object-fit:cover;border-radius:8px}</style></head><body><h2>Laporan Kerusakan & Perbaikan</h2><p>Tanggal cetak: ${new Date().toLocaleString()}</p><table border="1"><thead><tr><th>No</th><th>Tgl</th><th>Jam</th><th>Kerusakan</th><th>Solusi</th><th>Status</th><th>Foto</th><th>Petugas</th></tr></thead><tbody>`;
-            dataEntries.forEach(e => { let fotoHtml = `<div class="foto-grid">${e.fotoList.map(f=>`<img src="${f.base64}" title="${f.jamFoto}">`).join('')}</div>`; html += `<tr><td>${e.id}</td><td>${e.tanggal}</td><td>${e.waktuKerusakan}</td><td>${e.kerusakan}</td><td>${e.solusi}</td><td>${e.statusAlat}</td><td>${fotoHtml}</td><td>${e.petugas}</td></tr>`; });
+            dataEntries.forEach(e => { let fotoHtml = `<div class="foto-grid">${e.fotoList.map(f=>`<img src="${f.base64}" title="${f.jamFoto}">`).join('')}</div>`; html += `<tr><td>${e.id}<td>${e.tanggal}<td>${e.waktuKerusakan}<td>${e.kerusakan}<td>${e.solusi}<td>${e.statusAlat}<td>${fotoHtml}<td>${e.petugas}</tr>`; });
             html += `</tbody></table><p><em>Setiap foto memiliki watermark otomatis (teknisi, waktu, koordinat)</em></p></body></html>`;
             const blob = new Blob([html], {type:"text/html"}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`laporan_multi_foto_${Date.now()}.html`; a.click(); URL.revokeObjectURL(blob);
         });
@@ -466,7 +587,6 @@
         function showLoading(msg) { let ld = document.getElementById('globalLoading'); if(!ld){ ld=document.createElement('div'); ld.id='globalLoading'; ld.className='loading-overlay'; ld.innerHTML=`<div class="bg-black/80 text-white p-4 rounded-xl text-center">${msg}</div>`; document.body.appendChild(ld); } else ld.style.display='flex'; }
         function hideLoading() { let ld = document.getElementById('globalLoading'); if(ld) ld.remove(); }
 
-        // ======================== INISIALISASI FIREBASE ========================
         async function initFirebase() {
             if (!window.db) {
                 setTimeout(initFirebase, 300);
@@ -476,10 +596,9 @@
             await enablePersistence();
             attachRealtimeListener();
             updateFirebaseStatus(true, "Terhubung (realtime)");
-            // set default form
             updateNomorOtomatis();
+            updateCameraModeLabel();
         }
-
         initFirebase();
     </script>
 </body>
