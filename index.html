@@ -5,224 +5,248 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <title>Portal Transmisi | Manajemen Shift + Modul + Firebase (Offline Ready)</title>
     <link rel="icon" type="image/ico" href="favicon.ico">
+    <!-- Font Awesome 6 (free) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <script src="firebase-config.js"></script>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
         }
 
         body {
             background: #eef2f8;
-            padding: 16px 12px;
+            padding: 12px;
             min-height: 100vh;
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            line-height: 1.4;
         }
 
+        /* Container utama */
         .app-container {
             max-width: 1400px;
             margin: 0 auto;
             background: white;
-            border-radius: 32px;
-            box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.12);
+            border-radius: 36px;
+            box-shadow: 0 20px 40px -14px rgba(0, 0, 0, 0.15);
             overflow: hidden;
+            transition: all 0.2s;
         }
 
+        /* ========= HEADER YANG LEBIH RAPI ========= */
         .header {
             background: linear-gradient(135deg, #1e6f5c 0%, #0e5a48 100%);
             color: white;
-            padding: 18px 20px;
+            padding: 18px 24px;
             display: flex;
             flex-wrap: wrap;
-            justify-content: space-between;
             align-items: center;
-            gap: 14px;
+            justify-content: space-between;
+            gap: 16px;
         }
 
         .header-left {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 14px;
             flex-wrap: wrap;
         }
 
         .header-logo {
-            height: 110px;
+            height: 80px;
             width: auto;
-            max-width: 320px;
+            max-width: 260px;
             object-fit: contain;
-            filter: drop-shadow(0 0 12px rgba(0, 0, 0, 0.8)) drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.6));
-            transition: all 0.2s ease;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+            transition: all 0.2s;
         }
 
         .header h1 {
             font-size: 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            word-break: break-word;
-            white-space: nowrap;
             font-weight: 700;
-            letter-spacing: 0.5px;
-            color: white;
-            margin: 0;
+            letter-spacing: 0.3px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 4px 14px;
+            border-radius: 60px;
+            backdrop-filter: blur(2px);
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            white-space: nowrap;
         }
 
         .sync-status {
             font-size: 0.7rem;
-            padding: 2px 10px;
-            border-radius: 20px;
-            background: rgba(255,255,240,0.3);
-            display: inline-block;
-            margin-left: 12px;
-            vertical-align: middle;
+            padding: 4px 12px;
+            border-radius: 40px;
+            background: rgba(0, 0, 0, 0.2);
+            font-weight: normal;
+            margin-left: 8px;
         }
 
+        /* Kontrol bulan & tahun */
         .month-picker {
             background: rgba(255, 255, 255, 0.2);
-            padding: 6px 14px;
-            border-radius: 40px;
+            backdrop-filter: blur(4px);
+            padding: 8px 16px;
+            border-radius: 60px;
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 12px;
             align-items: center;
-            backdrop-filter: blur(4px);
             font-size: 0.85rem;
         }
 
         .month-picker select {
             background: white;
             border: none;
-            padding: 6px 10px;
-            border-radius: 30px;
-            font-weight: bold;
+            padding: 8px 14px;
+            border-radius: 40px;
+            font-weight: 600;
             color: #0b2b40;
             cursor: pointer;
             font-size: 0.85rem;
+            font-family: inherit;
+            transition: 0.2s;
+        }
+
+        .month-picker select:focus {
+            outline: 2px solid #f5b042;
         }
 
         .badge-status {
             background: #f5b042;
             color: #1e3a4d;
-            padding: 4px 12px;
-            border-radius: 30px;
-            font-size: 0.7rem;
+            padding: 6px 14px;
+            border-radius: 40px;
+            font-size: 0.75rem;
             font-weight: bold;
             white-space: nowrap;
         }
 
+        /* ========= CARD SHIFT HARI INI ========= */
         .shift-today-card {
             background: #fef9e6;
-            margin: 18px 20px 0 20px;
-            padding: 16px 20px;
-            border-radius: 28px;
+            margin: 20px 24px 0 24px;
+            padding: 20px 24px;
+            border-radius: 32px;
             border-left: 8px solid #f5b042;
-            box-shadow: 0 6px 12px -8px rgba(0, 0, 0, 0.08);
+            box-shadow: 0 8px 18px -10px rgba(0, 0, 0, 0.08);
         }
 
         .shift-today-card h3 {
             color: #b45f1b;
-            font-size: 1.2rem;
-            margin-bottom: 12px;
+            font-size: 1.25rem;
+            margin-bottom: 16px;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 12px;
             flex-wrap: wrap;
         }
 
         .shift-detail {
             display: flex;
             flex-wrap: wrap;
-            gap: 14px;
-            margin-top: 8px;
+            gap: 12px;
+            align-items: center;
         }
 
         .shift-item {
             background: white;
-            padding: 8px 16px;
-            border-radius: 40px;
+            padding: 10px 18px;
+            border-radius: 48px;
             box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
             font-weight: 500;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
             word-break: break-word;
+            flex: 1 0 auto;
+            min-width: 180px;
         }
 
+        /* Tombol aksi */
         .action-bar {
-            padding: 16px 20px 0 20px;
+            padding: 20px 24px 8px 24px;
+        }
+
+        .btn-save, .btn-outline {
+            border: none;
+            padding: 12px 28px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            touch-action: manipulation;
+            font-family: inherit;
         }
 
         .btn-save {
             background: #1e6f5c;
             color: white;
-            border: none;
-            padding: 12px 24px;
-            font-size: 0.95rem;
-            font-weight: bold;
-            border-radius: 40px;
-            cursor: pointer;
-            transition: 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            touch-action: manipulation;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
         }
 
         .btn-save:hover {
             background: #0e5a48;
             transform: translateY(-2px);
+            box-shadow: 0 10px 18px -8px rgba(0,0,0,0.2);
         }
 
         .btn-outline {
             background: transparent;
-            border: 1px solid #cbd5e1;
-            padding: 8px 18px;
-            border-radius: 40px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: 0.2s;
-            touch-action: manipulation;
+            border: 1.5px solid #cbd5e1;
+            color: #2c3e4e;
         }
 
         .btn-outline:hover {
             background: #eef2ff;
+            border-color: #1e6f5c;
         }
 
+        /* Konten dinamis (panel edit) */
         .content-area {
-            padding: 20px;
+            padding: 8px 24px 24px 24px;
             background: #ffffff;
-            transition: 0.2s;
             border-top: 1px solid #eef2f5;
             margin-top: 12px;
         }
 
+        /* Tabel shift */
         .shift-table-container {
             overflow-x: auto;
-            border-radius: 20px;
+            border-radius: 24px;
             border: 1px solid #e2e8f0;
             background: #fff;
-            margin-bottom: 20px;
+            margin: 16px 0;
             -webkit-overflow-scrolling: touch;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
         }
 
         .shift-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 0.8rem;
-            min-width: 580px;
+            font-size: 0.85rem;
+            min-width: 600px;
         }
 
         .shift-table th {
             background: #eef2f5;
-            padding: 12px 6px;
+            padding: 14px 8px;
             text-align: center;
             font-weight: 700;
             color: #1e3a4d;
             border-bottom: 2px solid #cbd5e1;
-            font-size: 0.8rem;
         }
 
         .shift-table td {
-            padding: 10px 6px;
+            padding: 12px 8px;
             text-align: center;
             border-bottom: 1px solid #e9edf2;
             vertical-align: middle;
@@ -230,14 +254,15 @@
 
         .shift-table input {
             width: 100%;
-            min-width: 110px;
-            padding: 8px 8px;
-            border-radius: 14px;
+            min-width: 120px;
+            padding: 10px 10px;
+            border-radius: 20px;
             border: 1px solid #cbd5e6;
             background: #fefefe;
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             text-align: center;
             transition: 0.2s;
+            font-family: inherit;
         }
 
         .shift-table input:focus {
@@ -246,57 +271,58 @@
             box-shadow: 0 0 0 3px rgba(245, 176, 66, 0.2);
         }
 
+        /* Bagian modul - grid lebih rapi */
         .modules-section {
-            padding: 24px 20px 32px 20px;
+            padding: 28px 24px 36px 24px;
             background: #fbfdff;
             border-top: 2px solid #e9edf2;
-            margin-top: 8px;
+            margin-top: 12px;
         }
 
         .modules-section h3 {
-            font-size: 1.25rem;
+            font-size: 1.35rem;
             font-weight: 700;
             color: #0b2b40;
-            margin-bottom: 20px;
+            margin-bottom: 24px;
             display: flex;
             align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
+            gap: 12px;
         }
 
         .modules-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-            gap: 16px;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 20px;
         }
 
         .module-card {
             background: white;
-            border-radius: 24px;
-            padding: 14px 14px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+            border-radius: 28px;
+            padding: 16px 20px;
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.04);
             border: 1px solid #e2edf2;
-            transition: all 0.2s;
+            transition: all 0.25s;
             text-decoration: none;
             color: #1e293b;
             display: flex;
             align-items: center;
-            gap: 14px;
+            gap: 18px;
             touch-action: manipulation;
         }
 
         .module-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 12px 20px -12px rgba(0, 0, 0, 0.15);
+            transform: translateY(-4px);
+            box-shadow: 0 18px 28px -12px rgba(0, 0, 0, 0.16);
             border-color: #f5b042;
+            background: #ffffff;
         }
 
         .module-icon {
-            font-size: 1.8rem;
-            width: 52px;
-            height: 52px;
+            font-size: 2rem;
+            width: 58px;
+            height: 58px;
             background: #eef2fa;
-            border-radius: 28px;
+            border-radius: 30px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -304,78 +330,92 @@
         }
 
         .module-info h4 {
-            font-size: 0.95rem;
-            font-weight: 700;
-            margin-bottom: 4px;
+            font-size: 1rem;
+            font-weight: 800;
+            margin-bottom: 6px;
         }
 
         .module-info p {
-            font-size: 0.65rem;
+            font-size: 0.7rem;
             color: #5b6e8c;
         }
 
-        footer {
-            text-align: center;
-            padding: 18px;
-            font-size: 0.7rem;
-            color: #7f8c8d;
-            border-top: 1px solid #e2edf2;
+        /* Pesan info / warning */
+        .warning-message, .info-message {
+            padding: 14px 20px;
+            border-radius: 28px;
+            font-size: 0.85rem;
+            margin: 16px 0;
         }
 
         .warning-message {
             background: #fff3e0;
             color: #b45f1b;
-            padding: 12px 18px;
-            border-radius: 20px;
-            margin: 12px 0;
-            font-size: 0.85rem;
+            border-left: 5px solid #f5b042;
         }
 
         .info-message {
             background: #e6f7f0;
             color: #1e6f5c;
-            padding: 10px 16px;
-            border-radius: 20px;
-            font-size: 0.8rem;
+            border-left: 5px solid #1e6f5c;
         }
 
-        @media (max-width: 640px) {
-            body { padding: 8px 8px; }
-            .header { padding: 14px 16px; }
-            .header-left { gap: 6px; }
-            .header-logo { height: 90px; max-width: 250px; }
-            .header h1 { font-size: 1.2rem; white-space: normal; }
-            .month-picker { padding: 5px 12px; gap: 8px; }
-            .shift-today-card { margin: 12px 14px 0 14px; padding: 12px 16px; }
-            .shift-item { font-size: 0.75rem; padding: 6px 12px; }
-            .action-bar { padding: 12px 16px 0 16px; }
-            .btn-save { padding: 10px 18px; font-size: 0.85rem; }
-            .content-area { padding: 14px; }
-            .shift-table th, .shift-table td { padding: 8px 4px; }
-            .shift-table input { min-width: 90px; font-size: 0.75rem; padding: 6px 5px; }
-            .modules-section { padding: 20px 14px 28px 14px; }
-            .module-card { padding: 10px 12px; }
-            .module-icon { width: 44px; height: 44px; font-size: 1.5rem; }
-            .module-info h4 { font-size: 0.85rem; }
+        footer {
+            text-align: center;
+            padding: 20px;
+            font-size: 0.7rem;
+            color: #7f8c8d;
+            border-top: 1px solid #e2edf2;
+            background: #fafcff;
         }
 
-        @media (max-width: 480px) {
+        /* ========= RESPONSIVE TINGKAT LANJUT ========= */
+        @media (max-width: 780px) {
+            body { padding: 8px; }
+            .header { padding: 16px 18px; flex-direction: column; align-items: stretch; }
+            .header-left { justify-content: space-between; flex-wrap: wrap; }
+            .header h1 { font-size: 1.2rem; white-space: normal; word-break: keep-all; }
+            .month-picker { justify-content: space-between; width: 100%; }
+            .shift-today-card { margin: 16px 16px 0 16px; padding: 16px; }
+            .shift-item { min-width: 140px; font-size: 0.8rem; }
+            .action-bar { padding: 16px 16px 0 16px; }
+            .content-area { padding: 8px 16px 20px 16px; }
+            .modules-section { padding: 24px 16px 28px 16px; }
+            .modules-grid { gap: 14px; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
+            .btn-save, .btn-outline { padding: 10px 22px; font-size: 0.85rem; }
+        }
+
+        @media (max-width: 580px) {
+            .header-logo { height: 60px; max-width: 180px; }
+            .shift-detail { flex-direction: column; align-items: stretch; gap: 10px; }
+            .shift-item { text-align: center; }
             .shift-table { min-width: 520px; }
-            .shift-detail { flex-direction: column; gap: 8px; }
-            .month-picker select { font-size: 0.75rem; padding: 4px 8px; }
-            .badge-status { font-size: 0.65rem; }
-            .header-logo { height: 80px; max-width: 210px; }
-            .header h1 { font-size: 1.1rem; }
-            .header-left { gap: 5px; }
+            .shift-table input { min-width: 100px; font-size: 0.75rem; padding: 8px 4px; }
+            .module-card { padding: 12px 14px; gap: 12px; }
+            .module-icon { width: 48px; height: 48px; font-size: 1.6rem; }
+            .module-info h4 { font-size: 0.85rem; }
+            .badge-status { font-size: 0.7rem; padding: 4px 10px; }
+            .month-picker select { padding: 6px 10px; font-size: 0.75rem; }
         }
 
-        button, .module-card, select { touch-action: manipulation; }
+        @media (max-width: 420px) {
+            .header h1 { font-size: 1rem; gap: 5px; }
+            .sync-status { font-size: 0.6rem; margin-left: 5px; }
+            .modules-grid { grid-template-columns: 1fr; }
+            .btn-save, .btn-outline { width: 100%; justify-content: center; }
+            .action-bar { display: flex; flex-direction: column; gap: 10px; }
+        }
+
+        /* sentuhan aksesibilitas */
+        button, .module-card, select {
+            touch-action: manipulation;
+        }
+
+        button:focus-visible, .module-card:focus-visible, select:focus-visible {
+            outline: 3px solid #f5b042;
+            outline-offset: 2px;
+        }
     </style>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
-    <script src="firebase-config.js"></script>
 </head>
 <body>
 <div class="app-container" id="appRoot">
@@ -419,13 +459,13 @@
 <script>
     // ========== KONFIGURASI FIREBASE DENGAN PERSISTENCE OFFLINE ==========
     let isFirebaseReady = false;
-    let currentShiftListenerRef = null;     // untuk melepas listener lama
-    let currentShiftData = {};               // data shift untuk bulan/yang sedang dipilih
-    let isManagePanelOpen = false;            // status panel edit terbuka/tidak
+    let currentShiftListenerRef = null;     
+    let currentShiftData = {};               
+    let isManagePanelOpen = false;            
     let currentYear = new Date().getFullYear();
     let currentMonth = new Date().getMonth() + 1;
 
-    const DB_PATH_SHIFT = 'monitoring/shift';   // root untuk semua bulan
+    const DB_PATH_SHIFT = 'monitoring/shift';   
 
     function updateFirebaseStatus(connected, message) {
         const statusEl = document.getElementById('firebaseStatus');
@@ -440,7 +480,6 @@
         }
     }
 
-    // Fungsi untuk mengirim data ke Firebase (tanpa intervensi localStorage)
     async function syncShiftToFirebase(year, month, scheduleObj) {
         if (!isFirebaseReady || !window.db) {
             console.warn("Firebase belum siap, data tidak tersimpan.");
@@ -458,12 +497,10 @@
         }
     }
 
-    // Mendapatkan path Firebase untuk bulan/tahun tertentu
     function getShiftPath(year, month) {
         return `${DB_PATH_SHIFT}/${year}/${String(month).padStart(2,'0')}`;
     }
 
-    // Melepas listener aktif jika ada
     function detachShiftListener() {
         if (currentShiftListenerRef) {
             currentShiftListenerRef.off('value');
@@ -471,7 +508,6 @@
         }
     }
 
-    // Callback ketika data shift berubah (realtime dari Firebase)
     function onShiftDataChanged(snapshot) {
         const data = snapshot.val();
         if (data && typeof data === 'object') {
@@ -479,9 +515,7 @@
         } else {
             currentShiftData = {};
         }
-        // Update tampilan shift hari ini
         refreshShiftTodayDisplay();
-        // Jika panel edit sedang terbuka, refresh panel dengan data terbaru
         if (isManagePanelOpen) {
             const dynamicDiv = document.getElementById('dynamicContent');
             if (dynamicDiv && dynamicDiv.style.display === 'block') {
@@ -490,30 +524,26 @@
         }
     }
 
-    // Memasang listener realtime untuk bulan/tahun tertentu
     function attachShiftListener(year, month) {
         if (!isFirebaseReady || !window.db) {
             console.warn("Firebase belum siap, tidak bisa pasang listener");
             return;
         }
-        detachShiftListener(); // lepas listener lama
+        detachShiftListener();
         const path = getShiftPath(year, month);
         const ref = window.db.ref(path);
         currentShiftListenerRef = ref;
-        // Pasang listener value (realtime + offline persistence otomatis)
         ref.on('value', (snapshot) => {
             onShiftDataChanged(snapshot);
         }, (error) => {
             console.error("Listener error:", error);
             updateFirebaseStatus(false, "Error listener");
         });
-        // Untuk inisialisasi awal, baca sekali untuk memastikan data cepat tampil (optional)
         ref.once('value').then(snapshot => {
             onShiftDataChanged(snapshot);
         }).catch(err => console.warn("once value error", err));
     }
 
-    // Helper: jumlah hari dalam bulan
     function getDaysInMonth(year, month) {
         return new Date(year, month, 0).getDate();
     }
@@ -538,7 +568,6 @@
         });
     }
 
-    // Mendapatkan tanggal hari ini (dalam rentang bulan yang dipilih)
     function getTodayMappedInSelectedMonth() {
         const today = new Date();
         const currentDay = today.getDate();
@@ -548,7 +577,6 @@
         return formatDateStr(currentYear, currentMonth, mappedDay);
     }
 
-    // Refresh tampilan shift hari ini berdasarkan currentShiftData
     async function refreshShiftTodayDisplay() {
         const container = document.getElementById('shiftDetailContainer');
         if (!container) return;
@@ -582,19 +610,18 @@
         isManagePanelOpen = false;
     }
 
-    // Render panel edit jadwal (menggunakan currentShiftData yang sudah realtime)
     async function renderManageShiftPanel(containerElement) {
         if (!containerElement) return;
         const daysCount = getDaysInMonth(currentYear, currentMonth);
         const existing = currentShiftData || {};
         
         let html = `
-            <div style="margin-bottom:16px;">
+            <div style="margin-bottom:20px;">
                 <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; align-items: center;">
-                    <h3 style="font-size: 1.2rem; color:#0b2b40;"><i class="fas fa-calendar-edit"></i> Edit Jadwal Shift - ${currentYear}/${String(currentMonth).padStart(2,'0')}</h3>
-                    <button id="closeManagePanel" class="btn-outline" style="padding:6px 16px;"><i class="fas fa-times"></i> Tutup</button>
+                    <h3 style="font-size: 1.3rem; color:#0b2b40; margin:0;"><i class="fas fa-calendar-edit"></i> Edit Jadwal Shift - ${currentYear}/${String(currentMonth).padStart(2,'0')}</h3>
+                    <button id="closeManagePanel" class="btn-outline" style="padding:8px 20px;"><i class="fas fa-times"></i> Tutup</button>
                 </div>
-                <div class="info-message" style="margin-top: 12px;"><i class="fas fa-info-circle"></i> Isi nama petugas untuk setiap shift. Semua tanggal bisa diisi. Kosong akan ditampilkan sebagai "-". Perubahan langsung tersimpan ke Firebase dan tersinkron otomatis.</div>
+                <div class="info-message" style="margin-top: 16px;"><i class="fas fa-info-circle"></i> Isi nama petugas untuk setiap shift. Semua tanggal bisa diisi. Kosong akan ditampilkan sebagai "-". Perubahan langsung tersimpan ke Firebase dan tersinkron otomatis.</div>
             </div>
             <div class="shift-table-container">
                 <table class="shift-table">
@@ -615,7 +642,7 @@
                 </tr>
             `;
         }
-        html += `</tbody></table></div><div style="display: flex; gap: 16px; margin-top: 20px;"><button id="btnUpdateSchedule" class="btn-save"><i class="fas fa-save"></i> 💾 Simpan Perubahan Jadwal</button><button id="btnCancelManage" class="btn-outline"><i class="fas fa-arrow-left"></i> Batal & Tutup</button></div>`;
+        html += `</tbody><table></div><div style="display: flex; flex-wrap: wrap; gap: 16px; margin-top: 24px;"><button id="btnUpdateSchedule" class="btn-save"><i class="fas fa-save"></i> 💾 Simpan Perubahan Jadwal</button><button id="btnCancelManage" class="btn-outline"><i class="fas fa-arrow-left"></i> Batal & Tutup</button></div>`;
         containerElement.innerHTML = html;
         
         const updateBtn = document.getElementById('btnUpdateSchedule');
@@ -641,7 +668,6 @@
                 if (hasEmpty) {
                     if (!confirm("⚠️ Ada shift yang kosong pada beberapa tanggal. Data tetap bisa disimpan, namun shift kosong akan menampilkan '-' di menu utama. Lanjutkan?")) return;
                 }
-                // Simpan ke Firebase (tanpa localStorage)
                 const success = await syncShiftToFirebase(currentYear, currentMonth, newData);
                 if (success) {
                     alert("✅ Jadwal shift berhasil diperbarui dan tersinkron ke Firebase (termasuk offline cache).");
@@ -693,11 +719,8 @@
     }
     
     async function initMainMenu() {
-        // Pasang listener realtime untuk bulan/tahun awal
         attachShiftListener(currentYear, currentMonth);
-        // Tampilkan modules grid
         renderModulesGrid();
-        // Event tombol kelola shift
         const manageBtn = document.getElementById('btnManageShift');
         if (manageBtn) {
             manageBtn.replaceWith(manageBtn.cloneNode(true));
@@ -741,52 +764,35 @@
     }
     
     async function reloadBySelection() {
-        closeManagePanel();        // tutup panel jika terbuka
-        // Ganti listener realtime ke bulan/tahun baru
+        closeManagePanel();
         attachShiftListener(currentYear, currentMonth);
-        // Update badge periode
         const statusBadge = document.getElementById('statusBadge');
         if (statusBadge) statusBadge.innerText = `📅 ${currentYear}-${String(currentMonth).padStart(2, '0')}`;
-        // refresh tampilan shift hari ini (akan otomatis terpanggil dari listener, tapi panggil manual untuk kecepatan)
         refreshShiftTodayDisplay();
     }
     
-    // Fungsi untuk mengaktifkan persistence offline Firebase
     async function enableFirebasePersistence() {
         if (!window.db) return false;
         try {
-            // Untuk compat SDK, firebase.database().enablePersistence
-            // window.db adalah instance database, kita perlu akses ke firebase object asli? 
-            // Kita asumsikan window.db adalah hasil dari firebase.database()
-            // Jika window.db tidak memiliki method enablePersistence, coba dari firebase itu sendiri.
             if (window.db.enablePersistence) {
                 await window.db.enablePersistence();
-                console.log("Firebase persistence diaktifkan (offline support)");
+                console.log("Firebase persistence diaktifkan");
             } else if (window.firebase && window.firebase.database) {
-                // alternatif
                 await window.firebase.database().enablePersistence();
-                console.log("Firebase persistence diaktifkan via root");
+                console.log("Firebase persistence via root");
             } else {
-                console.warn("enablePersistence tidak tersedia, offline mode mungkin tidak aktif");
+                console.warn("enablePersistence tidak tersedia");
             }
             return true;
         } catch (err) {
-            if (err.code === 'failed-precondition') {
-                console.warn("Persistence gagal, mungkin multiple tab buka");
-            } else if (err.code === 'unavailable') {
-                console.warn("Persistence tidak tersedia, browser tidak support");
-            } else {
-                console.error("Error enable persistence:", err);
-            }
+            console.warn("Persistence error:", err);
             return false;
         }
     }
 
-    // Inisialisasi ketika Firebase siap
     function waitForFirebaseAndLoad() {
         if (window.db) {
             isFirebaseReady = true;
-            // Aktifkan persistence offline
             enableFirebasePersistence().then(() => {
                 updateFirebaseStatus(true, "Terhubung (Offline Ready)");
                 initMainMenu();
