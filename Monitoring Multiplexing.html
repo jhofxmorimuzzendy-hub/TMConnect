@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>TVRI - TX Tanah Merah | Monitoring Multiplexing Lengkap (3 IRD, MUX, 3 Kabel, IP)</title>
+    <link rel="icon" type="image/ico" href="favicon.ico">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1e6f5c">
+    <link rel="apple-touch-icon" href="favicon.png">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { primary: '#1e6f5c', secondary: '#f5b042', accent: '#0e5a48' },
+                    screens: { 'xs': '480px', 'sm': '640px', 'md': '768px', 'lg': '1024px', 'xl': '1280px' }
+                }
+            }
+        }
+    </script>
+    <style>
+        * { -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #eef2f8 0%, #e0f0ec 100%); }
+        .loading-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 999; backdrop-filter: blur(2px); }
+        .table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
+        .foto-thumb-list { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+        .thumb-item { width: 42px; height: 42px; border-radius: 10px; overflow: hidden; border: 1px solid #ccc; cursor: pointer; background: #f1f5f9; flex-shrink: 0; }
+        .thumb-item img { width: 100%; height: 100%; object-fit: cover; }
+        .foto-preview-grid { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 12px; justify-content: center; }
+        .preview-card { position: relative; width: 85px; height: 85px; border-radius: 14px; overflow: hidden; border: 2px solid #1e6f5c; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+        .preview-card img { width: 100%; height: 100%; object-fit: cover; }
+        .preview-card .remove-btn { position: absolute; top: -8px; right: -8px; background: #ef4444; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; border: 2px solid white; }
+        .modal-img { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: flex; align-items: center; justify-content: center; z-index: 2000; cursor: pointer; flex-direction: column; }
+        .modal-img img { max-width: 92%; max-height: 85%; border-radius: 20px; object-fit: contain; }
+        .modal-caption { background: rgba(0,0,0,0.7); color: white; padding: 8px 16px; border-radius: 40px; margin-top: 16px; font-size: 14px; text-align: center; max-width: 90%; }
+        @media (max-width: 640px) {
+            td, th { font-size: 0.7rem; padding: 0.5rem 0.25rem; }
+            .preview-card { width: 70px; height: 70px; }
+            .thumb-item { width: 36px; height: 36px; }
+            button { font-size: 0.75rem; padding: 0.5rem 0.75rem; }
+            h1 { font-size: 1.6rem; }
+        }
+        input, select, textarea { font-size: 16px !important; }
+        .sync-status { font-size: 0.7rem; padding: 2px 10px; border-radius: 20px; background: rgba(255,255,240,0.3); display: inline-block; margin-left: 12px; vertical-align: middle; }
+        .flip-btn:active { transform: scale(0.96); }
+        .param-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 0.5rem; }
+        .border-soft { border-color: #e2e8f0; }
+    </style>
+</head>
+<body>
+<div class="container max-w-7xl mx-auto px-3 sm:px-4 md:px-5 py-4 md:py-6">
+    <!-- Header -->
+    <div class="text-center mb-5 md:mb-7">
+        <div class="inline-flex items-center justify-center bg-gradient-to-r from-primary to-accent p-3 rounded-full shadow-md">
+            <i class="fas fa-satellite-dish text-white text-xl md:text-2xl"></i>
+        </div>
+        <h1 class="text-xl sm:text-2xl md:text-4xl font-extrabold text-slate-800 mt-2 md:mt-3 leading-tight">
+            Monitoring Multiplexing (3 IRD, MUX, Kabel & IP)
+            <span id="firebaseStatus" class="sync-status"><i class="fas fa-cloud-upload-alt"></i> Menghubungkan...</span>
+        </h1>
+        <div class="mt-2 flex justify-center px-2">
+            <span class="badge-perbaikan bg-primary text-white text-xs md:text-sm rounded-full py-1 px-3 md:px-4 font-semibold"><i class="fas fa-camera-retro mr-1 md:mr-2"></i> Multi Foto Max 5 | Kamera + Watermark | Firebase Realtime</span>
+        </div>
+    </div>
+
+    <!-- Form Card -->
+    <div class="bg-white rounded-2xl shadow-xl overflow-hidden mb-6 md:mb-8 border border-gray-100">
+        <div class="bg-gradient-to-r from-primary to-accent px-4 py-3 md:px-5 md:py-4">
+            <h2 class="text-base md:text-xl font-semibold text-white"><i class="fas fa-clipboard-list mr-2"></i> Form Pencatatan Multiplexing Lengkap</h2>
+        </div>
+        <div class="p-4 sm:p-5 md:p-6">
+            <form id="formMultiplexing" class="space-y-5">
+                <!-- Data umum -->
+                <div class="grid grid-cols-1 xs:grid-cols-3 gap-3">
+                    <div><label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Nomor</label><input type="text" id="nomorOtomatis" readonly class="w-full bg-gray-100 border border-gray-300 rounded-xl px-3 py-2 text-gray-600 font-mono text-sm"></div>
+                    <div><label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Tanggal <span class="text-red-500">*</span></label><input type="date" id="tanggal" required class="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm"></div>
+                    <div><label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Petugas / Engineer <span class="text-red-500">*</span></label><input type="text" id="petugas" required placeholder="Nama petugas" class="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm"></div>
+                </div>
+                <div><label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Keterangan / Lokasi</label><textarea id="keterangan" rows="2" placeholder="Catatan umum lokasi rack, dll..." class="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm"></textarea></div>
+
+                <!-- 3 IRD Panel -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    <!-- IRD 1 : TVRI Nasional & World -->
+                    <div class="bg-slate-50 rounded-xl p-3 border border-gray-200">
+                        <h3 class="font-bold text-primary text-sm flex items-center gap-1"><i class="fas fa-satellite"></i> IRD 1 - TVRI Nasional & World</h3>
+                        <div class="grid grid-cols-2 gap-2 mt-2">
+                            <div><label class="text-[10px] font-medium">C/N (dB)</label><input type="number" step="any" id="ird1_cn" class="w-full border rounded-lg px-2 py-1 text-sm"></div>
+                            <div><label class="text-[10px] font-medium">Link Margin (dB)</label><input type="number" step="any" id="ird1_margin" class="w-full border rounded-lg px-2 py-1 text-sm"></div>
+                            <div class="col-span-2"><label class="text-[10px] font-medium">Status Lock</label><select id="ird1_lock" class="w-full border rounded-lg px-2 py-1 text-sm"><option value="Locked">Locked (Terkunci)</option><option value="Not Locked">Not Locked (Tidak Terkunci)</option><option value="Unlock">Unlock</option></select></div>
+                        </div>
+                    </div>
+                    <!-- IRD 2 : TVRI Sport -->
+                    <div class="bg-slate-50 rounded-xl p-3 border border-gray-200">
+                        <h3 class="font-bold text-primary text-sm"><i class="fas fa-futbol"></i> IRD 2 - TVRI Sport</h3>
+                        <div class="grid grid-cols-2 gap-2 mt-2">
+                            <div><label class="text-[10px] font-medium">C/N (dB)</label><input type="number" step="any" id="ird2_cn" class="w-full border rounded-lg px-2 py-1 text-sm"></div>
+                            <div><label class="text-[10px] font-medium">Link Margin (dB)</label><input type="number" step="any" id="ird2_margin" class="w-full border rounded-lg px-2 py-1 text-sm"></div>
+                            <div class="col-span-2"><label class="text-[10px] font-medium">Status Lock</label><select id="ird2_lock" class="w-full border rounded-lg px-2 py-1 text-sm"><option value="Locked">Locked</option><option value="Not Locked">Not Locked</option><option value="Unlock">Unlock</option></select></div>
+                        </div>
+                    </div>
+                    <!-- IRD 3 : TVRI Papua -->
+                    <div class="bg-slate-50 rounded-xl p-3 border border-gray-200">
+                        <h3 class="font-bold text-primary text-sm"><i class="fas fa-map-marker-alt"></i> IRD 3 - TVRI Papua</h3>
+                        <div class="grid grid-cols-2 gap-2 mt-2">
+                            <div><label class="text-[10px] font-medium">Quality (%)</label><input type="number" step="any" id="ird3_quality" class="w-full border rounded-lg px-2 py-1 text-sm"></div>
+                            <div><label class="text-[10px] font-medium">Strength (%)</label><input type="number" step="any" id="ird3_strength" class="w-full border rounded-lg px-2 py-1 text-sm"></div>
+                            <div class="col-span-2"><label class="text-[10px] font-medium">Status Lock</label><select id="ird3_lock" class="w-full border rounded-lg px-2 py-1 text-sm"><option value="Locked">Locked</option><option value="Not Locked">Not Locked</option><option value="Unlock">Unlock</option></select></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MUX: Status dan Merk -->
+                <div class="bg-slate-50 rounded-xl p-4 border border-gray-200">
+                    <h3 class="font-bold text-primary mb-2 flex items-center gap-2"><i class="fas fa-microchip"></i> MUX (Multiplexer)</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div><label class="block text-xs font-medium">Merk MUX</label><input type="text" id="mux_merk" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="Contoh: Ericsson, Harmonic, Cisco"></div>
+                        <div><label class="block text-xs font-medium">Status MUX</label><select id="mux_status" class="w-full border rounded-lg px-3 py-2 text-sm"><option value="Normal">Normal (Berfungsi)</option><option value="Warning">Warning / Gangguan Minor</option><option value="Error">Error / Down</option></select></div>
+                    </div>
+                </div>
+
+                <!-- Koneksi Kabel: 3 segmen dengan dropdown dan catatan -->
+                <div class="bg-slate-50 rounded-xl p-4 border border-gray-200">
+                    <h3 class="font-bold text-primary mb-2 flex items-center gap-2"><i class="fas fa-plug"></i> Koneksi Kabel (3 Segmen)</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div><label class="text-[10px] font-medium">Segmen 1: UTP/Ethernet</label><select id="cable_seg1" class="w-full border rounded-lg px-2 py-1 text-sm"><option value="UTP/Ethernet - Cat5e">Cat5e</option><option value="UTP/Ethernet - Cat6">Cat6</option><option value="UTP/Ethernet - Cat6a">Cat6a</option><option value="Tidak Terpasang">Tidak Terpasang</option></select></div>
+                        <div><label class="text-[10px] font-medium">Segmen 2: IRD ke MUX</label><select id="cable_seg2" class="w-full border rounded-lg px-2 py-1 text-sm"><option value="Koaksial BNC (IRD-MUX) - 75 ohm">Koaksial BNC (IRD-MUX) 75 ohm</option><option value="Koaksial SMA">Koaksial SMA</option><option value="Serat Optik (SDI)">Serat Optik (SDI)</option><option value="Tidak Terpasang">Tidak Terpasang</option></select></div>
+                        <div><label class="text-[10px] font-medium">Segmen 3: MUX ke Pemancar</label><select id="cable_seg3" class="w-full border rounded-lg px-2 py-1 text-sm"><option value="RF Coaxial (MUX-TX) - 50 ohm">RF Coaxial (MUX-TX) 50 ohm</option><option value="Waveguide">Waveguide</option><option value="Serat Optik (RF over Fiber)">Serat Optik</option><option value="Tidak Terpasang">Tidak Terpasang</option></select></div>
+                    </div>
+                    <div class="mt-2"><label class="text-xs font-medium">Catatan Kabel</label><textarea id="cable_notes" rows="2" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="Gangguan fisik, loss, konektor longgar, dll..."></textarea></div>
+                </div>
+
+                <!-- Pemantauan Siaran IP MUX -->
+                <div class="bg-slate-50 rounded-xl p-4 border border-gray-200">
+                    <h3 class="font-bold text-primary mb-2 flex items-center gap-2"><i class="fas fa-network-wired"></i> Pemantauan Siaran IP (MUX Output)</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        <div><label class="text-[10px] font-medium">Alamat IP Multicast</label><input type="text" id="ip_addr" class="w-full border rounded-lg px-2 py-1 text-sm" placeholder="239.10.10.1"></div>
+                        <div><label class="text-[10px] font-medium">Port In (Source)</label><input type="number" id="ip_port_in" class="w-full border rounded-lg px-2 py-1 text-sm" placeholder="1234"></div>
+                        <div><label class="text-[10px] font-medium">Port Out (Destination)</label><input type="number" id="ip_port_out" class="w-full border rounded-lg px-2 py-1 text-sm" placeholder="5678"></div>
+                        <div><label class="text-[10px] font-medium">Bitrate (Mbps)</label><input type="number" step="any" id="ip_bitrate" class="w-full border rounded-lg px-2 py-1 text-sm"></div>
+                        <div><label class="text-[10px] font-medium">Status</label><select id="ip_status" class="w-full border rounded-lg px-2 py-1 text-sm"><option value="Stabil">Stabil</option><option value="Flapping">Flapping / Intermitten</option><option value="Down">Down (Tidak Ada Paket)</option></select></div>
+                        <div class="col-span-full"><label class="text-[10px] font-medium">Catatan IP / Troubleshoot</label><textarea id="ip_notes" rows="1" class="w-full border rounded-lg px-2 py-1 text-sm" placeholder="Packet loss, jitter, dll..."></textarea></div>
+                    </div>
+                </div>
+
+                <!-- Multi Foto (sama watermark) -->
+                <div class="border-t border-gray-200 pt-4">
+                    <label class="block text-sm md:text-md font-semibold text-gray-800 mb-2"><i class="fas fa-camera-retro text-primary mr-2"></i> Dokumentasi Perangkat (Max 5, watermark otomatis)</label>
+                    <div class="bg-slate-50 rounded-xl p-3 md:p-4 border border-dashed border-gray-300">
+                        <div class="flex flex-wrap gap-2 justify-center">
+                            <button type="button" id="btnBukaKamera" class="bg-primary hover:bg-accent text-white px-3 py-2 rounded-xl text-xs md:text-sm shadow"><i class="fas fa-video mr-1"></i> Buka Kamera (Belakang)</button>
+                            <button type="button" id="btnCaptureFoto" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-xl disabled:opacity-50 text-xs md:text-sm shadow" disabled><i class="fas fa-camera mr-1"></i> Ambil + WM</button>
+                            <button type="button" id="btnUploadManual" class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-xl text-xs md:text-sm shadow"><i class="fas fa-upload mr-1"></i> Upload + WM</button>
+                        </div>
+                        <div id="videoContainer" class="hidden mt-3 rounded-xl overflow-hidden bg-black shadow-lg">
+                            <video id="videoCamera" autoplay playsinline class="w-full max-h-56 object-cover"></video>
+                            <div class="flex justify-between items-center p-2 bg-gray-900 flex-wrap gap-2">
+                                <span class="text-white text-xs"><i class="fas fa-info-circle"></i> Kamera aktif | <span id="cameraModeLabel">📷 BELAKANG</span></span>
+                                <div class="flex gap-2">
+                                    <button type="button" id="btnFlipCamera" class="bg-gray-700 hover:bg-gray-600 text-white text-xs px-3 py-1.5 rounded-full"><i class="fas fa-sync-alt mr-1"></i> Balik Kamera</button>
+                                    <button type="button" id="btnTutupKamera" class="text-red-400 hover:text-red-300 text-xs bg-gray-800 px-3 py-1.5 rounded-full"><i class="fas fa-times-circle mr-1"></i> Tutup</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="fotoPreviewList" class="foto-preview-grid mt-3"></div>
+                        <p id="fotoCounter" class="text-xs text-gray-500 mt-2 text-center">0 dari 5 foto</p>
+                        <input type="hidden" id="fotoDataArray" value="[]">
+                        <p class="text-[11px] md:text-xs text-gray-500 mt-3 bg-white/70 p-2 rounded text-center"><i class="fas fa-shield-alt text-green-600"></i> <strong>Watermark otomatis</strong> : Logo TVRI, petugas, waktu, koordinat GPS</p>
+                    </div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-3 pt-2">
+                    <button type="submit" class="bg-primary hover:bg-accent text-white font-semibold py-2.5 rounded-xl flex-1 transition shadow"><i class="fas fa-save mr-2"></i> Simpan Laporan Multiplexing</button>
+                    <button type="button" id="btnResetForm" class="bg-gray-200 hover:bg-gray-300 text-gray-800 py-2.5 rounded-xl flex-1 transition"><i class="fas fa-undo-alt mr-2"></i> Reset Form</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Daftar Riwayat -->
+    <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
+        <div class="bg-gradient-to-r from-primary to-accent px-4 py-3 flex justify-between items-center flex-wrap gap-2">
+            <h2 class="text-base md:text-xl font-semibold text-white"><i class="fas fa-history mr-2"></i> Riwayat Pencatatan Multiplexing</h2>
+            <div class="flex gap-2">
+                <button id="btnExportHTML" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs md:text-sm px-3 py-1.5 rounded-full"><i class="fas fa-file-export mr-1"></i> Export</button>
+                <button id="btnHapusSemua" class="bg-red-600 hover:bg-red-700 text-white text-xs md:text-sm px-3 py-1.5 rounded-full"><i class="fas fa-dumpster-fire mr-1"></i> Hapus Semua</button>
+            </div>
+        </div>
+        <div class="table-wrapper p-2 md:p-4">
+            <table class="min-w-[1000px] md:min-w-full bg-white border border-gray-200 rounded-xl text-xs md:text-sm">
+                <thead class="bg-gray-100">
+                <tr><th>No</th><th>Tgl</th><th>Petugas</th><th>IRD1 (C/N/Lock)</th><th>IRD2 (C/N/Lock)</th><th>IRD3 (Qual/Lock)</th><th>MUX</th><th>Kabel & IP</th><th>Foto</th><th>Aksi</th></tr>
+                </thead>
+                <tbody id="tabelBody"><tr><td colspan="10" class="text-center py-6 text-gray-400">⚡ Memuat data...</td></tr></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Firebase & global
+    let isFirebaseReady = false, entries = [], listenerRef = null, isInternalUpdate = false;
+    const DB_PATH = 'monitoring/multiplexing_v2/entries';
+    let currentFotoList = [];
+    let mediaStream = null, currentFacingMode = 'environment';
+    const videoEl = document.getElementById('videoCamera'), videoContainer = document.getElementById('videoContainer');
+    const btnBuka = document.getElementById('btnBukaKamera'), btnCapture = document.getElementById('btnCaptureFoto'), btnTutup = document.getElementById('btnTutupKamera'), btnFlip = document.getElementById('btnFlipCamera'), btnUpload = document.getElementById('btnUploadManual');
+    const fotoPreviewDiv = document.getElementById('fotoPreviewList'), fotoCounterSpan = document.getElementById('fotoCounter'), fotoDataArrayHidden = document.getElementById('fotoDataArray'), cameraModeLabel = document.getElementById('cameraModeLabel');
+
+    function updateFirebaseStatus(connected, msg) { let el = document.getElementById('firebaseStatus'); if(el) el.innerHTML = connected ? `<i class="fas fa-check-circle text-green-600"></i> ${msg}` : `<i class="fas fa-exclamation-triangle text-amber-600"></i> ${msg}`; }
+    async function enablePersistence() { if(window.db) try{ await window.db.enablePersistence(); return true; } catch(e){} return false; }
+    async function setEntriesToFirebase(arr) { if(!isFirebaseReady||!window.db) return false; const obj={}; arr.forEach(e=>{ obj[e.id]=e; }); await window.db.ref(DB_PATH).set(obj); updateFirebaseStatus(true,"Tersinkron"); return true; }
+    function attachRealtimeListener() { if(!isFirebaseReady||!window.db) return; if(listenerRef) listenerRef.off(); const ref=window.db.ref(DB_PATH); listenerRef=ref.on('value',(snap)=>{ if(isInternalUpdate) return; const data=snap.val(); entries=data?Object.values(data):[]; entries.sort((a,b)=>b.id-a.id); renderTable(); updateNomorOtomatis(); updateFirebaseStatus(true,`Realtime (${entries.length} data)`); },()=>updateFirebaseStatus(false,"Error listener")); }
+    function getNextId() { return entries.length ? Math.max(...entries.map(e=>e.id))+1 : 1; }
+    function updateNomorOtomatis() { document.getElementById("nomorOtomatis").value = getNextId(); }
+    async function addEntry(newEntry) { const updated = [newEntry, ...entries]; updated.sort((a,b)=>b.id-a.id); isInternalUpdate=true; await setEntriesToFirebase(updated); isInternalUpdate=false; }
+    async function deleteEntryById(id) { const updated = entries.filter(e=>e.id!==id); isInternalUpdate=true; await setEntriesToFirebase(updated); isInternalUpdate=false; }
+    async function clearAllEntries() { isInternalUpdate=true; await setEntriesToFirebase([]); isInternalUpdate=false; }
+
+    // Kamera & watermark (fungsi sama seperti sebelumnya, disederhanakan)
+    async function processSingleFoto(originalBase64, petugas) { /* watermark lengkap, gunakan fungsi dari kode asli */ 
+        const getPos = () => new Promise(r=>{ navigator.geolocation?.getCurrentPosition(p=>r({lat:p.coords.latitude,lng:p.coords.longitude}),()=>r(null),{timeout:5000}) || r(null); });
+        const pos = await getPos(); const now = new Date(); const waktuStr = now.toLocaleString('id-ID',{hour12:false}); 
+        const applyWM = (dataUrl, petugas, loc, waktu) => new Promise((res,rej)=>{ const img=new Image(); img.onload=()=>{ const canvas=document.createElement('canvas'); canvas.width=img.width; canvas.height=img.height; const ctx=canvas.getContext('2d'); ctx.drawImage(img,0,0); ctx.font="bold 28px Inter"; ctx.fillStyle="#1E3A8F"; ctx.fillText("TV",20,45); ctx.fillStyle="#FFFFFF"; ctx.font="bold 28px Inter"; ctx.fillText("RI",72,45); ctx.font="14px Inter"; ctx.fillStyle="white"; ctx.shadowBlur=6; ctx.fillText(`📡 TVRI - Multiplexing`,20,img.height-70); ctx.fillText(`👤 ${petugas}`,20,img.height-50); ctx.fillText(`🕒 ${waktu}`,20,img.height-30); if(loc) ctx.fillText(`📍 ${loc.lat.toFixed(5)}°, ${loc.lng.toFixed(5)}°`,20,img.height-10); res(canvas.toDataURL('image/jpeg',0.88)); }; img.onerror=rej; img.src=dataUrl; });
+        return { base64: await applyWM(originalBase64, petugas, pos, waktuStr), jamFoto: waktuStr, lat: pos?.lat||null, lng: pos?.lng||null };
+    }
+    async function addFotoFromSource(src) { const p=document.getElementById('petugas').value.trim(); if(!p){ alert("Isi petugas dulu."); return false; } if(currentFotoList.length>=5){ alert("Max 5 foto"); return false; } showLoading("Memproses watermark..."); try{ const obj=await processSingleFoto(src,p); currentFotoList.push(obj); updatePreviewUI(); updateHiddenArray(); hideLoading(); return true; }catch(e){ hideLoading(); alert("Gagal"); return false; } }
+    function updatePreviewUI(){ fotoPreviewDiv.innerHTML=''; currentFotoList.forEach((f,i)=>{ const card=document.createElement('div'); card.className='preview-card'; card.innerHTML=`<img src="${f.base64}"><div class="remove-btn" data-idx="${i}"><i class="fas fa-times"></i></div>`; fotoPreviewDiv.appendChild(card); }); document.querySelectorAll('.remove-btn').forEach(btn=>{ btn.addEventListener('click',(e)=>{ const idx=parseInt(btn.dataset.idx); currentFotoList.splice(idx,1); updatePreviewUI(); updateHiddenArray(); }); }); fotoCounterSpan.innerText=`${currentFotoList.length} dari 5 foto`; }
+    function updateHiddenArray(){ fotoDataArrayHidden.value=JSON.stringify(currentFotoList.map(f=>({base64:f.base64,jamFoto:f.jamFoto,lat:f.lat,lng:f.lng}))); }
+    async function bukaKamera(mode){ const p=document.getElementById('petugas').value; if(!p){ alert("Isi petugas dulu."); return; } if(mediaStream) tutupKamera(); try{ const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{exact:mode}}}); mediaStream=stream; videoEl.srcObject=stream; videoContainer.classList.remove('hidden'); btnCapture.disabled=false; await videoEl.play(); currentFacingMode=mode; cameraModeLabel.innerHTML=mode==='environment'?'📷 BELAKANG':'🤳 DEPAN'; }catch(e){ alert("Gagal akses kamera"); } }
+    function tutupKamera(){ if(mediaStream){ mediaStream.getTracks().forEach(t=>t.stop()); mediaStream=null; } videoEl.srcObject=null; videoContainer.classList.add('hidden'); btnCapture.disabled=true; }
+    async function captureFromVideo(){ if(!mediaStream){ alert("Buka kamera dulu"); return; } const canvas=document.createElement('canvas'); canvas.width=videoEl.videoWidth; canvas.height=videoEl.videoHeight; canvas.getContext('2d').drawImage(videoEl,0,0); await addFotoFromSource(canvas.toDataURL('image/jpeg',0.9)); }
+    function uploadManual(){ const inp=document.createElement('input'); inp.type='file'; inp.accept='image/*'; inp.onchange=async e=>{ if(e.target.files[0]){ const reader=new FileReader(); reader.onload=async ev=>await addFotoFromSource(ev.target.result); reader.readAsDataURL(e.target.files[0]); } }; inp.click(); }
+    btnBuka.onclick=()=>bukaKamera('environment'); btnCapture.onclick=captureFromVideo; btnTutup.onclick=tutupKamera; btnFlip.onclick=async()=>{ if(mediaStream){ const newMode=currentFacingMode==='environment'?'user':'environment'; await bukaKamera(newMode); }else alert("Kamera belum aktif"); }; btnUpload.onclick=uploadManual;
+    function showLoading(m){ let ld=document.getElementById('globalLoading'); if(!ld){ ld=document.createElement('div'); ld.id='globalLoading'; ld.className='loading-overlay'; ld.innerHTML=`<div class="bg-black/80 text-white p-4 rounded-xl">${m}</div>`; document.body.appendChild(ld); } else ld.style.display='flex'; }
+    function hideLoading(){ let ld=document.getElementById('globalLoading'); if(ld) ld.remove(); }
+
+    // Render tabel
+    function renderTable(){
+        const tbody=document.getElementById('tabelBody');
+        if(!entries.length){ tbody.innerHTML='<tr><td colspan="10" class="text-center py-6 text-gray-400">📭 Belum ada data</td></tr>'; return; }
+        let html='';
+        entries.forEach(e=>{
+            const ird1Str = `${e.ird1?.cn??'-'}dB / ${e.ird1?.lock??'-'}`;
+            const ird2Str = `${e.ird2?.cn??'-'}dB / ${e.ird2?.lock??'-'}`;
+            const ird3Str = `${e.ird3?.quality??'-'}% / ${e.ird3?.lock??'-'}`;
+            const muxStr = `${e.mux?.merk||'-'} (${e.mux?.status||'-'})`;
+            const cableIp = `Kabel: ${e.kabel?.seg1||'-'}, ${e.kabel?.seg2||'-'}, ${e.kabel?.seg3||'-'}<br>IP: ${e.ip?.alamat||'-'}:${e.ip?.port_in||'-'}→${e.ip?.port_out||'-'} ${e.ip?.bitrate??'-'}Mbps`;
+            const fotoCount = e.fotoList?.length||0; let thumbs='';
+            if(fotoCount) thumbs=`<div class="foto-thumb-list">${e.fotoList.slice(0,2).map((f,i)=>`<div class="thumb-item" onclick="window.viewAllFoto(${JSON.stringify(e.fotoList)},${i})"><img src="${f.base64}"></div>`).join('')}${fotoCount>2?`<span class="text-[10px] bg-gray-200 px-1 rounded-full">+${fotoCount-2}</span>`:''}</div>`;
+            const fotoCell = `<div><div class="flex justify-center">${thumbs}</div><button type="button" onclick="window.viewAllFoto(${JSON.stringify(e.fotoList)},0)" class="text-primary text-[10px] hover:underline"><i class="fas fa-images"></i> ${fotoCount} foto</button></div>`;
+            html+=`<tr class="border-b hover:bg-slate-50"><td class="py-2 px-1">${e.no||e.id}</td><td>${e.tanggal}</td><td>${escapeHtml(e.petugas)}</td><td class="text-[10px]">${ird1Str}</td><td class="text-[10px]">${ird2Str}</td><td class="text-[10px]">${ird3Str}</td><td class="text-[10px]">${muxStr}</td><td class="text-[10px]">${cableIp}</td><td class="text-center">${fotoCell}</td><td><button onclick="deleteEntry(${e.id})" class="bg-red-100 text-red-600 px-2 py-1 rounded-full text-[10px]"><i class="fas fa-trash"></i> Hapus</button></td></tr>`;
+        });
+        tbody.innerHTML=html;
+    }
+    window.deleteEntry = async (id)=>{ if(confirm("Hapus data?")) await deleteEntryById(id); };
+    window.viewAllFoto = (fotoList, start)=>{ if(!fotoList?.length) return; let cur=start; const modal=document.createElement('div'); modal.className="modal-img"; modal.innerHTML=`<img src="${fotoList[cur].base64}"><div class="modal-caption">${fotoList[cur].jamFoto}</div><div style="position:absolute;bottom:20px;display:flex;gap:20px;"><button id="prevModal" class="bg-black/60 px-3 py-1 rounded">◀ Prev</button><button id="nextModal" class="bg-black/60 px-3 py-1 rounded">Next ▶</button></div>`; document.body.appendChild(modal); const update=(idx)=>{ if(idx>=0 && idx<fotoList.length){ cur=idx; modal.querySelector('img').src=fotoList[cur].base64; modal.querySelector('.modal-caption').innerHTML=fotoList[cur].jamFoto; } }; modal.querySelector('#prevModal').onclick=(e)=>{ e.stopPropagation(); update(cur-1); }; modal.querySelector('#nextModal').onclick=(e)=>{ e.stopPropagation(); update(cur+1); }; modal.onclick=(e)=>{ if(e.target===modal) modal.remove(); }; };
+    function escapeHtml(s){ if(!s) return ''; return s.replace(/[&<>]/g,m=>m==='&'?'&amp;':m==='<'?'&lt;':'&gt;'); }
+
+    // Submit form
+    const form=document.getElementById('formMultiplexing');
+    form.addEventListener('submit', async(e)=>{
+        e.preventDefault();
+        const no=document.getElementById('nomorOtomatis').value, tgl=document.getElementById('tanggal').value, petugas=document.getElementById('petugas').value.trim();
+        if(!petugas) return alert("Petugas harus diisi");
+        if(currentFotoList.length===0) return alert("Minimal 1 foto dokumentasi");
+        const ird1 = { cn: parseFloat(document.getElementById('ird1_cn').value)||null, margin: parseFloat(document.getElementById('ird1_margin').value)||null, lock: document.getElementById('ird1_lock').value };
+        const ird2 = { cn: parseFloat(document.getElementById('ird2_cn').value)||null, margin: parseFloat(document.getElementById('ird2_margin').value)||null, lock: document.getElementById('ird2_lock').value };
+        const ird3 = { quality: parseFloat(document.getElementById('ird3_quality').value)||null, strength: parseFloat(document.getElementById('ird3_strength').value)||null, lock: document.getElementById('ird3_lock').value };
+        const mux = { merk: document.getElementById('mux_merk').value, status: document.getElementById('mux_status').value };
+        const kabel = { seg1: document.getElementById('cable_seg1').value, seg2: document.getElementById('cable_seg2').value, seg3: document.getElementById('cable_seg3').value, catatan: document.getElementById('cable_notes').value };
+        const ip = { alamat: document.getElementById('ip_addr').value, port_in: parseInt(document.getElementById('ip_port_in').value)||null, port_out: parseInt(document.getElementById('ip_port_out').value)||null, bitrate: parseFloat(document.getElementById('ip_bitrate').value)||null, status: document.getElementById('ip_status').value, catatan: document.getElementById('ip_notes').value };
+        const newEntry = { id: getNextId(), no, tanggal: tgl, petugas, keterangan: document.getElementById('keterangan').value, ird1, ird2, ird3, mux, kabel, ip, fotoList: [...currentFotoList], createdAt: new Date().toISOString() };
+        await addEntry(newEntry);
+        resetFormInput();
+        alert(`✅ Tersimpan dengan ${currentFotoList.length} foto.`);
+    });
+    function resetFormInput(){
+        document.getElementById('tanggal').value=new Date().toISOString().split('T')[0];
+        document.getElementById('petugas').value=''; document.getElementById('keterangan').value='';
+        document.querySelectorAll('input[type=number],input[type=text],textarea,select').forEach(inp=>{ if(inp.id && inp.id!=='nomorOtomatis'){ if(inp.tagName==='SELECT') inp.selectedIndex=0; else inp.value=''; } });
+        document.getElementById('cable_seg1').selectedIndex=0; document.getElementById('cable_seg2').selectedIndex=0; document.getElementById('cable_seg3').selectedIndex=0;
+        document.getElementById('mux_status').selectedIndex=0; document.getElementById('ip_status').selectedIndex=0;
+        currentFotoList=[]; updatePreviewUI(); updateHiddenArray(); updateNomorOtomatis(); if(mediaStream) tutupKamera();
+    }
+    document.getElementById('btnResetForm').addEventListener('click',()=>{ if(confirm("Reset form?")) resetFormInput(); });
+    document.getElementById('btnHapusSemua').addEventListener('click',async()=>{ if(confirm("Hapus SEMUA data?")){ await clearAllEntries(); resetFormInput(); alert("Semua data dihapus."); } });
+    document.getElementById('btnExportHTML').addEventListener('click',()=>{ if(!entries.length) return alert("Tidak ada data"); let html=`<html><head><title>Laporan Multiplexing</title></head><body><h2>Monitoring Multiplexing</h2><table border="1">${document.querySelector('table').outerHTML}</table></body></html>`; const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([html],{type:"text/html"})); a.download=`laporan_multiplexing_${Date.now()}.html`; a.click(); URL.revokeObjectURL(a.href); });
+    async function initFirebase(){ if(!window.db){ setTimeout(initFirebase,300); return; } isFirebaseReady=true; await enablePersistence(); attachRealtimeListener(); updateNomorOtomatis(); }
+    initFirebase();
+</script>
+</body>
+</html>
