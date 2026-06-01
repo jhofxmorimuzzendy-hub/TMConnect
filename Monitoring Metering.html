@@ -55,6 +55,8 @@
         .flip-btn { transition: all 0.2s ease; }
         .flip-btn:active { transform: scale(0.96); }
         .param-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 0.5rem; }
+        .table-voltage-line { font-weight: 600; color: #0c4e6e; }
+        .table-neutral-line { font-size: 0.65rem; color: #2c6e4e; background: #eef2f0; display: inline-block; padding: 0 4px; border-radius: 8px; margin-top: 2px; }
     </style>
 </head>
 <body>
@@ -69,7 +71,7 @@
                 <span id="firebaseStatus" class="sync-status"><i class="fas fa-cloud-upload-alt"></i> Menghubungkan...</span>
             </h1>
             <div class="mt-2 flex justify-center px-2">
-                <span class="badge-perbaikan bg-primary text-white text-xs md:text-sm rounded-full py-1 px-3 md:px-4 font-semibold"><i class="fas fa-camera-retro mr-1 md:mr-2"></i> Multi Foto (Max 5) | Kamera Belakang + Flip | Firebase Realtime</span>
+                <span class="badge-perbaikan bg-primary text-white text-xs md:text-sm rounded-full py-1 px-3 md:px-4 font-semibold"><i class="fas fa-camera-retro mr-1 md:mr-2"></i> Multi Foto (Max 5) | Kamera Belakang + Flip | Firebase Realtime | Netral (RN,SN,TN) tampil di riwayat</span>
             </div>
         </div>
 
@@ -92,11 +94,14 @@
                         <!-- PLN Panel -->
                         <div class="bg-slate-50 rounded-xl p-4 border border-gray-200">
                             <h3 class="font-bold text-primary mb-3 flex items-center gap-2"><i class="fas fa-bolt"></i> SUMBER PLN</h3>
-                            <div><span class="text-xs font-semibold text-gray-600">⚡ Tegangan (Volt)</span></div>
+                            <div><span class="text-xs font-semibold text-gray-600">⚡ Tegangan Line (Volt) R-S, S-T, T-R</span></div>
                             <div class="param-grid mt-1 mb-3">
                                 <div><label class="text-[10px] font-medium">RS</label><input type="number" step="any" id="vPLN_rs" class="w-full border rounded-lg px-2 py-1 text-sm"></div>
                                 <div><label class="text-[10px] font-medium">ST</label><input type="number" step="any" id="vPLN_st" class="w-full border rounded-lg px-2 py-1 text-sm"></div>
                                 <div><label class="text-[10px] font-medium">TR</label><input type="number" step="any" id="vPLN_tr" class="w-full border rounded-lg px-2 py-1 text-sm"></div>
+                            </div>
+                            <div><span class="text-xs font-semibold text-gray-600">🌍 Tegangan Netral (Volt) R-N, S-N, T-N</span></div>
+                            <div class="param-grid mt-1 mb-3">
                                 <div><label class="text-[10px] font-medium">RN</label><input type="number" step="any" id="vPLN_rn" class="w-full border rounded-lg px-2 py-1 text-sm"></div>
                                 <div><label class="text-[10px] font-medium">SN</label><input type="number" step="any" id="vPLN_sn" class="w-full border rounded-lg px-2 py-1 text-sm"></div>
                                 <div><label class="text-[10px] font-medium">TN</label><input type="number" step="any" id="vPLN_tn" class="w-full border rounded-lg px-2 py-1 text-sm"></div>
@@ -111,11 +116,14 @@
                         <!-- UPS Panel -->
                         <div class="bg-slate-50 rounded-xl p-4 border border-gray-200">
                             <h3 class="font-bold text-primary mb-3 flex items-center gap-2"><i class="fas fa-battery-full"></i> SUMBER UPS</h3>
-                            <div><span class="text-xs font-semibold text-gray-600">⚡ Tegangan (Volt)</span></div>
+                            <div><span class="text-xs font-semibold text-gray-600">⚡ Tegangan Line (Volt) RS, ST, TR</span></div>
                             <div class="param-grid mt-1 mb-3">
                                 <div><label class="text-[10px] font-medium">RS</label><input type="number" step="any" id="vUPS_rs" class="w-full border rounded-lg px-2 py-1 text-sm"></div>
                                 <div><label class="text-[10px] font-medium">ST</label><input type="number" step="any" id="vUPS_st" class="w-full border rounded-lg px-2 py-1 text-sm"></div>
                                 <div><label class="text-[10px] font-medium">TR</label><input type="number" step="any" id="vUPS_tr" class="w-full border rounded-lg px-2 py-1 text-sm"></div>
+                            </div>
+                            <div><span class="text-xs font-semibold text-gray-600">🌍 Tegangan Netral (Volt) RN, SN, TN</span></div>
+                            <div class="param-grid mt-1 mb-3">
                                 <div><label class="text-[10px] font-medium">RN</label><input type="number" step="any" id="vUPS_rn" class="w-full border rounded-lg px-2 py-1 text-sm"></div>
                                 <div><label class="text-[10px] font-medium">SN</label><input type="number" step="any" id="vUPS_sn" class="w-full border rounded-lg px-2 py-1 text-sm"></div>
                                 <div><label class="text-[10px] font-medium">TN</label><input type="number" step="any" id="vUPS_tn" class="w-full border rounded-lg px-2 py-1 text-sm"></div>
@@ -163,7 +171,7 @@
             </div>
         </div>
 
-        <!-- Daftar Riwayat -->
+        <!-- Daftar Riwayat dengan tampilan Netral (RN, SN, TN) -->
         <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
             <div class="bg-gradient-to-r from-primary to-accent px-4 py-3 md:px-5 md:py-4 flex justify-between items-center flex-wrap gap-2">
                 <h2 class="text-base md:text-xl font-semibold text-white"><i class="fas fa-history mr-2"></i> Riwayat Pencatatan</h2>
@@ -175,7 +183,7 @@
             <div class="table-wrapper p-2 md:p-4">
                 <table class="min-w-[800px] md:min-w-full bg-white border border-gray-200 rounded-xl text-xs md:text-sm">
                     <thead class="bg-gray-100">
-                        <tr><th class="py-2 px-1">No</th><th>Tgl</th><th>Petugas</th><th>Keterangan</th><th>PLN (V/I)</th><th>UPS (V/I)</th><th>Foto</th><th>Aksi</th></tr>
+                        <tr><th class="py-2 px-1">No</th><th>Tgl</th><th>Petugas</th><th>Keterangan</th><th>PLN (Line/Netral/Arus)</th><th>UPS (Line/Netral/Arus)</th><th>Foto</th><th>Aksi</th></tr>
                     </thead>
                     <tbody id="tabelBody"><tr><td colspan="8" class="text-center py-6 text-gray-400">⚡ Memuat data...</td></tr>
                 </tbody>
@@ -270,7 +278,7 @@
             isInternalUpdate = false;
         }
 
-        // ========== KAMERA MULTI FOTO (SAMA DENGAN KERUSAKAN) ==========
+        // ========== KAMERA MULTI FOTO ==========
         let currentFotoList = [];
         let mediaStream = null;
         let currentFacingMode = 'environment';
@@ -304,30 +312,29 @@
                 await videoEl.play();
                 currentFacingMode = desiredMode;
                 updateCameraModeLabel();
-            } catch (exactErr) {
-                try {
-                    const fallbackConstraints = { video: { facingMode: desiredMode } };
-                    const stream = await navigator.mediaDevices.getUserMedia(fallbackConstraints);
-                    mediaStream = stream;
-                    videoEl.srcObject = stream;
-                    videoContainer.classList.remove('hidden');
-                    btnCapture.disabled = false;
-                    await videoEl.play();
-                    currentFacingMode = desiredMode;
-                    updateCameraModeLabel();
-                } catch (fallbackErr) {
-                    try {
-                        const defaultStream = await navigator.mediaDevices.getUserMedia({ video: true });
-                        mediaStream = defaultStream;
-                        videoEl.srcObject = defaultStream;
-                        videoContainer.classList.remove('hidden');
-                        btnCapture.disabled = false;
-                        await videoEl.play();
-                        currentFacingMode = 'unknown';
-                        updateCameraModeLabel();
-                        alert("⚠️ Kamera default digunakan.");
-                    } catch (finalErr) { alert("Tidak dapat akses kamera: "+finalErr.message); }
-                }
+            } catch (exactErr) { /* fallback */ bukaKameraFallback(desiredMode); }
+        }
+        async function bukaKameraFallback(desiredMode) {
+            try {
+                const fallbackConstraints = { video: { facingMode: desiredMode } };
+                const stream = await navigator.mediaDevices.getUserMedia(fallbackConstraints);
+                mediaStream = stream;
+                videoEl.srcObject = stream;
+                videoContainer.classList.remove('hidden');
+                btnCapture.disabled = false;
+                await videoEl.play();
+                currentFacingMode = desiredMode;
+                updateCameraModeLabel();
+            } catch (e) {
+                const defaultStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                mediaStream = defaultStream;
+                videoEl.srcObject = defaultStream;
+                videoContainer.classList.remove('hidden');
+                btnCapture.disabled = false;
+                await videoEl.play();
+                currentFacingMode = 'unknown';
+                updateCameraModeLabel();
+                alert("⚠️ Kamera default digunakan.");
             }
         }
 
@@ -472,8 +479,8 @@
         btnFlip.addEventListener('click', flipCamera);
         btnUpload.addEventListener('click', uploadManual);
 
-        // ========== RENDER TABEL RIWAYAT ==========
-        function formatVal(v) { return (v!==null && v!==undefined) ? parseFloat(v).toFixed(1) : "-"; }
+        // ========== RENDER TABEL RIWAYAT dengan NETRAL ==========
+        function formatVal(v) { return (v!==null && v!==undefined && !isNaN(v)) ? parseFloat(v).toFixed(1) : "-"; }
         function escapeHtml(s) { if(!s) return ""; return s.replace(/[&<>]/g, m=>m==='&'?'&amp;':m==='<'?'&lt;':'&gt;'); }
 
         window.viewAllFoto = (fotoList, startIdx) => {
@@ -505,21 +512,31 @@
                     thumbs = `<div class="foto-thumb-list">${entry.fotoList.slice(0,2).map((f,i)=>`<div class="thumb-item" onclick="viewAllFoto(entry.fotoList, ${i})"><img src="${f.base64}"></div>`).join('')}${fotoCount>2?`<span class="text-[10px] bg-gray-200 px-1 rounded-full">+${fotoCount-2}</span>`:''}</div>`;
                 }
                 const fotoCell = `<div class="flex flex-col items-center gap-1"><div class="flex justify-center">${thumbs}</div><button type="button" onclick="viewAllFoto(entry.fotoList, 0)" class="text-primary text-[10px] md:text-xs hover:underline"><i class="fas fa-images"></i> ${fotoCount} foto</button></div>`;
-                const plnStr = `V:${formatVal(entry.pln?.v?.rs)}/${formatVal(entry.pln?.v?.st)}/${formatVal(entry.pln?.v?.tr)} I:${formatVal(entry.pln?.i?.r)}/${formatVal(entry.pln?.i?.s)}/${formatVal(entry.pln?.i?.t)}`;
-                const upsStr = `V:${formatVal(entry.ups?.v?.rs)}/${formatVal(entry.ups?.v?.st)}/${formatVal(entry.ups?.v?.tr)} I:${formatVal(entry.ups?.i?.r)}/${formatVal(entry.ups?.i?.s)}/${formatVal(entry.ups?.i?.t)}`;
+                
+                // PLN dengan Netral
+                const plnLine = `${formatVal(entry.pln?.v?.rs)}/${formatVal(entry.pln?.v?.st)}/${formatVal(entry.pln?.v?.tr)}`;
+                const plnNetral = `${formatVal(entry.pln?.v?.rn)}/${formatVal(entry.pln?.v?.sn)}/${formatVal(entry.pln?.v?.tn)}`;
+                const plnArus = `${formatVal(entry.pln?.i?.r)}/${formatVal(entry.pln?.i?.s)}/${formatVal(entry.pln?.i?.t)}`;
+                const plnStr = `<div><span class="table-voltage-line">▸V-Line: ${plnLine}</span><br><span class="table-neutral-line">🌍 Netral: ${plnNetral}</span><br><span class="text-gray-700">🔁 I: ${plnArus}</span></div>`;
+                
+                const upsLine = `${formatVal(entry.ups?.v?.rs)}/${formatVal(entry.ups?.v?.st)}/${formatVal(entry.ups?.v?.tr)}`;
+                const upsNetral = `${formatVal(entry.ups?.v?.rn)}/${formatVal(entry.ups?.v?.sn)}/${formatVal(entry.ups?.v?.tn)}`;
+                const upsArus = `${formatVal(entry.ups?.i?.r)}/${formatVal(entry.ups?.i?.s)}/${formatVal(entry.ups?.i?.t)}`;
+                const upsStr = `<div><span class="table-voltage-line">▸V-Line: ${upsLine}</span><br><span class="table-neutral-line">🌍 Netral: ${upsNetral}</span><br><span class="text-gray-700">🔁 I: ${upsArus}</span></div>`;
+                
                 html += `<tr class="border-b hover:bg-slate-50">
                     <td class="py-2 px-1 font-mono">${entry.no||entry.id}</td>
                     <td class="py-2 px-1">${entry.tanggal}</td>
                     <td class="py-2 px-1">${escapeHtml(entry.petugas)}</td>
                     <td class="py-2 px-1 max-w-[120px] truncate">${escapeHtml(entry.keterangan||'-')}</td>
-                    <td class="py-2 px-1 text-[10px]">${plnStr}</td>
-                    <td class="py-2 px-1 text-[10px]">${upsStr}</td>
+                    <td class="py-2 px-1 text-[10px] leading-relaxed">${plnStr}</td>
+                    <td class="py-2 px-1 text-[10px] leading-relaxed">${upsStr}</td>
                     <td class="py-2 px-1 text-center">${fotoCell}</td>
                     <td class="py-2 px-1"><button onclick="deleteEntry(${entry.id})" class="bg-red-100 text-red-600 px-2 py-1 rounded-full text-[10px]"><i class="fas fa-trash-can"></i> Hapus</button></td>
-                </tr>`;
+                 </tr>`;
             });
             tbody.innerHTML = html;
-            window.entryForView = dataEntries; // untuk akses dari onclick
+            window.entryForView = dataEntries;
         }
         window.deleteEntry = async (id) => { if(confirm("Hapus data?")) await deleteEntryById(id); };
 
@@ -570,15 +587,8 @@
             };
             const newId = getNextId();
             const newEntry = {
-                id: newId,
-                no: no,
-                tanggal: tgl,
-                petugas: petugas,
-                keterangan: keteranganInput.value.trim(),
-                pln: pln,
-                ups: ups,
-                fotoList: [...currentFotoList],
-                createdAt: new Date().toISOString()
+                id: newId, no: no, tanggal: tgl, petugas: petugas, keterangan: keteranganInput.value.trim(),
+                pln: pln, ups: ups, fotoList: [...currentFotoList], createdAt: new Date().toISOString()
             };
             await addEntry(newEntry);
             resetFormInput();
@@ -599,20 +609,22 @@
         resetBtn.addEventListener('click', () => { if(confirm("Reset form?")) resetFormInput(); });
         document.getElementById('btnHapusSemua').addEventListener('click', async () => { if(confirm("Hapus SEMUA data?")){ await clearAllEntries(); resetFormInput(); alert("Semua data dihapus."); } });
 
-        // ========== EXPORT HTML ==========
+        // ========== EXPORT HTML dengan NETRAL ==========
         document.getElementById('btnExportHTML').addEventListener('click', () => {
             if(!dataEntries.length) return alert("Tidak ada data");
-            let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Laporan Metering TVRI</title><style>body{font-family:Inter,sans-serif;margin:20px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #aaa;padding:6px;vertical-align:top}th{background:#1e6f5c;color:white}.foto-grid{display:flex;gap:6px;flex-wrap:wrap}img{width:60px;height:60px;object-fit:cover;border-radius:8px}</style></head><body><h2>Monitoring PLN & UPS - TX Tanah Merah</h2><p>Export: ${new Date().toLocaleString()}</p><table border="1"><thead><tr><th>No</th><th>Tgl</th><th>Petugas</th><th>Keterangan</th><th>PLN (V RS/ST/TR, I R/S/T)</th><th>UPS (V RS/ST/TR, I R/S/T)</th><th>Foto</th></tr></thead><tbody>`;
+            let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Laporan Metering TVRI (Netral)</title><style>body{font-family:Inter,sans-serif;margin:20px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #aaa;padding:6px;vertical-align:top}th{background:#1e6f5c;color:white}.foto-grid{display:flex;gap:6px;flex-wrap:wrap}img{width:60px;height:60px;object-fit:cover;border-radius:8px}.netral{color:#2b6e46;font-weight:500}</style></head><body><h2>Monitoring PLN & UPS - TX Tanah Merah (Data Netral Lengkap)</h2><p>Export: ${new Date().toLocaleString()}</p><table border="1"><thead><tr><th>No</th><th>Tgl</th><th>Petugas</th><th>Keterangan</th><th>PLN (Line V / Netral V / Arus)</th><th>UPS (Line V / Netral V / Arus)</th><th>Foto</th></tr></thead><tbody>`;
             dataEntries.forEach(e => {
                 let fotoHtml = `<div class="foto-grid">${(e.fotoList||[]).map(f=>`<img src="${f.base64}" title="${f.jamFoto}">`).join('')}</div>`;
-                let plnV = `${formatVal(e.pln?.v?.rs)}/${formatVal(e.pln?.v?.st)}/${formatVal(e.pln?.v?.tr)}`;
+                let plnVL = `${formatVal(e.pln?.v?.rs)}/${formatVal(e.pln?.v?.st)}/${formatVal(e.pln?.v?.tr)}`;
+                let plnVN = `${formatVal(e.pln?.v?.rn)}/${formatVal(e.pln?.v?.sn)}/${formatVal(e.pln?.v?.tn)}`;
                 let plnI = `${formatVal(e.pln?.i?.r)}/${formatVal(e.pln?.i?.s)}/${formatVal(e.pln?.i?.t)}`;
-                let upsV = `${formatVal(e.ups?.v?.rs)}/${formatVal(e.ups?.v?.st)}/${formatVal(e.ups?.v?.tr)}`;
+                let upsVL = `${formatVal(e.ups?.v?.rs)}/${formatVal(e.ups?.v?.st)}/${formatVal(e.ups?.v?.tr)}`;
+                let upsVN = `${formatVal(e.ups?.v?.rn)}/${formatVal(e.ups?.v?.sn)}/${formatVal(e.ups?.v?.tn)}`;
                 let upsI = `${formatVal(e.ups?.i?.r)}/${formatVal(e.ups?.i?.s)}/${formatVal(e.ups?.i?.t)}`;
-                html += `<tr><td>${e.no||e.id}</td><td>${e.tanggal}</td><td>${escapeHtml(e.petugas)}</td><td>${escapeHtml(e.keterangan||'-')}</td><td>V:${plnV}<br>I:${plnI}</td><td>V:${upsV}<br>I:${upsI}</td><td>${fotoHtml}</td></tr>`;
+                html += `<tr><td>${e.no||e.id}</td><td>${e.tanggal}</td><td>${escapeHtml(e.petugas)}</td><td>${escapeHtml(e.keterangan||'-')}</td><td>V-Line: ${plnVL}<br><span class="netral">V-Netral: ${plnVN}</span><br>I: ${plnI}</td><td>V-Line: ${upsVL}<br><span class="netral">V-Netral: ${upsVN}</span><br>I: ${upsI}</td><td>${fotoHtml}</td></tr>`;
             });
-            html += `</tbody></table><p><em>Watermark: TVRI, petugas, waktu, koordinat</em></p></body></html>`;
-            const blob = new Blob([html], {type:"text/html"}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`laporan_metering_${Date.now()}.html`; a.click(); URL.revokeObjectURL(blob);
+            html += `</tbody></table><p><em>Watermark otomatis: TVRI, petugas, waktu, koordinat | Data Netral (RN,SN,TN) ditampilkan</em></p></body></html>`;
+            const blob = new Blob([html], {type:"text/html"}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`laporan_metering_netral_${Date.now()}.html`; a.click(); URL.revokeObjectURL(blob);
         });
 
         function showLoading(msg) { let ld = document.getElementById('globalLoading'); if(!ld){ ld=document.createElement('div'); ld.id='globalLoading'; ld.className='loading-overlay'; ld.innerHTML=`<div class="bg-black/80 text-white p-4 rounded-xl">${msg}</div>`; document.body.appendChild(ld); } else ld.style.display='flex'; }
