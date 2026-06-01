@@ -735,7 +735,8 @@
             </div>
             <div class="shift-table-container">
                 <table class="shift-table">
-                    <thead><tr><th>Tanggal</th><th>Hari</th><th>Shift 1 (00-08)</th><th>Shift 2 (08-16)</th><th>Shift 3 (16-00)</th></tr></thead>
+                    <thead><tr><th>Tanggal</th><th>Hari</th><th>Shift 1 (00-08)</th><th>Shift 2 (08-16)</th><th>Shift 3 (16-00)</th></tr>
+                    </thead>
                     <tbody>
         `;
         for (let d = 1; d <= daysCount; d++) {
@@ -810,10 +811,12 @@
         const dayOfWeek = today.getDay();     
         const currentDate = today.getDate();  
         const tasks = [
-            { text: "Monitoring Pemancar TVRI Dashboard", link: "Monitoring Pemancar.html", icon: "fa-broadcast-tower" },
+            // Tugas utama yang selalu ada
             { text: "Monitoring Suhu", link: "Monitoring Suhu.html", icon: "fa-temperature-high" },
             { text: "Monitoring Metering", link: "Monitoring Metering.html", icon: "fa-chart-line" },
-            { text: "Monitoring Siaran Papua", link: "Monitoring Siaran.html", icon: "fa-satellite-dish" }
+            { text: "Monitoring Siaran Papua", link: "Monitoring Siaran.html", icon: "fa-satellite-dish" },
+            // Tugas yang diubah: dari "Monitoring Pemancar TVRI Dashboard" menjadi "Monitoring Dashboard TVRI" dengan link eksternal
+            { text: "Monitoring Dashboard TVRI", link: "https://tvri.lodagency.co.id/", icon: "fa-tv" }
         ];
         if (dayOfWeek === 1) {
             tasks.push({ text: "Monitoring Kebersihan", link: "Monitoring Kebersihan.html", icon: "fa-broom" });
@@ -838,15 +841,18 @@
             container.innerHTML = `<span class="task-badge empty-msg"><i class="fas fa-check-circle"></i> Tidak ada tugas tambahan hari ini</span>`;
             return;
         }
-        const tasksHtml = tasks.map(task => `
-            <a href="${task.link}" class="task-badge" target="_self" rel="noopener noreferrer">
+        const tasksHtml = tasks.map(task => {
+            // Untuk link eksternal (http/https) buka di tab baru, untuk internal tetap _self
+            const isExternal = task.link.startsWith('http');
+            const targetAttr = isExternal ? ' target="_blank" rel="noopener noreferrer"' : ' target="_self"';
+            return `<a href="${task.link}"${targetAttr} class="task-badge">
                 <i class="fas ${task.icon}"></i> ${escapeHtml(task.text)}
-            </a>
-        `).join('');
+            </a>`;
+        }).join('');
         container.innerHTML = tasksHtml;
     }
     
-    // DAFTAR MODUL (lengkap)
+    // DAFTAR MODUL (lengkap) + penambahan modul baru "Monitoring Dashboard TVRI"
     const modulesList = [
         { name: "Monitoring Suhu", icon: "fas fa-temperature-high", file: "Monitoring Suhu.html", desc: "Suhu ruangan & watermark GPS" },
         { name: "Monitoring Pemancar", icon: "fas fa-broadcast-tower", file: "Monitoring Pemancar.html", desc: "Catat downtime ON/OFF" },
@@ -857,21 +863,26 @@
         { name: "Monitoring BBM", icon: "fas fa-gas-pump", file: "Monitoring BBM.html", desc: "Genset & konsumsi BBM" },
         { name: "Monitoring Multiplexing", icon: "fas fa-network-wired", file: "Monitoring Multiplexing.html", desc: "Pantau 3 IRD, MUX, Kabel & IP + watermark" },
         { name: "Monitoring Kebersihan", icon: "fas fa-broom", file: "Monitoring Kebersihan.html", desc: "Pantau kebersihan area transmisi" },
-        { name: "Monitoring Grounding", icon: "fas fa-bolt", file: "Monitoring Grounding.html", desc: "Pencatatan grounding 3 titik + foto" }
+        { name: "Monitoring Grounding", icon: "fas fa-bolt", file: "Monitoring Grounding.html", desc: "Pencatatan grounding 3 titik + foto" },
+        // MODUL BARU: Monitoring Dashboard TVRI (eksternal)
+        { name: "Monitoring Dashboard TVRI", icon: "fas fa-tv", file: "https://tvri.lodagency.co.id/", desc: "Akses dashboard monitoring TVRI" }
     ];
     
     function renderModulesGrid() {
         const grid = document.getElementById('modulesGrid');
         if (!grid) return;
-        grid.innerHTML = modulesList.map(mod => `
-            <a href="${mod.file}" class="module-card" target="_self" rel="noopener noreferrer">
+        grid.innerHTML = modulesList.map(mod => {
+            // Deteksi link eksternal untuk membuka di tab baru
+            const isExternal = mod.file.startsWith('http');
+            const targetAttr = isExternal ? ' target="_blank" rel="noopener noreferrer"' : ' target="_self"';
+            return `<a href="${mod.file}"${targetAttr} class="module-card">
                 <div class="module-icon"><i class="${mod.icon}"></i></div>
                 <div class="module-info">
                     <h4>${mod.name}</h4>
                     <p>${mod.desc}</p>
                 </div>
-            </a>
-        `).join('');
+            </a>`;
+        }).join('');
     }
     
     async function initMainMenu() {
