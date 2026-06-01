@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>TVRI - TX Tanah Merah | Monitoring Multiplexing Lengkap (3 IRD, MUX, 4 Kabel, IP)</title>
+    <title>TVRI - TX Tanah Merah | Monitoring Multiplexing (10 Segmen Kabel + IP)</title>
     <link rel="icon" type="image/ico" href="favicon.ico">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -30,7 +30,6 @@
     <style>
         * { -webkit-tap-highlight-color: transparent; }
         body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #eef2f8 0%, #e0f0ec 100%); position: relative; }
-        /* Tombol navigasi */
         .nav-actions {
             position: fixed;
             top: 16px;
@@ -92,47 +91,39 @@
         }
         input, select, textarea { font-size: 16px !important; }
         .sync-status { font-size: 0.7rem; padding: 2px 10px; border-radius: 20px; background: rgba(255,255,240,0.3); display: inline-block; margin-left: 12px; vertical-align: middle; }
-        .flip-btn:active { transform: scale(0.96); }
-        .param-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 0.5rem; }
-        .border-soft { border-color: #e2e8f0; }
+        .cable-label { font-weight: 600; color: #0a5b4b; display: block; margin-bottom: 4px; font-size: 0.75rem; }
     </style>
 </head>
 <body>
-    <!-- Tombol navigasi -->
     <div class="nav-actions">
-        <button id="backToDashboardBtn" class="nav-btn" title="Kembali ke Dashboard">
-            <i class="fas fa-arrow-left"></i> Dashboard
-        </button>
-        <button id="refreshPageBtn" class="nav-btn" title="Refresh Halaman">
-            <i class="fas fa-sync-alt"></i> Refresh
-        </button>
+        <button id="backToDashboardBtn" class="nav-btn"><i class="fas fa-arrow-left"></i> Dashboard</button>
+        <button id="refreshPageBtn" class="nav-btn"><i class="fas fa-sync-alt"></i> Refresh</button>
     </div>
 
 <div class="container max-w-7xl mx-auto px-3 sm:px-4 md:px-5 py-4 md:py-6">
-    <!-- Header -->
     <div class="text-center mb-5 md:mb-7">
         <div class="inline-flex items-center justify-center bg-gradient-to-r from-primary to-accent p-3 rounded-full shadow-md">
             <i class="fas fa-satellite-dish text-white text-xl md:text-2xl"></i>
         </div>
         <h1 class="text-xl sm:text-2xl md:text-4xl font-extrabold text-slate-800 mt-2 md:mt-3 leading-tight">
-            Monitoring Multiplexing (3 IRD, MUX, 4 Segmen Kabel & IP)
+            Monitoring Multiplexing (3 IRD, 10 Segmen Kabel & IP)
             <span id="firebaseStatus" class="sync-status"><i class="fas fa-cloud-upload-alt"></i> Menghubungkan...</span>
         </h1>
         <div class="mt-2 flex justify-center px-2">
-            <span class="badge-perbaikan bg-primary text-white text-xs md:text-sm rounded-full py-1 px-3 md:px-4 font-semibold"><i class="fas fa-camera-retro mr-1 md:mr-2"></i> Multi Foto Max 5 | Kamera + Watermark | Firebase Realtime</span>
+            <span class="bg-primary text-white text-xs md:text-sm rounded-full py-1 px-3 md:px-4 font-semibold"><i class="fas fa-camera-retro mr-1 md:mr-2"></i> Multi Foto Max 5 | Kamera + Watermark | Auto Numbering & Copy Last</span>
         </div>
     </div>
 
     <!-- Form Card -->
     <div class="bg-white rounded-2xl shadow-xl overflow-hidden mb-6 md:mb-8 border border-gray-100">
         <div class="bg-gradient-to-r from-primary to-accent px-4 py-3 md:px-5 md:py-4">
-            <h2 class="text-base md:text-xl font-semibold text-white"><i class="fas fa-clipboard-list mr-2"></i> Form Pencatatan Multiplexing Lengkap</h2>
+            <h2 class="text-base md:text-xl font-semibold text-white"><i class="fas fa-clipboard-list mr-2"></i> Form Pencatatan Multiplexing (10 Segmen)</h2>
         </div>
         <div class="p-4 sm:p-5 md:p-6">
             <form id="formMultiplexing" class="space-y-5">
                 <!-- Data umum -->
                 <div class="grid grid-cols-1 xs:grid-cols-3 gap-3">
-                    <div><label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Nomor</label><input type="text" id="nomorOtomatis" readonly class="w-full bg-gray-100 border border-gray-300 rounded-xl px-3 py-2 text-gray-600 font-mono text-sm"></div>
+                    <div><label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Nomor Urut</label><input type="text" id="nomorOtomatis" readonly class="w-full bg-gray-100 border border-gray-300 rounded-xl px-3 py-2 text-gray-600 font-mono text-sm"></div>
                     <div><label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Tanggal <span class="text-red-500">*</span></label><input type="date" id="tanggal" required class="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm"></div>
                     <div><label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Petugas / Engineer <span class="text-red-500">*</span></label><input type="text" id="petugas" required placeholder="Nama petugas" class="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm"></div>
                 </div>
@@ -140,16 +131,14 @@
 
                 <!-- 3 IRD Panel -->
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                    <!-- IRD 1 : TVRI Nasional & World -->
                     <div class="bg-slate-50 rounded-xl p-3 border border-gray-200">
                         <h3 class="font-bold text-primary text-sm flex items-center gap-1"><i class="fas fa-satellite"></i> IRD 1 - TVRI Nasional & World</h3>
                         <div class="grid grid-cols-2 gap-2 mt-2">
                             <div><label class="text-[10px] font-medium">C/N (dB)</label><input type="number" step="any" id="ird1_cn" class="w-full border rounded-lg px-2 py-1 text-sm"></div>
                             <div><label class="text-[10px] font-medium">Link Margin (dB)</label><input type="number" step="any" id="ird1_margin" class="w-full border rounded-lg px-2 py-1 text-sm"></div>
-                            <div class="col-span-2"><label class="text-[10px] font-medium">Status Lock</label><select id="ird1_lock" class="w-full border rounded-lg px-2 py-1 text-sm"><option value="Locked">Locked (Terkunci)</option><option value="Not Locked">Not Locked (Tidak Terkunci)</option><option value="Unlock">Unlock</option></select></div>
+                            <div class="col-span-2"><label class="text-[10px] font-medium">Status Lock</label><select id="ird1_lock" class="w-full border rounded-lg px-2 py-1 text-sm"><option value="Locked">Locked</option><option value="Not Locked">Not Locked</option><option value="Unlock">Unlock</option></select></div>
                         </div>
                     </div>
-                    <!-- IRD 2 : TVRI Sport -->
                     <div class="bg-slate-50 rounded-xl p-3 border border-gray-200">
                         <h3 class="font-bold text-primary text-sm"><i class="fas fa-futbol"></i> IRD 2 - TVRI Sport</h3>
                         <div class="grid grid-cols-2 gap-2 mt-2">
@@ -158,7 +147,6 @@
                             <div class="col-span-2"><label class="text-[10px] font-medium">Status Lock</label><select id="ird2_lock" class="w-full border rounded-lg px-2 py-1 text-sm"><option value="Locked">Locked</option><option value="Not Locked">Not Locked</option><option value="Unlock">Unlock</option></select></div>
                         </div>
                     </div>
-                    <!-- IRD 3 : TVRI Papua -->
                     <div class="bg-slate-50 rounded-xl p-3 border border-gray-200">
                         <h3 class="font-bold text-primary text-sm"><i class="fas fa-map-marker-alt"></i> IRD 3 - TVRI Papua</h3>
                         <div class="grid grid-cols-2 gap-2 mt-2">
@@ -169,37 +157,34 @@
                     </div>
                 </div>
 
-                <!-- MUX: Status dan Merk -->
+                <!-- Koneksi Kabel: 10 SEGMEN -->
                 <div class="bg-slate-50 rounded-xl p-4 border border-gray-200">
-                    <h3 class="font-bold text-primary mb-2 flex items-center gap-2"><i class="fas fa-microchip"></i> MUX (Multiplexer)</h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div><label class="block text-xs font-medium">Merk MUX</label><input type="text" id="mux_merk" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="Contoh: Ericsson, Harmonic, Cisco"></div>
-                        <div><label class="block text-xs font-medium">Status MUX</label><select id="mux_status" class="w-full border rounded-lg px-3 py-2 text-sm"><option value="Normal">Normal (Berfungsi)</option><option value="Warning">Warning / Gangguan Minor</option><option value="Error">Error / Down</option></select></div>
+                    <h3 class="font-bold text-primary mb-3 flex items-center gap-2"><i class="fas fa-plug"></i> Koneksi Kabel (10 Segmen) - Isi Jenis Kabel/Konektor</h3>
+                    <div class="space-y-3">
+                        <div><label class="cable-label">🔹 Segmen 1: Parabola (Telkom 4) ke IRD1 & IRD2</label><input type="text" id="cable_seg1" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="Contoh: Koaksial RG6"></div>
+                        <div><label class="cable-label">🔸 Segmen 2: Parabola (Asiasat) ke IRD3</label><input type="text" id="cable_seg2" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="Jenis kabel"></div>
+                        <div><label class="cable-label">🔹 Segmen 3: IRD 1,2,3 ke Channel Switch</label><input type="text" id="cable_seg3" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="Contoh: BNC 75 ohm"></div>
+                        <div><label class="cable-label">🔸 Segmen 4: Channel Switch ke Monitor Blackmagic</label><input type="text" id="cable_seg4" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="HDMI / SDI"></div>
+                        <div><label class="cable-label">🔹 Segmen 5: Channel Switch ke Encoder</label><input type="text" id="cable_seg5" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="Kabel interface"></div>
+                        <div><label class="cable-label">🔸 Segmen 6: Encoder ke MUX</label><input type="text" id="cable_seg6" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="Koaksial / Serat Optik"></div>
+                        <div><label class="cable-label">🔹 Segmen 7: MUX ke Exciter</label><input type="text" id="cable_seg7" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="RF Coaxial"></div>
+                        <div><label class="cable-label">🔸 Segmen 8: Exciter ke Pemancar (NEC)</label><input type="text" id="cable_seg8" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="Jenis kabel exciter"></div>
+                        <div><label class="cable-label">🔹 Segmen 9: Pemancar (NEC) ke Tower</label><input type="text" id="cable_seg9" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="Feeder / Waveguide"></div>
+                        <div><label class="cable-label">🔸 Segmen 10: Switch (Ethernet)</label><input type="text" id="cable_seg10" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="UTP Cat6, VLAN"></div>
                     </div>
+                    <div class="mt-3"><label class="text-xs font-medium">Catatan Kabel (umum)</label><textarea id="cable_notes" rows="2" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="Loss, konektor longgar..."></textarea></div>
                 </div>
 
-                <!-- Koneksi Kabel: 4 SEGMEN (ditambah Parabola ke IRD) -->
+                <!-- Pemantauan Siaran IP -->
                 <div class="bg-slate-50 rounded-xl p-4 border border-gray-200">
-                    <h3 class="font-bold text-primary mb-2 flex items-center gap-2"><i class="fas fa-plug"></i> Koneksi Kabel (4 Segmen)</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div><label class="text-[10px] font-medium">Segmen 1: Parabola ke IRD</label><select id="cable_seg1" class="w-full border rounded-lg px-2 py-1 text-sm"><option value="Koaksial LNB (RG6) - 75 ohm">Koaksial LNB (RG6) - 75 ohm</option><option value="Koaksial LNB (RG59)">Koaksial LNB (RG59)</option><option value="Kabel Serat Optik (LNB over Fiber)">Serat Optik LNB</option><option value="Tidak Terpasang">Tidak Terpasang</option></select></div>
-                        <div><label class="text-[10px] font-medium">Segmen 2: UTP/Ethernet (Network)</label><select id="cable_seg2" class="w-full border rounded-lg px-2 py-1 text-sm"><option value="UTP/Ethernet - Cat5e">Cat5e</option><option value="UTP/Ethernet - Cat6">Cat6</option><option value="UTP/Ethernet - Cat6a">Cat6a</option><option value="Tidak Terpasang">Tidak Terpasang</option></select></div>
-                        <div><label class="text-[10px] font-medium">Segmen 3: IRD ke MUX</label><select id="cable_seg3" class="w-full border rounded-lg px-2 py-1 text-sm"><option value="Koaksial BNC (IRD-MUX) - 75 ohm">Koaksial BNC (IRD-MUX) 75 ohm</option><option value="Koaksial SMA">Koaksial SMA</option><option value="Serat Optik (SDI)">Serat Optik (SDI)</option><option value="Tidak Terpasang">Tidak Terpasang</option></select></div>
-                        <div><label class="text-[10px] font-medium">Segmen 4: MUX ke Pemancar (TX)</label><select id="cable_seg4" class="w-full border rounded-lg px-2 py-1 text-sm"><option value="RF Coaxial (MUX-TX) - 50 ohm">RF Coaxial (MUX-TX) 50 ohm</option><option value="Waveguide">Waveguide</option><option value="Serat Optik (RF over Fiber)">Serat Optik</option><option value="Tidak Terpasang">Tidak Terpasang</option></select></div>
-                    </div>
-                    <div class="mt-2"><label class="text-xs font-medium">Catatan Kabel (umum)</label><textarea id="cable_notes" rows="2" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="Gangguan fisik, loss, konektor longgar, dll..."></textarea></div>
-                </div>
-
-                <!-- Pemantauan Siaran IP MUX -->
-                <div class="bg-slate-50 rounded-xl p-4 border border-gray-200">
-                    <h3 class="font-bold text-primary mb-2 flex items-center gap-2"><i class="fas fa-network-wired"></i> Pemantauan Siaran IP (MUX Output)</h3>
+                    <h3 class="font-bold text-primary mb-2 flex items-center gap-2"><i class="fas fa-network-wired"></i> Pemantauan Siaran IP (Output)</h3>
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                         <div><label class="text-[10px] font-medium">Alamat IP Multicast</label><input type="text" id="ip_addr" class="w-full border rounded-lg px-2 py-1 text-sm" placeholder="239.10.10.1"></div>
-                        <div><label class="text-[10px] font-medium">Port In (Source)</label><input type="number" id="ip_port_in" class="w-full border rounded-lg px-2 py-1 text-sm" placeholder="1234"></div>
-                        <div><label class="text-[10px] font-medium">Port Out (Destination)</label><input type="number" id="ip_port_out" class="w-full border rounded-lg px-2 py-1 text-sm" placeholder="5678"></div>
+                        <div><label class="text-[10px] font-medium">Port in use</label><input type="number" id="ip_port_in_use" class="w-full border rounded-lg px-2 py-1 text-sm" placeholder="Port digunakan"></div>
+                        <div><label class="text-[10px] font-medium">Channel Terisi</label><input type="text" id="ip_channel_terisi" class="w-full border rounded-lg px-2 py-1 text-sm" placeholder="Nama channel"></div>
                         <div><label class="text-[10px] font-medium">Bitrate (Mbps)</label><input type="number" step="any" id="ip_bitrate" class="w-full border rounded-lg px-2 py-1 text-sm"></div>
-                        <div><label class="text-[10px] font-medium">Status</label><select id="ip_status" class="w-full border rounded-lg px-2 py-1 text-sm"><option value="Stabil">Stabil</option><option value="Flapping">Flapping / Intermitten</option><option value="Down">Down (Tidak Ada Paket)</option></select></div>
-                        <div class="col-span-full"><label class="text-[10px] font-medium">Catatan IP / Troubleshoot</label><textarea id="ip_notes" rows="1" class="w-full border rounded-lg px-2 py-1 text-sm" placeholder="Packet loss, jitter, dll..."></textarea></div>
+                        <div><label class="text-[10px] font-medium">Status</label><select id="ip_status" class="w-full border rounded-lg px-2 py-1 text-sm"><option value="Stabil">Stabil</option><option value="Flapping">Flapping</option><option value="Down">Down</option></select></div>
+                        <div class="col-span-full"><label class="text-[10px] font-medium">Catatan IP</label><textarea id="ip_notes" rows="1" class="w-full border rounded-lg px-2 py-1 text-sm" placeholder="Packet loss, jitter"></textarea></div>
                     </div>
                 </div>
 
@@ -208,29 +193,27 @@
                     <label class="block text-sm md:text-md font-semibold text-gray-800 mb-2"><i class="fas fa-camera-retro text-primary mr-2"></i> Dokumentasi Perangkat (Max 5, watermark otomatis)</label>
                     <div class="bg-slate-50 rounded-xl p-3 md:p-4 border border-dashed border-gray-300">
                         <div class="flex flex-wrap gap-2 justify-center">
-                            <button type="button" id="btnBukaKamera" class="bg-primary hover:bg-accent text-white px-3 py-2 rounded-xl text-xs md:text-sm shadow"><i class="fas fa-video mr-1"></i> Buka Kamera (Belakang)</button>
+                            <button type="button" id="btnBukaKamera" class="bg-primary hover:bg-accent text-white px-3 py-2 rounded-xl text-xs md:text-sm shadow"><i class="fas fa-video mr-1"></i> Buka Kamera</button>
                             <button type="button" id="btnCaptureFoto" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-xl disabled:opacity-50 text-xs md:text-sm shadow" disabled><i class="fas fa-camera mr-1"></i> Ambil + WM</button>
                             <button type="button" id="btnUploadManual" class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-xl text-xs md:text-sm shadow"><i class="fas fa-upload mr-1"></i> Upload + WM</button>
                         </div>
                         <div id="videoContainer" class="hidden mt-3 rounded-xl overflow-hidden bg-black shadow-lg">
                             <video id="videoCamera" autoplay playsinline class="w-full max-h-56 object-cover"></video>
                             <div class="flex justify-between items-center p-2 bg-gray-900 flex-wrap gap-2">
-                                <span class="text-white text-xs"><i class="fas fa-info-circle"></i> Kamera aktif | <span id="cameraModeLabel">📷 BELAKANG</span></span>
-                                <div class="flex gap-2">
-                                    <button type="button" id="btnFlipCamera" class="bg-gray-700 hover:bg-gray-600 text-white text-xs px-3 py-1.5 rounded-full"><i class="fas fa-sync-alt mr-1"></i> Balik Kamera</button>
-                                    <button type="button" id="btnTutupKamera" class="text-red-400 hover:text-red-300 text-xs bg-gray-800 px-3 py-1.5 rounded-full"><i class="fas fa-times-circle mr-1"></i> Tutup</button>
-                                </div>
+                                <span class="text-white text-xs">Kamera aktif | <span id="cameraModeLabel">📷 BELAKANG</span></span>
+                                <button type="button" id="btnFlipCamera" class="bg-gray-700 hover:bg-gray-600 text-white text-xs px-3 py-1.5 rounded-full"><i class="fas fa-sync-alt mr-1"></i> Balik</button>
+                                <button type="button" id="btnTutupKamera" class="text-red-400 text-xs bg-gray-800 px-3 py-1.5 rounded-full"><i class="fas fa-times-circle mr-1"></i> Tutup</button>
                             </div>
                         </div>
                         <div id="fotoPreviewList" class="foto-preview-grid mt-3"></div>
                         <p id="fotoCounter" class="text-xs text-gray-500 mt-2 text-center">0 dari 5 foto</p>
                         <input type="hidden" id="fotoDataArray" value="[]">
-                        <p class="text-[11px] md:text-xs text-gray-500 mt-3 bg-white/70 p-2 rounded text-center"><i class="fas fa-shield-alt text-green-600"></i> <strong>Watermark otomatis</strong> : Logo TVRI, petugas, waktu, koordinat GPS</p>
                     </div>
                 </div>
 
                 <div class="flex flex-col sm:flex-row gap-3 pt-2">
-                    <button type="submit" class="bg-primary hover:bg-accent text-white font-semibold py-2.5 rounded-xl flex-1 transition shadow"><i class="fas fa-save mr-2"></i> Simpan Laporan Multiplexing</button>
+                    <button type="submit" class="bg-primary hover:bg-accent text-white font-semibold py-2.5 rounded-xl flex-1 transition shadow"><i class="fas fa-save mr-2"></i> Simpan Laporan</button>
+                    <button type="button" id="btnCopyLast" class="bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl flex-1 transition"><i class="fas fa-copy mr-2"></i> Salin dari Terakhir</button>
                     <button type="button" id="btnResetForm" class="bg-gray-200 hover:bg-gray-300 text-gray-800 py-2.5 rounded-xl flex-1 transition"><i class="fas fa-undo-alt mr-2"></i> Reset Form</button>
                 </div>
             </form>
@@ -240,7 +223,7 @@
     <!-- Daftar Riwayat -->
     <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
         <div class="bg-gradient-to-r from-primary to-accent px-4 py-3 flex justify-between items-center flex-wrap gap-2">
-            <h2 class="text-base md:text-xl font-semibold text-white"><i class="fas fa-history mr-2"></i> Riwayat Pencatatan Multiplexing</h2>
+            <h2 class="text-base md:text-xl font-semibold text-white"><i class="fas fa-history mr-2"></i> Riwayat Pencatatan (urut waktu)</h2>
             <div class="flex gap-2">
                 <button id="btnExportHTML" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs md:text-sm px-3 py-1.5 rounded-full"><i class="fas fa-file-export mr-1"></i> Export</button>
                 <button id="btnHapusSemua" class="bg-red-600 hover:bg-red-700 text-white text-xs md:text-sm px-3 py-1.5 rounded-full"><i class="fas fa-dumpster-fire mr-1"></i> Hapus Semua</button>
@@ -249,18 +232,17 @@
         <div class="table-wrapper p-2 md:p-4">
             <table class="min-w-[1100px] md:min-w-full bg-white border border-gray-200 rounded-xl text-xs md:text-sm">
                 <thead class="bg-gray-100">
-                <tr><th>No</th><th>Tgl</th><th>Petugas</th><th>IRD1 (C/N/Lock)</th><th>IRD2 (C/N/Lock)</th><th>IRD3 (Qual/Lock)</th><th>MUX</th><th>Kabel & IP</th><th>Foto</th><th>Aksi</th></tr>
+                    <tr><th>No Urut</th><th>Tgl</th><th>Petugas</th><th>IRD1</th><th>IRD2</th><th>IRD3</th><th>Kabel (10 Seg) & IP</th><th>Foto</th><th>Aksi</th></tr>
                 </thead>
-                <tbody id="tabelBody"><tr><td colspan="10" class="text-center py-6 text-gray-400">⚡ Memuat data...</td></tr></tbody>
+                <tbody id="tabelBody"><tr><td colspan="9" class="text-center py-6 text-gray-400">⚡ Memuat data...</td></tr></tbody>
             </table>
         </div>
     </div>
 </div>
 
 <script>
-    // Firebase & global
     let isFirebaseReady = false, entries = [], listenerRef = null, isInternalUpdate = false;
-    const DB_PATH = 'monitoring/multiplexing_v3/entries';
+    const DB_PATH = 'monitoring/multiplexing_v6_auto_number';
     let currentFotoList = [];
     let mediaStream = null, currentFacingMode = 'environment';
     const videoEl = document.getElementById('videoCamera'), videoContainer = document.getElementById('videoContainer');
@@ -269,15 +251,107 @@
 
     function updateFirebaseStatus(connected, msg) { let el = document.getElementById('firebaseStatus'); if(el) el.innerHTML = connected ? `<i class="fas fa-check-circle text-green-600"></i> ${msg}` : `<i class="fas fa-exclamation-triangle text-amber-600"></i> ${msg}`; }
     async function enablePersistence() { if(window.db) try{ await window.db.enablePersistence(); return true; } catch(e){} return false; }
-    async function setEntriesToFirebase(arr) { if(!isFirebaseReady||!window.db) return false; const obj={}; arr.forEach(e=>{ obj[e.id]=e; }); await window.db.ref(DB_PATH).set(obj); updateFirebaseStatus(true,"Tersinkron"); return true; }
-    function attachRealtimeListener() { if(!isFirebaseReady||!window.db) return; if(listenerRef) listenerRef.off(); const ref=window.db.ref(DB_PATH); listenerRef=ref.on('value',(snap)=>{ if(isInternalUpdate) return; const data=snap.val(); entries=data?Object.values(data):[]; entries.sort((a,b)=>b.id-a.id); renderTable(); updateNomorOtomatis(); updateFirebaseStatus(true,`Realtime (${entries.length} data)`); },()=>updateFirebaseStatus(false,"Error listener")); }
-    function getNextId() { return entries.length ? Math.max(...entries.map(e=>e.id))+1 : 1; }
-    function updateNomorOtomatis() { document.getElementById("nomorOtomatis").value = getNextId(); }
-    async function addEntry(newEntry) { const updated = [newEntry, ...entries]; updated.sort((a,b)=>b.id-a.id); isInternalUpdate=true; await setEntriesToFirebase(updated); isInternalUpdate=false; }
-    async function deleteEntryById(id) { const updated = entries.filter(e=>e.id!==id); isInternalUpdate=true; await setEntriesToFirebase(updated); isInternalUpdate=false; }
-    async function clearAllEntries() { isInternalUpdate=true; await setEntriesToFirebase([]); isInternalUpdate=false; }
-
-    // Kamera & watermark (fungsi watermark sederhana tapi tetap profesional)
+    async function setEntriesToFirebase(arr) { if(!isFirebaseReady||!window.db) return false; const obj={}; arr.forEach(e=>{ obj[e.id]=e; }); await window.db.ref(DB_PATH).set(obj); return true; }
+    
+    // Recalculate urutan based on createdAt (oldest first) and update Firebase
+    async function recalculateAndUpdate() {
+        if(!entries.length) return;
+        const sorted = [...entries].sort((a,b) => new Date(a.createdAt) - new Date(b.createdAt));
+        let urutan = 1;
+        for(let item of sorted) {
+            item.urutan = urutan++;
+        }
+        isInternalUpdate = true;
+        await setEntriesToFirebase(entries);
+        isInternalUpdate = false;
+        renderTable();
+        updateNomorOtomatis();
+    }
+    
+    function attachRealtimeListener() { 
+        if(!isFirebaseReady||!window.db) return; 
+        if(listenerRef) listenerRef.off(); 
+        const ref=window.db.ref(DB_PATH); 
+        listenerRef=ref.on('value', async (snap)=>{ 
+            if(isInternalUpdate) return; 
+            const data=snap.val(); 
+            entries=data?Object.values(data):[]; 
+            await recalculateAndUpdate(); // force urutan recalc after any external change
+            updateFirebaseStatus(true,`Realtime (${entries.length} data)`);
+        },()=>updateFirebaseStatus(false,"Error listener")); 
+    }
+    
+    function updateNomorOtomatis() {
+        let next = 1;
+        if(entries.length) {
+            const maxUrutan = Math.max(...entries.map(e=>e.urutan||0));
+            next = maxUrutan + 1;
+        }
+        document.getElementById("nomorOtomatis").value = next;
+    }
+    
+    async function addEntry(newEntry) {
+        // assign created timestamp and id
+        newEntry.id = Date.now().toString();
+        newEntry.createdAt = new Date().toISOString();
+        entries.push(newEntry);
+        await recalculateAndUpdate(); // this will sort and assign urutan
+    }
+    
+    async function deleteEntryById(id) {
+        entries = entries.filter(e=>e.id !== id);
+        if(entries.length === 0) {
+            isInternalUpdate = true;
+            await setEntriesToFirebase([]);
+            isInternalUpdate = false;
+        } else {
+            await recalculateAndUpdate();
+        }
+        renderTable();
+        updateNomorOtomatis();
+    }
+    
+    async function clearAllEntries() {
+        entries = [];
+        isInternalUpdate = true;
+        await setEntriesToFirebase([]);
+        isInternalUpdate = false;
+        renderTable();
+        updateNomorOtomatis();
+    }
+    
+    // Auto-fill from latest entry (by createdAt desc)
+    function autoFillFromLatest() {
+        if(!entries.length) return false;
+        const latest = [...entries].sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
+        if(!latest) return false;
+        // Fill IP fields
+        if(latest.ip) {
+            document.getElementById('ip_addr').value = latest.ip.alamat || '';
+            document.getElementById('ip_port_in_use').value = latest.ip.port_in_use !== null ? latest.ip.port_in_use : '';
+            document.getElementById('ip_channel_terisi').value = latest.ip.channel_terisi || '';
+            document.getElementById('ip_bitrate').value = latest.ip.bitrate !== null ? latest.ip.bitrate : '';
+            document.getElementById('ip_status').value = latest.ip.status || 'Stabil';
+            document.getElementById('ip_notes').value = latest.ip.catatan || '';
+        }
+        // Fill Cable fields (10 segmen)
+        if(latest.kabel) {
+            document.getElementById('cable_seg1').value = latest.kabel.seg1 || '';
+            document.getElementById('cable_seg2').value = latest.kabel.seg2 || '';
+            document.getElementById('cable_seg3').value = latest.kabel.seg3 || '';
+            document.getElementById('cable_seg4').value = latest.kabel.seg4 || '';
+            document.getElementById('cable_seg5').value = latest.kabel.seg5 || '';
+            document.getElementById('cable_seg6').value = latest.kabel.seg6 || '';
+            document.getElementById('cable_seg7').value = latest.kabel.seg7 || '';
+            document.getElementById('cable_seg8').value = latest.kabel.seg8 || '';
+            document.getElementById('cable_seg9').value = latest.kabel.seg9 || '';
+            document.getElementById('cable_seg10').value = latest.kabel.seg10 || '';
+            document.getElementById('cable_notes').value = latest.kabel.catatan || '';
+        }
+        return true;
+    }
+    
+    // Camera & Watermark functions (unchanged but keep minimal)
     async function processSingleFoto(originalBase64, petugas) { 
         const getPos = () => new Promise(r=>{ navigator.geolocation?.getCurrentPosition(p=>r({lat:p.coords.latitude,lng:p.coords.longitude}),()=>r(null),{timeout:5000}) || r(null); });
         const pos = await getPos(); const now = new Date(); const waktuStr = now.toLocaleString('id-ID',{hour12:false}); 
@@ -295,68 +369,94 @@
     function showLoading(m){ let ld=document.getElementById('globalLoading'); if(!ld){ ld=document.createElement('div'); ld.id='globalLoading'; ld.className='loading-overlay'; ld.innerHTML=`<div class="bg-black/80 text-white p-4 rounded-xl">${m}</div>`; document.body.appendChild(ld); } else ld.style.display='flex'; }
     function hideLoading(){ let ld=document.getElementById('globalLoading'); if(ld) ld.remove(); }
 
-    // Render tabel (menampilkan 4 segmen kabel dan IP)
     function renderTable(){
-        const tbody=document.getElementById('tabelBody');
-        if(!entries.length){ tbody.innerHTML='<tr><td colspan="10" class="text-center py-6 text-gray-400">📭 Belum ada data multiplexing (4 segmen kabel + IP)</td><tr>'; return; }
-        let html='';
-        entries.forEach(e=>{
+        const tbody = document.getElementById('tabelBody');
+        if(!entries.length){ tbody.innerHTML='<tr><td colspan="9" class="text-center py-6 text-gray-400">📭 Belum ada data</td></tr>'; return; }
+        const sorted = [...entries].sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+        let html = '';
+        for(let e of sorted) {
             const ird1Str = `${e.ird1?.cn??'-'}dB / ${e.ird1?.lock??'-'}`;
             const ird2Str = `${e.ird2?.cn??'-'}dB / ${e.ird2?.lock??'-'}`;
             const ird3Str = `${e.ird3?.quality??'-'}% / ${e.ird3?.lock??'-'}`;
-            const muxStr = `${e.mux?.merk||'-'} (${e.mux?.status||'-'})`;
-            const kabelStr = `1:${e.kabel?.seg1||'-'}<br>2:${e.kabel?.seg2||'-'}<br>3:${e.kabel?.seg3||'-'}<br>4:${e.kabel?.seg4||'-'}`;
-            const ipStr = `IP:${e.ip?.alamat||'-'}:${e.ip?.port_in||'-'}→${e.ip?.port_out||'-'} ${e.ip?.bitrate??'-'}Mbps ${e.ip?.status||'-'}`;
-            const cableIpSummary = `<div class="text-[10px] leading-tight">${kabelStr}<hr class="my-1">${ipStr}</div>`;
+            const segs = e.kabel || {};
+            const segSummary = `1:${segs.seg1||'-'} | 2:${segs.seg2||'-'} | 3:${segs.seg3||'-'} | 4:${segs.seg4||'-'} | 5:${segs.seg5||'-'} | 6:${segs.seg6||'-'} | 7:${segs.seg7||'-'} | 8:${segs.seg8||'-'} | 9:${segs.seg9||'-'} | 10:${segs.seg10||'-'}`;
+            const ipInfo = `IP:${e.ip?.alamat||'-'} Port:${e.ip?.port_in_use||'-'} | Channel:${e.ip?.channel_terisi||'-'} | ${e.ip?.bitrate??'-'}Mbps ${e.ip?.status||'-'}`;
+            const cableIpSummary = `<div class="text-[10px] leading-tight"><details><summary>🔌 10 Segmen</summary><span class="text-[9px]">${segSummary}</span></details><hr class="my-1">${ipInfo}</div>`;
             const fotoCount = e.fotoList?.length||0; let thumbs='';
             if(fotoCount) thumbs=`<div class="foto-thumb-list">${e.fotoList.slice(0,2).map((f,i)=>`<div class="thumb-item" onclick='window.viewAllFoto(${JSON.stringify(e.fotoList)},${i})'><img src="${f.base64}"></div>`).join('')}${fotoCount>2?`<span class="text-[10px] bg-gray-200 px-1 rounded-full">+${fotoCount-2}</span>`:''}</div>`;
             const fotoCell = `<div><div class="flex justify-center">${thumbs}</div><button type="button" onclick='window.viewAllFoto(${JSON.stringify(e.fotoList)},0)' class="text-primary text-[10px] hover:underline"><i class="fas fa-images"></i> ${fotoCount} foto</button></div>`;
-            html+=`<tr class="border-b hover:bg-slate-50"><td class="py-2 px-1">${e.no||e.id}</td><td class="py-2 px-1">${e.tanggal}</td><td class="py-2 px-1">${escapeHtml(e.petugas)}</td><td class="text-[10px]">${ird1Str}</td><td class="text-[10px]">${ird2Str}</td><td class="text-[10px]">${ird3Str}</td><td class="text-[10px]">${muxStr}</td><td class="text-[10px]">${cableIpSummary}</td><td class="text-center">${fotoCell}</td><td><button onclick="deleteEntry(${e.id})" class="bg-red-100 text-red-600 px-2 py-1 rounded-full text-[10px]"><i class="fas fa-trash"></i> Hapus</button></td></tr>`;
-        });
-        tbody.innerHTML=html;
+            html += `<tr class="border-b"><td class="py-2 px-1">${e.urutan}</td><td class="py-2 px-1">${e.tanggal}</td><td class="py-2 px-1">${escapeHtml(e.petugas)}</td><td class="text-[10px]">${ird1Str}</td><td class="text-[10px]">${ird2Str}</td><td class="text-[10px]">${ird3Str}</td><td class="text-[10px]">${cableIpSummary}</td><td class="text-center">${fotoCell}</td><td><button onclick="deleteEntry('${e.id}')" class="bg-red-100 text-red-600 px-2 py-1 rounded-full text-[10px]"><i class="fas fa-trash"></i> Hapus</button></td></tr>`;
+        }
+        tbody.innerHTML = html;
     }
     window.deleteEntry = async (id)=>{ if(confirm("Hapus data?")) await deleteEntryById(id); };
     window.viewAllFoto = (fotoList, start)=>{ if(!fotoList?.length) return; let cur=start; const modal=document.createElement('div'); modal.className="modal-img"; modal.innerHTML=`<img src="${fotoList[cur].base64}"><div class="modal-caption">${fotoList[cur].jamFoto}</div><div style="position:absolute;bottom:20px;display:flex;gap:20px;"><button id="prevModal" class="bg-black/60 px-3 py-1 rounded">◀ Prev</button><button id="nextModal" class="bg-black/60 px-3 py-1 rounded">Next ▶</button></div>`; document.body.appendChild(modal); const update=(idx)=>{ if(idx>=0 && idx<fotoList.length){ cur=idx; modal.querySelector('img').src=fotoList[cur].base64; modal.querySelector('.modal-caption').innerHTML=fotoList[cur].jamFoto; } }; modal.querySelector('#prevModal').onclick=(e)=>{ e.stopPropagation(); update(cur-1); }; modal.querySelector('#nextModal').onclick=(e)=>{ e.stopPropagation(); update(cur+1); }; modal.onclick=(e)=>{ if(e.target===modal) modal.remove(); }; };
     function escapeHtml(s){ if(!s) return ''; return s.replace(/[&<>]/g,m=>m==='&'?'&amp;':m==='<'?'&lt;':'&gt;'); }
 
     // Submit form
-    const form=document.getElementById('formMultiplexing');
+    const form = document.getElementById('formMultiplexing');
     form.addEventListener('submit', async(e)=>{
         e.preventDefault();
-        const no=document.getElementById('nomorOtomatis').value, tgl=document.getElementById('tanggal').value, petugas=document.getElementById('petugas').value.trim();
+        const petugas = document.getElementById('petugas').value.trim();
         if(!petugas) return alert("Petugas harus diisi");
         if(currentFotoList.length===0) return alert("Minimal 1 foto dokumentasi");
         const ird1 = { cn: parseFloat(document.getElementById('ird1_cn').value)||null, margin: parseFloat(document.getElementById('ird1_margin').value)||null, lock: document.getElementById('ird1_lock').value };
         const ird2 = { cn: parseFloat(document.getElementById('ird2_cn').value)||null, margin: parseFloat(document.getElementById('ird2_margin').value)||null, lock: document.getElementById('ird2_lock').value };
         const ird3 = { quality: parseFloat(document.getElementById('ird3_quality').value)||null, strength: parseFloat(document.getElementById('ird3_strength').value)||null, lock: document.getElementById('ird3_lock').value };
-        const mux = { merk: document.getElementById('mux_merk').value, status: document.getElementById('mux_status').value };
-        const kabel = { seg1: document.getElementById('cable_seg1').value, seg2: document.getElementById('cable_seg2').value, seg3: document.getElementById('cable_seg3').value, seg4: document.getElementById('cable_seg4').value, catatan: document.getElementById('cable_notes').value };
-        const ip = { alamat: document.getElementById('ip_addr').value, port_in: parseInt(document.getElementById('ip_port_in').value)||null, port_out: parseInt(document.getElementById('ip_port_out').value)||null, bitrate: parseFloat(document.getElementById('ip_bitrate').value)||null, status: document.getElementById('ip_status').value, catatan: document.getElementById('ip_notes').value };
-        const newEntry = { id: getNextId(), no, tanggal: tgl, petugas, keterangan: document.getElementById('keterangan').value, ird1, ird2, ird3, mux, kabel, ip, fotoList: [...currentFotoList], createdAt: new Date().toISOString() };
+        const kabel = {
+            seg1: document.getElementById('cable_seg1').value, seg2: document.getElementById('cable_seg2').value,
+            seg3: document.getElementById('cable_seg3').value, seg4: document.getElementById('cable_seg4').value,
+            seg5: document.getElementById('cable_seg5').value, seg6: document.getElementById('cable_seg6').value,
+            seg7: document.getElementById('cable_seg7').value, seg8: document.getElementById('cable_seg8').value,
+            seg9: document.getElementById('cable_seg9').value, seg10: document.getElementById('cable_seg10').value,
+            catatan: document.getElementById('cable_notes').value
+        };
+        const ip = {
+            alamat: document.getElementById('ip_addr').value,
+            port_in_use: parseInt(document.getElementById('ip_port_in_use').value)||null,
+            channel_terisi: document.getElementById('ip_channel_terisi').value,
+            bitrate: parseFloat(document.getElementById('ip_bitrate').value)||null,
+            status: document.getElementById('ip_status').value,
+            catatan: document.getElementById('ip_notes').value
+        };
+        const newEntry = {
+            tanggal: document.getElementById('tanggal').value,
+            petugas, keterangan: document.getElementById('keterangan').value,
+            ird1, ird2, ird3, kabel, ip, fotoList: [...currentFotoList]
+        };
         await addEntry(newEntry);
-        resetFormInput();
-        alert(`✅ Tersimpan dengan ${currentFotoList.length} foto.`);
+        resetFormInput(true); // true means after submit, auto-fill from latest again
+        alert(`✅ Tersimpan dengan urutan nomor ${document.getElementById("nomorOtomatis").value-1} (baru)`);
     });
-    function resetFormInput(){
-        document.getElementById('tanggal').value=new Date().toISOString().split('T')[0];
-        document.getElementById('petugas').value=''; document.getElementById('keterangan').value='';
-        document.querySelectorAll('input[type=number],input[type=text],textarea,select').forEach(inp=>{ if(inp.id && inp.id!=='nomorOtomatis'){ if(inp.tagName==='SELECT') inp.selectedIndex=0; else inp.value=''; } });
-        ['cable_seg1','cable_seg2','cable_seg3','cable_seg4','ird1_lock','ird2_lock','ird3_lock','mux_status','ip_status'].forEach(id=>{ let sel=document.getElementById(id); if(sel) sel.selectedIndex=0; });
-        currentFotoList=[]; updatePreviewUI(); updateHiddenArray(); updateNomorOtomatis(); if(mediaStream) tutupKamera();
+    
+    function resetFormInput(keepAutoFill = false) {
+        document.getElementById('tanggal').value = new Date().toISOString().split('T')[0];
+        document.getElementById('petugas').value = '';
+        document.getElementById('keterangan').value = '';
+        // clear IRD
+        document.querySelectorAll('input[type=number], input[type=text], textarea, select').forEach(inp => {
+            if(inp.id && inp.id !== 'nomorOtomatis' && !inp.id.includes('camera') && inp.id !== 'fotoDataArray') {
+                if(inp.tagName === 'SELECT') inp.selectedIndex = 0;
+                else inp.value = '';
+            }
+        });
+        // reset specific selects
+        ['ird1_lock','ird2_lock','ird3_lock','ip_status'].forEach(id=>{ let sel=document.getElementById(id); if(sel) sel.selectedIndex=0; });
+        currentFotoList = []; updatePreviewUI(); updateHiddenArray();
+        if(mediaStream) tutupKamera();
+        if(keepAutoFill) autoFillFromLatest();
+        updateNomorOtomatis();
     }
-    document.getElementById('btnResetForm').addEventListener('click',()=>{ if(confirm("Reset form?")) resetFormInput(); });
-    document.getElementById('btnHapusSemua').addEventListener('click',async()=>{ if(confirm("Hapus SEMUA data multiplexing?")){ await clearAllEntries(); resetFormInput(); alert("Semua data dihapus."); } });
-    document.getElementById('btnExportHTML').addEventListener('click',()=>{ if(!entries.length) return alert("Tidak ada data"); let html=`<html><head><title>Laporan Multiplexing 4 Segmen Kabel</title><style>body{font-family:Inter}table{border-collapse:collapse}td,th{border:1px solid #aaa;padding:6px}</style></head><body><h2>Monitoring Multiplexing</h2>${document.querySelector('table').outerHTML}</body></html>`; const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([html],{type:"text/html"})); a.download=`laporan_multiplexing_${Date.now()}.html`; a.click(); URL.revokeObjectURL(a.href); });
-    async function initFirebase(){ if(!window.db){ setTimeout(initFirebase,300); return; } isFirebaseReady=true; await enablePersistence(); attachRealtimeListener(); updateNomorOtomatis(); }
+    
+    document.getElementById('btnResetForm').addEventListener('click', () => { if(confirm("Reset form (kosongkan semua)?")) resetFormInput(false); });
+    document.getElementById('btnCopyLast').addEventListener('click', () => { if(autoFillFromLatest()) alert("Data IP dan Kabel telah disalin dari riwayat terakhir."); else alert("Belum ada data riwayat."); });
+    document.getElementById('btnHapusSemua').addEventListener('click', async()=>{ if(confirm("Hapus SEMUA data?")){ await clearAllEntries(); resetFormInput(false); alert("Semua data dihapus."); } });
+    document.getElementById('btnExportHTML').addEventListener('click',()=>{ if(!entries.length) return alert("Tidak ada data"); let html=`<html><head><title>Laporan Multiplexing</title><style>table{border-collapse:collapse}td,th{border:1px solid #aaa;padding:6px}</style></head><body><h2>Monitoring Multiplexing (10 Segmen)</h2>${document.querySelector('table').outerHTML}</body></html>`; const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([html],{type:"text/html"})); a.download=`laporan_multiplexing_${Date.now()}.html`; a.click(); URL.revokeObjectURL(a.href); });
+    document.getElementById('backToDashboardBtn').addEventListener('click',()=>window.location.href='index.html');
+    document.getElementById('refreshPageBtn').addEventListener('click',()=>window.location.reload());
+    
+    async function initFirebase(){ if(!window.db){ setTimeout(initFirebase,300); return; } isFirebaseReady=true; await enablePersistence(); attachRealtimeListener(); updateNomorOtomatis(); autoFillFromLatest(); }
     initFirebase();
-
-    // ========== EVENT LISTENER UNTUK TOMBOL NAVIGASI ==========
-    document.getElementById('backToDashboardBtn').addEventListener('click', function() {
-        window.location.href = 'index.html';
-    });
-    document.getElementById('refreshPageBtn').addEventListener('click', function() {
-        window.location.reload();
-    });
 </script>
 </body>
 </html>
