@@ -91,11 +91,13 @@
         }
         input, select, textarea { font-size: 16px !important; }
         .sync-status { font-size: 0.7rem; padding: 2px 10px; border-radius: 20px; background: rgba(255,255,240,0.3); display: inline-block; margin-left: 12px; vertical-align: middle; }
-        .cable-label { font-weight: 600; color: #0a5b4b; display: block; margin-bottom: 4px; font-size: 0.75rem; }
-        .segmen-row { margin-bottom: 12px; display: flex; gap: 8px; align-items: center; }
-        .segmen-input { flex: 1; }
-        .segmen-remove { background: #ef4444; color: white; border-radius: 50%; width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; font-size: 14px; }
-        .segmen-remove:hover { background: #dc2626; }
+        .cable-label { font-weight: 600; color: #0a5b4b; display: inline-block; min-width: 200px; font-size: 0.75rem; }
+        .segmen-row { margin-bottom: 12px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+        .segmen-input { flex: 2; min-width: 200px; }
+        .segmen-actions { display: flex; gap: 6px; }
+        .action-icon { cursor: pointer; font-size: 14px; padding: 6px; border-radius: 8px; transition: 0.2s; }
+        .action-icon:hover { background: #e2e8f0; }
+        .label-edit { background: #f1f5f9; border-radius: 8px; padding: 4px 8px; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; }
     </style>
 </head>
 <body>
@@ -114,7 +116,7 @@
             <span id="firebaseStatus" class="sync-status"><i class="fas fa-cloud-upload-alt"></i> Menghubungkan...</span>
         </h1>
         <div class="mt-2 flex justify-center px-2">
-            <span class="bg-primary text-white text-xs md:text-sm rounded-full py-1 px-3 md:px-4 font-semibold"><i class="fas fa-camera-retro mr-1 md:mr-2"></i> Multi Foto Max 5 | Kamera + Watermark | Segmen Kabel Bisa Ditambah</span>
+            <span class="bg-primary text-white text-xs md:text-sm rounded-full py-1 px-3 md:px-4 font-semibold"><i class="fas fa-camera-retro mr-1 md:mr-2"></i> Multi Foto Max 5 | Kamera + Watermark | Segmen Kabel: +Tambah, Edit Label, Hapus</span>
         </div>
     </div>
 
@@ -161,14 +163,12 @@
                     </div>
                 </div>
 
-                <!-- Koneksi Kabel: DINAMIS (bisa tambah segmen) -->
+                <!-- Koneksi Kabel: DINAMIS dengan 10 segmen awal + fitur tambah/edit/hapus -->
                 <div class="bg-slate-50 rounded-xl p-4 border border-gray-200">
                     <h3 class="font-bold text-primary mb-3 flex items-center gap-2"><i class="fas fa-plug"></i> Koneksi Kabel (Segmen Dinamis) - Isi Jenis Kabel/Konektor</h3>
-                    <div id="segmenContainer" class="space-y-3">
-                        <!-- Segmen 1 - 10 default (dari request awal) -->
-                    </div>
-                    <div class="flex justify-between items-center mt-3">
-                        <button type="button" id="btnTambahSegmen" class="bg-primary hover:bg-accent text-white text-xs px-3 py-1.5 rounded-full"><i class="fas fa-plus-circle mr-1"></i> Tambah Segmen</button>
+                    <div id="segmenContainer" class="space-y-3"></div>
+                    <div class="flex justify-between items-center mt-4">
+                        <button type="button" id="btnTambahSegmen" class="bg-primary hover:bg-accent text-white text-xs px-3 py-2 rounded-full"><i class="fas fa-plus-circle mr-1"></i> Tambah Segmen</button>
                         <span id="segmenCounter" class="text-xs text-gray-500">Total segmen: 10</span>
                     </div>
                 </div>
@@ -232,59 +232,98 @@
                 <thead class="bg-gray-100">
                     <tr><th>No Urut</th><th>Tgl</th><th>Petugas</th><th>IRD1</th><th>IRD2</th><th>IRD3</th><th>Kabel (Segmen) & IP</th><th>Foto</th><th>Aksi</th></tr>
                 </thead>
-                <tbody id="tabelBody"><tr><td colspan="9" class="text-center py-6 text-gray-400">⚡ Memuat data......</td></tr></tbody>
-            </table>
+                <tbody id="tabelBody"><tr><td colspan="9" class="text-center py-6 text-gray-400">⚡ Memuat data......</td></tr>
+                </tbody>
+            前途
         </div>
     </div>
 </div>
 
 <script>
-    // Dynamic Segments management
-    let segmenList = []; // array of {nomor, value}
-    const initialSegments = [
-        "🔹 Segmen 1: Parabola (Telkom 4) ke IRD1 & IRD2",
-        "🔸 Segmen 2: Parabola (Asiasat) ke IRD3",
-        "🔹 Segmen 3: IRD 1,2,3 ke Channel Switch",
-        "🔸 Segmen 4: Channel Switch ke Monitor Blackmagic",
-        "🔹 Segmen 5: Channel Switch ke Encoder",
-        "🔸 Segmen 6: Encoder ke MUX",
-        "🔹 Segmen 7: MUX ke Exciter",
-        "🔸 Segmen 8: Exciter ke Pemancar (NEC)",
-        "🔹 Segmen 9: Pemancar (NEC) ke Tower",
-        "🔸 Segmen 10: Switch (Ethernet)"
+    // ======================= SEGMEN DINAMIS (AWAL 10 SEGMEN) =======================
+    let segmenList = []; // array of {nomor, label, value}
+    
+    // Data awal 10 segmen (label asli)
+    const defaultLabels = [
+        "Parabola (Telkom 4) ke IRD1 & IRD2",
+        "Parabola (Asiasat) ke IRD3",
+        "IRD 1,2,3 ke Channel Switch",
+        "Channel Switch ke Monitor Blackmagic",
+        "Channel Switch ke Encoder",
+        "Encoder ke MUX",
+        "MUX ke Exciter",
+        "Exciter ke Pemancar (NEC)",
+        "Pemancar (NEC) ke Tower",
+        "Switch (Ethernet)"
     ];
     
-    function buildSegmenContainer() {
+    function initDefaultSegments() {
+        segmenList = [];
+        for(let i=0; i<defaultLabels.length; i++) {
+            segmenList.push({ nomor: i+1, label: defaultLabels[i], value: '' });
+        }
+        renderSegmenContainer();
+        updateSegmenCounter();
+    }
+    
+    function renderSegmenContainer() {
         const container = document.getElementById('segmenContainer');
         container.innerHTML = '';
         segmenList.forEach((seg, idx) => {
             const rowDiv = document.createElement('div');
             rowDiv.className = 'segmen-row';
             rowDiv.dataset.index = idx;
+            
+            // Label dengan tombol edit
             const labelSpan = document.createElement('span');
-            labelSpan.className = 'cable-label w-36 flex-shrink-0 text-xs';
-            labelSpan.innerText = seg.nomor+':';
+            labelSpan.className = 'cable-label';
+            labelSpan.innerHTML = `<span class="label-edit"><strong>Segmen ${seg.nomor}:</strong> ${escapeHtml(seg.label)} <i class="fas fa-pen action-icon" style="font-size:10px; cursor:pointer;" data-edit-idx="${idx}"></i></span>`;
+            
+            // Input untuk nilai kabel
             const input = document.createElement('input');
             input.type = 'text';
             input.className = 'segmen-input w-full border rounded-lg px-3 py-2 text-sm';
-            input.placeholder = seg.label + ' (isi jenis kabel/konektor)';
+            input.placeholder = `Isi jenis kabel/konektor untuk Segmen ${seg.nomor}`;
             input.value = seg.value || '';
             input.addEventListener('input', (e) => { seg.value = e.target.value; });
-            const removeBtn = document.createElement('span');
-            removeBtn.className = 'segmen-remove';
-            removeBtn.innerHTML = '<i class="fas fa-times"></i>';
-            removeBtn.style.cursor = 'pointer';
-            removeBtn.onclick = () => {
-                if(segmenList.length <= 1) { alert("Minimal harus ada 1 segmen"); return; }
-                segmenList.splice(idx, 1);
-                renumberSegments();
-                buildSegmenContainer();
-                updateSegmenCounter();
-            };
+            
+            // Tombol hapus (tidak bisa hapus jika hanya 1 segmen tersisa)
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'segmen-actions';
+            const deleteIcon = document.createElement('i');
+            deleteIcon.className = 'fas fa-trash-alt action-icon text-red-500';
+            deleteIcon.title = 'Hapus segmen';
+            deleteIcon.style.cursor = 'pointer';
+            deleteIcon.addEventListener('click', () => {
+                if(segmenList.length <= 1) {
+                    alert("Minimal harus ada 1 segmen!");
+                    return;
+                }
+                if(confirm(`Hapus Segmen ${seg.nomor} (${seg.label})?`)) {
+                    segmenList.splice(idx, 1);
+                    renumberSegments();
+                    renderSegmenContainer();
+                    updateSegmenCounter();
+                }
+            });
+            actionsDiv.appendChild(deleteIcon);
             rowDiv.appendChild(labelSpan);
             rowDiv.appendChild(input);
-            rowDiv.appendChild(removeBtn);
+            rowDiv.appendChild(actionsDiv);
             container.appendChild(rowDiv);
+        });
+        
+        // Pasang event listener edit setelah render (karena tombol edit ada di innerHTML)
+        document.querySelectorAll('[data-edit-idx]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const idx = parseInt(btn.dataset.editIdx);
+                const seg = segmenList[idx];
+                const newLabel = prompt(`Edit label untuk Segmen ${seg.nomor}:`, seg.label);
+                if(newLabel && newLabel.trim() !== '') {
+                    seg.label = newLabel.trim();
+                    renderSegmenContainer();
+                }
+            });
         });
     }
     
@@ -294,8 +333,9 @@
     
     function addNewSegment() {
         let newNumber = segmenList.length + 1;
-        segmenList.push({ nomor: newNumber, label: `Segmen ${newNumber} (kustom)`, value: '' });
-        buildSegmenContainer();
+        let defaultLabel = `Segmen ${newNumber} (kustom)`;
+        segmenList.push({ nomor: newNumber, label: defaultLabel, value: '' });
+        renderSegmenContainer();
         updateSegmenCounter();
     }
     
@@ -307,46 +347,42 @@
         let result = {};
         segmenList.forEach(seg => {
             result[`seg${seg.nomor}`] = seg.value || '';
+            // Simpan juga label untuk keperluan restore nanti (optional)
+            result[`label${seg.nomor}`] = seg.label;
         });
         return result;
     }
     
     function setSegmenValues(valuesObj) {
-        // valuesObj like { seg1: '...', seg2: '...', seg11: '...' }
+        // valuesObj berisi seg1, seg2, ..., label1, label2, ...
         if(!valuesObj) return;
-        const newList = [];
-        const maxKey = Math.max(...Object.keys(valuesObj).filter(k=>k.startsWith('seg')).map(k=>parseInt(k.replace('seg',''))), 0);
-        // Ensure we have at least current segmenList length, but we will rebuild
-        for(let i=1; i<=maxKey; i++) {
-            let label = (i <= initialSegments.length) ? initialSegments[i-1].substring(initialSegments[i-1].indexOf(':')+2) : `Segmen ${i} (kustom)`;
-            newList.push({ nomor: i, label: label, value: valuesObj[`seg${i}`] || '' });
+        // Cari jumlah segmen maks dari keys
+        const segKeys = Object.keys(valuesObj).filter(k => k.startsWith('seg'));
+        if(segKeys.length === 0) {
+            initDefaultSegments();
+            return;
         }
-        if(newList.length === 0) {
-            // fallback to default 10
-            for(let i=0; i<initialSegments.length; i++) {
-                newList.push({ nomor: i+1, label: initialSegments[i].substring(initialSegments[i].indexOf(':')+2), value: '' });
-            }
+        const maxSeg = Math.max(...segKeys.map(k => parseInt(k.replace('seg',''))));
+        const newList = [];
+        for(let i=1; i<=maxSeg; i++) {
+            let label = valuesObj[`label${i}`];
+            if(!label) label = (i <= defaultLabels.length) ? defaultLabels[i-1] : `Segmen ${i} (kustom)`;
+            newList.push({
+                nomor: i,
+                label: label,
+                value: valuesObj[`seg${i}`] || ''
+            });
         }
         segmenList = newList;
-        buildSegmenContainer();
+        renderSegmenContainer();
         updateSegmenCounter();
     }
     
-    // Initialize default 10 segments
-    function initDefaultSegments() {
-        segmenList = [];
-        for(let i=0; i<initialSegments.length; i++) {
-            let labelRaw = initialSegments[i];
-            let labelText = labelRaw.substring(labelRaw.indexOf(':')+2);
-            segmenList.push({ nomor: i+1, label: labelText, value: '' });
-        }
-        buildSegmenContainer();
-        updateSegmenCounter();
-    }
+    function escapeHtml(s) { if(!s) return ''; return s.replace(/[&<>]/g, m => m==='&'?'&amp;':m==='<'?'&lt;':'&gt;'); }
     
-    // Firebase & global
+    // ======================= FIREBASE & DATA UTAMA =======================
     let isFirebaseReady = false, entries = [], listenerRef = null, isInternalUpdate = false;
-    const DB_PATH = 'monitoring/multiplexing_v7_dynamic_seg';
+    const DB_PATH = 'monitoring/multiplexing_v8_dynamic_seg_fixed';
     let currentFotoList = [];
     let mediaStream = null, currentFacingMode = 'environment';
     const videoEl = document.getElementById('videoCamera'), videoContainer = document.getElementById('videoContainer');
@@ -424,7 +460,7 @@
         if(!entries.length) return false;
         const latest = [...entries].sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
         if(!latest) return false;
-        // Fill IP
+        // IP
         if(latest.ip) {
             document.getElementById('ip_addr').value = latest.ip.alamat || '';
             document.getElementById('ip_port_in_use').value = latest.ip.port_in_use !== null ? latest.ip.port_in_use : '';
@@ -433,14 +469,14 @@
             document.getElementById('ip_status').value = latest.ip.status || 'Stabil';
             document.getElementById('ip_notes').value = latest.ip.catatan || '';
         }
-        // Fill Cable dynamic segments
+        // Kabel dinamis
         if(latest.kabel) {
             setSegmenValues(latest.kabel);
         }
         return true;
     }
     
-    // Camera & watermark (unchanged)
+    // Camera & watermark
     async function processSingleFoto(originalBase64, petugas) { 
         const getPos = () => new Promise(r=>{ navigator.geolocation?.getCurrentPosition(p=>r({lat:p.coords.latitude,lng:p.coords.longitude}),()=>r(null),{timeout:5000}) || r(null); });
         const pos = await getPos(); const now = new Date(); const waktuStr = now.toLocaleString('id-ID',{hour12:false}); 
@@ -458,6 +494,7 @@
     function showLoading(m){ let ld=document.getElementById('globalLoading'); if(!ld){ ld=document.createElement('div'); ld.id='globalLoading'; ld.className='loading-overlay'; ld.innerHTML=`<div class="bg-black/80 text-white p-4 rounded-xl">${m}</div>`; document.body.appendChild(ld); } else ld.style.display='flex'; }
     function hideLoading(){ let ld=document.getElementById('globalLoading'); if(ld) ld.remove(); }
 
+    // Render tabel riwayat
     function renderTable(){
         const tbody = document.getElementById('tabelBody');
         if(!entries.length){ tbody.innerHTML='<tr><td colspan="9" class="text-center py-6 text-gray-400">📭 Belum ada data</td></tr>'; return; }
@@ -482,8 +519,7 @@
     }
     window.deleteEntry = async (id)=>{ if(confirm("Hapus data?")) await deleteEntryById(id); };
     window.viewAllFoto = (fotoList, start)=>{ if(!fotoList?.length) return; let cur=start; const modal=document.createElement('div'); modal.className="modal-img"; modal.innerHTML=`<img src="${fotoList[cur].base64}"><div class="modal-caption">${fotoList[cur].jamFoto}</div><div style="position:absolute;bottom:20px;display:flex;gap:20px;"><button id="prevModal" class="bg-black/60 px-3 py-1 rounded">◀ Prev</button><button id="nextModal" class="bg-black/60 px-3 py-1 rounded">Next ▶</button></div>`; document.body.appendChild(modal); const update=(idx)=>{ if(idx>=0 && idx<fotoList.length){ cur=idx; modal.querySelector('img').src=fotoList[cur].base64; modal.querySelector('.modal-caption').innerHTML=fotoList[cur].jamFoto; } }; modal.querySelector('#prevModal').onclick=(e)=>{ e.stopPropagation(); update(cur-1); }; modal.querySelector('#nextModal').onclick=(e)=>{ e.stopPropagation(); update(cur+1); }; modal.onclick=(e)=>{ if(e.target===modal) modal.remove(); }; };
-    function escapeHtml(s){ if(!s) return ''; return s.replace(/[&<>]/g,m=>m==='&'?'&amp;':m==='<'?'&lt;':'&gt;'); }
-
+    
     // Submit form
     const form = document.getElementById('formMultiplexing');
     form.addEventListener('submit', async(e)=>{
@@ -517,15 +553,15 @@
         document.getElementById('tanggal').value = new Date().toISOString().split('T')[0];
         document.getElementById('petugas').value = '';
         document.getElementById('keterangan').value = '';
+        // Reset semua input kecuali segmen
         document.querySelectorAll('input[type=number], input[type=text], textarea, select').forEach(inp => {
             if(inp.id && inp.id !== 'nomorOtomatis' && !inp.id.includes('camera') && inp.id !== 'fotoDataArray' && !inp.closest('#segmenContainer')) {
                 if(inp.tagName === 'SELECT') inp.selectedIndex = 0;
                 else inp.value = '';
             }
         });
-        // Reset IP selects
         ['ird1_lock','ird2_lock','ird3_lock','ip_status'].forEach(id=>{ let sel=document.getElementById(id); if(sel) sel.selectedIndex=0; });
-        // Reset dynamic segments to default 10
+        // Reset segmen ke default 10 segmen (tidak menghapus struktur)
         initDefaultSegments();
         currentFotoList = []; updatePreviewUI(); updateHiddenArray();
         if(mediaStream) tutupKamera();
