@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>TVRI - TX Tanah Merah | Monitoring Multiplexing Lengkap (3 IRD, MUX, 3 Kabel, IP)</title>
+    <title>TVRI - TX Tanah Merah | Monitoring Multiplexing Lengkap (3 IRD, MUX, 4 Kabel, IP)</title>
     <link rel="icon" type="image/ico" href="favicon.ico">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -64,7 +64,7 @@
             <i class="fas fa-satellite-dish text-white text-xl md:text-2xl"></i>
         </div>
         <h1 class="text-xl sm:text-2xl md:text-4xl font-extrabold text-slate-800 mt-2 md:mt-3 leading-tight">
-            Monitoring Multiplexing (3 IRD, MUX, Kabel & IP)
+            Monitoring Multiplexing (3 IRD, MUX, 4 Segmen Kabel & IP)
             <span id="firebaseStatus" class="sync-status"><i class="fas fa-cloud-upload-alt"></i> Menghubungkan...</span>
         </h1>
         <div class="mt-2 flex justify-center px-2">
@@ -127,15 +127,16 @@
                     </div>
                 </div>
 
-                <!-- Koneksi Kabel: 3 segmen dengan dropdown dan catatan -->
+                <!-- Koneksi Kabel: 4 SEGMEN (ditambah Parabola ke IRD) -->
                 <div class="bg-slate-50 rounded-xl p-4 border border-gray-200">
-                    <h3 class="font-bold text-primary mb-2 flex items-center gap-2"><i class="fas fa-plug"></i> Koneksi Kabel (3 Segmen)</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <div><label class="text-[10px] font-medium">Segmen 1: UTP/Ethernet</label><select id="cable_seg1" class="w-full border rounded-lg px-2 py-1 text-sm"><option value="UTP/Ethernet - Cat5e">Cat5e</option><option value="UTP/Ethernet - Cat6">Cat6</option><option value="UTP/Ethernet - Cat6a">Cat6a</option><option value="Tidak Terpasang">Tidak Terpasang</option></select></div>
-                        <div><label class="text-[10px] font-medium">Segmen 2: IRD ke MUX</label><select id="cable_seg2" class="w-full border rounded-lg px-2 py-1 text-sm"><option value="Koaksial BNC (IRD-MUX) - 75 ohm">Koaksial BNC (IRD-MUX) 75 ohm</option><option value="Koaksial SMA">Koaksial SMA</option><option value="Serat Optik (SDI)">Serat Optik (SDI)</option><option value="Tidak Terpasang">Tidak Terpasang</option></select></div>
-                        <div><label class="text-[10px] font-medium">Segmen 3: MUX ke Pemancar</label><select id="cable_seg3" class="w-full border rounded-lg px-2 py-1 text-sm"><option value="RF Coaxial (MUX-TX) - 50 ohm">RF Coaxial (MUX-TX) 50 ohm</option><option value="Waveguide">Waveguide</option><option value="Serat Optik (RF over Fiber)">Serat Optik</option><option value="Tidak Terpasang">Tidak Terpasang</option></select></div>
+                    <h3 class="font-bold text-primary mb-2 flex items-center gap-2"><i class="fas fa-plug"></i> Koneksi Kabel (4 Segmen)</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div><label class="text-[10px] font-medium">Segmen 1: Parabola ke IRD</label><select id="cable_seg1" class="w-full border rounded-lg px-2 py-1 text-sm"><option value="Koaksial LNB (RG6) - 75 ohm">Koaksial LNB (RG6) - 75 ohm</option><option value="Koaksial LNB (RG59)">Koaksial LNB (RG59)</option><option value="Kabel Serat Optik (LNB over Fiber)">Serat Optik LNB</option><option value="Tidak Terpasang">Tidak Terpasang</option></select></div>
+                        <div><label class="text-[10px] font-medium">Segmen 2: UTP/Ethernet (Network)</label><select id="cable_seg2" class="w-full border rounded-lg px-2 py-1 text-sm"><option value="UTP/Ethernet - Cat5e">Cat5e</option><option value="UTP/Ethernet - Cat6">Cat6</option><option value="UTP/Ethernet - Cat6a">Cat6a</option><option value="Tidak Terpasang">Tidak Terpasang</option></select></div>
+                        <div><label class="text-[10px] font-medium">Segmen 3: IRD ke MUX</label><select id="cable_seg3" class="w-full border rounded-lg px-2 py-1 text-sm"><option value="Koaksial BNC (IRD-MUX) - 75 ohm">Koaksial BNC (IRD-MUX) 75 ohm</option><option value="Koaksial SMA">Koaksial SMA</option><option value="Serat Optik (SDI)">Serat Optik (SDI)</option><option value="Tidak Terpasang">Tidak Terpasang</option></select></div>
+                        <div><label class="text-[10px] font-medium">Segmen 4: MUX ke Pemancar (TX)</label><select id="cable_seg4" class="w-full border rounded-lg px-2 py-1 text-sm"><option value="RF Coaxial (MUX-TX) - 50 ohm">RF Coaxial (MUX-TX) 50 ohm</option><option value="Waveguide">Waveguide</option><option value="Serat Optik (RF over Fiber)">Serat Optik</option><option value="Tidak Terpasang">Tidak Terpasang</option></select></div>
                     </div>
-                    <div class="mt-2"><label class="text-xs font-medium">Catatan Kabel</label><textarea id="cable_notes" rows="2" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="Gangguan fisik, loss, konektor longgar, dll..."></textarea></div>
+                    <div class="mt-2"><label class="text-xs font-medium">Catatan Kabel (umum)</label><textarea id="cable_notes" rows="2" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="Gangguan fisik, loss, konektor longgar, dll..."></textarea></div>
                 </div>
 
                 <!-- Pemantauan Siaran IP MUX -->
@@ -151,7 +152,7 @@
                     </div>
                 </div>
 
-                <!-- Multi Foto (sama watermark) -->
+                <!-- Multi Foto -->
                 <div class="border-t border-gray-200 pt-4">
                     <label class="block text-sm md:text-md font-semibold text-gray-800 mb-2"><i class="fas fa-camera-retro text-primary mr-2"></i> Dokumentasi Perangkat (Max 5, watermark otomatis)</label>
                     <div class="bg-slate-50 rounded-xl p-3 md:p-4 border border-dashed border-gray-300">
@@ -195,7 +196,7 @@
             </div>
         </div>
         <div class="table-wrapper p-2 md:p-4">
-            <table class="min-w-[1000px] md:min-w-full bg-white border border-gray-200 rounded-xl text-xs md:text-sm">
+            <table class="min-w-[1100px] md:min-w-full bg-white border border-gray-200 rounded-xl text-xs md:text-sm">
                 <thead class="bg-gray-100">
                 <tr><th>No</th><th>Tgl</th><th>Petugas</th><th>IRD1 (C/N/Lock)</th><th>IRD2 (C/N/Lock)</th><th>IRD3 (Qual/Lock)</th><th>MUX</th><th>Kabel & IP</th><th>Foto</th><th>Aksi</th></tr>
                 </thead>
@@ -208,7 +209,7 @@
 <script>
     // Firebase & global
     let isFirebaseReady = false, entries = [], listenerRef = null, isInternalUpdate = false;
-    const DB_PATH = 'monitoring/multiplexing_v2/entries';
+    const DB_PATH = 'monitoring/multiplexing_v3/entries';
     let currentFotoList = [];
     let mediaStream = null, currentFacingMode = 'environment';
     const videoEl = document.getElementById('videoCamera'), videoContainer = document.getElementById('videoContainer');
@@ -225,8 +226,8 @@
     async function deleteEntryById(id) { const updated = entries.filter(e=>e.id!==id); isInternalUpdate=true; await setEntriesToFirebase(updated); isInternalUpdate=false; }
     async function clearAllEntries() { isInternalUpdate=true; await setEntriesToFirebase([]); isInternalUpdate=false; }
 
-    // Kamera & watermark (fungsi sama seperti sebelumnya, disederhanakan)
-    async function processSingleFoto(originalBase64, petugas) { /* watermark lengkap, gunakan fungsi dari kode asli */ 
+    // Kamera & watermark (fungsi watermark sederhana tapi tetap profesional)
+    async function processSingleFoto(originalBase64, petugas) { 
         const getPos = () => new Promise(r=>{ navigator.geolocation?.getCurrentPosition(p=>r({lat:p.coords.latitude,lng:p.coords.longitude}),()=>r(null),{timeout:5000}) || r(null); });
         const pos = await getPos(); const now = new Date(); const waktuStr = now.toLocaleString('id-ID',{hour12:false}); 
         const applyWM = (dataUrl, petugas, loc, waktu) => new Promise((res,rej)=>{ const img=new Image(); img.onload=()=>{ const canvas=document.createElement('canvas'); canvas.width=img.width; canvas.height=img.height; const ctx=canvas.getContext('2d'); ctx.drawImage(img,0,0); ctx.font="bold 28px Inter"; ctx.fillStyle="#1E3A8F"; ctx.fillText("TV",20,45); ctx.fillStyle="#FFFFFF"; ctx.font="bold 28px Inter"; ctx.fillText("RI",72,45); ctx.font="14px Inter"; ctx.fillStyle="white"; ctx.shadowBlur=6; ctx.fillText(`📡 TVRI - Multiplexing`,20,img.height-70); ctx.fillText(`👤 ${petugas}`,20,img.height-50); ctx.fillText(`🕒 ${waktu}`,20,img.height-30); if(loc) ctx.fillText(`📍 ${loc.lat.toFixed(5)}°, ${loc.lng.toFixed(5)}°`,20,img.height-10); res(canvas.toDataURL('image/jpeg',0.88)); }; img.onerror=rej; img.src=dataUrl; });
@@ -243,21 +244,23 @@
     function showLoading(m){ let ld=document.getElementById('globalLoading'); if(!ld){ ld=document.createElement('div'); ld.id='globalLoading'; ld.className='loading-overlay'; ld.innerHTML=`<div class="bg-black/80 text-white p-4 rounded-xl">${m}</div>`; document.body.appendChild(ld); } else ld.style.display='flex'; }
     function hideLoading(){ let ld=document.getElementById('globalLoading'); if(ld) ld.remove(); }
 
-    // Render tabel
+    // Render tabel (menampilkan 4 segmen kabel dan IP)
     function renderTable(){
         const tbody=document.getElementById('tabelBody');
-        if(!entries.length){ tbody.innerHTML='<tr><td colspan="10" class="text-center py-6 text-gray-400">📭 Belum ada data</td></tr>'; return; }
+        if(!entries.length){ tbody.innerHTML='<tr><td colspan="10" class="text-center py-6 text-gray-400">📭 Belum ada data multiplexing (4 segmen kabel + IP)</td></tr>'; return; }
         let html='';
         entries.forEach(e=>{
             const ird1Str = `${e.ird1?.cn??'-'}dB / ${e.ird1?.lock??'-'}`;
             const ird2Str = `${e.ird2?.cn??'-'}dB / ${e.ird2?.lock??'-'}`;
             const ird3Str = `${e.ird3?.quality??'-'}% / ${e.ird3?.lock??'-'}`;
             const muxStr = `${e.mux?.merk||'-'} (${e.mux?.status||'-'})`;
-            const cableIp = `Kabel: ${e.kabel?.seg1||'-'}, ${e.kabel?.seg2||'-'}, ${e.kabel?.seg3||'-'}<br>IP: ${e.ip?.alamat||'-'}:${e.ip?.port_in||'-'}→${e.ip?.port_out||'-'} ${e.ip?.bitrate??'-'}Mbps`;
+            const kabelStr = `1:${e.kabel?.seg1||'-'}<br>2:${e.kabel?.seg2||'-'}<br>3:${e.kabel?.seg3||'-'}<br>4:${e.kabel?.seg4||'-'}`;
+            const ipStr = `IP:${e.ip?.alamat||'-'}:${e.ip?.port_in||'-'}→${e.ip?.port_out||'-'} ${e.ip?.bitrate??'-'}Mbps ${e.ip?.status||'-'}`;
+            const cableIpSummary = `<div class="text-[10px] leading-tight">${kabelStr}<hr class="my-1">${ipStr}</div>`;
             const fotoCount = e.fotoList?.length||0; let thumbs='';
-            if(fotoCount) thumbs=`<div class="foto-thumb-list">${e.fotoList.slice(0,2).map((f,i)=>`<div class="thumb-item" onclick="window.viewAllFoto(${JSON.stringify(e.fotoList)},${i})"><img src="${f.base64}"></div>`).join('')}${fotoCount>2?`<span class="text-[10px] bg-gray-200 px-1 rounded-full">+${fotoCount-2}</span>`:''}</div>`;
-            const fotoCell = `<div><div class="flex justify-center">${thumbs}</div><button type="button" onclick="window.viewAllFoto(${JSON.stringify(e.fotoList)},0)" class="text-primary text-[10px] hover:underline"><i class="fas fa-images"></i> ${fotoCount} foto</button></div>`;
-            html+=`<tr class="border-b hover:bg-slate-50"><td class="py-2 px-1">${e.no||e.id}</td><td>${e.tanggal}</td><td>${escapeHtml(e.petugas)}</td><td class="text-[10px]">${ird1Str}</td><td class="text-[10px]">${ird2Str}</td><td class="text-[10px]">${ird3Str}</td><td class="text-[10px]">${muxStr}</td><td class="text-[10px]">${cableIp}</td><td class="text-center">${fotoCell}</td><td><button onclick="deleteEntry(${e.id})" class="bg-red-100 text-red-600 px-2 py-1 rounded-full text-[10px]"><i class="fas fa-trash"></i> Hapus</button></td></tr>`;
+            if(fotoCount) thumbs=`<div class="foto-thumb-list">${e.fotoList.slice(0,2).map((f,i)=>`<div class="thumb-item" onclick='window.viewAllFoto(${JSON.stringify(e.fotoList)},${i})'><img src="${f.base64}"></div>`).join('')}${fotoCount>2?`<span class="text-[10px] bg-gray-200 px-1 rounded-full">+${fotoCount-2}</span>`:''}</div>`;
+            const fotoCell = `<div><div class="flex justify-center">${thumbs}</div><button type="button" onclick='window.viewAllFoto(${JSON.stringify(e.fotoList)},0)' class="text-primary text-[10px] hover:underline"><i class="fas fa-images"></i> ${fotoCount} foto</button></div>`;
+            html+=`<tr class="border-b hover:bg-slate-50"><td class="py-2 px-1">${e.no||e.id}</td><td class="py-2 px-1">${e.tanggal}</td><td class="py-2 px-1">${escapeHtml(e.petugas)}</td><td class="text-[10px]">${ird1Str}</td><td class="text-[10px]">${ird2Str}</td><td class="text-[10px]">${ird3Str}</td><td class="text-[10px]">${muxStr}</td><td class="text-[10px]">${cableIpSummary}</td><td class="text-center">${fotoCell}</td><td><button onclick="deleteEntry(${e.id})" class="bg-red-100 text-red-600 px-2 py-1 rounded-full text-[10px]"><i class="fas fa-trash"></i> Hapus</button></td></tr>`;
         });
         tbody.innerHTML=html;
     }
@@ -276,7 +279,7 @@
         const ird2 = { cn: parseFloat(document.getElementById('ird2_cn').value)||null, margin: parseFloat(document.getElementById('ird2_margin').value)||null, lock: document.getElementById('ird2_lock').value };
         const ird3 = { quality: parseFloat(document.getElementById('ird3_quality').value)||null, strength: parseFloat(document.getElementById('ird3_strength').value)||null, lock: document.getElementById('ird3_lock').value };
         const mux = { merk: document.getElementById('mux_merk').value, status: document.getElementById('mux_status').value };
-        const kabel = { seg1: document.getElementById('cable_seg1').value, seg2: document.getElementById('cable_seg2').value, seg3: document.getElementById('cable_seg3').value, catatan: document.getElementById('cable_notes').value };
+        const kabel = { seg1: document.getElementById('cable_seg1').value, seg2: document.getElementById('cable_seg2').value, seg3: document.getElementById('cable_seg3').value, seg4: document.getElementById('cable_seg4').value, catatan: document.getElementById('cable_notes').value };
         const ip = { alamat: document.getElementById('ip_addr').value, port_in: parseInt(document.getElementById('ip_port_in').value)||null, port_out: parseInt(document.getElementById('ip_port_out').value)||null, bitrate: parseFloat(document.getElementById('ip_bitrate').value)||null, status: document.getElementById('ip_status').value, catatan: document.getElementById('ip_notes').value };
         const newEntry = { id: getNextId(), no, tanggal: tgl, petugas, keterangan: document.getElementById('keterangan').value, ird1, ird2, ird3, mux, kabel, ip, fotoList: [...currentFotoList], createdAt: new Date().toISOString() };
         await addEntry(newEntry);
@@ -287,13 +290,12 @@
         document.getElementById('tanggal').value=new Date().toISOString().split('T')[0];
         document.getElementById('petugas').value=''; document.getElementById('keterangan').value='';
         document.querySelectorAll('input[type=number],input[type=text],textarea,select').forEach(inp=>{ if(inp.id && inp.id!=='nomorOtomatis'){ if(inp.tagName==='SELECT') inp.selectedIndex=0; else inp.value=''; } });
-        document.getElementById('cable_seg1').selectedIndex=0; document.getElementById('cable_seg2').selectedIndex=0; document.getElementById('cable_seg3').selectedIndex=0;
-        document.getElementById('mux_status').selectedIndex=0; document.getElementById('ip_status').selectedIndex=0;
+        ['cable_seg1','cable_seg2','cable_seg3','cable_seg4','ird1_lock','ird2_lock','ird3_lock','mux_status','ip_status'].forEach(id=>{ let sel=document.getElementById(id); if(sel) sel.selectedIndex=0; });
         currentFotoList=[]; updatePreviewUI(); updateHiddenArray(); updateNomorOtomatis(); if(mediaStream) tutupKamera();
     }
     document.getElementById('btnResetForm').addEventListener('click',()=>{ if(confirm("Reset form?")) resetFormInput(); });
-    document.getElementById('btnHapusSemua').addEventListener('click',async()=>{ if(confirm("Hapus SEMUA data?")){ await clearAllEntries(); resetFormInput(); alert("Semua data dihapus."); } });
-    document.getElementById('btnExportHTML').addEventListener('click',()=>{ if(!entries.length) return alert("Tidak ada data"); let html=`<html><head><title>Laporan Multiplexing</title></head><body><h2>Monitoring Multiplexing</h2><table border="1">${document.querySelector('table').outerHTML}</table></body></html>`; const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([html],{type:"text/html"})); a.download=`laporan_multiplexing_${Date.now()}.html`; a.click(); URL.revokeObjectURL(a.href); });
+    document.getElementById('btnHapusSemua').addEventListener('click',async()=>{ if(confirm("Hapus SEMUA data multiplexing?")){ await clearAllEntries(); resetFormInput(); alert("Semua data dihapus."); } });
+    document.getElementById('btnExportHTML').addEventListener('click',()=>{ if(!entries.length) return alert("Tidak ada data"); let html=`<html><head><title>Laporan Multiplexing 4 Segmen Kabel</title><style>body{font-family:Inter}table{border-collapse:collapse}td,th{border:1px solid #aaa;padding:6px}</style></head><body><h2>Monitoring Multiplexing</h2>${document.querySelector('table').outerHTML}</body></html>`; const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([html],{type:"text/html"})); a.download=`laporan_multiplexing_${Date.now()}.html`; a.click(); URL.revokeObjectURL(a.href); });
     async function initFirebase(){ if(!window.db){ setTimeout(initFirebase,300); return; } isFirebaseReady=true; await enablePersistence(); attachRealtimeListener(); updateNomorOtomatis(); }
     initFirebase();
 </script>
