@@ -694,7 +694,7 @@
         }
     }
     
-    // DAFTAR MODUL (ditambahkan Monitoring Multiplexing)
+    // DAFTAR MODUL (ditambahkan Monitoring Kebersihan & Monitoring Grounding)
     const modulesList = [
         { name: "Monitoring Suhu", icon: "fas fa-temperature-high", file: "Monitoring Suhu.html", desc: "Suhu ruangan & watermark GPS" },
         { name: "Monitoring Pemancar", icon: "fas fa-broadcast-tower", file: "Monitoring Pemancar.html", desc: "Catat downtime ON/OFF" },
@@ -703,8 +703,11 @@
         { name: "Monitoring Siaran", icon: "fas fa-satellite-dish", file: "Monitoring Siaran.html", desc: "Status channel & laporan" },
         { name: "Monitoring Kerusakan", icon: "fas fa-tools", file: "Monitoring Kerusakan.html", desc: "Multi foto & status alat" },
         { name: "Monitoring BBM", icon: "fas fa-gas-pump", file: "Monitoring BBM.html", desc: "Genset & konsumsi BBM" },
-        // MODUL BARU: Monitoring Multiplexing
-        { name: "Monitoring Multiplexing", icon: "fas fa-network-wired", file: "Monitoring Multiplexing.html", desc: "Pantau 3 IRD, MUX, Kabel & IP + watermark" }
+        { name: "Monitoring Multiplexing", icon: "fas fa-network-wired", file: "Monitoring Multiplexing.html", desc: "Pantau 3 IRD, MUX, Kabel & IP + watermark" },
+        // MODUL BARU: Monitoring Kebersihan
+        { name: "Monitoring Kebersihan", icon: "fas fa-broom", file: "Monitoring Kebersihan.html", desc: "Pantau kebersihan area transmisi (genset, peralatan, pemancar, lingkungan)" },
+        // MODUL BARU: Monitoring Grounding
+        { name: "Monitoring Grounding", icon: "fas fa-bolt", file: "Monitoring Grounding.html", desc: "Pencatatan grounding 3 titik (Tower, Rak Perangkat, GIS/Trafo) + foto" }
     ];
     
     function renderModulesGrid() {
