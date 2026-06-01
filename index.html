@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Portal Transmisi | Manajemen Shift + Modul + Firebase + Notifikasi Tugas Harian</title>
+    <title>Portal Transmisi | Manajemen Shift + Modul + Firebase + Tugas Harian</title>
     <link rel="icon" type="image/ico" href="favicon.ico">
     <!-- Font Awesome 6 (free) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -149,7 +149,7 @@
             transform: translateY(-1px);
         }
 
-        /* ========= CARD SHIFT HARI INI ========= */
+        /* ========= CARD SHIFT HARI INI (tetap seperti semula) ========= */
         .shift-today-card {
             background: #fef9e6;
             margin: 20px 24px 0 24px;
@@ -188,65 +188,78 @@
             min-width: 180px;
         }
 
-        /* NOTIFIKASI TUGAS HARIAN - CARD KHUSUS */
+        /* ========= TUGAS HARIAN - VERSI SIMPLER MODERN ========= */
         .daily-tasks-card {
-            background: linear-gradient(105deg, #eff6ff 0%, #ffffff 100%);
+            background: #ffffff;
             margin: 20px 24px 0 24px;
             padding: 20px 24px;
-            border-radius: 32px;
-            border-left: 8px solid #1e6f5c;
-            box-shadow: 0 8px 20px -12px rgba(0, 0, 0, 0.12);
-            transition: all 0.2s;
+            border-radius: 28px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0, 0, 0, 0.05);
+            border: 1px solid #edf2f7;
+            transition: all 0.2s ease;
         }
         .daily-tasks-card h3 {
             font-size: 1.2rem;
-            font-weight: 700;
-            color: #0e5a48;
+            font-weight: 600;
+            color: #1a4a3f;
             display: flex;
             align-items: center;
-            gap: 12px;
-            margin-bottom: 16px;
+            gap: 10px;
+            margin-bottom: 20px;
+            letter-spacing: -0.2px;
+        }
+        .daily-tasks-card h3 i {
+            font-size: 1.25rem;
+            color: #2c7a64;
         }
         .daily-tasks-list {
             display: flex;
             flex-wrap: wrap;
             gap: 12px;
+            align-items: center;
         }
+        /* Style modern & minimalis untuk setiap tugas */
         .task-badge {
-            background: white;
-            border-radius: 60px;
-            padding: 8px 18px;
+            background: #f8fafc;
+            border: 1px solid #e2edf2;
+            border-radius: 48px;
+            padding: 8px 20px;
             font-size: 0.85rem;
             font-weight: 500;
             display: inline-flex;
             align-items: center;
             gap: 10px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            border: 1px solid #dce7f0;
-            transition: all 0.2s;
+            transition: all 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1);
             text-decoration: none;
             color: #1e293b;
+            backdrop-filter: blur(2px);
+            cursor: pointer;
         }
         .task-badge i {
-            font-size: 1rem;
-            color: #1e6f5c;
-            width: 1.4rem;
+            font-size: 0.95rem;
+            color: #2c7a64;
+            width: 1.25rem;
+            text-align: center;
         }
         .task-badge:hover {
+            background: #ffffff;
+            border-color: #9bbfb2;
             transform: translateY(-2px);
-            background: #fef9e6;
-            border-color: #f5b042;
-            box-shadow: 0 6px 12px -8px rgba(0,0,0,0.15);
+            box-shadow: 0 8px 16px -12px rgba(0, 0, 0, 0.18);
+            color: #0f3b32;
         }
         .task-badge.empty-msg {
             background: #f1f5f9;
-            color: #475569;
-            cursor: default;
+            color: #4b5565;
             border-color: #e2e8f0;
+            cursor: default;
+            box-shadow: none;
         }
         .task-badge.empty-msg:hover {
             transform: none;
             background: #f1f5f9;
+            border-color: #e2e8f0;
+            box-shadow: none;
         }
 
         /* Tombol aksi */
@@ -451,7 +464,7 @@
             background: #fafcff;
         }
 
-        /* ========= RESPONSIVE TINGKAT LANJUT ========= */
+        /* ========= RESPONSIVE ========= */
         @media (max-width: 780px) {
             body { padding: 8px; }
             .header { padding: 16px 18px; flex-direction: column; align-items: stretch; }
@@ -460,21 +473,22 @@
             .month-picker { justify-content: space-between; width: 100%; }
             .btn-refresh { align-self: flex-end; }
             .shift-today-card { margin: 16px 16px 0 16px; padding: 16px; }
-            .daily-tasks-card { margin: 16px 16px 0 16px; padding: 16px; }
+            .daily-tasks-card { margin: 16px 16px 0 16px; padding: 16px 20px; }
             .shift-item { min-width: 140px; font-size: 0.8rem; }
             .action-bar { padding: 16px 16px 0 16px; }
             .content-area { padding: 8px 16px 20px 16px; }
             .modules-section { padding: 24px 16px 28px 16px; }
             .modules-grid { gap: 14px; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
             .btn-save, .btn-outline { padding: 10px 22px; font-size: 0.85rem; }
+            .task-badge { padding: 6px 16px; font-size: 0.8rem; }
         }
 
         @media (max-width: 580px) {
             .header-logo { height: 60px; max-width: 180px; }
             .shift-detail { flex-direction: column; align-items: stretch; gap: 10px; }
             .shift-item { text-align: center; }
-            .daily-tasks-list { flex-direction: column; gap: 8px; }
-            .task-badge { justify-content: center; }
+            .daily-tasks-list { flex-direction: column; align-items: stretch; gap: 8px; }
+            .task-badge { justify-content: center; width: 100%; }
             .shift-table { min-width: 520px; }
             .shift-table input { min-width: 100px; font-size: 0.75rem; padding: 8px 4px; }
             .module-card { padding: 12px 14px; gap: 12px; }
@@ -529,13 +543,12 @@
                 <div id="shiftDetailContainer">Memuat data shift...</div>
             </div>
 
-            <!-- NOTIFIKASI TUGAS HARIAN (berdasarkan hari & tanggal) -->
+            <!-- TUGAS MONITORING HARIAN (VERSI SIMPLER MODERN) - tanpa info tambahan -->
             <div class="daily-tasks-card" id="dailyTasksCard">
-                <h3><i class="fas fa-tasks"></i> 📋 Tugas Monitoring Hari Ini</h3>
+                <h3><i class="fas fa-tasks"></i> Tugas Monitoring Hari Ini</h3>
                 <div id="dailyTasksList" class="daily-tasks-list">
                     <span class="task-badge empty-msg"><i class="fas fa-spinner fa-pulse"></i> Memuat tugas...</span>
                 </div>
-                <div style="margin-top: 12px; font-size: 0.7rem; color: #3b6e5b;"><i class="fas fa-info-circle"></i> Tugas rutin harian + tugas khusus berdasarkan hari/tanggal (cth: Senin: Kebersihan, Sabtu: Pemanasan Genset, tgl 13: Grounding, tgl 23: Kwh Meter)</div>
             </div>
 
             <div class="action-bar">
@@ -549,7 +562,7 @@
                 <div class="modules-grid" id="modulesGrid"></div>
             </div>
         </div>
-        <footer><i class="fas fa-clock"></i> Sistem Manajemen Shift & Monitoring Terpadu | Portal Transmisi - Tanah Merah (Firebase Offline Ready) | Notifikasi tugas dinamis</footer>
+        <footer><i class="fas fa-clock"></i> Sistem Manajemen Shift & Monitoring Terpadu | Portal Transmisi - Tanah Merah (Firebase Offline Ready)</footer>
     </div>
 </div>
 
@@ -718,12 +731,11 @@
                     <h3 style="font-size: 1.3rem; color:#0b2b40; margin:0;"><i class="fas fa-calendar-edit"></i> Edit Jadwal Shift - ${currentYear}/${String(currentMonth).padStart(2,'0')}</h3>
                     <button id="closeManagePanel" class="btn-outline" style="padding:8px 20px;"><i class="fas fa-times"></i> Tutup</button>
                 </div>
-                <div class="info-message" style="margin-top: 16px;"><i class="fas fa-info-circle"></i> Isi nama petugas untuk setiap shift. Semua tanggal bisa diisi. Kosong akan ditampilkan sebagai "-". Perubahan langsung tersimpan ke Firebase dan tersinkron otomatis.</div>
+                <div class="info-message" style="margin-top: 16px;"><i class="fas fa-info-circle"></i> Isi nama petugas untuk setiap shift. Perubahan langsung tersimpan ke Firebase dan tersinkron otomatis.</div>
             </div>
             <div class="shift-table-container">
                 <table class="shift-table">
-                    <thead><tr><th>Tanggal</th><th>Hari</th><th>Shift 1 (00-08)</th><th>Shift 2 (08-16)</th><th>Shift 3 (16-00)</th></tr>
-                    </thead>
+                    <thead><tr><th>Tanggal</th><th>Hari</th><th>Shift 1 (00-08)</th><th>Shift 2 (08-16)</th><th>Shift 3 (16-00)</th></tr></thead>
                     <tbody>
         `;
         for (let d = 1; d <= daysCount; d++) {
@@ -795,34 +807,26 @@
     // ==================== NOTIFIKASI TUGAS HARIAN (DINAMIS) ====================
     function getDailyNotifications() {
         const today = new Date();
-        const dayOfWeek = today.getDay();     // 0 Minggu, 1 Senin, ... 6 Sabtu
-        const currentDate = today.getDate();  // 1-31
-        
-        // Tugas rutin setiap hari
+        const dayOfWeek = today.getDay();     
+        const currentDate = today.getDate();  
         const tasks = [
             { text: "Monitoring Pemancar TVRI Dashboard", link: "Monitoring Pemancar.html", icon: "fa-broadcast-tower" },
             { text: "Monitoring Suhu", link: "Monitoring Suhu.html", icon: "fa-temperature-high" },
             { text: "Monitoring Metering", link: "Monitoring Metering.html", icon: "fa-chart-line" },
             { text: "Monitoring Siaran Papua", link: "Monitoring Siaran.html", icon: "fa-satellite-dish" }
         ];
-        
-        // Hari Senin (1) -> Monitoring Kebersihan
         if (dayOfWeek === 1) {
-            tasks.push({ text: "Monitoring Kebersihan (Area Genset, Peralatan, Lingkungan)", link: "Monitoring Kebersihan.html", icon: "fa-broom" });
+            tasks.push({ text: "Monitoring Kebersihan", link: "Monitoring Kebersihan.html", icon: "fa-broom" });
         }
-        // Hari Sabtu (6) -> Pemanasan Genset
         if (dayOfWeek === 6) {
-            tasks.push({ text: "Pemanasan Genset (Lakukan pemanasan genset rutin)", link: "Monitoring BBM.html", icon: "fa-gas-pump" });
+            tasks.push({ text: "Pemanasan Genset", link: "Monitoring BBM.html", icon: "fa-gas-pump" });
         }
-        // Tanggal 13 -> Monitoring Grounding
         if (currentDate === 13) {
-            tasks.push({ text: "Monitoring Grounding (Tower, Rak Perangkat, GIS/Trafo)", link: "Monitoring Grounding.html", icon: "fa-bolt" });
+            tasks.push({ text: "Monitoring Grounding", link: "Monitoring Grounding.html", icon: "fa-bolt" });
         }
-        // Tanggal 23 -> Monitoring Kwh Meter
         if (currentDate === 23) {
-            tasks.push({ text: "Monitoring Kwh Meter (Pencatatan & foto)", link: "Monitoring Kwh Meter.html", icon: "fa-charging-station" });
+            tasks.push({ text: "Monitoring Kwh Meter", link: "Monitoring Kwh Meter.html", icon: "fa-charging-station" });
         }
-        
         return tasks;
     }
     
@@ -841,9 +845,8 @@
         `).join('');
         container.innerHTML = tasksHtml;
     }
-    // ========================================================
     
-    // DAFTAR MODUL (Monitoring Kebersihan & Grounding sudah ada)
+    // DAFTAR MODUL (lengkap)
     const modulesList = [
         { name: "Monitoring Suhu", icon: "fas fa-temperature-high", file: "Monitoring Suhu.html", desc: "Suhu ruangan & watermark GPS" },
         { name: "Monitoring Pemancar", icon: "fas fa-broadcast-tower", file: "Monitoring Pemancar.html", desc: "Catat downtime ON/OFF" },
@@ -853,8 +856,8 @@
         { name: "Monitoring Kerusakan", icon: "fas fa-tools", file: "Monitoring Kerusakan.html", desc: "Multi foto & status alat" },
         { name: "Monitoring BBM", icon: "fas fa-gas-pump", file: "Monitoring BBM.html", desc: "Genset & konsumsi BBM" },
         { name: "Monitoring Multiplexing", icon: "fas fa-network-wired", file: "Monitoring Multiplexing.html", desc: "Pantau 3 IRD, MUX, Kabel & IP + watermark" },
-        { name: "Monitoring Kebersihan", icon: "fas fa-broom", file: "Monitoring Kebersihan.html", desc: "Pantau kebersihan area transmisi (genset, peralatan, pemancar, lingkungan)" },
-        { name: "Monitoring Grounding", icon: "fas fa-bolt", file: "Monitoring Grounding.html", desc: "Pencatatan grounding 3 titik (Tower, Rak Perangkat, GIS/Trafo) + foto" }
+        { name: "Monitoring Kebersihan", icon: "fas fa-broom", file: "Monitoring Kebersihan.html", desc: "Pantau kebersihan area transmisi" },
+        { name: "Monitoring Grounding", icon: "fas fa-bolt", file: "Monitoring Grounding.html", desc: "Pencatatan grounding 3 titik + foto" }
     ];
     
     function renderModulesGrid() {
@@ -874,7 +877,7 @@
     async function initMainMenu() {
         attachShiftListener(currentYear, currentMonth);
         renderModulesGrid();
-        renderDailyNotifications();  // tampilkan notifikasi tugas berdasarkan hari & tanggal nyata
+        renderDailyNotifications(); 
         const manageBtn = document.getElementById('btnManageShift');
         if (manageBtn) {
             manageBtn.replaceWith(manageBtn.cloneNode(true));
@@ -923,7 +926,7 @@
         const statusBadge = document.getElementById('statusBadge');
         if (statusBadge) statusBadge.innerText = `📅 ${currentYear}-${String(currentMonth).padStart(2, '0')}`;
         refreshShiftTodayDisplay();
-        // notifikasi tugas tidak perlu di-reload karena tetap berdasarkan tanggal hari ini
+        // Tugas harian tetap berdasarkan tanggal hari ini (tidak perlu reload)
     }
     
     async function enableFirebasePersistence() {
@@ -934,7 +937,6 @@
                 console.log("Firebase persistence diaktifkan");
             } else if (window.firebase && window.firebase.database) {
                 await window.firebase.database().enablePersistence();
-                console.log("Firebase persistence via root");
             } else {
                 console.warn("enablePersistence tidak tersedia");
             }
