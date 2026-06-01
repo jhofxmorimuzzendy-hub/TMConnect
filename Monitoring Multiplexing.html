@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>TVRI - TX Tanah Merah | Monitoring Multiplexing (10 Segmen Kabel + IP)</title>
+    <title>TVRI - TX Tanah Merah | Monitoring Multiplexing (Segmen Kabel Dinamis + IP)</title>
     <link rel="icon" type="image/ico" href="favicon.ico">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -92,6 +92,10 @@
         input, select, textarea { font-size: 16px !important; }
         .sync-status { font-size: 0.7rem; padding: 2px 10px; border-radius: 20px; background: rgba(255,255,240,0.3); display: inline-block; margin-left: 12px; vertical-align: middle; }
         .cable-label { font-weight: 600; color: #0a5b4b; display: block; margin-bottom: 4px; font-size: 0.75rem; }
+        .segmen-row { margin-bottom: 12px; display: flex; gap: 8px; align-items: center; }
+        .segmen-input { flex: 1; }
+        .segmen-remove { background: #ef4444; color: white; border-radius: 50%; width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; font-size: 14px; }
+        .segmen-remove:hover { background: #dc2626; }
     </style>
 </head>
 <body>
@@ -106,18 +110,18 @@
             <i class="fas fa-satellite-dish text-white text-xl md:text-2xl"></i>
         </div>
         <h1 class="text-xl sm:text-2xl md:text-4xl font-extrabold text-slate-800 mt-2 md:mt-3 leading-tight">
-            Monitoring Multiplexing (3 IRD, 10 Segmen Kabel & IP)
+            Monitoring Multiplexing (3 IRD, Segmen Kabel Dinamis & IP)
             <span id="firebaseStatus" class="sync-status"><i class="fas fa-cloud-upload-alt"></i> Menghubungkan...</span>
         </h1>
         <div class="mt-2 flex justify-center px-2">
-            <span class="bg-primary text-white text-xs md:text-sm rounded-full py-1 px-3 md:px-4 font-semibold"><i class="fas fa-camera-retro mr-1 md:mr-2"></i> Multi Foto Max 5 | Kamera + Watermark | Auto Numbering & Copy Last</span>
+            <span class="bg-primary text-white text-xs md:text-sm rounded-full py-1 px-3 md:px-4 font-semibold"><i class="fas fa-camera-retro mr-1 md:mr-2"></i> Multi Foto Max 5 | Kamera + Watermark | Segmen Kabel Bisa Ditambah</span>
         </div>
     </div>
 
     <!-- Form Card -->
     <div class="bg-white rounded-2xl shadow-xl overflow-hidden mb-6 md:mb-8 border border-gray-100">
         <div class="bg-gradient-to-r from-primary to-accent px-4 py-3 md:px-5 md:py-4">
-            <h2 class="text-base md:text-xl font-semibold text-white"><i class="fas fa-clipboard-list mr-2"></i> Form Pencatatan Multiplexing (10 Segmen)</h2>
+            <h2 class="text-base md:text-xl font-semibold text-white"><i class="fas fa-clipboard-list mr-2"></i> Form Pencatatan Multiplexing (Segmen Kabel Dinamis)</h2>
         </div>
         <div class="p-4 sm:p-5 md:p-6">
             <form id="formMultiplexing" class="space-y-5">
@@ -157,22 +161,16 @@
                     </div>
                 </div>
 
-                <!-- Koneksi Kabel: 10 SEGMEN -->
+                <!-- Koneksi Kabel: DINAMIS (bisa tambah segmen) -->
                 <div class="bg-slate-50 rounded-xl p-4 border border-gray-200">
-                    <h3 class="font-bold text-primary mb-3 flex items-center gap-2"><i class="fas fa-plug"></i> Koneksi Kabel (10 Segmen) - Isi Jenis Kabel/Konektor</h3>
-                    <div class="space-y-3">
-                        <div><label class="cable-label">🔹 Segmen 1: Parabola (Telkom 4) ke IRD1 & IRD2</label><input type="text" id="cable_seg1" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="Contoh: Koaksial RG6"></div>
-                        <div><label class="cable-label">🔸 Segmen 2: Parabola (Asiasat) ke IRD3</label><input type="text" id="cable_seg2" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="Jenis kabel"></div>
-                        <div><label class="cable-label">🔹 Segmen 3: IRD 1,2,3 ke Channel Switch</label><input type="text" id="cable_seg3" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="Contoh: BNC 75 ohm"></div>
-                        <div><label class="cable-label">🔸 Segmen 4: Channel Switch ke Monitor Blackmagic</label><input type="text" id="cable_seg4" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="HDMI / SDI"></div>
-                        <div><label class="cable-label">🔹 Segmen 5: Channel Switch ke Encoder</label><input type="text" id="cable_seg5" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="Kabel interface"></div>
-                        <div><label class="cable-label">🔸 Segmen 6: Encoder ke MUX</label><input type="text" id="cable_seg6" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="Koaksial / Serat Optik"></div>
-                        <div><label class="cable-label">🔹 Segmen 7: MUX ke Exciter</label><input type="text" id="cable_seg7" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="RF Coaxial"></div>
-                        <div><label class="cable-label">🔸 Segmen 8: Exciter ke Pemancar (NEC)</label><input type="text" id="cable_seg8" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="Jenis kabel exciter"></div>
-                        <div><label class="cable-label">🔹 Segmen 9: Pemancar (NEC) ke Tower</label><input type="text" id="cable_seg9" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="Feeder / Waveguide"></div>
-                        <div><label class="cable-label">🔸 Segmen 10: Switch (Ethernet)</label><input type="text" id="cable_seg10" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="UTP Cat6, VLAN"></div>
+                    <h3 class="font-bold text-primary mb-3 flex items-center gap-2"><i class="fas fa-plug"></i> Koneksi Kabel (Segmen Dinamis) - Isi Jenis Kabel/Konektor</h3>
+                    <div id="segmenContainer" class="space-y-3">
+                        <!-- Segmen 1 - 10 default (dari request awal) -->
                     </div>
-                    <div class="mt-3"><label class="text-xs font-medium">Catatan Kabel (umum)</label><textarea id="cable_notes" rows="2" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="Loss, konektor longgar..."></textarea></div>
+                    <div class="flex justify-between items-center mt-3">
+                        <button type="button" id="btnTambahSegmen" class="bg-primary hover:bg-accent text-white text-xs px-3 py-1.5 rounded-full"><i class="fas fa-plus-circle mr-1"></i> Tambah Segmen</button>
+                        <span id="segmenCounter" class="text-xs text-gray-500">Total segmen: 10</span>
+                    </div>
                 </div>
 
                 <!-- Pemantauan Siaran IP -->
@@ -232,17 +230,123 @@
         <div class="table-wrapper p-2 md:p-4">
             <table class="min-w-[1100px] md:min-w-full bg-white border border-gray-200 rounded-xl text-xs md:text-sm">
                 <thead class="bg-gray-100">
-                    <tr><th>No Urut</th><th>Tgl</th><th>Petugas</th><th>IRD1</th><th>IRD2</th><th>IRD3</th><th>Kabel (10 Seg) & IP</th><th>Foto</th><th>Aksi</th></tr>
+                    <tr><th>No Urut</th><th>Tgl</th><th>Petugas</th><th>IRD1</th><th>IRD2</th><th>IRD3</th><th>Kabel (Segmen) & IP</th><th>Foto</th><th>Aksi</th></tr>
                 </thead>
-                <tbody id="tabelBody"><tr><td colspan="9" class="text-center py-6 text-gray-400">⚡ Memuat data...</td></tr></tbody>
+                <tbody id="tabelBody"><tr><td colspan="9" class="text-center py-6 text-gray-400">⚡ Memuat data......</td></tr></tbody>
             </table>
         </div>
     </div>
 </div>
 
 <script>
+    // Dynamic Segments management
+    let segmenList = []; // array of {nomor, value}
+    const initialSegments = [
+        "🔹 Segmen 1: Parabola (Telkom 4) ke IRD1 & IRD2",
+        "🔸 Segmen 2: Parabola (Asiasat) ke IRD3",
+        "🔹 Segmen 3: IRD 1,2,3 ke Channel Switch",
+        "🔸 Segmen 4: Channel Switch ke Monitor Blackmagic",
+        "🔹 Segmen 5: Channel Switch ke Encoder",
+        "🔸 Segmen 6: Encoder ke MUX",
+        "🔹 Segmen 7: MUX ke Exciter",
+        "🔸 Segmen 8: Exciter ke Pemancar (NEC)",
+        "🔹 Segmen 9: Pemancar (NEC) ke Tower",
+        "🔸 Segmen 10: Switch (Ethernet)"
+    ];
+    
+    function buildSegmenContainer() {
+        const container = document.getElementById('segmenContainer');
+        container.innerHTML = '';
+        segmenList.forEach((seg, idx) => {
+            const rowDiv = document.createElement('div');
+            rowDiv.className = 'segmen-row';
+            rowDiv.dataset.index = idx;
+            const labelSpan = document.createElement('span');
+            labelSpan.className = 'cable-label w-36 flex-shrink-0 text-xs';
+            labelSpan.innerText = seg.nomor+':';
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'segmen-input w-full border rounded-lg px-3 py-2 text-sm';
+            input.placeholder = seg.label + ' (isi jenis kabel/konektor)';
+            input.value = seg.value || '';
+            input.addEventListener('input', (e) => { seg.value = e.target.value; });
+            const removeBtn = document.createElement('span');
+            removeBtn.className = 'segmen-remove';
+            removeBtn.innerHTML = '<i class="fas fa-times"></i>';
+            removeBtn.style.cursor = 'pointer';
+            removeBtn.onclick = () => {
+                if(segmenList.length <= 1) { alert("Minimal harus ada 1 segmen"); return; }
+                segmenList.splice(idx, 1);
+                renumberSegments();
+                buildSegmenContainer();
+                updateSegmenCounter();
+            };
+            rowDiv.appendChild(labelSpan);
+            rowDiv.appendChild(input);
+            rowDiv.appendChild(removeBtn);
+            container.appendChild(rowDiv);
+        });
+    }
+    
+    function renumberSegments() {
+        segmenList.forEach((seg, i) => { seg.nomor = i+1; });
+    }
+    
+    function addNewSegment() {
+        let newNumber = segmenList.length + 1;
+        segmenList.push({ nomor: newNumber, label: `Segmen ${newNumber} (kustom)`, value: '' });
+        buildSegmenContainer();
+        updateSegmenCounter();
+    }
+    
+    function updateSegmenCounter() {
+        document.getElementById('segmenCounter').innerText = `Total segmen: ${segmenList.length}`;
+    }
+    
+    function getSegmenValues() {
+        let result = {};
+        segmenList.forEach(seg => {
+            result[`seg${seg.nomor}`] = seg.value || '';
+        });
+        return result;
+    }
+    
+    function setSegmenValues(valuesObj) {
+        // valuesObj like { seg1: '...', seg2: '...', seg11: '...' }
+        if(!valuesObj) return;
+        const newList = [];
+        const maxKey = Math.max(...Object.keys(valuesObj).filter(k=>k.startsWith('seg')).map(k=>parseInt(k.replace('seg',''))), 0);
+        // Ensure we have at least current segmenList length, but we will rebuild
+        for(let i=1; i<=maxKey; i++) {
+            let label = (i <= initialSegments.length) ? initialSegments[i-1].substring(initialSegments[i-1].indexOf(':')+2) : `Segmen ${i} (kustom)`;
+            newList.push({ nomor: i, label: label, value: valuesObj[`seg${i}`] || '' });
+        }
+        if(newList.length === 0) {
+            // fallback to default 10
+            for(let i=0; i<initialSegments.length; i++) {
+                newList.push({ nomor: i+1, label: initialSegments[i].substring(initialSegments[i].indexOf(':')+2), value: '' });
+            }
+        }
+        segmenList = newList;
+        buildSegmenContainer();
+        updateSegmenCounter();
+    }
+    
+    // Initialize default 10 segments
+    function initDefaultSegments() {
+        segmenList = [];
+        for(let i=0; i<initialSegments.length; i++) {
+            let labelRaw = initialSegments[i];
+            let labelText = labelRaw.substring(labelRaw.indexOf(':')+2);
+            segmenList.push({ nomor: i+1, label: labelText, value: '' });
+        }
+        buildSegmenContainer();
+        updateSegmenCounter();
+    }
+    
+    // Firebase & global
     let isFirebaseReady = false, entries = [], listenerRef = null, isInternalUpdate = false;
-    const DB_PATH = 'monitoring/multiplexing_v6_auto_number';
+    const DB_PATH = 'monitoring/multiplexing_v7_dynamic_seg';
     let currentFotoList = [];
     let mediaStream = null, currentFacingMode = 'environment';
     const videoEl = document.getElementById('videoCamera'), videoContainer = document.getElementById('videoContainer');
@@ -253,14 +357,11 @@
     async function enablePersistence() { if(window.db) try{ await window.db.enablePersistence(); return true; } catch(e){} return false; }
     async function setEntriesToFirebase(arr) { if(!isFirebaseReady||!window.db) return false; const obj={}; arr.forEach(e=>{ obj[e.id]=e; }); await window.db.ref(DB_PATH).set(obj); return true; }
     
-    // Recalculate urutan based on createdAt (oldest first) and update Firebase
     async function recalculateAndUpdate() {
         if(!entries.length) return;
         const sorted = [...entries].sort((a,b) => new Date(a.createdAt) - new Date(b.createdAt));
         let urutan = 1;
-        for(let item of sorted) {
-            item.urutan = urutan++;
-        }
+        for(let item of sorted) { item.urutan = urutan++; }
         isInternalUpdate = true;
         await setEntriesToFirebase(entries);
         isInternalUpdate = false;
@@ -276,7 +377,7 @@
             if(isInternalUpdate) return; 
             const data=snap.val(); 
             entries=data?Object.values(data):[]; 
-            await recalculateAndUpdate(); // force urutan recalc after any external change
+            await recalculateAndUpdate();
             updateFirebaseStatus(true,`Realtime (${entries.length} data)`);
         },()=>updateFirebaseStatus(false,"Error listener")); 
     }
@@ -291,11 +392,10 @@
     }
     
     async function addEntry(newEntry) {
-        // assign created timestamp and id
         newEntry.id = Date.now().toString();
         newEntry.createdAt = new Date().toISOString();
         entries.push(newEntry);
-        await recalculateAndUpdate(); // this will sort and assign urutan
+        await recalculateAndUpdate();
     }
     
     async function deleteEntryById(id) {
@@ -320,12 +420,11 @@
         updateNomorOtomatis();
     }
     
-    // Auto-fill from latest entry (by createdAt desc)
     function autoFillFromLatest() {
         if(!entries.length) return false;
         const latest = [...entries].sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
         if(!latest) return false;
-        // Fill IP fields
+        // Fill IP
         if(latest.ip) {
             document.getElementById('ip_addr').value = latest.ip.alamat || '';
             document.getElementById('ip_port_in_use').value = latest.ip.port_in_use !== null ? latest.ip.port_in_use : '';
@@ -334,24 +433,14 @@
             document.getElementById('ip_status').value = latest.ip.status || 'Stabil';
             document.getElementById('ip_notes').value = latest.ip.catatan || '';
         }
-        // Fill Cable fields (10 segmen)
+        // Fill Cable dynamic segments
         if(latest.kabel) {
-            document.getElementById('cable_seg1').value = latest.kabel.seg1 || '';
-            document.getElementById('cable_seg2').value = latest.kabel.seg2 || '';
-            document.getElementById('cable_seg3').value = latest.kabel.seg3 || '';
-            document.getElementById('cable_seg4').value = latest.kabel.seg4 || '';
-            document.getElementById('cable_seg5').value = latest.kabel.seg5 || '';
-            document.getElementById('cable_seg6').value = latest.kabel.seg6 || '';
-            document.getElementById('cable_seg7').value = latest.kabel.seg7 || '';
-            document.getElementById('cable_seg8').value = latest.kabel.seg8 || '';
-            document.getElementById('cable_seg9').value = latest.kabel.seg9 || '';
-            document.getElementById('cable_seg10').value = latest.kabel.seg10 || '';
-            document.getElementById('cable_notes').value = latest.kabel.catatan || '';
+            setSegmenValues(latest.kabel);
         }
         return true;
     }
     
-    // Camera & Watermark functions (unchanged but keep minimal)
+    // Camera & watermark (unchanged)
     async function processSingleFoto(originalBase64, petugas) { 
         const getPos = () => new Promise(r=>{ navigator.geolocation?.getCurrentPosition(p=>r({lat:p.coords.latitude,lng:p.coords.longitude}),()=>r(null),{timeout:5000}) || r(null); });
         const pos = await getPos(); const now = new Date(); const waktuStr = now.toLocaleString('id-ID',{hour12:false}); 
@@ -379,9 +468,11 @@
             const ird2Str = `${e.ird2?.cn??'-'}dB / ${e.ird2?.lock??'-'}`;
             const ird3Str = `${e.ird3?.quality??'-'}% / ${e.ird3?.lock??'-'}`;
             const segs = e.kabel || {};
-            const segSummary = `1:${segs.seg1||'-'} | 2:${segs.seg2||'-'} | 3:${segs.seg3||'-'} | 4:${segs.seg4||'-'} | 5:${segs.seg5||'-'} | 6:${segs.seg6||'-'} | 7:${segs.seg7||'-'} | 8:${segs.seg8||'-'} | 9:${segs.seg9||'-'} | 10:${segs.seg10||'-'}`;
+            const segEntries = Object.entries(segs).filter(([k]) => k.startsWith('seg')).sort((a,b) => parseInt(a[0].replace('seg','')) - parseInt(b[0].replace('seg','')));
+            let segSummary = segEntries.map(([key, val]) => `${key.replace('seg','')}:${val||'-'}`).join(' | ');
+            if(!segSummary) segSummary = 'Tidak ada segmen';
             const ipInfo = `IP:${e.ip?.alamat||'-'} Port:${e.ip?.port_in_use||'-'} | Channel:${e.ip?.channel_terisi||'-'} | ${e.ip?.bitrate??'-'}Mbps ${e.ip?.status||'-'}`;
-            const cableIpSummary = `<div class="text-[10px] leading-tight"><details><summary>🔌 10 Segmen</summary><span class="text-[9px]">${segSummary}</span></details><hr class="my-1">${ipInfo}</div>`;
+            const cableIpSummary = `<div class="text-[10px] leading-tight"><details><summary>🔌 ${segEntries.length} Segmen</summary><span class="text-[9px]">${segSummary}</span></details><hr class="my-1">${ipInfo}</div>`;
             const fotoCount = e.fotoList?.length||0; let thumbs='';
             if(fotoCount) thumbs=`<div class="foto-thumb-list">${e.fotoList.slice(0,2).map((f,i)=>`<div class="thumb-item" onclick='window.viewAllFoto(${JSON.stringify(e.fotoList)},${i})'><img src="${f.base64}"></div>`).join('')}${fotoCount>2?`<span class="text-[10px] bg-gray-200 px-1 rounded-full">+${fotoCount-2}</span>`:''}</div>`;
             const fotoCell = `<div><div class="flex justify-center">${thumbs}</div><button type="button" onclick='window.viewAllFoto(${JSON.stringify(e.fotoList)},0)' class="text-primary text-[10px] hover:underline"><i class="fas fa-images"></i> ${fotoCount} foto</button></div>`;
@@ -403,14 +494,7 @@
         const ird1 = { cn: parseFloat(document.getElementById('ird1_cn').value)||null, margin: parseFloat(document.getElementById('ird1_margin').value)||null, lock: document.getElementById('ird1_lock').value };
         const ird2 = { cn: parseFloat(document.getElementById('ird2_cn').value)||null, margin: parseFloat(document.getElementById('ird2_margin').value)||null, lock: document.getElementById('ird2_lock').value };
         const ird3 = { quality: parseFloat(document.getElementById('ird3_quality').value)||null, strength: parseFloat(document.getElementById('ird3_strength').value)||null, lock: document.getElementById('ird3_lock').value };
-        const kabel = {
-            seg1: document.getElementById('cable_seg1').value, seg2: document.getElementById('cable_seg2').value,
-            seg3: document.getElementById('cable_seg3').value, seg4: document.getElementById('cable_seg4').value,
-            seg5: document.getElementById('cable_seg5').value, seg6: document.getElementById('cable_seg6').value,
-            seg7: document.getElementById('cable_seg7').value, seg8: document.getElementById('cable_seg8').value,
-            seg9: document.getElementById('cable_seg9').value, seg10: document.getElementById('cable_seg10').value,
-            catatan: document.getElementById('cable_notes').value
-        };
+        const kabel = getSegmenValues();
         const ip = {
             alamat: document.getElementById('ip_addr').value,
             port_in_use: parseInt(document.getElementById('ip_port_in_use').value)||null,
@@ -425,7 +509,7 @@
             ird1, ird2, ird3, kabel, ip, fotoList: [...currentFotoList]
         };
         await addEntry(newEntry);
-        resetFormInput(true); // true means after submit, auto-fill from latest again
+        resetFormInput(true);
         alert(`✅ Tersimpan dengan urutan nomor ${document.getElementById("nomorOtomatis").value-1} (baru)`);
     });
     
@@ -433,29 +517,32 @@
         document.getElementById('tanggal').value = new Date().toISOString().split('T')[0];
         document.getElementById('petugas').value = '';
         document.getElementById('keterangan').value = '';
-        // clear IRD
         document.querySelectorAll('input[type=number], input[type=text], textarea, select').forEach(inp => {
-            if(inp.id && inp.id !== 'nomorOtomatis' && !inp.id.includes('camera') && inp.id !== 'fotoDataArray') {
+            if(inp.id && inp.id !== 'nomorOtomatis' && !inp.id.includes('camera') && inp.id !== 'fotoDataArray' && !inp.closest('#segmenContainer')) {
                 if(inp.tagName === 'SELECT') inp.selectedIndex = 0;
                 else inp.value = '';
             }
         });
-        // reset specific selects
+        // Reset IP selects
         ['ird1_lock','ird2_lock','ird3_lock','ip_status'].forEach(id=>{ let sel=document.getElementById(id); if(sel) sel.selectedIndex=0; });
+        // Reset dynamic segments to default 10
+        initDefaultSegments();
         currentFotoList = []; updatePreviewUI(); updateHiddenArray();
         if(mediaStream) tutupKamera();
         if(keepAutoFill) autoFillFromLatest();
         updateNomorOtomatis();
     }
     
+    document.getElementById('btnTambahSegmen').addEventListener('click', () => { addNewSegment(); });
     document.getElementById('btnResetForm').addEventListener('click', () => { if(confirm("Reset form (kosongkan semua)?")) resetFormInput(false); });
     document.getElementById('btnCopyLast').addEventListener('click', () => { if(autoFillFromLatest()) alert("Data IP dan Kabel telah disalin dari riwayat terakhir."); else alert("Belum ada data riwayat."); });
     document.getElementById('btnHapusSemua').addEventListener('click', async()=>{ if(confirm("Hapus SEMUA data?")){ await clearAllEntries(); resetFormInput(false); alert("Semua data dihapus."); } });
-    document.getElementById('btnExportHTML').addEventListener('click',()=>{ if(!entries.length) return alert("Tidak ada data"); let html=`<html><head><title>Laporan Multiplexing</title><style>table{border-collapse:collapse}td,th{border:1px solid #aaa;padding:6px}</style></head><body><h2>Monitoring Multiplexing (10 Segmen)</h2>${document.querySelector('table').outerHTML}</body></html>`; const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([html],{type:"text/html"})); a.download=`laporan_multiplexing_${Date.now()}.html`; a.click(); URL.revokeObjectURL(a.href); });
+    document.getElementById('btnExportHTML').addEventListener('click',()=>{ if(!entries.length) return alert("Tidak ada data"); let html=`<html><head><title>Laporan Multiplexing</title><style>table{border-collapse:collapse}td,th{border:1px solid #aaa;padding:6px}</style></head><body><h2>Monitoring Multiplexing (Segmen Dinamis)</h2>${document.querySelector('table').outerHTML}</body></html>`; const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([html],{type:"text/html"})); a.download=`laporan_multiplexing_${Date.now()}.html`; a.click(); URL.revokeObjectURL(a.href); });
     document.getElementById('backToDashboardBtn').addEventListener('click',()=>window.location.href='index.html');
     document.getElementById('refreshPageBtn').addEventListener('click',()=>window.location.reload());
     
     async function initFirebase(){ if(!window.db){ setTimeout(initFirebase,300); return; } isFirebaseReady=true; await enablePersistence(); attachRealtimeListener(); updateNomorOtomatis(); autoFillFromLatest(); }
+    initDefaultSegments();
     initFirebase();
 </script>
 </body>
