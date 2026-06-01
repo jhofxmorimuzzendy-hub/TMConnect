@@ -21,6 +21,48 @@
         tailwind.config = { theme: { extend: { colors: { primary: '#1e6f5c', accent: '#0e5a48', secondary: '#f5b042' } } } }
     </script>
     <style>
+        body { background: linear-gradient(135deg, #eef2f8 0%, #e0f0ec 100%); font-family: 'Inter', sans-serif; position: relative; }
+        /* Tombol navigasi */
+        .nav-actions {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            display: flex;
+            gap: 12px;
+            z-index: 1000;
+        }
+        .nav-btn {
+            background: rgba(30, 111, 92, 0.9);
+            backdrop-filter: blur(4px);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 40px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+        .nav-btn:hover {
+            background: #0e5a48;
+            transform: translateY(-2px);
+        }
+        @media (max-width: 640px) {
+            .nav-btn {
+                padding: 6px 12px;
+                font-size: 0.7rem;
+                gap: 6px;
+            }
+            .nav-actions {
+                top: 10px;
+                right: 10px;
+                gap: 8px;
+            }
+        }
         .loading-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 999; backdrop-filter: blur(2px); font-family: 'Inter', sans-serif; }
         .table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 0.5rem; }
         @media (max-width: 640px) {
@@ -52,6 +94,16 @@
     </style>
 </head>
 <body class="bg-gradient-to-br from-slate-50 to-teal-50 font-sans antialiased" style="font-family: 'Inter', sans-serif;">
+    <!-- Tombol navigasi -->
+    <div class="nav-actions">
+        <button id="backToDashboardBtn" class="nav-btn" title="Kembali ke Dashboard">
+            <i class="fas fa-arrow-left"></i> Dashboard
+        </button>
+        <button id="refreshPageBtn" class="nav-btn" title="Refresh Halaman">
+            <i class="fas fa-sync-alt"></i> Refresh
+        </button>
+    </div>
+
     <div class="container max-w-7xl mx-auto px-4 py-4 md:py-8">
         <!-- Header -->
         <div class="text-center mb-6 md:mb-8">
@@ -139,9 +191,8 @@
                     <thead class="bg-gray-100">
                         <tr><th class="py-2 md:py-3 px-1 md:px-2">No</th><th>Tanggal</th><th>ON</th><th>OFF</th><th>Durasi</th><th>Liter</th><th>Foto</th><th>Petugas</th><th>Keterangan</th><th>Aksi</th></tr>
                     </thead>
-                    <tbody id="tabelBody"><tr><td colspan="10" class="text-center py-6 md:py-8 text-gray-400">⚙️ Memuat data...</tr></tr>
-                </tbody>
-            </table>
+                    <tbody id="tabelBody"><tr><td colspan="10" class="text-center py-6 md:py-8 text-gray-400">⚙️ Memuat data...</td</tr</tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -539,7 +590,7 @@
         // ========== RENDER TABEL (Multi Foto Thumbnail & Modal) ==========
         function renderTable() {
             const tbody = document.getElementById("tabelBody");
-            if(!dataEntries.length){ tbody.innerHTML=`<tr><td colspan="10" class="text-center py-6 text-gray-400">📭 Kosong</td></tr>`; return; }
+            if(!dataEntries.length){ tbody.innerHTML=`<tr><td colspan="10" class="text-center py-6 text-gray-400">📭 Kosong</td</tr`; return; }
             let html = "";
             dataEntries.forEach(entry => {
                 const fotoCount = entry.fotoList?.length || 0;
@@ -557,7 +608,7 @@
                     <td class="py-2 px-1">${entry.petugas}</td>
                     <td class="py-2 px-1 max-w-[100px] truncate">${entry.keterangan||'-'}</td>
                     <td class="py-2 px-1 text-center"><button onclick="deleteEntry(${entry.id})" class="bg-red-100 hover:bg-red-200 text-red-600 px-2 py-0.5 md:py-1 rounded-full text-[10px] md:text-xs"><i class="fas fa-trash-can"></i> Hapus</button></td>
-                 </tr>`;
+                  </tr>`;
             });
             tbody.innerHTML = html;
         }
@@ -645,7 +696,7 @@
         // ========== EXPORT HTML (Multi Foto) ==========
         document.getElementById('btnExportHTML').addEventListener('click', () => {
             if(dataEntries.length === 0) { alert("Tidak ada data diekspor."); return; }
-            let exportHtml = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Laporan Genset - Tanah Merah</title><style>body{font-family:Segoe UI,sans-serif;margin:20px;background:#f1f5f9} .container{max-width:1300px;margin:auto;background:white;border-radius:24px;padding:20px;box-shadow:0 8px 20px rgba(0,0,0,0.1)} h2{color:#1e6f5c;border-left:6px solid #1e6f5c;padding-left:16px} table{border-collapse:collapse;width:100%;margin-top:20px;font-size:13px} th,td{border:1px solid #cbd5e1;padding:8px 5px;text-align:center;vertical-align:middle} th{background:#e2e8f0} .foto-grid{display:flex;gap:6px;flex-wrap:wrap;justify-content:center} img{width:60px;height:60px;object-fit:cover;border-radius:8px;border:1px solid #aaa} .footer{margin-top:30px;text-align:center;font-size:11px;color:#334155;border-top:1px dashed #cbd5e1;padding-top:15px}</style></head><body><div class="container"><h2>📄 Laporan Penggunaan Genset</h2><p><strong>Unit:</strong> Genset Tanah Merah (Darurat) &nbsp;|&nbsp; Export: ${new Date().toLocaleString()}</p><table><thead><tr><th>No</th><th>Tanggal</th><th>ON</th><th>OFF</th><th>Durasi</th><th>Liter BBM</th><th>Foto Dokumentasi</th><th>Petugas</th><th>Keterangan</th></tr></thead><tbody>`;
+            let exportHtml = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Laporan Genset - Tanah Merah</title><style>body{font-family:Segoe UI,sans-serif;margin:20px;background:#f1f5f9} .container{max-width:1300px;margin:auto;background:white;border-radius:24px;padding:20px;box-shadow:0 8px 20px rgba(0,0,0,0.1)} h2{color:#1e6f5c;border-left:6px solid #1e6f5c;padding-left:16px} table{border-collapse:collapse;width:100%;margin-top:20px;font-size:13px} th,td{border:1px solid #cbd5e1;padding:8px 5px;text-align:center;vertical-align:middle} th{background:#e2e8f0} .foto-grid{display:flex;gap:6px;flex-wrap:wrap;justify-content:center} img{width:60px;height:60px;object-fit:cover;border-radius:8px;border:1px solid #aaa} .footer{margin-top:30px;text-align:center;font-size:11px;color:#334155;border-top:1px dashed #cbd5e1;padding-top:15px}</style></head><body><div class="container"><h2>📄 Laporan Penggunaan Genset</h2><p><strong>Unit:</strong> Genset Tanah Merah (Darurat) &nbsp;|&nbsp; Export: ${new Date().toLocaleString()}</p><td><thead><tr><th>No</th><th>Tanggal</th><th>ON</th><th>OFF</th><th>Durasi</th><th>Liter BBM</th><th>Foto Dokumentasi</th><th>Petugas</th><th>Keterangan</th></tr></thead><tbody>`;
             dataEntries.forEach(entry => {
                 let fotoHtml = `<div class="foto-grid">${entry.fotoList.map(f=>`<img src="${f.base64}" title="${f.jamFoto}">`).join('')}</div>`;
                 exportHtml += `<tr><td>${entry.id}</td><td>${entry.tanggal}</td><td>${entry.waktuOn}</td><td>${entry.waktuOff}</td><td>${entry.durasi}</td><td>${entry.totalLiter} L</td><td>${fotoHtml}</td><td>${entry.petugas}</td><td>${(entry.keterangan||'-').replace(/</g,'&lt;')}</td></tr>`;
@@ -677,6 +728,14 @@
             updateCameraModeLabel();
         }
         initFirebase();
+
+        // ========== EVENT LISTENER UNTUK TOMBOL NAVIGASI ==========
+        document.getElementById('backToDashboardBtn').addEventListener('click', function() {
+            window.location.href = 'index.html';
+        });
+        document.getElementById('refreshPageBtn').addEventListener('click', function() {
+            window.location.reload();
+        });
     </script>
 </body>
 </html>
