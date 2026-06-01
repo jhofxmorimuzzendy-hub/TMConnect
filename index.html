@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Portal Transmisi | Manajemen Shift + Modul + Firebase (Offline Ready)</title>
+    <title>Portal Transmisi | Manajemen Shift + Modul + Firebase + Notifikasi Tugas Harian</title>
     <link rel="icon" type="image/ico" href="favicon.ico">
     <!-- Font Awesome 6 (free) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -186,6 +186,67 @@
             word-break: break-word;
             flex: 1 0 auto;
             min-width: 180px;
+        }
+
+        /* NOTIFIKASI TUGAS HARIAN - CARD KHUSUS */
+        .daily-tasks-card {
+            background: linear-gradient(105deg, #eff6ff 0%, #ffffff 100%);
+            margin: 20px 24px 0 24px;
+            padding: 20px 24px;
+            border-radius: 32px;
+            border-left: 8px solid #1e6f5c;
+            box-shadow: 0 8px 20px -12px rgba(0, 0, 0, 0.12);
+            transition: all 0.2s;
+        }
+        .daily-tasks-card h3 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #0e5a48;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .daily-tasks-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .task-badge {
+            background: white;
+            border-radius: 60px;
+            padding: 8px 18px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            border: 1px solid #dce7f0;
+            transition: all 0.2s;
+            text-decoration: none;
+            color: #1e293b;
+        }
+        .task-badge i {
+            font-size: 1rem;
+            color: #1e6f5c;
+            width: 1.4rem;
+        }
+        .task-badge:hover {
+            transform: translateY(-2px);
+            background: #fef9e6;
+            border-color: #f5b042;
+            box-shadow: 0 6px 12px -8px rgba(0,0,0,0.15);
+        }
+        .task-badge.empty-msg {
+            background: #f1f5f9;
+            color: #475569;
+            cursor: default;
+            border-color: #e2e8f0;
+        }
+        .task-badge.empty-msg:hover {
+            transform: none;
+            background: #f1f5f9;
         }
 
         /* Tombol aksi */
@@ -399,6 +460,7 @@
             .month-picker { justify-content: space-between; width: 100%; }
             .btn-refresh { align-self: flex-end; }
             .shift-today-card { margin: 16px 16px 0 16px; padding: 16px; }
+            .daily-tasks-card { margin: 16px 16px 0 16px; padding: 16px; }
             .shift-item { min-width: 140px; font-size: 0.8rem; }
             .action-bar { padding: 16px 16px 0 16px; }
             .content-area { padding: 8px 16px 20px 16px; }
@@ -411,6 +473,8 @@
             .header-logo { height: 60px; max-width: 180px; }
             .shift-detail { flex-direction: column; align-items: stretch; gap: 10px; }
             .shift-item { text-align: center; }
+            .daily-tasks-list { flex-direction: column; gap: 8px; }
+            .task-badge { justify-content: center; }
             .shift-table { min-width: 520px; }
             .shift-table input { min-width: 100px; font-size: 0.75rem; padding: 8px 4px; }
             .module-card { padding: 12px 14px; gap: 12px; }
@@ -428,12 +492,11 @@
             .action-bar { display: flex; flex-direction: column; gap: 10px; }
         }
 
-        /* sentuhan aksesibilitas */
-        button, .module-card, select {
+        button, .module-card, select, .task-badge {
             touch-action: manipulation;
         }
 
-        button:focus-visible, .module-card:focus-visible, select:focus-visible {
+        button:focus-visible, .module-card:focus-visible, select:focus-visible, .task-badge:focus-visible {
             outline: 3px solid #f5b042;
             outline-offset: 2px;
         }
@@ -466,6 +529,15 @@
                 <div id="shiftDetailContainer">Memuat data shift...</div>
             </div>
 
+            <!-- NOTIFIKASI TUGAS HARIAN (berdasarkan hari & tanggal) -->
+            <div class="daily-tasks-card" id="dailyTasksCard">
+                <h3><i class="fas fa-tasks"></i> 📋 Tugas Monitoring Hari Ini</h3>
+                <div id="dailyTasksList" class="daily-tasks-list">
+                    <span class="task-badge empty-msg"><i class="fas fa-spinner fa-pulse"></i> Memuat tugas...</span>
+                </div>
+                <div style="margin-top: 12px; font-size: 0.7rem; color: #3b6e5b;"><i class="fas fa-info-circle"></i> Tugas rutin harian + tugas khusus berdasarkan hari/tanggal (cth: Senin: Kebersihan, Sabtu: Pemanasan Genset, tgl 13: Grounding, tgl 23: Kwh Meter)</div>
+            </div>
+
             <div class="action-bar">
                 <button id="btnManageShift" class="btn-save"><i class="fas fa-users"></i> Kelola Jadwal Shift (Edit / Perbarui)</button>
             </div>
@@ -477,7 +549,7 @@
                 <div class="modules-grid" id="modulesGrid"></div>
             </div>
         </div>
-        <footer><i class="fas fa-clock"></i> Sistem Manajemen Shift & Monitoring Terpadu | Portal Transmisi - Tanah Merah (Firebase Offline Ready)</footer>
+        <footer><i class="fas fa-clock"></i> Sistem Manajemen Shift & Monitoring Terpadu | Portal Transmisi - Tanah Merah (Firebase Offline Ready) | Notifikasi tugas dinamis</footer>
     </div>
 </div>
 
@@ -650,7 +722,8 @@
             </div>
             <div class="shift-table-container">
                 <table class="shift-table">
-                    <thead><tr><th>Tanggal</th><th>Hari</th><th>Shift 1 (00-08)</th><th>Shift 2 (08-16)</th><th>Shift 3 (16-00)</th></tr></thead>
+                    <thead><tr><th>Tanggal</th><th>Hari</th><th>Shift 1 (00-08)</th><th>Shift 2 (08-16)</th><th>Shift 3 (16-00)</th></tr>
+                    </thead>
                     <tbody>
         `;
         for (let d = 1; d <= daysCount; d++) {
@@ -719,7 +792,58 @@
         }
     }
     
-    // DAFTAR MODUL (ditambahkan Monitoring Kebersihan & Monitoring Grounding)
+    // ==================== NOTIFIKASI TUGAS HARIAN (DINAMIS) ====================
+    function getDailyNotifications() {
+        const today = new Date();
+        const dayOfWeek = today.getDay();     // 0 Minggu, 1 Senin, ... 6 Sabtu
+        const currentDate = today.getDate();  // 1-31
+        
+        // Tugas rutin setiap hari
+        const tasks = [
+            { text: "Monitoring Pemancar TVRI Dashboard", link: "Monitoring Pemancar.html", icon: "fa-broadcast-tower" },
+            { text: "Monitoring Suhu", link: "Monitoring Suhu.html", icon: "fa-temperature-high" },
+            { text: "Monitoring Metering", link: "Monitoring Metering.html", icon: "fa-chart-line" },
+            { text: "Monitoring Siaran Papua", link: "Monitoring Siaran.html", icon: "fa-satellite-dish" }
+        ];
+        
+        // Hari Senin (1) -> Monitoring Kebersihan
+        if (dayOfWeek === 1) {
+            tasks.push({ text: "Monitoring Kebersihan (Area Genset, Peralatan, Lingkungan)", link: "Monitoring Kebersihan.html", icon: "fa-broom" });
+        }
+        // Hari Sabtu (6) -> Pemanasan Genset
+        if (dayOfWeek === 6) {
+            tasks.push({ text: "Pemanasan Genset (Lakukan pemanasan genset rutin)", link: "Monitoring BBM.html", icon: "fa-gas-pump" });
+        }
+        // Tanggal 13 -> Monitoring Grounding
+        if (currentDate === 13) {
+            tasks.push({ text: "Monitoring Grounding (Tower, Rak Perangkat, GIS/Trafo)", link: "Monitoring Grounding.html", icon: "fa-bolt" });
+        }
+        // Tanggal 23 -> Monitoring Kwh Meter
+        if (currentDate === 23) {
+            tasks.push({ text: "Monitoring Kwh Meter (Pencatatan & foto)", link: "Monitoring Kwh Meter.html", icon: "fa-charging-station" });
+        }
+        
+        return tasks;
+    }
+    
+    function renderDailyNotifications() {
+        const container = document.getElementById('dailyTasksList');
+        if (!container) return;
+        const tasks = getDailyNotifications();
+        if (tasks.length === 0) {
+            container.innerHTML = `<span class="task-badge empty-msg"><i class="fas fa-check-circle"></i> Tidak ada tugas tambahan hari ini</span>`;
+            return;
+        }
+        const tasksHtml = tasks.map(task => `
+            <a href="${task.link}" class="task-badge" target="_self" rel="noopener noreferrer">
+                <i class="fas ${task.icon}"></i> ${escapeHtml(task.text)}
+            </a>
+        `).join('');
+        container.innerHTML = tasksHtml;
+    }
+    // ========================================================
+    
+    // DAFTAR MODUL (Monitoring Kebersihan & Grounding sudah ada)
     const modulesList = [
         { name: "Monitoring Suhu", icon: "fas fa-temperature-high", file: "Monitoring Suhu.html", desc: "Suhu ruangan & watermark GPS" },
         { name: "Monitoring Pemancar", icon: "fas fa-broadcast-tower", file: "Monitoring Pemancar.html", desc: "Catat downtime ON/OFF" },
@@ -729,9 +853,7 @@
         { name: "Monitoring Kerusakan", icon: "fas fa-tools", file: "Monitoring Kerusakan.html", desc: "Multi foto & status alat" },
         { name: "Monitoring BBM", icon: "fas fa-gas-pump", file: "Monitoring BBM.html", desc: "Genset & konsumsi BBM" },
         { name: "Monitoring Multiplexing", icon: "fas fa-network-wired", file: "Monitoring Multiplexing.html", desc: "Pantau 3 IRD, MUX, Kabel & IP + watermark" },
-        // MODUL BARU: Monitoring Kebersihan
         { name: "Monitoring Kebersihan", icon: "fas fa-broom", file: "Monitoring Kebersihan.html", desc: "Pantau kebersihan area transmisi (genset, peralatan, pemancar, lingkungan)" },
-        // MODUL BARU: Monitoring Grounding
         { name: "Monitoring Grounding", icon: "fas fa-bolt", file: "Monitoring Grounding.html", desc: "Pencatatan grounding 3 titik (Tower, Rak Perangkat, GIS/Trafo) + foto" }
     ];
     
@@ -752,6 +874,7 @@
     async function initMainMenu() {
         attachShiftListener(currentYear, currentMonth);
         renderModulesGrid();
+        renderDailyNotifications();  // tampilkan notifikasi tugas berdasarkan hari & tanggal nyata
         const manageBtn = document.getElementById('btnManageShift');
         if (manageBtn) {
             manageBtn.replaceWith(manageBtn.cloneNode(true));
@@ -800,6 +923,7 @@
         const statusBadge = document.getElementById('statusBadge');
         if (statusBadge) statusBadge.innerText = `📅 ${currentYear}-${String(currentMonth).padStart(2, '0')}`;
         refreshShiftTodayDisplay();
+        // notifikasi tugas tidak perlu di-reload karena tetap berdasarkan tanggal hari ini
     }
     
     async function enableFirebasePersistence() {
@@ -842,7 +966,6 @@
         if (statusBadge) statusBadge.innerText = `📅 ${currentYear}-${String(currentMonth).padStart(2, '0')}`;
         waitForFirebaseAndLoad();
         
-        // Tombol Refresh
         const refreshBtn = document.getElementById('refreshPageBtn');
         if (refreshBtn) {
             refreshBtn.addEventListener('click', () => {
