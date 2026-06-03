@@ -14,7 +14,6 @@
     <script src="log-helper.js"></script>
     <script src="auth-check.js"></script>
     <style>
-        /* (semua style sama seperti sebelumnya, tidak diubah) */
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #eef2f8 0%, #e0f0ec 100%); padding: 20px; min-height: 100vh; }
         .container { max-width: 1400px; margin: 0 auto; background: white; border-radius: 36px; box-shadow: 0 20px 40px -12px rgba(0,0,0,0.15); overflow: hidden; }
@@ -49,6 +48,8 @@
         .firebase-console-btn:hover { background: #1d4ed8; color: white; }
         .delete-old-logs-btn { background: #dc2626; color: white; border: none; }
         .delete-old-logs-btn:hover { background: #b91c1c; }
+        .delete-all-logs-btn { background: #b91c1c; color: white; border: none; }
+        .delete-all-logs-btn:hover { background: #991b1b; }
         .log-row-error { background-color: #fff0f0; }
         .log-row-warning { background-color: #fff8e7; }
         .loading, .empty-msg { text-align: center; padding: 40px; color: #5b6e8c; }
@@ -112,10 +113,11 @@
             </div>
             <div class="action-bar">
                 <span><i class="fas fa-history"></i> Log Aktivitas User</span>
-                <div style="display: flex; gap: 8px;">
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                     <button id="exportLogCsvBtn" class="refresh-btn"><i class="fas fa-file-csv"></i> Export CSV</button>
                     <button id="exportLogHtmlBtn" class="refresh-btn"><i class="fas fa-file-code"></i> Export HTML</button>
                     <button id="deleteOldLogsBtn" class="refresh-btn delete-old-logs-btn"><i class="fas fa-trash-alt"></i> Hapus Log > 30 Hari</button>
+                    <button id="deleteAllLogsBtn" class="refresh-btn delete-all-logs-btn"><i class="fas fa-trash-alt"></i> Hapus Semua Log</button>
                     <button id="refreshLogsBtn" class="refresh-btn"><i class="fas fa-sync-alt"></i> Refresh Log</button>
                 </div>
             </div>
@@ -179,7 +181,7 @@
                 </td>
             </tr>`;
         }
-        html += `</tbody></table></div>`;
+        html += `</tbody><table></div>`;
         container.innerHTML = html;
         document.querySelectorAll('.btn-edit').forEach(btn => btn.addEventListener('click', async () => {
             const uid = btn.getAttribute('data-uid');
@@ -261,12 +263,12 @@
             const waktu = log.timestampDate.toLocaleString('id-ID');
             const roleClass = log.userRole === 'admin' ? 'role-badge admin' : 'role-badge';
             html += `<tr>
-                <td style="white-space:nowrap;">${escapeHtml(waktu)}</td>
-                <td>${escapeHtml(log.userEmail || '-')}</td>
-                <td><span class="${roleClass}">${escapeHtml(log.userRole || 'guest')}</span></td>
-                <td><strong>${escapeHtml(log.action)}</strong></td>
-                <td>${escapeHtml(log.module || '-')}</td>
-                <td style="max-width:300px; word-break:break-word;">${escapeHtml(log.details || '-')}</td>
+                <td style="white-space:nowrap;">${escapeHtml(waktu)}</td
+                <td>${escapeHtml(log.userEmail || '-')}</td
+                <td><span class="${roleClass}">${escapeHtml(log.userRole || 'guest')}</span></td
+                <td><strong>${escapeHtml(log.action)}</strong></td
+                <td>${escapeHtml(log.module || '-')}</td
+                <td style="max-width:300px; word-break:break-word;">${escapeHtml(log.details || '-')}</td
             </tr>`;
         }
         html += `</tbody></table></div>`;
@@ -278,7 +280,7 @@
         showLogMessage(`Memuat ${allLogs.length} log.`, 'info');
     }
 
-    // ========== FITUR HAPUS LOG LEBIH DARI 30 HARI ==========
+    // ========== HAPUS LOG LEBIH DARI 30 HARI ==========
     async function deleteOldLogs(days = 30) {
         if (!confirm(`⚠️ PERINGATAN: Anda akan menghapus semua log yang berusia lebih dari ${days} hari. Tindakan ini permanen. Lanjutkan?`)) return;
         const cutoffDate = Date.now() - (days * 24 * 60 * 60 * 1000);
@@ -289,8 +291,7 @@
         }
         if (!confirm(`Akan menghapus ${logsToDelete.length} log yang lebih dari ${days} hari. Yakin?`)) return;
         showLogMessage(`Menghapus ${logsToDelete.length} log... Mohon tunggu.`, 'info');
-        let deletedCount = 0;
-        let errorCount = 0;
+        let deletedCount = 0, errorCount = 0;
         for (let log of logsToDelete) {
             try {
                 await window.db.ref(`logs/${log.id}`).remove();
@@ -304,7 +305,34 @@
         if (typeof window.logActivity === 'function') {
             window.logActivity('HAPUS LOG LAMA', `Menghapus ${deletedCount} log (usia > ${days} hari)`, 'User Control');
         }
-        await refreshLogs(); // refresh tampilan
+        await refreshLogs();
+    }
+
+    // ========== HAPUS SEMUA LOG ==========
+    async function deleteAllLogs() {
+        if (!confirm(`⚠️ PERINGATAN: Anda akan menghapus SEMUA log aktivitas! Tindakan ini permanen dan tidak dapat dibatalkan. Lanjutkan?`)) return;
+        const totalLogs = allLogs.length;
+        if (totalLogs === 0) {
+            showLogMessage('Tidak ada log untuk dihapus.', 'info');
+            return;
+        }
+        if (!confirm(`Akan menghapus ${totalLogs} log. Yakin?`)) return;
+        showLogMessage(`Menghapus ${totalLogs} log... Mohon tunggu (bisa memakan waktu beberapa detik).`, 'info');
+        let deletedCount = 0, errorCount = 0;
+        for (let log of allLogs) {
+            try {
+                await window.db.ref(`logs/${log.id}`).remove();
+                deletedCount++;
+            } catch (err) {
+                console.error(`Gagal hapus log ${log.id}:`, err);
+                errorCount++;
+            }
+        }
+        showLogMessage(`✅ Selesai: ${deletedCount} log dihapus. Gagal: ${errorCount}.`, deletedCount > 0 ? 'success' : 'error');
+        if (typeof window.logActivity === 'function') {
+            window.logActivity('HAPUS SEMUA LOG', `Menghapus ${deletedCount} log (semua data)`, 'User Control');
+        }
+        await refreshLogs();
     }
 
     // ========== EKSPORT ==========
@@ -321,7 +349,7 @@
     }
     function exportLogsToHTML() {
         if (!filteredLogs.length) { alert('Tidak ada data untuk diekspor.'); return; }
-        let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Log Aktivitas Portal Transmisi</title><style>body{font-family:Inter,sans-serif;margin:20px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccc;padding:8px}th{background:#1e6f5c;color:white}</style></head><body><h1>Log Aktivitas User</h1><p>Tanggal export: ${new Date().toLocaleString()}</p><table border="1"><thead><tr><th>Waktu</th><th>User</th><th>Role</th><th>Aksi</th><th>Modul</th><th>Detail</th></tr></thead><tbody>`;
+        let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Log Aktivitas Portal Transmisi</title><style>body{font-family:Inter,sans-serif;margin:20px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccc;padding:8px}th{background:#1e6f5c;color:white}</style></head><body><h1>Log Aktivitas User</h1><p>Tanggal export: ${new Date().toLocaleString()}</p><table border="1"><thead><tr><th>Waktu</th><th>User</th><th>Role</th><th>Aksi</th><th>Modul</th><th>Detail</th><tr></thead><tbody>`;
         for (let log of filteredLogs) {
             html += `<tr>
                 <td>${escapeHtml(log.timestampDate.toLocaleString('id-ID'))}</td>
@@ -332,7 +360,7 @@
                 <td>${escapeHtml(log.details || '-')}</td>
             </tr>`;
         }
-        html += `</tbody></td></body></html>`;
+        html += `</tbody></table></body></html>`;
         const blob = new Blob([html], {type: 'text/html'});
         const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `log_aktivitas_${new Date().toISOString().slice(0,19)}.html`; link.click(); URL.revokeObjectURL(link.href);
     }
@@ -362,6 +390,7 @@
     document.getElementById('refreshUsersBtn').addEventListener('click', refreshUserList);
     document.getElementById('backToDashboardBtn').addEventListener('click', () => window.location.href = 'index.html');
     document.getElementById('deleteOldLogsBtn').addEventListener('click', () => deleteOldLogs(30));
+    document.getElementById('deleteAllLogsBtn').addEventListener('click', () => deleteAllLogs());
 
     // ----------------------- INIT -----------------------
     async function init() {
