@@ -26,6 +26,12 @@ window.logActivity = async function(action, details, moduleName = null) {
         }
     }
     
+    // ✅ CEGAH GUEST MENGIRIM LOG
+    if (userRole === 'guest') {
+        console.log("Guest tidak dicatat aktivitasnya (log diabaikan):", action);
+        return;
+    }
+    
     const logEntry = {
         timestamp: firebase.database.ServerValue.TIMESTAMP, // server time
         timestampLocal: new Date().toISOString(),
