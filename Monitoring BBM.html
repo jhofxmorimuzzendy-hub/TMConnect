@@ -17,12 +17,14 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="firebase-config.js"></script>
+    <script src="log-helper.js"></script>  <!-- ✅ TAMBAHKAN -->
     <script src="auth-check.js"></script>
 
     <script>
         tailwind.config = { theme: { extend: { colors: { primary: '#1e6f5c', accent: '#0e5a48', secondary: '#f5b042' } } } }
     </script>
     <style>
+        /* style tambahan untuk responsif lebih rapi */
         body { background: linear-gradient(135deg, #eef2f8 0%, #e0f0ec 100%); font-family: 'Inter', sans-serif; position: relative; }
         .nav-actions {
             position: fixed;
@@ -102,6 +104,12 @@
             align-items: center;
             gap: 6px;
             margin-left: 12px;
+        }
+        /* responsif tambahan */
+        @media (max-width: 768px) {
+            .container { padding-left: 1rem; padding-right: 1rem; }
+            .preview-card { width: 70px; height: 70px; }
+            .thumb-item { width: 36px; height: 36px; }
         }
     </style>
 </head>
@@ -331,12 +339,20 @@
             isInternalUpdate = true;
             await setEntriesToFirebase(updated);
             isInternalUpdate = false;
+            // LOG: Hapus data
+            if (typeof window.logActivity === 'function') {
+                window.logActivity('HAPUS DATA', `Menghapus data BBM ID ${id}`, 'Monitoring BBM');
+            }
         }
 
         async function clearAllEntries() {
             isInternalUpdate = true;
             await setEntriesToFirebase([]);
             isInternalUpdate = false;
+            // LOG: Hapus semua
+            if (typeof window.logActivity === 'function') {
+                window.logActivity('HAPUS SEMUA', `Menghapus semua data BBM (${dataEntries.length} entries)`, 'Monitoring BBM');
+            }
         }
 
         async function updateEntryInFirebase(updatedEntry) {
@@ -396,6 +412,10 @@
 
             await updateEntryInFirebase(entry);
             alert("Data berhasil diperbarui.");
+            // LOG: Edit data
+            if (typeof window.logActivity === 'function') {
+                window.logActivity('EDIT DATA', `Mengedit data BBM ID ${id} (Tanggal: ${entry.tanggal}, Liter: ${entry.totalLiter})`, 'Monitoring BBM');
+            }
         };
 
         // ========== KAMERA ==========
@@ -678,12 +698,16 @@
                     <td class="py-2 px-1">${escapeHtml(entry.petugas)}</td
                     <td class="py-2 px-1 max-w-[100px] truncate">${escapeHtml(entry.keterangan||'-')}</td
                     <td class="py-2 px-1 text-center">${actionButtons}</td
-                </table>`;
+                </tr>`;
             });
             tbody.innerHTML = html;
         }
 
-        window.deleteEntry = async (id) => { if(confirm("Yakin hapus data pemakaian genset ini?")) await deleteEntryById(id); };
+        window.deleteEntry = async (id) => { 
+            if(confirm("Yakin hapus data pemakaian genset ini?")) {
+                await deleteEntryById(id);
+            }
+        };
         
         window.viewAllFoto = (id) => {
             const entry = dataEntries.find(e=>e.id===id);
@@ -757,6 +781,10 @@
             await addEntry(newEntry);
             resetFormInput();
             alert(`✅ Data Genset tersimpan: Durasi ${durasi} | ${newEntry.totalLiter} Liter | ${currentFotoList.length} foto. Firebase tersinkron.`);
+            // LOG: Tambah data
+            if (typeof window.logActivity === 'function') {
+                window.logActivity('TAMBAH DATA', `Menambahkan data BBM ID ${newId}, Liter: ${newEntry.totalLiter}, Durasi: ${durasi}`, 'Monitoring BBM');
+            }
         });
         
         function resetFormInput() { 
@@ -770,16 +798,20 @@
         
         document.getElementById('btnHapusSemua').addEventListener('click', async () => { 
             if (userRole !== 'admin') { alert("Hanya admin yang dapat menghapus semua data."); return; }
-            if(confirm("⚠️ Hapus SEMUA data? Tindakan permanen.")){ await clearAllEntries(); resetFormInput(); alert("Semua data riwayat dihapus dari Firebase."); } 
+            if(confirm("⚠️ Hapus SEMUA data? Tindakan permanen.")){ 
+                await clearAllEntries(); 
+                resetFormInput(); 
+                alert("Semua data riwayat dihapus dari Firebase.");
+            } 
         });
         
         // ========== EXPORT HTML (Multi Foto) ==========
         document.getElementById('btnExportHTML').addEventListener('click', () => {
             if(dataEntries.length === 0) { alert("Tidak ada data diekspor."); return; }
-            let exportHtml = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Laporan Genset - Tanah Merah</title><style>body{font-family:Segoe UI,sans-serif;margin:20px;background:#f1f5f9} .container{max-width:1300px;margin:auto;background:white;border-radius:24px;padding:20px;box-shadow:0 8px 20px rgba(0,0,0,0.1)} h2{color:#1e6f5c;border-left:6px solid #1e6f5c;padding-left:16px} table{border-collapse:collapse;width:100%;margin-top:20px;font-size:13px} th,td{border:1px solid #cbd5e1;padding:8px 5px;text-align:center;vertical-align:middle} th{background:#e2e8f0} .foto-grid{display:flex;gap:6px;flex-wrap:wrap;justify-content:center} img{width:60px;height:60px;object-fit:cover;border-radius:8px;border:1px solid #aaa} .footer{margin-top:30px;text-align:center;font-size:11px;color:#334155;border-top:1px dashed #cbd5e1;padding-top:15px}</style></head><body><div class="container"><h2>📄 Laporan Penggunaan Genset</h2><p><strong>Unit:</strong> Genset Tanah Merah (Darurat) &nbsp;|&nbsp; Export: ${new Date().toLocaleString()}</p><td><thead><tr><th>No</th><th>Tanggal</th><th>ON</th><th>OFF</th><th>Durasi</th><th>Liter BBM</th><th>Foto Dokumentasi</th><th>Petugas</th><th>Keterangan</th></tr></thead><tbody>`;
+            let exportHtml = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Laporan Genset - Tanah Merah</title><style>body{font-family:Segoe UI,sans-serif;margin:20px;background:#f1f5f9} .container{max-width:1300px;margin:auto;background:white;border-radius:24px;padding:20px;box-shadow:0 8px 20px rgba(0,0,0,0.1)} h2{color:#1e6f5c;border-left:6px solid #1e6f5c;padding-left:16px} table{border-collapse:collapse;width:100%;margin-top:20px;font-size:13px} th,td{border:1px solid #cbd5e1;padding:8px 5px;text-align:center;vertical-align:middle} th{background:#e2e8f0} .foto-grid{display:flex;gap:6px;flex-wrap:wrap;justify-content:center} img{width:60px;height:60px;object-fit:cover;border-radius:8px;border:1px solid #aaa} .footer{margin-top:30px;text-align:center;font-size:11px;color:#334155;border-top:1px dashed #cbd5e1;padding-top:15px}</style></head><body><div class="container"><h2>📄 Laporan Penggunaan Genset</h2><p><strong>Unit:</strong> Genset Tanah Merah (Darurat) &nbsp;|&nbsp; Export: ${new Date().toLocaleString()}</p><table><thead><tr><th>No</th><th>Tanggal</th><th>ON</th><th>OFF</th><th>Durasi</th><th>Liter BBM</th><th>Foto Dokumentasi</th><th>Petugas</th><th>Keterangan</th></tr></thead><tbody>`;
             dataEntries.forEach(entry => {
                 let fotoHtml = `<div class="foto-grid">${entry.fotoList.map(f=>`<img src="${f.base64}" title="${f.jamFoto}">`).join('')}</div>`;
-                exportHtml += `<tr><td>${entry.id}</td<td>${entry.tanggal}</td<td>${entry.waktuOn}</td<td>${entry.waktuOff}</td<td>${entry.durasi}</td<td>${entry.totalLiter} L</td<td>${fotoHtml}</td<td>${escapeHtml(entry.petugas)}</td<td>${escapeHtml(entry.keterangan||'-')}</td</tr>`;
+                exportHtml += `<tr><td>${entry.id}</td><td>${entry.tanggal}</td><td>${entry.waktuOn}</td><td>${entry.waktuOff}</td><td>${entry.durasi}</td><td>${entry.totalLiter} L</td><td>${fotoHtml}</td><td>${escapeHtml(entry.petugas)}</td><td>${escapeHtml(entry.keterangan||'-')}</td></tr>`;
             });
             exportHtml += `</tbody></table><div class="footer">Watermark otomatis: GENSET TANAH MERAH + operator + waktu + koordinat.</div></div></body></html>`;
             const blob = new Blob([exportHtml], { type: "text/html" });
@@ -788,6 +820,10 @@
             link.download = `laporan_genset_${Date.now()}.html`;
             link.click();
             URL.revokeObjectURL(blob);
+            // LOG: Export data
+            if (typeof window.logActivity === 'function') {
+                window.logActivity('EXPORT', `Mengekspor data BBM ke HTML (${dataEntries.length} data)`, 'Monitoring BBM');
+            }
         });
         
         function showLoading(msg) { let ld = document.getElementById('globalLoading'); if(!ld){ ld=document.createElement('div'); ld.id='globalLoading'; ld.className='loading-overlay'; ld.innerHTML=`<div class="bg-black/80 text-white p-4 rounded-xl text-center">${msg}</div>`; document.body.appendChild(ld); } else ld.style.display='flex'; }
