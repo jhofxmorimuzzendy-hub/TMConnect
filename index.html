@@ -14,20 +14,55 @@
     <script src="firebase-config.js"></script>
     <script src="auth-check.js"></script>
     <style>
-        /* semua style tetap sama seperti aslinya, tidak diubah */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #eef2f8; padding: 12px; min-height: 100vh; font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; line-height: 1.4; }
         .app-container { max-width: 1400px; margin: 0 auto; background: white; border-radius: 36px; box-shadow: 0 20px 40px -14px rgba(0, 0, 0, 0.15); overflow: hidden; }
-        .header { background: linear-gradient(135deg, #1e6f5c 0%, #0e5a48 100%); color: white; padding: 18px 24px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; }
+        .header { 
+            background: linear-gradient(135deg, #1e6f5c 0%, #0e5a48 100%); 
+            color: white; 
+            padding: 18px 24px; 
+            display: flex; 
+            flex-wrap: wrap; 
+            align-items: center; 
+            justify-content: space-between; 
+            gap: 16px; 
+        }
         .header-left { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
         .header-logo { height: 80px; width: auto; max-width: 260px; object-fit: contain; filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3)); }
         .header h1 { font-size: 1.5rem; font-weight: 700; background: rgba(255,255,255,0.1); padding: 4px 14px; border-radius: 60px; display: inline-flex; align-items: center; gap: 10px; white-space: nowrap; }
         .sync-status { font-size: 0.7rem; padding: 4px 12px; border-radius: 40px; background: rgba(0,0,0,0.2); margin-left: 8px; }
-        .month-picker { background: rgba(255,255,255,0.2); backdrop-filter: blur(4px); padding: 8px 16px; border-radius: 60px; display: flex; gap: 12px; align-items: center; }
+        .month-picker { background: rgba(255,255,255,0.2); backdrop-filter: blur(4px); padding: 8px 16px; border-radius: 60px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
         .month-picker select { background: white; border: none; padding: 8px 14px; border-radius: 40px; font-weight: 600; color: #0b2b40; cursor: pointer; }
         .badge-status { background: #f5b042; color: #1e3a4d; padding: 6px 14px; border-radius: 40px; font-size: 0.75rem; font-weight: bold; }
-        .btn-refresh, .btn-logout { background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 16px; border-radius: 40px; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; backdrop-filter: blur(4px); }
+        /* Warna role display lebih terang */
+        #userRoleDisplay {
+            background: rgba(0,0,0,0.5);
+            color: #fef9c3;
+            font-weight: 600;
+        }
+        .btn-refresh, .btn-logout { 
+            background: rgba(255,255,255,0.2); 
+            border: none; 
+            color: white; 
+            padding: 8px 16px; 
+            border-radius: 40px; 
+            font-size: 0.8rem; 
+            font-weight: 600; 
+            cursor: pointer; 
+            display: inline-flex; 
+            align-items: center; 
+            gap: 8px; 
+            backdrop-filter: blur(4px); 
+            transition: 0.2s;
+        }
         .btn-refresh:hover, .btn-logout:hover { background: rgba(255,255,255,0.35); transform: translateY(-1px); }
+        /* Container tombol aksi header */
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
         .shift-today-card { background: #fef9e6; margin: 20px 24px 0 24px; padding: 20px 24px; border-radius: 32px; border-left: 8px solid #f5b042; }
         .shift-today-card h3 { color: #b45f1b; font-size: 1.25rem; margin-bottom: 16px; display: flex; align-items: center; gap: 12px; }
         .shift-detail { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
@@ -60,9 +95,88 @@
         .warning-message { background: #fff3e0; color: #b45f1b; border-left: 5px solid #f5b042; }
         .info-message { background: #e6f7f0; color: #1e6f5c; border-left: 5px solid #1e6f5c; }
         footer { text-align: center; padding: 20px; font-size: 0.7rem; color: #7f8c8d; border-top: 1px solid #e2edf2; background: #fafcff; }
-        @media (max-width: 780px) { body { padding: 8px; } .header { padding: 16px 18px; flex-direction: column; align-items: stretch; } .header-left { justify-content: space-between; } .header h1 { font-size: 1.2rem; } .month-picker { justify-content: space-between; width: 100%; } .btn-refresh, .btn-logout { align-self: flex-end; } .shift-today-card { margin: 16px 16px 0 16px; padding: 16px; } .daily-tasks-card { margin: 16px 16px 0 16px; padding: 16px 20px; } .shift-item { min-width: 140px; font-size: 0.8rem; } .action-bar { padding: 16px 16px 0 16px; } .content-area { padding: 8px 16px 20px 16px; } .modules-section { padding: 24px 16px 28px 16px; } .modules-grid { gap: 14px; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); } .btn-save, .btn-outline { padding: 10px 22px; font-size: 0.85rem; } .task-badge { padding: 6px 16px; font-size: 0.8rem; } }
-        @media (max-width: 580px) { .header-logo { height: 60px; max-width: 180px; } .shift-detail { flex-direction: column; align-items: stretch; } .shift-item { text-align: center; } .daily-tasks-list { flex-direction: column; } .task-badge { justify-content: center; width: 100%; } .shift-table { min-width: 520px; } .shift-table input { min-width: 100px; font-size: 0.75rem; padding: 8px 4px; } .module-card { padding: 12px 14px; gap: 12px; } .module-icon { width: 48px; height: 48px; font-size: 1.6rem; } .module-info h4 { font-size: 0.85rem; } .badge-status { font-size: 0.7rem; padding: 4px 10px; } .month-picker select { padding: 6px 10px; font-size: 0.75rem; } }
-        @media (max-width: 420px) { .header h1 { font-size: 1rem; gap: 5px; } .sync-status { font-size: 0.6rem; margin-left: 5px; } .modules-grid { grid-template-columns: 1fr; } .btn-save, .btn-outline { width: 100%; justify-content: center; } .action-bar { display: flex; flex-direction: column; gap: 10px; } }
+
+        /* ========== RESPONSIF UNTUK HP ========== */
+        @media (max-width: 780px) {
+            body { padding: 8px; }
+            .header { 
+                padding: 16px 18px; 
+                flex-direction: column; 
+                align-items: stretch; 
+                gap: 12px;
+            }
+            .header-left { 
+                justify-content: space-between; 
+                flex-wrap: wrap;
+            }
+            .header h1 { 
+                font-size: 1.2rem; 
+                white-space: normal;
+                text-align: center;
+            }
+            .month-picker { 
+                justify-content: space-between; 
+                width: 100%;
+                flex-wrap: wrap;
+            }
+            .month-picker select { 
+                flex: 1;
+                min-width: 100px;
+            }
+            .header-actions {
+                justify-content: flex-end;
+                width: 100%;
+                gap: 8px;
+            }
+            .btn-refresh, .btn-logout, .badge-status {
+                padding: 6px 12px;
+                font-size: 0.7rem;
+            }
+            .shift-today-card { margin: 16px 16px 0 16px; padding: 16px; }
+            .daily-tasks-card { margin: 16px 16px 0 16px; padding: 16px 20px; }
+            .shift-item { min-width: 140px; font-size: 0.8rem; }
+            .action-bar { padding: 16px 16px 0 16px; }
+            .content-area { padding: 8px 16px 20px 16px; }
+            .modules-section { padding: 24px 16px 28px 16px; }
+            .modules-grid { gap: 14px; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
+            .btn-save, .btn-outline { padding: 10px 22px; font-size: 0.85rem; }
+            .task-badge { padding: 6px 16px; font-size: 0.8rem; }
+        }
+
+        @media (max-width: 580px) {
+            .header-logo { height: 50px; max-width: 150px; }
+            .shift-detail { flex-direction: column; align-items: stretch; }
+            .shift-item { text-align: center; }
+            .daily-tasks-list { flex-direction: column; }
+            .task-badge { justify-content: center; width: 100%; }
+            .shift-table { min-width: 520px; }
+            .shift-table input { min-width: 100px; font-size: 0.75rem; padding: 8px 4px; }
+            .module-card { padding: 12px 14px; gap: 12px; }
+            .module-icon { width: 48px; height: 48px; font-size: 1.6rem; }
+            .module-info h4 { font-size: 0.85rem; }
+            .badge-status { font-size: 0.7rem; padding: 4px 10px; }
+            .month-picker select { padding: 6px 10px; font-size: 0.75rem; }
+            .header-actions {
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 420px) {
+            .header h1 { font-size: 1rem; gap: 5px; }
+            .sync-status { font-size: 0.6rem; margin-left: 5px; }
+            .modules-grid { grid-template-columns: 1fr; }
+            .btn-save, .btn-outline { width: 100%; justify-content: center; }
+            .action-bar { display: flex; flex-direction: column; gap: 10px; }
+            .header-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .btn-refresh, .btn-logout, .badge-status {
+                text-align: center;
+                justify-content: center;
+            }
+        }
+
         button, .module-card, select, .task-badge { touch-action: manipulation; }
         button:focus-visible, .module-card:focus-visible, select:focus-visible, .task-badge:focus-visible { outline: 3px solid #f5b042; outline-offset: 2px; }
     </style>
@@ -82,9 +196,9 @@
             <select id="yearSelect" aria-label="Pilih tahun"></select>
             <span class="badge-status" id="statusBadge">✅ Siap</span>
         </div>
-        <div style="display: flex; align-items: center; gap: 16px;">
-            <span id="userRoleDisplay" class="badge-status" style="background: rgba(0,0,0,0.3);"><i class="fas fa-user"></i> Memuat...</span>
-            <a href="user-control.html" id="adminControlLink" style="display: none; color: white; background: #f5b042; padding: 6px 14px; border-radius: 40px; text-decoration: none; font-size: 0.75rem; font-weight: bold;"><i class="fas fa-shield-alt"></i> User Control</a>
+        <div class="header-actions">
+            <span id="userRoleDisplay" class="badge-status"><i class="fas fa-user"></i> Memuat...</span>
+            <a href="user-control.html" id="adminControlLink" style="display: none; background: #f5b042; color: #1e3a4d; padding: 6px 14px; border-radius: 40px; text-decoration: none; font-size: 0.75rem; font-weight: bold;"><i class="fas fa-shield-alt"></i> User Control</a>
             <button id="logoutBtn" class="btn-logout" style="display: none;"><i class="fas fa-sign-out-alt"></i> Logout</button>
             <button id="refreshPageBtn" class="btn-refresh" title="Refresh Halaman">
                 <i class="fas fa-sync-alt"></i> Refresh
@@ -345,7 +459,7 @@
                 </tr>
             `;
         }
-        html += `</tbody><table></div><div style="display: flex; flex-wrap: wrap; gap: 16px; margin-top: 24px;"><button id="btnUpdateSchedule" class="btn-save"><i class="fas fa-save"></i> 💾 Simpan Perubahan Jadwal</button><button id="btnCancelManage" class="btn-outline"><i class="fas fa-arrow-left"></i> Batal & Tutup</button></div>`;
+        html += `</tbody></table></div><div style="display: flex; flex-wrap: wrap; gap: 16px; margin-top: 24px;"><button id="btnUpdateSchedule" class="btn-save"><i class="fas fa-save"></i> 💾 Simpan Perubahan Jadwal</button><button id="btnCancelManage" class="btn-outline"><i class="fas fa-arrow-left"></i> Batal & Tutup</button></div>`;
         containerElement.innerHTML = html;
         
         const updateBtn = document.getElementById('btnUpdateSchedule');
@@ -474,6 +588,13 @@
             logoutBtn.style.display = 'inline-flex';
             logoutBtn.innerHTML = (role === 'guest') ? '<i class="fas fa-sign-in-alt"></i> Login' : '<i class="fas fa-sign-out-alt"></i> Logout';
         }
+        // Ubah warna teks userRoleDisplay menjadi lebih terang sesuai role (opsional)
+        const roleSpan = document.getElementById('userRoleDisplay');
+        if (roleSpan) {
+            if (role === 'admin') roleSpan.innerHTML = '<i class="fas fa-user-shield"></i> Admin';
+            else if (role === 'user') roleSpan.innerHTML = '<i class="fas fa-user"></i> User';
+            else roleSpan.innerHTML = '<i class="fas fa-user-friends"></i> Tamu';
+        }
     });
 
     async function handleLogoutOrLogin() {
@@ -554,20 +675,17 @@
     // ========== PERBAIKAN UTAMA: FUNGSI ENABLE PERSISTENCE ==========
     async function enableFirebasePersistence() {
         if (!window.db) return false;
-        // Gunakan hanya window.db.enablePersistence() untuk compat SDK v10
         if (typeof window.db.enablePersistence === 'function') {
             try {
                 await window.db.enablePersistence();
                 console.log("Firebase persistence diaktifkan (offline support)");
             } catch (err) {
-                // Abaikan error, persistence gagal (misal multiple tab)
                 console.log("Persistence tidak diaktifkan:", err.message);
             }
         } else {
-            // Tidak ada method, diam saja (tidak perlu peringatan)
             console.log("Persistence tidak didukung browser");
         }
-        return true; // Selalu lanjutkan
+        return true;
     }
 
     function waitForFirebaseAndLoad() {
