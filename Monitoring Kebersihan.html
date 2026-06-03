@@ -14,8 +14,10 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="firebase-config.js"></script>
-    <script src="log-helper.js"></script> <!-- ✅ TAMBAHKAN LOG HELPER -->
+    <script src="log-helper.js"></script>
     <script src="auth-check.js"></script>
+    <!-- ✅ TAMBAHKAN timestamp-editor.js untuk admin edit timestamp watermark -->
+    <script src="timestamp-editor.js"></script>
 
     <script>
         tailwind.config = {
@@ -558,10 +560,17 @@
             });
         }
 
+        // ========== FUNGSI UTAMA PROSES FOTO DENGAN EDIT TIMESTAMP UNTUK ADMIN ==========
         async function processSingleFoto(originalBase64, petugas) {
             if (!petugas) throw new Error("Petugas belum diisi");
             const pos = await getCurrentPosition();
-            const now = new Date();
+            let now = new Date();
+            
+            // Jika admin dan fungsi edit timestamp tersedia, tawarkan edit
+            if (userRole === 'admin' && typeof window.getEditableTimestamp === 'function') {
+                now = await window.getEditableTimestamp(userRole, now);
+            }
+            
             const waktuStr = now.toLocaleString('id-ID', { hour12: false, day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit', second:'2-digit' });
             const watermarked = await applyWatermark(originalBase64, petugas, pos, waktuStr);
             return { base64: watermarked, jamFoto: waktuStr, lat: pos?.lat || null, lng: pos?.lng || null };
@@ -751,9 +760,9 @@
             let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Laporan Kebersihan - Transmisi Tanah Merah</title><style>body{font-family:Inter,sans-serif;margin:20px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #aaa;padding:8px;vertical-align:top}th{background:#1e6f5c;color:white}.foto-grid{display:flex;gap:6px;flex-wrap:wrap}img{width:60px;height:60px;object-fit:cover;border-radius:8px}</style></head><body><h2>Monitoring Kebersihan - Transmisi Tanah Merah Ch44 (658)</h2><p>Export: ${new Date().toLocaleString()}</p><table border="1"><thead><tr><th>No</th><th>Tanggal</th><th>Petugas</th><th>Genset</th><th>Peralatan</th><th>R.Pemancar</th><th>Lingkungan</th><th>Foto</th><th>Keterangan</th></tr></thead><tbody>`;
             dataEntries.forEach((e,idx) => {
                 let fotoHtml = `<div class="foto-grid">${(e.fotoList||[]).map(f=>`<img src="${f.base64}" title="${f.jamFoto}">`).join('')}</div>`;
-                html += `<tr><td>${idx+1}</td><td>${e.tanggal}</td><td>${escapeHtml(e.petugas)}</td<td>${e.kebersihanGenset}</td<td>${e.kebersihanPeralatan}</td<td>${e.kebersihanPemancar}</td<td>${e.kebersihanLingkungan}</td<td>${fotoHtml}</td<td>${escapeHtml(e.keterangan||'-')}</td</td>`;
+                html += `<tr><td>${idx+1}</td><td>${e.tanggal}</td><td>${escapeHtml(e.petugas)}</td<td>${e.kebersihanGenset}</td<td>${e.kebersihanPeralatan}</td<td>${e.kebersihanPemancar}</td<td>${e.kebersihanLingkungan}</td<td>${fotoHtml}</td<td>${escapeHtml(e.keterangan||'-')}</td</tr>`;
             });
-            html += `</tbody><table><p><em>Watermark otomatis: TVRI, transmisi, petugas, waktu, koordinat.</em></p></body></html>`;
+            html += `</tbody></table><p><em>Watermark otomatis: TVRI, transmisi, petugas, waktu, koordinat.</em></p></body></html>`;
             const blob = new Blob([html], {type:"text/html"}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`laporan_kebersihan_${Date.now()}.html`; a.click(); URL.revokeObjectURL(blob);
             // LOG: Export data
             if (typeof window.logActivity === 'function') {
