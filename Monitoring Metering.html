@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>TVRI - TX Tanah Merah | Monitoring PLN & UPS + Multi Foto + Flip Kamera</title>
+    <title>TVRI - TX Tanah Merah | Monitoring PLN & UPS + Multi Foto + Flip Kamera + Multi Role</title>
     <link rel="icon" type="image/ico" href="favicon.ico">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -12,10 +12,12 @@
     <meta name="theme-color" content="#1e6f5c">
     <link rel="apple-touch-icon" href="favicon.png">
     
-    <!-- Firebase SDK -->
+    <!-- Firebase SDK + Auth -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="firebase-config.js"></script>
+    <script src="auth-check.js"></script>
 
     <script>
         tailwind.config = {
@@ -98,6 +100,17 @@
         .param-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 0.5rem; }
         .table-voltage-line { font-weight: 600; color: #0c4e6e; }
         .table-neutral-line { font-size: 0.65rem; color: #2c6e4e; background: #eef2f0; display: inline-block; padding: 0 4px; border-radius: 8px; margin-top: 2px; }
+        .role-badge-header {
+            background: rgba(0,0,0,0.3);
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-left: 12px;
+        }
     </style>
 </head>
 <body>
@@ -120,6 +133,7 @@
             <h1 class="text-xl sm:text-2xl md:text-4xl font-extrabold text-slate-800 mt-2 md:mt-3 leading-tight">
                 Monitoring PLN & UPS - TX Tanah Merah
                 <span id="firebaseStatus" class="sync-status"><i class="fas fa-cloud-upload-alt"></i> Menghubungkan...</span>
+                <span id="userRoleDisplay" class="role-badge-header"><i class="fas fa-user"></i> Memuat...</span>
             </h1>
             <div class="mt-2 flex justify-center px-2">
                 <span class="badge-perbaikan bg-primary text-white text-xs md:text-sm rounded-full py-1 px-3 md:px-4 font-semibold"><i class="fas fa-camera-retro mr-1 md:mr-2"></i> Multi Foto | Kamera Flip | Nomor lanjut otomatis | Tegangan terisi dari data terakhir</span>
@@ -248,6 +262,7 @@
         let dataEntries = [];
         let listenerRef = null;
         let isInternalUpdate = false;
+        let userRole = 'guest'; // dari auth-check
         const DB_PATH = 'monitoring/metering/entries';
 
         function updateFirebaseStatus(connected, message) {
@@ -302,12 +317,11 @@
                 } else dataEntries = [];
                 renderTable();
                 updateNomorOtomatis();
-                prefillTeganganDariDataTerakhir(); // isi tegangan dari data terakhir
+                prefillTeganganDariDataTerakhir();
                 updateFirebaseStatus(true, `Realtime (${dataEntries.length} data)`);
             }, (error) => updateFirebaseStatus(false, "Error listener"));
         }
 
-        // Nomor form = jumlah dataEntries + 1 (lanjutan dari riwayat)
         function updateNomorOtomatis() { 
             const nextNumber = dataEntries.length + 1;
             document.getElementById("nomorOtomatis").value = nextNumber; 
@@ -334,18 +348,28 @@
             isInternalUpdate = false;
         }
 
+        async function updateEntryInFirebase(updatedEntry) {
+            const index = dataEntries.findIndex(e => e.id == updatedEntry.id);
+            if (index !== -1) {
+                dataEntries[index] = updatedEntry;
+                isInternalUpdate = true;
+                await setEntriesToFirebase(dataEntries);
+                isInternalUpdate = false;
+                renderTable();
+                updateNomorOtomatis();
+            }
+        }
+
         // ========== PRE-FILL TEGANGAN DARI DATA TERAKHIR ==========
         function prefillTeganganDariDataTerakhir() {
             if (!dataEntries.length) {
-                // kosongkan semua input number tegangan/arus
                 const allNumberInputs = document.querySelectorAll('#formMetering input[type="number"]');
                 allNumberInputs.forEach(inp => inp.value = '');
                 return;
             }
-            const last = dataEntries[0]; // data terbaru (karena sorted descending)
+            const last = dataEntries[0];
             const pln = last.pln || {};
             const ups = last.ups || {};
-            // PLN
             setNumberIfExists('vPLN_rs', pln.v?.rs);
             setNumberIfExists('vPLN_st', pln.v?.st);
             setNumberIfExists('vPLN_tr', pln.v?.tr);
@@ -355,7 +379,6 @@
             setNumberIfExists('iPLN_r', pln.i?.r);
             setNumberIfExists('iPLN_s', pln.i?.s);
             setNumberIfExists('iPLN_t', pln.i?.t);
-            // UPS
             setNumberIfExists('vUPS_rs', ups.v?.rs);
             setNumberIfExists('vUPS_st', ups.v?.st);
             setNumberIfExists('vUPS_tr', ups.v?.tr);
@@ -576,7 +599,56 @@
         btnFlip.addEventListener('click', flipCamera);
         btnUpload.addEventListener('click', uploadManual);
 
-        // ========== RENDER TABEL DENGAN NOMOR URUT OTOMATIS ==========
+        // ========== FUNGSI EDIT UNTUK ADMIN ==========
+        window.editEntry = async (id) => {
+            if (userRole !== 'admin') {
+                alert("Hanya admin yang dapat mengedit data.");
+                return;
+            }
+            const entry = dataEntries.find(e => e.id == id);
+            if (!entry) return;
+
+            const newTanggal = prompt("Edit tanggal (YYYY-MM-DD):", entry.tanggal);
+            if (newTanggal && newTanggal !== entry.tanggal) entry.tanggal = newTanggal;
+
+            const newPetugas = prompt("Edit petugas:", entry.petugas);
+            if (newPetugas !== null && newPetugas !== entry.petugas) entry.petugas = newPetugas;
+
+            const newKeterangan = prompt("Edit keterangan:", entry.keterangan || "");
+            if (newKeterangan !== null && newKeterangan !== entry.keterangan) entry.keterangan = newKeterangan;
+
+            // edit nilai PLN
+            const pln = entry.pln || { v: {}, i: {} };
+            pln.v.rs = parseFloat(prompt("PLN V-RS:", pln.v.rs ?? '')) || null;
+            pln.v.st = parseFloat(prompt("PLN V-ST:", pln.v.st ?? '')) || null;
+            pln.v.tr = parseFloat(prompt("PLN V-TR:", pln.v.tr ?? '')) || null;
+            pln.v.rn = parseFloat(prompt("PLN V-RN:", pln.v.rn ?? '')) || null;
+            pln.v.sn = parseFloat(prompt("PLN V-SN:", pln.v.sn ?? '')) || null;
+            pln.v.tn = parseFloat(prompt("PLN V-TN:", pln.v.tn ?? '')) || null;
+            pln.i.r = parseFloat(prompt("PLN I-R:", pln.i.r ?? '')) || null;
+            pln.i.s = parseFloat(prompt("PLN I-S:", pln.i.s ?? '')) || null;
+            pln.i.t = parseFloat(prompt("PLN I-T:", pln.i.t ?? '')) || null;
+            entry.pln = pln;
+
+            // edit nilai UPS
+            const ups = entry.ups || { v: {}, i: {} };
+            ups.v.rs = parseFloat(prompt("UPS V-RS:", ups.v.rs ?? '')) || null;
+            ups.v.st = parseFloat(prompt("UPS V-ST:", ups.v.st ?? '')) || null;
+            ups.v.tr = parseFloat(prompt("UPS V-TR:", ups.v.tr ?? '')) || null;
+            ups.v.rn = parseFloat(prompt("UPS V-RN:", ups.v.rn ?? '')) || null;
+            ups.v.sn = parseFloat(prompt("UPS V-SN:", ups.v.sn ?? '')) || null;
+            ups.v.tn = parseFloat(prompt("UPS V-TN:", ups.v.tn ?? '')) || null;
+            ups.i.r = parseFloat(prompt("UPS I-R:", ups.i.r ?? '')) || null;
+            ups.i.s = parseFloat(prompt("UPS I-S:", ups.i.s ?? '')) || null;
+            ups.i.t = parseFloat(prompt("UPS I-T:", ups.i.t ?? '')) || null;
+            entry.ups = ups;
+
+            await updateEntryInFirebase(entry);
+            alert("Data berhasil diperbarui.");
+            prefillTeganganDariDataTerakhir();
+        };
+
+        // ========== RENDER TABEL ==========
         function formatVal(v) { return (v!==null && v!==undefined && !isNaN(v)) ? parseFloat(v).toFixed(1) : "-"; }
         function escapeHtml(s) { if(!s) return ""; return s.replace(/[&<>]/g, m=>m==='&'?'&amp;':m==='<'?'&lt;':'&gt;'); }
 
@@ -618,6 +690,12 @@
                 const upsNetral = `${formatVal(entry.ups?.v?.rn)}/${formatVal(entry.ups?.v?.sn)}/${formatVal(entry.ups?.v?.tn)}`;
                 const upsArus = `${formatVal(entry.ups?.i?.r)}/${formatVal(entry.ups?.i?.s)}/${formatVal(entry.ups?.i?.t)}`;
                 const upsStr = `<div><span class="table-voltage-line">▸V-Line: ${upsLine}</span><br><span class="table-neutral-line">🌍 Netral: ${upsNetral}</span><br><span class="text-gray-700">🔁 I: ${upsArus}</span></div>`;
+
+                let actionButtons = `<button onclick="deleteEntry(${entry.id})" class="bg-red-100 text-red-600 px-2 py-1 rounded-full text-[10px]"><i class="fas fa-trash-can"></i> Hapus</button>`;
+                if (userRole === 'admin') {
+                    actionButtons = `<button onclick="editEntry(${entry.id})" class="bg-blue-100 text-blue-600 px-2 py-1 rounded-full text-[10px] mr-1"><i class="fas fa-edit"></i> Edit</button>${actionButtons}`;
+                }
+
                 html += `<tr class="border-b hover:bg-slate-50">
                     <td class="py-2 px-1 font-mono">${nomorUrut}</td>
                     <td class="py-2 px-1">${entry.tanggal}</td>
@@ -626,8 +704,8 @@
                     <td class="py-2 px-1 text-[10px] leading-relaxed">${plnStr}</td>
                     <td class="py-2 px-1 text-[10px] leading-relaxed">${upsStr}</td>
                     <td class="py-2 px-1 text-center">${fotoCell}</td>
-                    <td class="py-2 px-1"><button onclick="deleteEntry(${entry.id})" class="bg-red-100 text-red-600 px-2 py-1 rounded-full text-[10px]"><i class="fas fa-trash-can"></i> Hapus</button></td>
-                  </tr>`;
+                    <td class="py-2 px-1 text-center">${actionButtons}</td>
+                </tr>`;
             });
             tbody.innerHTML = html;
         }
@@ -643,6 +721,10 @@
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
+            if (userRole === 'guest') {
+                alert("Tamu tidak dapat menyimpan data. Silakan login.");
+                return;
+            }
             const noForm = document.getElementById('nomorOtomatis').value.trim();
             const tgl = tanggalInput.value;
             const petugas = petugasInput.value.trim();
@@ -691,7 +773,7 @@
                 createdAt: new Date().toISOString()
             };
             await addEntry(newEntry);
-            resetFormInput(); // akan mengisi tegangan dari data terakhir dan kosongkan petugas/foto/keterangan
+            resetFormInput();
             alert(`✅ Tersimpan dengan ${currentFotoList.length} foto.`);
         });
 
@@ -699,13 +781,10 @@
             tanggalInput.value = new Date().toISOString().split('T')[0];
             petugasInput.value = '';
             keteranganInput.value = '';
-            // Hapus semua foto
             currentFotoList = [];
             updatePreviewUI();
             updateHiddenArray();
-            // Nomor otomatis akan diperbarui oleh updateNomorOtomatis setelah dataEntries berubah
             updateNomorOtomatis();
-            // Tegangan diisi ulang dari data terakhir (jika ada)
             prefillTeganganDariDataTerakhir();
             if(mediaStream) tutupKamera();
         }
@@ -732,6 +811,31 @@
 
         function showLoading(msg) { let ld = document.getElementById('globalLoading'); if(!ld){ ld=document.createElement('div'); ld.id='globalLoading'; ld.className='loading-overlay'; ld.innerHTML=`<div class="bg-black/80 text-white p-4 rounded-xl">${msg}</div>`; document.body.appendChild(ld); } else ld.style.display='flex'; }
         function hideLoading() { let ld = document.getElementById('globalLoading'); if(ld) ld.remove(); }
+
+        // ======================== MULTI-ROLE HANDLER ========================
+        window.addEventListener('roleChanged', (e) => {
+            userRole = e.detail.role;
+            const roleSpan = document.getElementById('userRoleDisplay');
+            if (roleSpan) {
+                if (userRole === 'admin') roleSpan.innerHTML = '<i class="fas fa-user-shield"></i> Admin';
+                else if (userRole === 'user') roleSpan.innerHTML = '<i class="fas fa-user"></i> User';
+                else roleSpan.innerHTML = '<i class="fas fa-user-friends"></i> Tamu';
+            }
+            // Nonaktifkan form jika tamu
+            const formInputs = document.querySelectorAll('#formMetering input, #formMetering select, #formMetering textarea, #formMetering button[type="submit"]');
+            formInputs.forEach(inp => {
+                if (userRole === 'guest') inp.disabled = true;
+                else inp.disabled = false;
+            });
+            // Tombol hapus semua hanya untuk admin
+            const hapusSemuaBtn = document.getElementById('btnHapusSemua');
+            if (hapusSemuaBtn) {
+                if (userRole !== 'admin') hapusSemuaBtn.style.display = 'none';
+                else hapusSemuaBtn.style.display = 'inline-flex';
+            }
+            // Render ulang tabel untuk menampilkan tombol edit jika admin
+            renderTable();
+        });
 
         async function initFirebase() {
             if (!window.db) { setTimeout(initFirebase, 300); return; }
