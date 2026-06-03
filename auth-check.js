@@ -9,6 +9,20 @@ let currentRole = 'guest'; // 'guest', 'user', 'admin'
 window.currentUser = null;
 window.currentRole = 'guest';
 
+// Fungsi aman untuk log activity (menunggu logActivity tersedia)
+async function safeLogActivity(action, details, moduleName) {
+    if (typeof window.logActivity === 'function') {
+        try {
+            await window.logActivity(action, details, moduleName);
+            console.log(`Log berhasil: ${action} - ${details}`);
+        } catch (err) {
+            console.warn("Gagal mencatat log:", err);
+        }
+    } else {
+        console.warn("logActivity tidak tersedia, log tidak tersimpan:", action, details);
+    }
+}
+
 function updateUIBasedOnRole() {
   // Elemen-elemen yang perlu disembunyikan untuk tamu/user/admin
   const adminOnlyElements = document.querySelectorAll('.admin-only');
@@ -84,8 +98,8 @@ async function fetchUserRole(uid) {
 // Fungsi logout
 async function logoutUser() {
   // Log aktivitas logout sebelum signOut (jika ada user)
-  if (currentUser && typeof window.logActivity === 'function') {
-    await window.logActivity('LOGOUT', `User ${currentUser.email} logout`, 'Auth');
+  if (currentUser) {
+    await safeLogActivity('LOGOUT', `User ${currentUser.email} logout`, 'Auth');
   }
   window.auth.signOut().then(() => {
     window.location.href = 'login.html';
@@ -95,24 +109,25 @@ async function logoutUser() {
 // Inisialisasi auth state observer
 function initAuthCheck() {
   window.auth.onAuthStateChanged(async (user) => {
+    let previousUser = currentUser;
     if (user) {
       currentUser = user;
-      window.currentUser = user; // simpan global
+      window.currentUser = user;
       currentRole = await fetchUserRole(user.uid);
       window.currentRole = currentRole;
-      // Simpan role di localStorage untuk akses cepat (opsional)
+      // Simpan role di localStorage untuk akses cepat
       localStorage.setItem('userRole', currentRole);
       localStorage.setItem('userEmail', user.email);
       
-      // Log aktivitas session start (user aktif)
-      // Gunakan setTimeout agar logActivity tersedia jika script belum selesai dimuat
-      if (typeof window.logActivity === 'function') {
-        setTimeout(() => {
-          window.logActivity('SESSION_START', `User ${user.email} aktif dengan role ${currentRole}`, 'Auth');
-        }, 100);
+      // Log aktivitas session start (user aktif) hanya jika sebelumnya tidak ada user atau berbeda
+      if (!previousUser || previousUser.uid !== user.uid) {
+        await safeLogActivity('SESSION_START', `User ${user.email} aktif dengan role ${currentRole}`, 'Auth');
       }
     } else {
       // User logout atau tidak ada
+      if (previousUser) {
+        await safeLogActivity('SESSION_END', `Session berakhir untuk ${previousUser.email}`, 'Auth');
+      }
       currentUser = null;
       window.currentUser = null;
       currentRole = 'guest';
