@@ -17,6 +17,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="firebase-config.js"></script>
+    <script src="log-helper.js"></script> <!-- ✅ TAMBAHKAN LOG HELPER -->
     <script src="auth-check.js"></script>
 
     <script>
@@ -341,11 +342,19 @@
             isInternalUpdate = true;
             await setEntriesToFirebase(updated);
             isInternalUpdate = false;
+            // LOG: Hapus data
+            if (typeof window.logActivity === 'function') {
+                window.logActivity('HAPUS DATA', `Menghapus data Metering ID ${id}`, 'Monitoring Metering');
+            }
         }
         async function clearAllEntries() {
             isInternalUpdate = true;
             await setEntriesToFirebase([]);
             isInternalUpdate = false;
+            // LOG: Hapus semua
+            if (typeof window.logActivity === 'function') {
+                window.logActivity('HAPUS SEMUA', `Menghapus semua data Metering (${dataEntries.length} entries)`, 'Monitoring Metering');
+            }
         }
 
         async function updateEntryInFirebase(updatedEntry) {
@@ -646,6 +655,10 @@
             await updateEntryInFirebase(entry);
             alert("Data berhasil diperbarui.");
             prefillTeganganDariDataTerakhir();
+            // LOG: Edit data
+            if (typeof window.logActivity === 'function') {
+                window.logActivity('EDIT DATA', `Mengedit data Metering ID ${id} (Tanggal: ${entry.tanggal}, Petugas: ${entry.petugas})`, 'Monitoring Metering');
+            }
         };
 
         // ========== RENDER TABEL ==========
@@ -699,12 +712,12 @@
                 html += `<tr class="border-b hover:bg-slate-50">
                     <td class="py-2 px-1 font-mono">${nomorUrut}</td>
                     <td class="py-2 px-1">${entry.tanggal}</td>
-                    <td class="py-2 px-1">${escapeHtml(entry.petugas)}</td>
-                    <td class="py-2 px-1 max-w-[120px] truncate">${escapeHtml(entry.keterangan||'-')}</td>
-                    <td class="py-2 px-1 text-[10px] leading-relaxed">${plnStr}</td>
-                    <td class="py-2 px-1 text-[10px] leading-relaxed">${upsStr}</td>
-                    <td class="py-2 px-1 text-center">${fotoCell}</td>
-                    <td class="py-2 px-1 text-center">${actionButtons}</td>
+                    <td class="py-2 px-1">${escapeHtml(entry.petugas)}</td
+                    <td class="py-2 px-1 max-w-[120px] truncate">${escapeHtml(entry.keterangan||'-')}</td
+                    <td class="py-2 px-1 text-[10px] leading-relaxed">${plnStr}</td
+                    <td class="py-2 px-1 text-[10px] leading-relaxed">${upsStr}</td
+                    <td class="py-2 px-1 text-center">${fotoCell}</td
+                    <td class="py-2 px-1 text-center">${actionButtons}</td
                 </tr>`;
             });
             tbody.innerHTML = html;
@@ -775,6 +788,10 @@
             await addEntry(newEntry);
             resetFormInput();
             alert(`✅ Tersimpan dengan ${currentFotoList.length} foto.`);
+            // LOG: Tambah data
+            if (typeof window.logActivity === 'function') {
+                window.logActivity('TAMBAH DATA', `Menambahkan data Metering ID ${newId} (Tanggal: ${tgl}, Petugas: ${petugas})`, 'Monitoring Metering');
+            }
         });
 
         function resetFormInput() {
@@ -789,7 +806,13 @@
             if(mediaStream) tutupKamera();
         }
         resetBtn.addEventListener('click', () => { if(confirm("Reset form? Data tegangan akan diisi dari riwayat terakhir, petugas & foto dikosongkan.")) resetFormInput(); });
-        document.getElementById('btnHapusSemua').addEventListener('click', async () => { if(confirm("Hapus SEMUA data?")){ await clearAllEntries(); resetFormInput(); alert("Semua data dihapus."); } });
+        document.getElementById('btnHapusSemua').addEventListener('click', async () => { 
+            if(confirm("Hapus SEMUA data?")){ 
+                await clearAllEntries(); 
+                resetFormInput(); 
+                alert("Semua data dihapus.");
+            } 
+        });
 
         // ========== EXPORT HTML ==========
         document.getElementById('btnExportHTML').addEventListener('click', () => {
@@ -807,6 +830,10 @@
             });
             html += `</tbody></table><p><em>Watermark otomatis & nomor urut berurutan</em></p></body></html>`;
             const blob = new Blob([html], {type:"text/html"}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`laporan_metering_${Date.now()}.html`; a.click(); URL.revokeObjectURL(blob);
+            // LOG: Export data
+            if (typeof window.logActivity === 'function') {
+                window.logActivity('EXPORT', `Mengekspor data Metering ke HTML (${dataEntries.length} data)`, 'Monitoring Metering');
+            }
         });
 
         function showLoading(msg) { let ld = document.getElementById('globalLoading'); if(!ld){ ld=document.createElement('div'); ld.id='globalLoading'; ld.className='loading-overlay'; ld.innerHTML=`<div class="bg-black/80 text-white p-4 rounded-xl">${msg}</div>`; document.body.appendChild(ld); } else ld.style.display='flex'; }
