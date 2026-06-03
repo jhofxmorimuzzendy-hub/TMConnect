@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>TVRI - TX Tanah Merah | Monitoring Multiplexing (Segmen Kabel Dinamis + IP)</title>
+    <title>TVRI - TX Tanah Merah | Monitoring Multiplexing (Segmen Kabel Dinamis + IP) + Multi Role</title>
     <link rel="icon" type="image/ico" href="favicon.ico">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -12,10 +12,12 @@
     <meta name="theme-color" content="#1e6f5c">
     <link rel="apple-touch-icon" href="favicon.png">
     
-    <!-- Firebase SDK -->
+    <!-- Firebase SDK + Auth -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="firebase-config.js"></script>
+    <script src="auth-check.js"></script>
 
     <script>
         tailwind.config = {
@@ -98,6 +100,17 @@
         .action-icon { cursor: pointer; font-size: 14px; padding: 6px; border-radius: 8px; transition: 0.2s; }
         .action-icon:hover { background: #e2e8f0; }
         .label-edit { background: #f1f5f9; border-radius: 8px; padding: 4px 8px; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; }
+        .role-badge-header {
+            background: rgba(0,0,0,0.3);
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-left: 12px;
+        }
     </style>
 </head>
 <body>
@@ -114,6 +127,7 @@
         <h1 class="text-xl sm:text-2xl md:text-4xl font-extrabold text-slate-800 mt-2 md:mt-3 leading-tight">
             Monitoring Multiplexing (3 IRD, Segmen Kabel Dinamis & IP)
             <span id="firebaseStatus" class="sync-status"><i class="fas fa-cloud-upload-alt"></i> Menghubungkan...</span>
+            <span id="userRoleDisplay" class="role-badge-header"><i class="fas fa-user"></i> Memuat...</span>
         </h1>
         <div class="mt-2 flex justify-center px-2">
             <span class="bg-primary text-white text-xs md:text-sm rounded-full py-1 px-3 md:px-4 font-semibold"><i class="fas fa-camera-retro mr-1 md:mr-2"></i> Multi Foto Max 5 | Kamera + Watermark | Segmen Kabel: +Tambah, Edit Label, Hapus</span>
@@ -163,7 +177,7 @@
                     </div>
                 </div>
 
-                <!-- Koneksi Kabel: DINAMIS dengan 10 segmen awal + fitur tambah/edit/hapus -->
+                <!-- Koneksi Kabel: DINAMIS -->
                 <div class="bg-slate-50 rounded-xl p-4 border border-gray-200">
                     <h3 class="font-bold text-primary mb-3 flex items-center gap-2"><i class="fas fa-plug"></i> Koneksi Kabel (Segmen Dinamis) - Isi Jenis Kabel/Konektor</h3>
                     <div id="segmenContainer" class="space-y-3"></div>
@@ -232,9 +246,8 @@
                 <thead class="bg-gray-100">
                     <tr><th>No Urut</th><th>Tgl</th><th>Petugas</th><th>IRD1</th><th>IRD2</th><th>IRD3</th><th>Kabel (Segmen) & IP</th><th>Foto</th><th>Aksi</th></tr>
                 </thead>
-                <tbody id="tabelBody"><tr><td colspan="9" class="text-center py-6 text-gray-400">⚡ Memuat data......</td></tr>
-                </tbody>
-            前途
+                <tbody id="tabelBody"><tr><td colspan="9" class="text-center py-6 text-gray-400">⚡ Memuat data......</td</tr</tbody>
+            </table>
         </div>
     </div>
 </div>
@@ -347,16 +360,13 @@
         let result = {};
         segmenList.forEach(seg => {
             result[`seg${seg.nomor}`] = seg.value || '';
-            // Simpan juga label untuk keperluan restore nanti (optional)
             result[`label${seg.nomor}`] = seg.label;
         });
         return result;
     }
     
     function setSegmenValues(valuesObj) {
-        // valuesObj berisi seg1, seg2, ..., label1, label2, ...
         if(!valuesObj) return;
-        // Cari jumlah segmen maks dari keys
         const segKeys = Object.keys(valuesObj).filter(k => k.startsWith('seg'));
         if(segKeys.length === 0) {
             initDefaultSegments();
@@ -385,6 +395,8 @@
     const DB_PATH = 'monitoring/multiplexing_v8_dynamic_seg_fixed';
     let currentFotoList = [];
     let mediaStream = null, currentFacingMode = 'environment';
+    let userRole = 'guest'; // dari auth-check
+    
     const videoEl = document.getElementById('videoCamera'), videoContainer = document.getElementById('videoContainer');
     const btnBuka = document.getElementById('btnBukaKamera'), btnCapture = document.getElementById('btnCaptureFoto'), btnTutup = document.getElementById('btnTutupKamera'), btnFlip = document.getElementById('btnFlipCamera'), btnUpload = document.getElementById('btnUploadManual');
     const fotoPreviewDiv = document.getElementById('fotoPreviewList'), fotoCounterSpan = document.getElementById('fotoCounter'), fotoDataArrayHidden = document.getElementById('fotoDataArray'), cameraModeLabel = document.getElementById('cameraModeLabel');
@@ -456,11 +468,95 @@
         updateNomorOtomatis();
     }
     
+    async function updateEntryInFirebase(updatedEntry) {
+        const index = entries.findIndex(e => e.id === updatedEntry.id);
+        if (index !== -1) {
+            entries[index] = updatedEntry;
+            isInternalUpdate = true;
+            await setEntriesToFirebase(entries);
+            isInternalUpdate = false;
+            renderTable();
+            updateNomorOtomatis();
+        }
+    }
+    
+    // Admin edit function
+    window.editEntry = async (id) => {
+        if (userRole !== 'admin') { alert("Hanya admin yang dapat mengedit data."); return; }
+        const entry = entries.find(e => e.id === id);
+        if (!entry) return;
+        
+        // Edit tanggal
+        const newTanggal = prompt("Edit tanggal (YYYY-MM-DD):", entry.tanggal);
+        if (newTanggal && newTanggal !== entry.tanggal) entry.tanggal = newTanggal;
+        
+        // Edit petugas
+        const newPetugas = prompt("Edit petugas:", entry.petugas);
+        if (newPetugas !== null && newPetugas !== entry.petugas) entry.petugas = newPetugas;
+        
+        // Edit IRD1
+        const ird1_cn = prompt("IRD1 C/N (dB):", entry.ird1?.cn ?? '');
+        if (ird1_cn !== null) entry.ird1.cn = parseFloat(ird1_cn) || null;
+        const ird1_margin = prompt("IRD1 Link Margin (dB):", entry.ird1?.margin ?? '');
+        if (ird1_margin !== null) entry.ird1.margin = parseFloat(ird1_margin) || null;
+        const ird1_lock = prompt("IRD1 Status Lock (Locked/Not Locked/Unlock):", entry.ird1?.lock ?? 'Locked');
+        if (ird1_lock !== null) entry.ird1.lock = ird1_lock;
+        
+        // Edit IRD2
+        const ird2_cn = prompt("IRD2 C/N (dB):", entry.ird2?.cn ?? '');
+        if (ird2_cn !== null) entry.ird2.cn = parseFloat(ird2_cn) || null;
+        const ird2_margin = prompt("IRD2 Link Margin (dB):", entry.ird2?.margin ?? '');
+        if (ird2_margin !== null) entry.ird2.margin = parseFloat(ird2_margin) || null;
+        const ird2_lock = prompt("IRD2 Status Lock (Locked/Not Locked/Unlock):", entry.ird2?.lock ?? 'Locked');
+        if (ird2_lock !== null) entry.ird2.lock = ird2_lock;
+        
+        // Edit IRD3
+        const ird3_quality = prompt("IRD3 Quality (%):", entry.ird3?.quality ?? '');
+        if (ird3_quality !== null) entry.ird3.quality = parseFloat(ird3_quality) || null;
+        const ird3_strength = prompt("IRD3 Strength (%):", entry.ird3?.strength ?? '');
+        if (ird3_strength !== null) entry.ird3.strength = parseFloat(ird3_strength) || null;
+        const ird3_lock = prompt("IRD3 Status Lock (Locked/Not Locked/Unlock):", entry.ird3?.lock ?? 'Locked');
+        if (ird3_lock !== null) entry.ird3.lock = ird3_lock;
+        
+        // Edit IP settings
+        if (entry.ip) {
+            const ip_alamat = prompt("Alamat IP Multicast:", entry.ip.alamat || '');
+            if (ip_alamat !== null) entry.ip.alamat = ip_alamat;
+            const ip_port = prompt("Port in use:", entry.ip.port_in_use || '');
+            if (ip_port !== null) entry.ip.port_in_use = parseInt(ip_port) || null;
+            const ip_channel = prompt("Channel Terisi:", entry.ip.channel_terisi || '');
+            if (ip_channel !== null) entry.ip.channel_terisi = ip_channel;
+            const ip_bitrate = prompt("Bitrate (Mbps):", entry.ip.bitrate || '');
+            if (ip_bitrate !== null) entry.ip.bitrate = parseFloat(ip_bitrate) || null;
+            const ip_status = prompt("Status (Stabil/Flapping/Down):", entry.ip.status || 'Stabil');
+            if (ip_status !== null) entry.ip.status = ip_status;
+            const ip_notes = prompt("Catatan IP:", entry.ip.catatan || '');
+            if (ip_notes !== null) entry.ip.catatan = ip_notes;
+        }
+        
+        // Edit segmen kabel
+        const editSegments = confirm("Edit segmen kabel? (OK untuk edit, Cancel lewati)");
+        if (editSegments) {
+            let newSegments = {};
+            for (let seg of segmenList) {
+                const newVal = prompt(`Nilai untuk segmen ${seg.nomor} (${seg.label}):`, seg.value);
+                if (newVal !== null) newSegments[`seg${seg.nomor}`] = newVal;
+                else newSegments[`seg${seg.nomor}`] = seg.value;
+                newSegments[`label${seg.nomor}`] = seg.label;
+            }
+            setSegmenValues(newSegments);
+            // Simpan nilai segmen ke entry
+            entry.kabel = getSegmenValues();
+        }
+        
+        await updateEntryInFirebase(entry);
+        alert("Data berhasil diperbarui.");
+    };
+    
     function autoFillFromLatest() {
         if(!entries.length) return false;
         const latest = [...entries].sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
         if(!latest) return false;
-        // IP
         if(latest.ip) {
             document.getElementById('ip_addr').value = latest.ip.alamat || '';
             document.getElementById('ip_port_in_use').value = latest.ip.port_in_use !== null ? latest.ip.port_in_use : '';
@@ -469,7 +565,6 @@
             document.getElementById('ip_status').value = latest.ip.status || 'Stabil';
             document.getElementById('ip_notes').value = latest.ip.catatan || '';
         }
-        // Kabel dinamis
         if(latest.kabel) {
             setSegmenValues(latest.kabel);
         }
@@ -494,10 +589,10 @@
     function showLoading(m){ let ld=document.getElementById('globalLoading'); if(!ld){ ld=document.createElement('div'); ld.id='globalLoading'; ld.className='loading-overlay'; ld.innerHTML=`<div class="bg-black/80 text-white p-4 rounded-xl">${m}</div>`; document.body.appendChild(ld); } else ld.style.display='flex'; }
     function hideLoading(){ let ld=document.getElementById('globalLoading'); if(ld) ld.remove(); }
 
-    // Render tabel riwayat
+    // Render tabel riwayat dengan tombol edit untuk admin
     function renderTable(){
         const tbody = document.getElementById('tabelBody');
-        if(!entries.length){ tbody.innerHTML='<tr><td colspan="9" class="text-center py-6 text-gray-400">📭 Belum ada data</td></tr>'; return; }
+        if(!entries.length){ tbody.innerHTML='<tr><td colspan="9" class="text-center py-6 text-gray-400">📭 Belum ada数据</td</tr'; return; }
         const sorted = [...entries].sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
         let html = '';
         for(let e of sorted) {
@@ -513,7 +608,11 @@
             const fotoCount = e.fotoList?.length||0; let thumbs='';
             if(fotoCount) thumbs=`<div class="foto-thumb-list">${e.fotoList.slice(0,2).map((f,i)=>`<div class="thumb-item" onclick='window.viewAllFoto(${JSON.stringify(e.fotoList)},${i})'><img src="${f.base64}"></div>`).join('')}${fotoCount>2?`<span class="text-[10px] bg-gray-200 px-1 rounded-full">+${fotoCount-2}</span>`:''}</div>`;
             const fotoCell = `<div><div class="flex justify-center">${thumbs}</div><button type="button" onclick='window.viewAllFoto(${JSON.stringify(e.fotoList)},0)' class="text-primary text-[10px] hover:underline"><i class="fas fa-images"></i> ${fotoCount} foto</button></div>`;
-            html += `<tr class="border-b"><td class="py-2 px-1">${e.urutan}</td><td class="py-2 px-1">${e.tanggal}</td><td class="py-2 px-1">${escapeHtml(e.petugas)}</td><td class="text-[10px]">${ird1Str}</td><td class="text-[10px]">${ird2Str}</td><td class="text-[10px]">${ird3Str}</td><td class="text-[10px]">${cableIpSummary}</td><td class="text-center">${fotoCell}</td><td><button onclick="deleteEntry('${e.id}')" class="bg-red-100 text-red-600 px-2 py-1 rounded-full text-[10px]"><i class="fas fa-trash"></i> Hapus</button></td></tr>`;
+            let actionButtons = `<button onclick="deleteEntry('${e.id}')" class="bg-red-100 text-red-600 px-2 py-1 rounded-full text-[10px]"><i class="fas fa-trash"></i> Hapus</button>`;
+            if (userRole === 'admin') {
+                actionButtons = `<button onclick="editEntry('${e.id}')" class="bg-blue-100 text-blue-600 px-2 py-1 rounded-full text-[10px] mr-1"><i class="fas fa-edit"></i> Edit</button>${actionButtons}`;
+            }
+            html += `<tr class="border-b"><td class="py-2 px-1">${e.urutan}</td><td class="py-2 px-1">${e.tanggal}</td><td class="py-2 px-1">${escapeHtml(e.petugas)}</td><td class="text-[10px]">${ird1Str}</td><td class="text-[10px]">${ird2Str}</td><td class="text-[10px]">${ird3Str}</td><td class="text-[10px]">${cableIpSummary}</td><td class="text-center">${fotoCell}</td><td class="text-center">${actionButtons}</td></tr>`;
         }
         tbody.innerHTML = html;
     }
@@ -524,6 +623,7 @@
     const form = document.getElementById('formMultiplexing');
     form.addEventListener('submit', async(e)=>{
         e.preventDefault();
+        if (userRole === 'guest') { alert("Tamu tidak dapat menyimpan data. Silakan login."); return; }
         const petugas = document.getElementById('petugas').value.trim();
         if(!petugas) return alert("Petugas harus diisi");
         if(currentFotoList.length===0) return alert("Minimal 1 foto dokumentasi");
@@ -553,7 +653,6 @@
         document.getElementById('tanggal').value = new Date().toISOString().split('T')[0];
         document.getElementById('petugas').value = '';
         document.getElementById('keterangan').value = '';
-        // Reset semua input kecuali segmen
         document.querySelectorAll('input[type=number], input[type=text], textarea, select').forEach(inp => {
             if(inp.id && inp.id !== 'nomorOtomatis' && !inp.id.includes('camera') && inp.id !== 'fotoDataArray' && !inp.closest('#segmenContainer')) {
                 if(inp.tagName === 'SELECT') inp.selectedIndex = 0;
@@ -561,13 +660,40 @@
             }
         });
         ['ird1_lock','ird2_lock','ird3_lock','ip_status'].forEach(id=>{ let sel=document.getElementById(id); if(sel) sel.selectedIndex=0; });
-        // Reset segmen ke default 10 segmen (tidak menghapus struktur)
         initDefaultSegments();
         currentFotoList = []; updatePreviewUI(); updateHiddenArray();
         if(mediaStream) tutupKamera();
         if(keepAutoFill) autoFillFromLatest();
         updateNomorOtomatis();
     }
+    
+    // Multi-role handler
+    window.addEventListener('roleChanged', (e) => {
+        userRole = e.detail.role;
+        const roleSpan = document.getElementById('userRoleDisplay');
+        if (roleSpan) {
+            if (userRole === 'admin') roleSpan.innerHTML = '<i class="fas fa-user-shield"></i> Admin';
+            else if (userRole === 'user') roleSpan.innerHTML = '<i class="fas fa-user"></i> User';
+            else roleSpan.innerHTML = '<i class="fas fa-user-friends"></i> Tamu';
+        }
+        // Nonaktifkan form jika tamu
+        const formInputs = document.querySelectorAll('#formMultiplexing input, #formMultiplexing select, #formMultiplexing textarea, #formMultiplexing button[type="submit"]');
+        formInputs.forEach(inp => {
+            if (userRole === 'guest') inp.disabled = true;
+            else inp.disabled = false;
+        });
+        // Tombol hapus semua hanya untuk admin
+        const hapusSemuaBtn = document.getElementById('btnHapusSemua');
+        if (hapusSemuaBtn) {
+            if (userRole !== 'admin') hapusSemuaBtn.style.display = 'none';
+            else hapusSemuaBtn.style.display = 'inline-flex';
+        }
+        // Tombol tambah segmen juga dinonaktifkan untuk tamu
+        const tambahSegmenBtn = document.getElementById('btnTambahSegmen');
+        if (tambahSegmenBtn) tambahSegmenBtn.disabled = (userRole === 'guest');
+        // Render ulang tabel untuk tombol edit
+        renderTable();
+    });
     
     document.getElementById('btnTambahSegmen').addEventListener('click', () => { addNewSegment(); });
     document.getElementById('btnResetForm').addEventListener('click', () => { if(confirm("Reset form (kosongkan semua)?")) resetFormInput(false); });
