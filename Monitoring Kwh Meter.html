@@ -17,6 +17,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
   <script src="firebase-config.js"></script>
+  <script src="log-helper.js"></script> <!-- ✅ TAMBAHKAN LOG HELPER -->
   <script src="auth-check.js"></script>
 
   <script>
@@ -325,12 +326,20 @@
     isInternalUpdate = true;
     await setEntriesToFirebase(updated);
     isInternalUpdate = false;
+    // LOG: Hapus data
+    if (typeof window.logActivity === 'function') {
+      window.logActivity('HAPUS DATA', `Menghapus data kWh ID ${id}`, 'Monitoring Kwh Meter');
+    }
   }
 
   async function clearAllEntries() {
     isInternalUpdate = true;
     await setEntriesToFirebase([]);
     isInternalUpdate = false;
+    // LOG: Hapus semua
+    if (typeof window.logActivity === 'function') {
+      window.logActivity('HAPUS SEMUA', `Menghapus semua data kWh (${dataEntries.length} entries)`, 'Monitoring Kwh Meter');
+    }
   }
 
   async function updateEntryInFirebase(updatedEntry) {
@@ -381,6 +390,10 @@
     await updateEntryInFirebase(entry);
     alert("Data berhasil diperbarui.");
     hitungAutoTagihan();
+    // LOG: Edit data
+    if (typeof window.logActivity === 'function') {
+      window.logActivity('EDIT DATA', `Mengedit data kWh ID ${id} (Awal: ${entry.awalReading} kWh, Tagihan: ${entry.totalTagihan} kWh)`, 'Monitoring Kwh Meter');
+    }
   };
 
   // ========== KAMERA MULTI FOTO ==========
@@ -621,7 +634,7 @@
 
   function renderTable() {
     const tbody = document.getElementById("tabelBody");
-    if(!dataEntries.length){ tbody.innerHTML=`<tr><td colspan="7" class="text-center py-6 text-gray-400">📭 Kosong</td</tr`; return; }
+    if(!dataEntries.length){ tbody.innerHTML=`<td><td colspan="7" class="text-center py-6 text-gray-400">📭 Kosong</td</tr`; return; }
     let html = "";
     dataEntries.forEach((entry, idx) => {
       const fotoCount = entry.fotoList?.length || 0;
@@ -641,8 +654,8 @@
         <td class="py-2 px-1">${entry.awalReading.toFixed(2)}</td>
         <td class="py-2 px-1 font-semibold text-primary">${entry.totalTagihan.toFixed(2)}</td>
         <td class="py-2 px-1 text-center">${fotoCell}</td>
-        <td class="py-2 px-1">${escapeHtml(entry.petugas)}</td>
-        <td class="py-2 px-1 text-center">${actionButtons}</td>
+        <td class="py-2 px-1">${escapeHtml(entry.petugas)}</td
+        <td class="py-2 px-1 text-center">${actionButtons}</td
       </tr>`;
     });
     tbody.innerHTML = html;
@@ -690,6 +703,10 @@
     resetFormInput();
     alert(`✅ Tersimpan dengan ${currentFotoList.length} foto.`);
     hitungAutoTagihan();
+    // LOG: Tambah data
+    if (typeof window.logActivity === 'function') {
+      window.logActivity('TAMBAH DATA', `Menambahkan data kWh ID ${newId} (Awal: ${awal} kWh, Tagihan: ${total} kWh)`, 'Monitoring Kwh Meter');
+    }
   });
 
   function resetFormInput() {
@@ -704,7 +721,13 @@
     hitungAutoTagihan();
   }
   resetBtn.addEventListener('click', () => { if(confirm("Reset form?")) resetFormInput(); });
-  document.getElementById('btnHapusSemua').addEventListener('click', async () => { if(confirm("Hapus SEMUA data?")){ await clearAllEntries(); resetFormInput(); alert("Semua data dihapus."); } });
+  document.getElementById('btnHapusSemua').addEventListener('click', async () => { 
+    if(confirm("Hapus SEMUA data?")){ 
+      await clearAllEntries(); 
+      resetFormInput(); 
+      alert("Semua data dihapus.");
+    } 
+  });
 
   // ========== EXPORT HTML ==========
   document.getElementById('btnExportHTML').addEventListener('click', () => {
@@ -716,6 +739,10 @@
     });
     html += `</tbody></table><p><em>Watermark: TVRI, alamat, petugas, waktu, koordinat</em></p></body></html>`;
     const blob = new Blob([html], {type:"text/html"}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`laporan_kwh_tvri_${Date.now()}.html`; a.click(); URL.revokeObjectURL(blob);
+    // LOG: Export data
+    if (typeof window.logActivity === 'function') {
+      window.logActivity('EXPORT', `Mengekspor data kWh ke HTML (${dataEntries.length} data)`, 'Monitoring Kwh Meter');
+    }
   });
 
   function showLoading(msg) { let ld = document.getElementById('globalLoading'); if(!ld){ ld=document.createElement('div'); ld.id='globalLoading'; ld.className='loading-overlay'; ld.innerHTML=`<div class="bg-black/80 text-white p-4 rounded-xl text-center">${msg}</div>`; document.body.appendChild(ld); } else ld.style.display='flex'; }
