@@ -10,7 +10,9 @@
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="firebase-config.js"></script>
+    <script src="auth-check.js"></script>
     <style>
         * {
             margin: 0;
@@ -149,7 +151,7 @@
             transform: translateY(-1px);
         }
 
-        /* ========= CARD SHIFT HARI INI (tetap seperti semula) ========= */
+        /* ========= CARD SHIFT HARI INI ========= */
         .shift-today-card {
             background: #fef9e6;
             margin: 20px 24px 0 24px;
@@ -188,7 +190,7 @@
             min-width: 180px;
         }
 
-        /* ========= TUGAS HARIAN - VERSI SIMPLER MODERN ========= */
+        /* ========= TUGAS HARIAN ========= */
         .daily-tasks-card {
             background: #ffffff;
             margin: 20px 24px 0 24px;
@@ -218,7 +220,6 @@
             gap: 12px;
             align-items: center;
         }
-        /* Style modern & minimalis untuk setiap tugas */
         .task-badge {
             background: #f8fafc;
             border: 1px solid #e2edf2;
@@ -366,7 +367,7 @@
             box-shadow: 0 0 0 3px rgba(245, 176, 66, 0.2);
         }
 
-        /* Bagian modul - grid lebih rapi */
+        /* Bagian modul */
         .modules-section {
             padding: 28px 24px 36px 24px;
             background: #fbfdff;
@@ -435,7 +436,6 @@
             color: #5b6e8c;
         }
 
-        /* Pesan info / warning */
         .warning-message, .info-message {
             padding: 14px 20px;
             border-radius: 28px;
@@ -464,7 +464,7 @@
             background: #fafcff;
         }
 
-        /* ========= RESPONSIVE ========= */
+        /* Responsive */
         @media (max-width: 780px) {
             body { padding: 8px; }
             .header { padding: 16px 18px; flex-direction: column; align-items: stretch; }
@@ -531,9 +531,14 @@
             <select id="yearSelect" aria-label="Pilih tahun"></select>
             <span class="badge-status" id="statusBadge">✅ Siap</span>
         </div>
-        <button id="refreshPageBtn" class="btn-refresh" title="Refresh Halaman">
-            <i class="fas fa-sync-alt"></i> Refresh
-        </button>
+        <div style="display: flex; align-items: center; gap: 16px;">
+            <span id="userRoleDisplay" class="badge-status" style="background: rgba(0,0,0,0.3);"><i class="fas fa-user"></i> Memuat...</span>
+            <a href="user-control.html" id="adminControlLink" style="display: none; color: white; background: #f5b042; padding: 6px 14px; border-radius: 40px; text-decoration: none; font-size: 0.75rem; font-weight: bold;"><i class="fas fa-shield-alt"></i> User Control</a>
+            <button id="logoutBtn" class="btn-refresh" style="display: none;"><i class="fas fa-sign-out-alt"></i> Logout</button>
+            <button id="refreshPageBtn" class="btn-refresh" title="Refresh Halaman">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+        </div>
     </div>
 
     <div id="mainMenuPanel">
@@ -543,7 +548,6 @@
                 <div id="shiftDetailContainer">Memuat data shift...</div>
             </div>
 
-            <!-- TUGAS MONITORING HARIAN (VERSI SIMPLER MODERN) - tanpa info tambahan -->
             <div class="daily-tasks-card" id="dailyTasksCard">
                 <h3><i class="fas fa-tasks"></i> Tugas Monitoring Hari Ini</h3>
                 <div id="dailyTasksList" class="daily-tasks-list">
@@ -811,11 +815,9 @@
         const dayOfWeek = today.getDay();     
         const currentDate = today.getDate();  
         const tasks = [
-            // Tugas utama yang selalu ada
             { text: "Monitoring Suhu", link: "Monitoring Suhu.html", icon: "fa-temperature-high" },
             { text: "Monitoring Metering", link: "Monitoring Metering.html", icon: "fa-chart-line" },
             { text: "Monitoring Siaran Papua", link: "Monitoring Siaran.html", icon: "fa-satellite-dish" },
-            // Tugas yang diubah: dari "Monitoring Pemancar TVRI Dashboard" menjadi "Monitoring Dashboard TVRI" dengan link eksternal
             { text: "Monitoring Dashboard TVRI", link: "https://tvri.lodagency.co.id/", icon: "fa-tv" }
         ];
         if (dayOfWeek === 1) {
@@ -842,7 +844,6 @@
             return;
         }
         const tasksHtml = tasks.map(task => {
-            // Untuk link eksternal (http/https) buka di tab baru, untuk internal tetap _self
             const isExternal = task.link.startsWith('http');
             const targetAttr = isExternal ? ' target="_blank" rel="noopener noreferrer"' : ' target="_self"';
             return `<a href="${task.link}"${targetAttr} class="task-badge">
@@ -852,7 +853,7 @@
         container.innerHTML = tasksHtml;
     }
     
-    // DAFTAR MODUL (lengkap) + penambahan modul baru "Monitoring Dashboard TVRI"
+    // DAFTAR MODUL
     const modulesList = [
         { name: "Monitoring Suhu", icon: "fas fa-temperature-high", file: "Monitoring Suhu.html", desc: "Suhu ruangan & watermark GPS" },
         { name: "Monitoring Pemancar", icon: "fas fa-broadcast-tower", file: "Monitoring Pemancar.html", desc: "Catat downtime ON/OFF" },
@@ -864,7 +865,6 @@
         { name: "Monitoring Multiplexing", icon: "fas fa-network-wired", file: "Monitoring Multiplexing.html", desc: "Pantau 3 IRD, MUX, Kabel & IP + watermark" },
         { name: "Monitoring Kebersihan", icon: "fas fa-broom", file: "Monitoring Kebersihan.html", desc: "Pantau kebersihan area transmisi" },
         { name: "Monitoring Grounding", icon: "fas fa-bolt", file: "Monitoring Grounding.html", desc: "Pencatatan grounding 3 titik + foto" },
-        // MODUL BARU: Monitoring Dashboard TVRI (eksternal)
         { name: "Monitoring Dashboard TVRI", icon: "fas fa-tv", file: "https://tvri.lodagency.co.id/", desc: "Akses dashboard monitoring TVRI" }
     ];
     
@@ -872,7 +872,6 @@
         const grid = document.getElementById('modulesGrid');
         if (!grid) return;
         grid.innerHTML = modulesList.map(mod => {
-            // Deteksi link eksternal untuk membuka di tab baru
             const isExternal = mod.file.startsWith('http');
             const targetAttr = isExternal ? ' target="_blank" rel="noopener noreferrer"' : ' target="_self"';
             return `<a href="${mod.file}"${targetAttr} class="module-card">
@@ -884,6 +883,30 @@
             </a>`;
         }).join('');
     }
+    
+    // ==================== FUNGSI UNTUK MULTI-ROLE (TAMU, USER, ADMIN) ====================
+    // Event listener dari auth-check.js untuk menyesuaikan UI berdasarkan role
+    window.addEventListener('roleChanged', (e) => {
+        const role = e.detail.role;
+        const manageShiftBtn = document.getElementById('btnManageShift');
+        if (manageShiftBtn) {
+            if (role === 'guest') {
+                manageShiftBtn.style.display = 'none';
+            } else {
+                manageShiftBtn.style.display = 'inline-flex';
+            }
+        }
+        // Jika role bukan admin, sembunyikan link user control
+        const adminLink = document.getElementById('adminControlLink');
+        if (adminLink) {
+            adminLink.style.display = role === 'admin' ? 'inline-flex' : 'none';
+        }
+        // Tampilkan tombol logout hanya jika bukan tamu
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.style.display = role !== 'guest' ? 'inline-flex' : 'none';
+        }
+    });
     
     async function initMainMenu() {
         attachShiftListener(currentYear, currentMonth);
@@ -937,7 +960,6 @@
         const statusBadge = document.getElementById('statusBadge');
         if (statusBadge) statusBadge.innerText = `📅 ${currentYear}-${String(currentMonth).padStart(2, '0')}`;
         refreshShiftTodayDisplay();
-        // Tugas harian tetap berdasarkan tanggal hari ini (tidak perlu reload)
     }
     
     async function enableFirebasePersistence() {
