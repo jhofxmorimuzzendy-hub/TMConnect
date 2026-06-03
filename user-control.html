@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Kontrol Pengguna + Log Aktivitas - Admin Portal Transmisi</title>
+    <title>Kontrol Pengguna + Log Aktivitas - Portal Transmisi</title>
     <link rel="icon" type="image/ico" href="favicon.ico">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;500;600;700;800&display=swap" rel="stylesheet">
@@ -21,15 +21,39 @@
         .header h1 { font-size: 1.5rem; font-weight: 700; display: flex; align-items: center; gap: 12px; }
         .back-btn { background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 20px; border-radius: 60px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: 0.2s; }
         .back-btn:hover { background: rgba(255,255,255,0.35); transform: translateY(-2px); }
-        .tabs { display: flex; background: #f1f5f9; padding: 0 28px; gap: 8px; border-bottom: 1px solid #e2e8f0; }
+        .tabs { display: flex; background: #f1f5f9; padding: 0 28px; gap: 8px; border-bottom: 1px solid #e2e8f0; flex-wrap: wrap; }
         .tab-btn { padding: 12px 24px; background: transparent; border: none; font-weight: 600; cursor: pointer; color: #475569; transition: 0.2s; }
         .tab-btn.active { color: #1e6f5c; border-bottom: 3px solid #1e6f5c; background: white; }
         .tab-content { display: none; padding: 28px; }
         .tab-content.active { display: block; }
+        /* User table */
         .user-table-wrapper, .log-table-wrapper { overflow-x: auto; border-radius: 24px; border: 1px solid #e2e8f0; margin-top: 20px; }
         table { width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: 600px; }
-        th { background: #eef2f5; padding: 14px 12px; text-align: left; border-bottom: 2px solid #cbd5e1; }
-        td { padding: 12px; border-bottom: 1px solid #e9edf2; vertical-align: middle; }
+        th { background: #eef2f5; padding: 14px 12px; text-align: left; border-bottom: 2px solid #cbd5e1; font-weight: 600; }
+        td { padding: 12px; border-bottom: 1px solid #e9edf2; vertical-align: top; }
+        /* Perbaikan tampilan log table */
+        .log-table-wrapper table { min-width: 800px; }
+        .log-table-wrapper th, .log-table-wrapper td { 
+            padding: 10px 8px; 
+            word-break: break-word; 
+            white-space: normal;
+        }
+        .log-table-wrapper th:nth-child(1) { width: 150px; }  /* Waktu */
+        .log-table-wrapper th:nth-child(2) { width: 180px; }  /* User */
+        .log-table-wrapper th:nth-child(3) { width: 80px; }   /* Role */
+        .log-table-wrapper th:nth-child(4) { width: 120px; }  /* Aksi */
+        .log-table-wrapper th:nth-child(5) { width: 140px; }  /* Modul */
+        .log-table-wrapper th:nth-child(6) { min-width: 250px; } /* Detail */
+        @media (max-width: 1000px) {
+            .log-table-wrapper table { min-width: 700px; }
+            .log-table-wrapper th:nth-child(1) { width: 130px; }
+            .log-table-wrapper th:nth-child(2) { width: 150px; }
+            .log-table-wrapper th:nth-child(6) { min-width: 200px; }
+        }
+        @media (max-width: 768px) {
+            .log-table-wrapper table { min-width: 650px; }
+            .log-table-wrapper th, .log-table-wrapper td { font-size: 0.75rem; padding: 8px 6px; }
+        }
         .role-badge { display: inline-block; background: #e6f7f0; color: #1e6f5c; padding: 4px 12px; border-radius: 40px; font-size: 0.75rem; font-weight: 600; }
         .role-badge.admin { background: #fef3c7; color: #b45309; }
         select, button, input { font-family: inherit; }
@@ -41,24 +65,30 @@
         .filter-bar { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; align-items: flex-end; }
         .filter-group { display: flex; flex-direction: column; gap: 4px; }
         .filter-group label { font-size: 0.7rem; font-weight: 600; color: #475569; }
-        .filter-group input, .filter-group select { padding: 8px 12px; border-radius: 40px; border: 1px solid #cbd5e1; min-width: 150px; }
+        .filter-group input, .filter-group select { padding: 8px 12px; border-radius: 40px; border: 1px solid #cbd5e1; min-width: 150px; background: white; }
         .action-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 20px; }
-        .refresh-btn { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 8px 18px; border-radius: 40px; cursor: pointer; font-weight: 600; text-decoration: none; color: #1e293b; display: inline-flex; align-items: center; gap: 8px; }
+        .refresh-btn { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 8px 18px; border-radius: 40px; cursor: pointer; font-weight: 600; text-decoration: none; color: #1e293b; display: inline-flex; align-items: center; gap: 8px; transition: 0.2s; }
+        .refresh-btn:hover { background: #e2e8f0; transform: translateY(-1px); }
         .firebase-console-btn { background: #2563eb; color: white; border: none; }
-        .firebase-console-btn:hover { background: #1d4ed8; color: white; }
+        .firebase-console-btn:hover { background: #1d4ed8; }
         .delete-old-logs-btn { background: #dc2626; color: white; border: none; }
         .delete-old-logs-btn:hover { background: #b91c1c; }
         .delete-all-logs-btn { background: #b91c1c; color: white; border: none; }
         .delete-all-logs-btn:hover { background: #991b1b; }
-        .log-row-error { background-color: #fff0f0; }
-        .log-row-warning { background-color: #fff8e7; }
         .loading, .empty-msg { text-align: center; padding: 40px; color: #5b6e8c; }
         .error-msg, .info-msg, .success-msg { padding: 12px 18px; border-radius: 60px; margin-bottom: 20px; text-align: center; }
         .error-msg { background: #fee2e2; color: #b91c1c; }
         .info-msg { background: #e6f7f0; color: #1e6f5c; }
         .success-msg { background: #dcfce7; color: #15803d; }
         footer { text-align: center; padding: 20px; font-size: 0.7rem; color: #7f8c8d; border-top: 1px solid #e2edf2; background: #fafcff; }
-        @media (max-width: 640px) { .header { padding: 16px 20px; } .tabs { padding: 0 16px; } .tab-content { padding: 20px; } td, th { padding: 8px; } .filter-group input, .filter-group select { min-width: 120px; } }
+        @media (max-width: 640px) {
+            .header { padding: 16px 20px; flex-direction: column; align-items: stretch; }
+            .tabs { padding: 0 16px; }
+            .tab-content { padding: 20px; }
+            .filter-group input, .filter-group select { min-width: 120px; }
+            .action-bar { flex-direction: column; align-items: stretch; }
+            .action-bar div { justify-content: center; }
+        }
     </style>
 </head>
 <body>
@@ -77,21 +107,19 @@
             <div class="action-bar">
                 <span><i class="fas fa-database"></i> Manajemen role & reset password</span>
                 <div style="display: flex; gap: 12px;">
-                    <a href="https://console.firebase.google.com/project/monitoring-tvri-30c22/authentication/users" target="_blank" class="refresh-btn firebase-console-btn">
-                        <i class="fas fa-external-link-alt"></i> Buka Firebase Console
-                    </a>
+                    <a href="https://console.firebase.google.com/project/monitoring-tvri-30c22/authentication/users" target="_blank" class="refresh-btn firebase-console-btn"><i class="fas fa-external-link-alt"></i> Buka Firebase Console</a>
                     <button id="refreshUsersBtn" class="refresh-btn"><i class="fas fa-sync-alt"></i> Refresh</button>
                 </div>
             </div>
             <div id="usersListContainer"><div class="loading"><i class="fas fa-spinner fa-pulse"></i> Memuat daftar pengguna...</div></div>
-            <div class="info-msg" style="margin-top: 20px;"><i class="fas fa-info-circle"></i> <strong>Catatan:</strong> Hapus data user hanya dari database. Untuk hapus total dari Authentication, gunakan tombol Firebase Console.</div>
+            <div class="info-msg"><i class="fas fa-info-circle"></i> <strong>Catatan:</strong> Hapus data user hanya dari database. Untuk hapus total dari Authentication, gunakan tombol Firebase Console.</div>
         </div>
     </div>
     <div id="logsTab" class="tab-content">
         <div class="content">
             <div id="logMessageContainer"></div>
             <div class="filter-bar">
-                <div class="filter-group"><label>User Email</label><input type="text" id="filterEmail" placeholder="Cari email..." style="min-width: 180px;"></div>
+                <div class="filter-group"><label>User Email</label><input type="text" id="filterEmail" placeholder="Cari email..."></div>
                 <div class="filter-group"><label>Modul</label>
                     <select id="filterModule">
                         <option value="">Semua</option>
@@ -162,7 +190,7 @@
     function renderUsersTable(users, adminUid) {
         const container = document.getElementById('usersListContainer');
         if (!users.length) { container.innerHTML = `<div class="info-msg">Belum ada pengguna terdaftar.</div>`; return; }
-        let html = `<div class="user-table-wrapper"><table><thead><tr><th>Email</th><th>Role</th><th>Ubah Role</th><th>Dibuat</th><th>Aksi</th></tr></thead><tbody>`;
+        let html = `<div class="user-table-wrapper"><td><thead><tr><th>Email</th><th>Role</th><th>Ubah Role</th><th>Dibuat</th><th>Aksi</th></tr></thead><tbody>`;
         for (let user of users) {
             const isCurrent = (user.uid === adminUid);
             html += `<tr>
@@ -181,7 +209,7 @@
                 </td>
             </tr>`;
         }
-        html += `</tbody><table></div>`;
+        html += `</tbody></table></div>`;
         container.innerHTML = html;
         document.querySelectorAll('.btn-edit').forEach(btn => btn.addEventListener('click', async () => {
             const uid = btn.getAttribute('data-uid');
@@ -258,7 +286,11 @@
     function renderLogsTable() {
         const container = document.getElementById('logsListContainer');
         if (!filteredLogs.length) { container.innerHTML = `<div class="empty-msg">Tidak ada log yang cocok.</div>`; return; }
-        let html = `<div class="log-table-wrapper"><table><thead><tr><th>Waktu</th><th>User</th><th>Role</th><th>Aksi</th><th>Modul</th><th>Detail</th></tr></thead><tbody>`;
+        let html = `<div class="log-table-wrapper"><table>
+            <thead>
+                <tr><th>Waktu</th><th>User</th><th>Role</th><th>Aksi</th><th>Modul</th><th>Detail</th></tr>
+            </thead>
+            <tbody>`;
         for (let log of filteredLogs) {
             const waktu = log.timestampDate.toLocaleString('id-ID');
             const roleClass = log.userRole === 'admin' ? 'role-badge admin' : 'role-badge';
@@ -268,7 +300,7 @@
                 <td><span class="${roleClass}">${escapeHtml(log.userRole || 'guest')}</span></td
                 <td><strong>${escapeHtml(log.action)}</strong></td
                 <td>${escapeHtml(log.module || '-')}</td
-                <td style="max-width:300px; word-break:break-word;">${escapeHtml(log.details || '-')}</td
+                <td style="word-break:break-word; white-space:normal;">${escapeHtml(log.details || '-')}</td
             </tr>`;
         }
         html += `</tbody></table></div>`;
@@ -280,62 +312,41 @@
         showLogMessage(`Memuat ${allLogs.length} log.`, 'info');
     }
 
-    // ========== HAPUS LOG LEBIH DARI 30 HARI ==========
+    // Hapus log > 30 hari
     async function deleteOldLogs(days = 30) {
         if (!confirm(`⚠️ PERINGATAN: Anda akan menghapus semua log yang berusia lebih dari ${days} hari. Tindakan ini permanen. Lanjutkan?`)) return;
         const cutoffDate = Date.now() - (days * 24 * 60 * 60 * 1000);
         const logsToDelete = allLogs.filter(log => log.timestampDate.getTime() < cutoffDate);
-        if (logsToDelete.length === 0) {
-            showLogMessage(`Tidak ada log yang berusia lebih dari ${days} hari.`, 'info');
-            return;
-        }
-        if (!confirm(`Akan menghapus ${logsToDelete.length} log yang lebih dari ${days} hari. Yakin?`)) return;
-        showLogMessage(`Menghapus ${logsToDelete.length} log... Mohon tunggu.`, 'info');
-        let deletedCount = 0, errorCount = 0;
+        if (logsToDelete.length === 0) { showLogMessage(`Tidak ada log yang berusia lebih dari ${days} hari.`, 'info'); return; }
+        if (!confirm(`Akan menghapus ${logsToDelete.length} log. Yakin?`)) return;
+        showLogMessage(`Menghapus ${logsToDelete.length} log...`, 'info');
+        let deleted = 0, errors = 0;
         for (let log of logsToDelete) {
-            try {
-                await window.db.ref(`logs/${log.id}`).remove();
-                deletedCount++;
-            } catch (err) {
-                console.error(`Gagal hapus log ${log.id}:`, err);
-                errorCount++;
-            }
+            try { await window.db.ref(`logs/${log.id}`).remove(); deleted++; } 
+            catch (err) { errors++; console.error(err); }
         }
-        showLogMessage(`✅ Selesai: ${deletedCount} log dihapus. Gagal: ${errorCount}.`, deletedCount > 0 ? 'success' : 'error');
-        if (typeof window.logActivity === 'function') {
-            window.logActivity('HAPUS LOG LAMA', `Menghapus ${deletedCount} log (usia > ${days} hari)`, 'User Control');
-        }
+        showLogMessage(`✅ Selesai: ${deleted} log dihapus. Gagal: ${errors}.`, deleted > 0 ? 'success' : 'error');
+        if (typeof window.logActivity === 'function') window.logActivity('HAPUS LOG LAMA', `Menghapus ${deleted} log (usia > ${days} hari)`, 'User Control');
         await refreshLogs();
     }
 
-    // ========== HAPUS SEMUA LOG ==========
+    // Hapus semua log
     async function deleteAllLogs() {
-        if (!confirm(`⚠️ PERINGATAN: Anda akan menghapus SEMUA log aktivitas! Tindakan ini permanen dan tidak dapat dibatalkan. Lanjutkan?`)) return;
-        const totalLogs = allLogs.length;
-        if (totalLogs === 0) {
-            showLogMessage('Tidak ada log untuk dihapus.', 'info');
-            return;
-        }
-        if (!confirm(`Akan menghapus ${totalLogs} log. Yakin?`)) return;
-        showLogMessage(`Menghapus ${totalLogs} log... Mohon tunggu (bisa memakan waktu beberapa detik).`, 'info');
-        let deletedCount = 0, errorCount = 0;
+        if (!confirm(`⚠️ PERINGATAN: Anda akan menghapus SEMUA log! Tindakan ini permanen. Lanjutkan?`)) return;
+        const total = allLogs.length;
+        if (total === 0) { showLogMessage('Tidak ada log untuk dihapus.', 'info'); return; }
+        if (!confirm(`Akan menghapus ${total} log. Yakin?`)) return;
+        showLogMessage(`Menghapus ${total} log... Mohon tunggu.`, 'info');
+        let deleted = 0, errors = 0;
         for (let log of allLogs) {
-            try {
-                await window.db.ref(`logs/${log.id}`).remove();
-                deletedCount++;
-            } catch (err) {
-                console.error(`Gagal hapus log ${log.id}:`, err);
-                errorCount++;
-            }
+            try { await window.db.ref(`logs/${log.id}`).remove(); deleted++; } 
+            catch (err) { errors++; console.error(err); }
         }
-        showLogMessage(`✅ Selesai: ${deletedCount} log dihapus. Gagal: ${errorCount}.`, deletedCount > 0 ? 'success' : 'error');
-        if (typeof window.logActivity === 'function') {
-            window.logActivity('HAPUS SEMUA LOG', `Menghapus ${deletedCount} log (semua data)`, 'User Control');
-        }
+        showLogMessage(`✅ Selesai: ${deleted} log dihapus. Gagal: ${errors}.`, deleted > 0 ? 'success' : 'error');
+        if (typeof window.logActivity === 'function') window.logActivity('HAPUS SEMUA LOG', `Menghapus ${deleted} log`, 'User Control');
         await refreshLogs();
     }
 
-    // ========== EKSPORT ==========
     function exportLogsToCSV() {
         if (!filteredLogs.length) { alert('Tidak ada data untuk diekspor.'); return; }
         const headers = ['Waktu', 'User Email', 'Role', 'Aksi', 'Modul', 'Detail', 'User Agent', 'URL'];
@@ -349,7 +360,7 @@
     }
     function exportLogsToHTML() {
         if (!filteredLogs.length) { alert('Tidak ada data untuk diekspor.'); return; }
-        let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Log Aktivitas Portal Transmisi</title><style>body{font-family:Inter,sans-serif;margin:20px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccc;padding:8px}th{background:#1e6f5c;color:white}</style></head><body><h1>Log Aktivitas User</h1><p>Tanggal export: ${new Date().toLocaleString()}</p><table border="1"><thead><tr><th>Waktu</th><th>User</th><th>Role</th><th>Aksi</th><th>Modul</th><th>Detail</th><tr></thead><tbody>`;
+        let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Log Aktivitas</title><style>body{font-family:Inter,sans-serif;margin:20px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccc;padding:8px}th{background:#1e6f5c;color:white}</style></head><body><h1>Log Aktivitas User</h1><p>Export: ${new Date().toLocaleString()}</p><table border="1"><thead><tr><th>Waktu</th><th>User</th><th>Role</th><th>Aksi</th><th>Modul</th><th>Detail</th></tr></thead><tbody>`;
         for (let log of filteredLogs) {
             html += `<tr>
                 <td>${escapeHtml(log.timestampDate.toLocaleString('id-ID'))}</td>
@@ -390,9 +401,9 @@
     document.getElementById('refreshUsersBtn').addEventListener('click', refreshUserList);
     document.getElementById('backToDashboardBtn').addEventListener('click', () => window.location.href = 'index.html');
     document.getElementById('deleteOldLogsBtn').addEventListener('click', () => deleteOldLogs(30));
-    document.getElementById('deleteAllLogsBtn').addEventListener('click', () => deleteAllLogs());
+    document.getElementById('deleteAllLogsBtn').addEventListener('click', deleteAllLogs);
 
-    // ----------------------- INIT -----------------------
+    // Init
     async function init() {
         if (!window.auth || !window.db) { setTimeout(init, 300); return; }
         window.auth.onAuthStateChanged(async (user) => {
