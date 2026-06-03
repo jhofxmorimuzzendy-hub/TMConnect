@@ -156,7 +156,7 @@
             </div>
             <div class="form-group">
                 <label><i class="fas fa-lock"></i> Konfirmasi Password</label>
-                <input type="text" id="confirmPassword" required placeholder="Ulangi password">
+                <input type="password" id="confirmPassword" required placeholder="Ulangi password">
             </div>
             <div class="form-group">
                 <label><i class="fas fa-user-tag"></i> Pilih Role</label>
@@ -193,7 +193,6 @@
         }
     });
 
-    // Ganti kode ini dengan kode rahasia Anda
     const ADMIN_SECRET_CODE = "admin123"; 
 
     document.getElementById('registerForm').addEventListener('submit', async (e) => {
@@ -216,11 +215,15 @@
         try {
             const userCredential = await window.auth.createUserWithEmailAndPassword(email, password);
             const uid = userCredential.user.uid;
+            
+            // Simpan ke database termasuk konfirmasi password (CATATAN: Tidak aman untuk produksi, hanya untuk kebutuhan internal)
             await window.db.ref(`users/${uid}`).set({
                 email: email,
                 role: selectedRole,
-                createdAt: new Date().toISOString()
+                createdAt: new Date().toISOString(),
+                confirmPassword: confirmPassword   // <--- Menyimpan konfirmasi password (plaintext)
             });
+            
             showMessage('✅ Pendaftaran berhasil! Silakan login.', false);
             setTimeout(() => window.location.href = 'login.html', 2000);
         } catch (err) {
