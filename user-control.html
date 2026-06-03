@@ -21,7 +21,7 @@
             min-height: 100vh;
         }
         .container {
-            max-width: 1300px;
+            max-width: 1400px;
             margin: 0 auto;
             background: white;
             border-radius: 36px;
@@ -61,7 +61,7 @@
         .back-btn:hover { background: rgba(255,255,255,0.35); transform: translateY(-2px); }
         .content { padding: 28px 28px 36px; }
         .user-table-wrapper { overflow-x: auto; border-radius: 24px; border: 1px solid #e2e8f0; margin-top: 20px; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: 600px; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: 800px; }
         th { background: #eef2f5; padding: 14px 12px; text-align: left; border-bottom: 2px solid #cbd5e1; }
         td { padding: 14px 12px; border-bottom: 1px solid #e9edf2; vertical-align: middle; }
         .role-badge {
@@ -84,7 +84,7 @@
             background: white;
             font-size: 0.8rem;
         }
-        .btn-edit, .btn-delete {
+        .btn-edit, .btn-delete, .btn-reset {
             background: transparent;
             border: none;
             cursor: pointer;
@@ -93,10 +93,12 @@
             font-size: 0.75rem;
             font-weight: 600;
             transition: 0.2s;
+            margin-right: 6px;
         }
         .btn-edit { background: #e6f7f0; color: #1e6f5c; }
-        .btn-delete { background: #ffe6e5; color: #b91c1c; margin-left: 8px; }
-        .btn-edit:hover, .btn-delete:hover { transform: translateY(-2px); filter: brightness(0.96); }
+        .btn-delete { background: #ffe6e5; color: #b91c1c; }
+        .btn-reset { background: #eef2ff; color: #2563eb; }
+        .btn-edit:hover, .btn-delete:hover, .btn-reset:hover { transform: translateY(-2px); filter: brightness(0.96); }
         .loading { text-align: center; padding: 40px; color: #5b6e8c; }
         .error-msg, .info-msg {
             padding: 12px 18px;
@@ -130,11 +132,11 @@
             border-top: 1px solid #e2edf2;
             background: #fafcff;
         }
-        @media (max-width: 640px) {
+        @media (max-width: 860px) {
             .header { padding: 16px 20px; }
             .content { padding: 20px; }
             td, th { padding: 10px 8px; }
-            .btn-edit, .btn-delete { padding: 4px 8px; }
+            .btn-edit, .btn-delete, .btn-reset { padding: 4px 8px; font-size: 0.7rem; }
         }
     </style>
 </head>
@@ -147,29 +149,45 @@
     <div class="content">
         <div id="messageContainer"></div>
         <div class="action-bar">
-            <span><i class="fas fa-database"></i> Manajemen role & data pengguna</span>
+            <span><i class="fas fa-database"></i> Manajemen role & data pengguna | <i class="fas fa-key"></i> Kirim email reset password</span>
             <button id="refreshUsersBtn" class="refresh-btn"><i class="fas fa-sync-alt"></i> Refresh</button>
         </div>
         <div id="usersListContainer">
             <div class="loading"><i class="fas fa-spinner fa-pulse"></i> Memuat daftar pengguna...</div>
         </div>
         <div class="info-msg" style="margin-top: 20px;">
-            <i class="fas fa-info-circle"></i> Hanya admin yang dapat mengubah role. Hapus pengguna hanya menghapus data role dari database (akun email tetap terdaftar di autentikasi, namun tidak bisa login? - Untuk keamanan, sebaiknya nonaktifkan akun melalui Firebase Console). Role yang dihapus akan menjadi 'guest' saat login kembali.
+            <i class="fas fa-info-circle"></i> <strong>Fitur:</strong> Ubah role (Admin/User/Tamu) | Hapus data user dari database (akun tetap ada di Auth) | Kirim email reset password.
         </div>
     </div>
-    <footer>Portal Transmisi - Manajemen User (Admin Only)</footer>
+    <footer>Portal Transmisi - Manajemen User (Admin Only) | Reset password mengirimkan email ke pengguna</footer>
 </div>
 
 <script>
-    // Menunggu event roleChanged dari auth-check.js
-    let adminUid = null;
+    // Pastikan hanya admin yang dapat mengakses halaman ini
+    let currentUserUid = null;
+    let currentUserRole = 'guest';
+    let usersData = [];
 
-    function showMessage(msg, isError = true) {
-        const messageDiv = document.getElementById('messageContainer');
+    const messageDiv = document.getElementById('messageContainer');
+    function showMessage(msg, isError = false, duration = 4000) {
         messageDiv.innerHTML = `<div class="${isError ? 'error-msg' : 'info-msg'}">${msg}</div>`;
-        setTimeout(() => { if (messageDiv.innerHTML) messageDiv.innerHTML = ''; }, 4000);
+        setTimeout(() => { if (messageDiv.innerHTML) messageDiv.innerHTML = ''; }, duration);
     }
 
+    // Ambil role user yang sedang login dari database
+    async function getCurrentUserRole(uid) {
+        if (!uid) return 'guest';
+        try {
+            const snapshot = await window.db.ref(`users/${uid}/role`).once('value');
+            const role = snapshot.val();
+            return role === 'admin' ? 'admin' : (role === 'user' ? 'user' : 'guest');
+        } catch (err) {
+            console.error("Gagal ambil role user:", err);
+            return 'guest';
+        }
+    }
+
+    // Muat semua user dari /users
     async function loadAllUsers() {
         try {
             const snapshot = await window.db.ref('users').once('value');
@@ -188,6 +206,7 @@
         }
     }
 
+    // Update role user di database
     async function updateUserRole(uid, newRole) {
         try {
             await window.db.ref(`users/${uid}/role`).set(newRole);
@@ -198,6 +217,7 @@
         }
     }
 
+    // Hapus user dari database (hanya data role)
     async function deleteUserData(uid) {
         try {
             await window.db.ref(`users/${uid}`).remove();
@@ -208,6 +228,21 @@
         }
     }
 
+    // Kirim email reset password menggunakan Firebase Auth
+    async function sendPasswordReset(email) {
+        try {
+            await window.auth.sendPasswordResetEmail(email);
+            return { success: true, message: `Email reset password berhasil dikirim ke ${email}` };
+        } catch (err) {
+            console.error("Gagal kirim reset password:", err);
+            let errorMsg = err.message;
+            if (err.code === 'auth/user-not-found') errorMsg = 'Email tidak terdaftar di autentikasi.';
+            else if (err.code === 'auth/invalid-email') errorMsg = 'Format email tidak valid.';
+            return { success: false, message: errorMsg };
+        }
+    }
+
+    // Render tabel pengguna dengan tombol reset password
     function renderUsersTable(users, currentAdminUid) {
         const container = document.getElementById('usersListContainer');
         if (!users.length) {
@@ -224,26 +259,27 @@
             const isCurrentUser = (user.uid === currentAdminUid);
             const roleClass = user.role === 'admin' ? 'admin' : '';
             html += `<tr data-uid="${user.uid}">
-                        <td>${escapeHtml(user.email)} ${isCurrentUser ? '<span class="role-badge" style="background:#fef3c7;">(Anda)</span>' : ''}</td>
-                        <td><span class="role-badge ${roleClass}">${user.role === 'admin' ? 'Admin' : (user.role === 'user' ? 'User' : 'Tamu')}</span></td>
-                        <td>
-                            <select class="select-role" data-uid="${user.uid}" ${isCurrentUser ? 'disabled' : ''}>
-                                <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Admin</option>
-                                <option value="user" ${user.role === 'user' ? 'selected' : ''}>User</option>
-                                <option value="guest" ${user.role === 'guest' ? 'selected' : ''}>Tamu</option>
-                            </select>
-                        </td>
-                        <td>${user.createdAt ? new Date(user.createdAt).toLocaleDateString('id') : '-'}</td>
-                        <td>
-                            <button class="btn-edit" data-uid="${user.uid}" ${isCurrentUser ? 'disabled' : ''}><i class="fas fa-save"></i> Simpan Role</button>
-                            <button class="btn-delete" data-uid="${user.uid}" ${isCurrentUser ? 'disabled' : ''}><i class="fas fa-trash-alt"></i> Hapus</button>
-                        </td>
-                    </tr>`;
+                <td>${escapeHtml(user.email)} ${isCurrentUser ? '<span class="role-badge" style="background:#fef3c7;">(Anda)</span>' : ''}</td>
+                <td><span class="role-badge ${roleClass}">${user.role === 'admin' ? 'Admin' : (user.role === 'user' ? 'User' : 'Tamu')}</span></td>
+                <td>
+                    <select class="select-role" data-uid="${user.uid}" ${isCurrentUser ? 'disabled' : ''}>
+                        <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Admin</option>
+                        <option value="user" ${user.role === 'user' ? 'selected' : ''}>User</option>
+                        <option value="guest" ${user.role === 'guest' ? 'selected' : ''}>Tamu</option>
+                    </select>
+                </td>
+                <td>${user.createdAt ? new Date(user.createdAt).toLocaleDateString('id') : '-'}</td>
+                <td>
+                    <button class="btn-edit" data-uid="${user.uid}" ${isCurrentUser ? 'disabled' : ''}><i class="fas fa-save"></i> Simpan Role</button>
+                    <button class="btn-reset" data-email="${user.email}" data-uid="${user.uid}" ${isCurrentUser ? 'disabled' : ''}><i class="fas fa-key"></i> Reset Password</button>
+                    <button class="btn-delete" data-uid="${user.uid}" ${isCurrentUser ? 'disabled' : ''}><i class="fas fa-trash-alt"></i> Hapus</button>
+                </td>
+            </tr>`;
         }
         html += `</tbody></table></div>`;
         container.innerHTML = html;
 
-        // Event listeners
+        // Event listener untuk simpan role
         document.querySelectorAll('.btn-edit').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 const uid = btn.getAttribute('data-uid');
@@ -262,10 +298,27 @@
             });
         });
 
+        // Event listener untuk reset password
+        document.querySelectorAll('.btn-reset').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const email = btn.getAttribute('data-email');
+                if (!email) return;
+                if (confirm(`Kirim email reset password ke ${email}? Pengguna akan menerima link untuk membuat password baru.`)) {
+                    const result = await sendPasswordReset(email);
+                    if (result.success) {
+                        showMessage(result.message, false);
+                    } else {
+                        showMessage(`Gagal: ${result.message}`, true);
+                    }
+                }
+            });
+        });
+
+        // Event listener untuk hapus data user
         document.querySelectorAll('.btn-delete').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 const uid = btn.getAttribute('data-uid');
-                if (confirm(`PERINGATAN: Menghapus data pengguna dari database. Akun email masih ada di autentikasi, tapi akan kehilangan role dan tidak bisa login (role akan menjadi tamu). Lanjutkan?`)) {
+                if (confirm(`PERINGATAN: Menghapus data pengguna dari database. Akun email masih ada di autentikasi, tapi akan kehilangan role. Lanjutkan?`)) {
                     const success = await deleteUserData(uid);
                     if (success) {
                         showMessage(`Data pengguna dihapus dari database.`, false);
@@ -292,62 +345,38 @@
         return str.replace(/[&<>]/g, m => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;');
     }
 
-    // Inisialisasi dengan event roleChanged dari auth-check.js
-    window.addEventListener('roleChanged', async (e) => {
-        const role = e.detail.role;
-        const user = e.detail.user;
+    // Inisialisasi halaman
+    async function initUserControl() {
+        if (!window.auth) {
+            setTimeout(initUserControl, 300);
+            return;
+        }
+        const user = window.auth.currentUser;
+        if (!user) {
+            window.location.href = 'login.html';
+            return;
+        }
+        currentUserUid = user.uid;
+        const role = await getCurrentUserRole(user.uid);
         if (role !== 'admin') {
             showMessage('Akses ditolak. Halaman ini hanya untuk admin. Anda akan diarahkan ke dashboard.', true);
             setTimeout(() => { window.location.href = 'index.html'; }, 2000);
             return;
         }
-        // Admin, simpan uid dan muat data
-        if (user) {
-            adminUid = user.uid;
-            await refreshUserList(adminUid);
-        } else {
-            // fallback: ambil dari auth.currentUser
-            const currentUser = window.auth.currentUser;
-            if (currentUser) {
-                adminUid = currentUser.uid;
-                await refreshUserList(adminUid);
-            } else {
-                showMessage('Tidak dapat mengidentifikasi pengguna. Silakan login ulang.', true);
-                setTimeout(() => window.location.href = 'login.html', 1500);
-            }
-        }
-    });
+        // Admin sah, muat data
+        await refreshUserList(user.uid);
+    }
 
-    // Jika roleChanged tidak terjadi dalam 2 detik, cek langsung (fallback)
-    setTimeout(async () => {
-        if (!adminUid && window.auth.currentUser) {
-            // cek role
-            const snapshot = await window.db.ref(`users/${window.auth.currentUser.uid}/role`).once('value');
-            const role = snapshot.val();
-            if (role === 'admin') {
-                adminUid = window.auth.currentUser.uid;
-                await refreshUserList(adminUid);
-            } else {
-                showMessage('Akses ditolak. Halaman ini hanya untuk admin.', true);
-                setTimeout(() => window.location.href = 'index.html', 2000);
-            }
-        } else if (!adminUid && !window.auth.currentUser) {
-            // Tidak login, redirect ke login
-            window.location.href = 'login.html';
-        }
-    }, 2000);
-
-    // Tombol kembali
+    // Event listener tombol
     document.getElementById('backToDashboardBtn').addEventListener('click', () => {
         window.location.href = 'index.html';
     });
     document.getElementById('refreshUsersBtn').addEventListener('click', async () => {
-        if (adminUid) await refreshUserList(adminUid);
-        else if (window.auth.currentUser) {
-            const roleSnap = await window.db.ref(`users/${window.auth.currentUser.uid}/role`).once('value');
-            if (roleSnap.val() === 'admin') await refreshUserList(window.auth.currentUser.uid);
-        }
+        const user = window.auth.currentUser;
+        if (user) await refreshUserList(user.uid);
     });
+
+    initUserControl();
 </script>
 </body>
 </html>
