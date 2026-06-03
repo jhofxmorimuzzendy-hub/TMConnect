@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Monitoring Suhu | Transmisi Tanah Merah Ch44 (658) + Multi Foto + Flip Kamera</title>
+    <title>Monitoring Suhu | Transmisi Tanah Merah Ch44 (658) + Multi Foto + Flip Kamera + Role User</title>
     <link rel="icon" type="image/ico" href="favicon.ico">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -15,7 +15,9 @@
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="firebase-config.js"></script>
+    <script src="auth-check.js"></script>
 
     <script>
         tailwind.config = {
@@ -95,6 +97,16 @@
         .flip-btn { transition: all 0.2s ease; }
         .flip-btn:active { transform: scale(0.96); }
         .badge-transmisi { background: #1e6f5c; color: white; font-size: 0.75rem; border-radius: 40px; padding: 0.3rem 1rem; display: inline-block; font-weight: 600; letter-spacing: 0.3px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+        .role-badge-header {
+            background: rgba(0,0,0,0.3);
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
     </style>
 </head>
 <body>
@@ -117,6 +129,7 @@
             <h1 class="text-xl sm:text-2xl md:text-4xl font-extrabold text-slate-800 mt-2 md:mt-3 leading-tight">
                 Monitoring Suhu Ruangan
                 <span id="firebaseStatus" class="sync-status"><i class="fas fa-cloud-upload-alt"></i> Menghubungkan...</span>
+                <span id="userRoleDisplay" class="role-badge-header"><i class="fas fa-user"></i> Memuat...</span>
             </h1>
             <div class="mt-2 flex justify-center px-2 flex-wrap gap-2">
                 <span class="badge-transmisi"><i class="fas fa-tower-broadcast mr-1"></i> Transmisi - Tanah Merah, Ch 44 (Freq 658)</span>
@@ -141,7 +154,7 @@
                         <div><label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Keterangan</label><textarea id="keterangan" rows="1" placeholder="Catatan tambahan" class="w-full border border-gray-300 rounded-xl px-3 py-2 md:py-2.5 text-sm focus:ring-2 focus:ring-primary"></textarea></div>
                     </div>
                     
-                    <!-- Dokumentasi Foto Multi (sama persis dengan Monitoring Kerusakan) -->
+                    <!-- Dokumentasi Foto Multi -->
                     <div class="border-t border-gray-200 pt-4 mt-2">
                         <label class="block text-sm md:text-md font-semibold text-gray-800 mb-2"><i class="fas fa-camera-retro text-primary mr-2"></i> Dokumentasi Foto Ruangan (Max 5, watermark otomatis)</label>
                         <div class="bg-slate-50 rounded-xl p-3 md:p-4 border border-dashed border-gray-300">
@@ -203,6 +216,7 @@
         let listenerRef = null;
         let isInternalUpdate = false;
         const DB_PATH = 'monitoring/suhu/entries';
+        let userRole = 'guest'; // role dari auth-check
 
         function updateFirebaseStatus(connected, message) {
             const statusEl = document.getElementById('firebaseStatus');
@@ -244,7 +258,6 @@
             }
         }
 
-        // Normalisasi data lama (single foto) ke format baru (fotoList)
         function normalizeEntry(entry) {
             if (!entry.fotoList && entry.fotoBase64) {
                 entry.fotoList = [{
@@ -309,7 +322,7 @@
             isInternalUpdate = false;
         }
 
-        // ========== KAMERA MULTI FOTO (SAMA DENGAN KERUSAKAN) ==========
+        // ========== KAMERA MULTI FOTO ==========
         let currentFotoList = [];
         let mediaStream = null;
         let currentFacingMode = 'environment';
@@ -437,7 +450,6 @@
             });
         }
 
-        // Watermark khusus Transmisi Tanah Merah
         async function applyWatermarkSuhu(dataUrl, petugasName, locationCoord, waktuStr) {
             return new Promise((resolve, reject) => {
                 const img = new Image();
@@ -511,7 +523,31 @@
         btnFlip.addEventListener('click', flipCamera);
         btnUpload.addEventListener('click', uploadManual);
 
-        // ========== RENDER TABEL ==========
+        // ========== FUNGSI EDIT UNTUK ADMIN (Manipulasi Tanggal) ==========
+        async function updateEntryInFirebase(updatedEntry) {
+            const index = dataEntries.findIndex(e => e.id == updatedEntry.id);
+            if (index !== -1) {
+                dataEntries[index] = updatedEntry;
+                isInternalUpdate = true;
+                await setEntriesToFirebase(dataEntries);
+                isInternalUpdate = false;
+                renderTable();
+                updateNomorOtomatis();
+            }
+        }
+
+        window.editEntry = async (id) => {
+            const entry = dataEntries.find(e => e.id == id);
+            if (!entry) return;
+            const newTanggal = prompt("Edit tanggal (YYYY-MM-DD):", entry.tanggal);
+            if (newTanggal && newTanggal !== entry.tanggal) {
+                entry.tanggal = newTanggal;
+                await updateEntryInFirebase(entry);
+                alert("Tanggal berhasil diubah.");
+            }
+        };
+
+        // ========== RENDER TABEL dengan Tombol Edit untuk Admin ==========
         window.viewAllFoto = (fotoList, startIdx) => {
             if(!fotoList?.length) return;
             let current = startIdx || 0;
@@ -532,7 +568,7 @@
 
         function renderTable() {
             const tbody = document.getElementById("tabelBody");
-            if(!dataEntries.length){ tbody.innerHTML=`<tr><td colspan="7" class="text-center py-6 text-gray-400">📭 Kosong</td></tr>`; return; }
+            if(!dataEntries.length){ tbody.innerHTML=`<tr><td colspan="7" class="text-center py-6 text-gray-400">📭 Kosong</td</tr`; return; }
             let html = "";
             dataEntries.forEach(entry => {
                 const fotoCount = entry.fotoList?.length || 0;
@@ -541,6 +577,10 @@
                     thumbs = `<div class="foto-thumb-list">${entry.fotoList.slice(0,2).map((f,i)=>`<div class="thumb-item" onclick="viewAllFoto(entry.fotoList, ${i})"><img src="${f.base64}"></div>`).join('')}${fotoCount>2?`<span class="text-[10px] bg-gray-200 px-1 rounded-full">+${fotoCount-2}</span>`:''}</div>`;
                 }
                 const fotoCell = `<div class="flex flex-col items-center gap-1"><div class="flex justify-center">${thumbs}</div><button type="button" onclick="viewAllFoto(entry.fotoList, 0)" class="text-primary text-[10px] md:text-xs hover:underline"><i class="fas fa-images"></i> ${fotoCount} foto</button></div>`;
+                let editButtonHtml = '';
+                if (userRole === 'admin') {
+                    editButtonHtml = `<button onclick="editEntry(${entry.id})" class="bg-blue-100 text-blue-600 px-2 py-1 rounded-full text-[10px] mr-1"><i class="fas fa-edit"></i> Edit</button>`;
+                }
                 html += `<tr class="border-b hover:bg-slate-50">
                     <td class="py-2 px-1 font-mono">${entry.id}</td>
                     <td class="py-2 px-1">${entry.tanggal}</td>
@@ -548,8 +588,11 @@
                     <td class="py-2 px-1 text-center">${fotoCell}</td>
                     <td class="py-2 px-1">${escapeHtml(entry.petugas)}</td>
                     <td class="py-2 px-1 max-w-[120px] truncate">${escapeHtml(entry.keterangan||'-')}</td>
-                    <td class="py-2 px-1"><button onclick="deleteEntry(${entry.id})" class="bg-red-100 text-red-600 px-2 py-1 rounded-full text-[10px]"><i class="fas fa-trash-can"></i> Hapus</button></td>
-                </tr>`;
+                    <td class="py-2 px-1">
+                        ${editButtonHtml}
+                        <button onclick="deleteEntry(${entry.id})" class="bg-red-100 text-red-600 px-2 py-1 rounded-full text-[10px]"><i class="fas fa-trash-can"></i> Hapus</button>
+                    </td>
+                </table>`;
             });
             tbody.innerHTML = html;
             window.entryData = dataEntries;
@@ -568,6 +611,11 @@
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
+            // Cegah submit jika role tamu (seharusnya sudah disabled, tapi safety)
+            if (userRole === 'guest') {
+                alert("Anda tidak memiliki izin untuk menyimpan data. Silakan login.");
+                return;
+            }
             const tanggal = tanggalInput.value.trim();
             const suhu = parseFloat(suhuInput.value);
             const petugas = petugasInput.value.trim();
@@ -610,12 +658,38 @@
                 let fotoHtml = `<div class="foto-grid">${(e.fotoList||[]).map(f=>`<img src="${f.base64}" title="${f.jamFoto}">`).join('')}</div>`;
                 html += `<tr><td>${idx+1}</td><td>${e.tanggal}</td><td>${e.suhu} °C</td><td>${fotoHtml}</td><td>${escapeHtml(e.petugas)}</td><td>${escapeHtml(e.keterangan||'-')}</td></tr>`;
             });
-            html += `</tbody><table><p><em>Watermark otomatis: TVRI, transmisi, petugas, waktu, koordinat.</em></p></body></html>`;
+            html += `</tbody></table><p><em>Watermark otomatis: TVRI, transmisi, petugas, waktu, koordinat.</em></p></body></html>`;
             const blob = new Blob([html], {type:"text/html"}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`laporan_suhu_${Date.now()}.html`; a.click(); URL.revokeObjectURL(blob);
         });
 
         function showLoading(msg) { let ld = document.getElementById('globalLoading'); if(!ld){ ld=document.createElement('div'); ld.id='globalLoading'; ld.className='loading-overlay'; ld.innerHTML=`<div class="bg-black/80 text-white p-4 rounded-xl text-center">${msg}</div>`; document.body.appendChild(ld); } else ld.style.display='flex'; }
         function hideLoading() { let ld = document.getElementById('globalLoading'); if(ld) ld.remove(); }
+
+        // ======================== MULTI-ROLE HANDLER ========================
+        window.addEventListener('roleChanged', (e) => {
+            userRole = e.detail.role;
+            // Update tampilan role di header
+            const roleDisplaySpan = document.getElementById('userRoleDisplay');
+            if (roleDisplaySpan) {
+                if (userRole === 'admin') roleDisplaySpan.innerHTML = '<i class="fas fa-user-shield"></i> Admin';
+                else if (userRole === 'user') roleDisplaySpan.innerHTML = '<i class="fas fa-user"></i> User';
+                else roleDisplaySpan.innerHTML = '<i class="fas fa-user-friends"></i> Tamu';
+            }
+            // Nonaktifkan form jika tamu
+            const formInputs = document.querySelectorAll('#formSuhu input, #formSuhu select, #formSuhu textarea, #formSuhu button[type="submit"]');
+            formInputs.forEach(inp => {
+                if (userRole === 'guest') inp.disabled = true;
+                else inp.disabled = false;
+            });
+            // Tombol hapus semua hanya untuk admin? (opsional)
+            const hapusSemuaBtn = document.getElementById('btnHapusSemua');
+            if (hapusSemuaBtn) {
+                if (userRole !== 'admin') hapusSemuaBtn.style.display = 'none';
+                else hapusSemuaBtn.style.display = 'inline-flex';
+            }
+            // Render ulang tabel untuk menampilkan tombol edit jika admin
+            renderTable();
+        });
 
         // ======================== INISIALISASI FIREBASE ========================
         async function initFirebase() {
