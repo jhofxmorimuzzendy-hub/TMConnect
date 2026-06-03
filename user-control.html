@@ -11,7 +11,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
     <script src="firebase-config.js"></script>
-    <script src="auth-check.js"></script>
     <style>
         * { margin:0; padding:0; box-sizing:border-box; }
         body {
@@ -21,7 +20,7 @@
             min-height: 100vh;
         }
         .container {
-            max-width: 1400px;
+            max-width: 1300px;
             margin: 0 auto;
             background: white;
             border-radius: 36px;
@@ -74,9 +73,7 @@
             font-weight: 600;
         }
         .role-badge.admin { background: #fef3c7; color: #b45309; }
-        select, button {
-            font-family: inherit;
-        }
+        select, button { font-family: inherit; }
         .select-role {
             padding: 6px 10px;
             border-radius: 30px;
@@ -90,17 +87,17 @@
             cursor: pointer;
             padding: 6px 12px;
             border-radius: 30px;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             font-weight: 600;
             transition: 0.2s;
-            margin-right: 6px;
+            margin-right: 5px;
         }
         .btn-edit { background: #e6f7f0; color: #1e6f5c; }
         .btn-delete { background: #ffe6e5; color: #b91c1c; }
         .btn-reset { background: #eef2ff; color: #2563eb; }
         .btn-edit:hover, .btn-delete:hover, .btn-reset:hover { transform: translateY(-2px); filter: brightness(0.96); }
         .loading { text-align: center; padding: 40px; color: #5b6e8c; }
-        .error-msg, .info-msg {
+        .error-msg, .info-msg, .success-msg {
             padding: 12px 18px;
             border-radius: 60px;
             margin-bottom: 20px;
@@ -108,6 +105,7 @@
         }
         .error-msg { background: #fee2e2; color: #b91c1c; }
         .info-msg { background: #e6f7f0; color: #1e6f5c; }
+        .success-msg { background: #dcfce7; color: #15803d; }
         .action-bar {
             display: flex;
             justify-content: space-between;
@@ -132,11 +130,11 @@
             border-top: 1px solid #e2edf2;
             background: #fafcff;
         }
-        @media (max-width: 860px) {
+        @media (max-width: 640px) {
             .header { padding: 16px 20px; }
             .content { padding: 20px; }
             td, th { padding: 10px 8px; }
-            .btn-edit, .btn-delete, .btn-reset { padding: 4px 8px; font-size: 0.7rem; }
+            .btn-edit, .btn-delete, .btn-reset { padding: 4px 8px; font-size: 0.65rem; }
         }
     </style>
 </head>
@@ -149,40 +147,42 @@
     <div class="content">
         <div id="messageContainer"></div>
         <div class="action-bar">
-            <span><i class="fas fa-database"></i> Manajemen role & data pengguna | <i class="fas fa-key"></i> Kirim email reset password</span>
+            <span><i class="fas fa-database"></i> Manajemen role & kirim reset password</span>
             <button id="refreshUsersBtn" class="refresh-btn"><i class="fas fa-sync-alt"></i> Refresh</button>
         </div>
         <div id="usersListContainer">
             <div class="loading"><i class="fas fa-spinner fa-pulse"></i> Memuat daftar pengguna...</div>
         </div>
         <div class="info-msg" style="margin-top: 20px;">
-            <i class="fas fa-info-circle"></i> <strong>Fitur:</strong> Ubah role (Admin/User/Tamu) | Hapus data user dari database (akun tetap ada di Auth) | Kirim email reset password.
+            <i class="fas fa-info-circle"></i> <strong>Catatan:</strong> Hanya admin yang dapat mengubah role. Fitur "Reset Password" akan mengirim email ke pengguna untuk membuat password baru.
         </div>
     </div>
-    <footer>Portal Transmisi - Manajemen User (Admin Only) | Reset password mengirimkan email ke pengguna</footer>
+    <footer>Portal Transmisi - Manajemen User (Admin Only)</footer>
 </div>
 
 <script>
-    // Pastikan hanya admin yang dapat mengakses halaman ini
-    let currentUserUid = null;
-    let currentUserRole = 'guest';
-    let usersData = [];
+    // Variabel global
+    let currentAdminUid = null;
+    let currentAdminEmail = null;
 
     const messageDiv = document.getElementById('messageContainer');
-    function showMessage(msg, isError = false, duration = 4000) {
-        messageDiv.innerHTML = `<div class="${isError ? 'error-msg' : 'info-msg'}">${msg}</div>`;
-        setTimeout(() => { if (messageDiv.innerHTML) messageDiv.innerHTML = ''; }, duration);
+    function showMessage(msg, type = 'error') {
+        let className = 'error-msg';
+        if (type === 'success') className = 'success-msg';
+        if (type === 'info') className = 'info-msg';
+        messageDiv.innerHTML = `<div class="${className}">${msg}</div>`;
+        setTimeout(() => { if (messageDiv.innerHTML) messageDiv.innerHTML = ''; }, 4000);
     }
 
-    // Ambil role user yang sedang login dari database
-    async function getCurrentUserRole(uid) {
+    // Ambil role user berdasarkan UID
+    async function getUserRole(uid) {
         if (!uid) return 'guest';
         try {
             const snapshot = await window.db.ref(`users/${uid}/role`).once('value');
             const role = snapshot.val();
             return role === 'admin' ? 'admin' : (role === 'user' ? 'user' : 'guest');
         } catch (err) {
-            console.error("Gagal ambil role user:", err);
+            console.error("Gagal ambil role:", err);
             return 'guest';
         }
     }
@@ -206,7 +206,7 @@
         }
     }
 
-    // Update role user di database
+    // Update role user
     async function updateUserRole(uid, newRole) {
         try {
             await window.db.ref(`users/${uid}/role`).set(newRole);
@@ -217,7 +217,7 @@
         }
     }
 
-    // Hapus user dari database (hanya data role)
+    // Hapus data user (tidak menghapus akun auth)
     async function deleteUserData(uid) {
         try {
             await window.db.ref(`users/${uid}`).remove();
@@ -228,22 +228,21 @@
         }
     }
 
-    // Kirim email reset password menggunakan Firebase Auth
+    // Kirim email reset password
     async function sendPasswordReset(email) {
         try {
             await window.auth.sendPasswordResetEmail(email);
-            return { success: true, message: `Email reset password berhasil dikirim ke ${email}` };
+            return { success: true, message: `Email reset password telah dikirim ke ${email}` };
         } catch (err) {
-            console.error("Gagal kirim reset password:", err);
+            console.error("Gagal kirim reset email:", err);
             let errorMsg = err.message;
-            if (err.code === 'auth/user-not-found') errorMsg = 'Email tidak terdaftar di autentikasi.';
-            else if (err.code === 'auth/invalid-email') errorMsg = 'Format email tidak valid.';
+            if (err.code === 'auth/user-not-found') errorMsg = 'Pengguna dengan email ini tidak ditemukan di autentikasi.';
             return { success: false, message: errorMsg };
         }
     }
 
-    // Render tabel pengguna dengan tombol reset password
-    function renderUsersTable(users, currentAdminUid) {
+    // Render tabel pengguna
+    function renderUsersTable(users, adminUid) {
         const container = document.getElementById('usersListContainer');
         if (!users.length) {
             container.innerHTML = `<div class="info-msg"><i class="fas fa-user-slash"></i> Belum ada pengguna terdaftar selain admin.</div>`;
@@ -256,30 +255,30 @@
                 </thead>
                 <tbody>`;
         for (let user of users) {
-            const isCurrentUser = (user.uid === currentAdminUid);
+            const isCurrentUser = (user.uid === adminUid);
             const roleClass = user.role === 'admin' ? 'admin' : '';
             html += `<tr data-uid="${user.uid}">
-                <td>${escapeHtml(user.email)} ${isCurrentUser ? '<span class="role-badge" style="background:#fef3c7;">(Anda)</span>' : ''}</td>
-                <td><span class="role-badge ${roleClass}">${user.role === 'admin' ? 'Admin' : (user.role === 'user' ? 'User' : 'Tamu')}</span></td>
-                <td>
-                    <select class="select-role" data-uid="${user.uid}" ${isCurrentUser ? 'disabled' : ''}>
-                        <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Admin</option>
-                        <option value="user" ${user.role === 'user' ? 'selected' : ''}>User</option>
-                        <option value="guest" ${user.role === 'guest' ? 'selected' : ''}>Tamu</option>
-                    </select>
-                </td>
-                <td>${user.createdAt ? new Date(user.createdAt).toLocaleDateString('id') : '-'}</td>
-                <td>
-                    <button class="btn-edit" data-uid="${user.uid}" ${isCurrentUser ? 'disabled' : ''}><i class="fas fa-save"></i> Simpan Role</button>
-                    <button class="btn-reset" data-email="${user.email}" data-uid="${user.uid}" ${isCurrentUser ? 'disabled' : ''}><i class="fas fa-key"></i> Reset Password</button>
-                    <button class="btn-delete" data-uid="${user.uid}" ${isCurrentUser ? 'disabled' : ''}><i class="fas fa-trash-alt"></i> Hapus</button>
-                </td>
-            </tr>`;
+                        <td>${escapeHtml(user.email)} ${isCurrentUser ? '<span class="role-badge" style="background:#fef3c7;">(Anda)</span>' : ''}</td>
+                        <td><span class="role-badge ${roleClass}">${user.role === 'admin' ? 'Admin' : (user.role === 'user' ? 'User' : 'Tamu')}</span></td>
+                        <td>
+                            <select class="select-role" data-uid="${user.uid}" ${isCurrentUser ? 'disabled' : ''}>
+                                <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Admin</option>
+                                <option value="user" ${user.role === 'user' ? 'selected' : ''}>User</option>
+                                <option value="guest" ${user.role === 'guest' ? 'selected' : ''}>Tamu</option>
+                            </select>
+                        </td>
+                        <td>${user.createdAt ? new Date(user.createdAt).toLocaleDateString('id') : '-'}</td>
+                        <td>
+                            <button class="btn-edit" data-uid="${user.uid}" data-email="${user.email}" ${isCurrentUser ? 'disabled' : ''}><i class="fas fa-save"></i> Simpan Role</button>
+                            <button class="btn-reset" data-email="${user.email}" ${isCurrentUser ? 'disabled' : ''}><i class="fas fa-key"></i> Reset Password</button>
+                            <button class="btn-delete" data-uid="${user.uid}" ${isCurrentUser ? 'disabled' : ''}><i class="fas fa-trash-alt"></i> Hapus Data</button>
+                        </td>
+                    </tr>`;
         }
         html += `</tbody></table></div>`;
         container.innerHTML = html;
 
-        // Event listener untuk simpan role
+        // Event: Simpan Role
         document.querySelectorAll('.btn-edit').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 const uid = btn.getAttribute('data-uid');
@@ -289,16 +288,16 @@
                 if (confirm(`Ubah role pengguna ini menjadi ${newRole.toUpperCase()}?`)) {
                     const success = await updateUserRole(uid, newRole);
                     if (success) {
-                        showMessage(`Role berhasil diperbarui.`, false);
-                        await refreshUserList(currentAdminUid);
+                        showMessage(`Role berhasil diperbarui.`, 'success');
+                        await refreshUserList();
                     } else {
-                        showMessage(`Gagal memperbarui role.`, true);
+                        showMessage(`Gagal memperbarui role.`, 'error');
                     }
                 }
             });
         });
 
-        // Event listener untuk reset password
+        // Event: Reset Password
         document.querySelectorAll('.btn-reset').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 const email = btn.getAttribute('data-email');
@@ -306,32 +305,32 @@
                 if (confirm(`Kirim email reset password ke ${email}? Pengguna akan menerima link untuk membuat password baru.`)) {
                     const result = await sendPasswordReset(email);
                     if (result.success) {
-                        showMessage(result.message, false);
+                        showMessage(result.message, 'success');
                     } else {
-                        showMessage(`Gagal: ${result.message}`, true);
+                        showMessage(`Gagal: ${result.message}`, 'error');
                     }
                 }
             });
         });
 
-        // Event listener untuk hapus data user
+        // Event: Hapus Data User (hanya data role)
         document.querySelectorAll('.btn-delete').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 const uid = btn.getAttribute('data-uid');
                 if (confirm(`PERINGATAN: Menghapus data pengguna dari database. Akun email masih ada di autentikasi, tapi akan kehilangan role. Lanjutkan?`)) {
                     const success = await deleteUserData(uid);
                     if (success) {
-                        showMessage(`Data pengguna dihapus dari database.`, false);
-                        await refreshUserList(currentAdminUid);
+                        showMessage(`Data pengguna dihapus dari database.`, 'success');
+                        await refreshUserList();
                     } else {
-                        showMessage(`Gagal menghapus data.`, true);
+                        showMessage(`Gagal menghapus data.`, 'error');
                     }
                 }
             });
         });
     }
 
-    async function refreshUserList(currentAdminUid) {
+    async function refreshUserList() {
         try {
             const users = await loadAllUsers();
             renderUsersTable(users, currentAdminUid);
@@ -345,7 +344,7 @@
         return str.replace(/[&<>]/g, m => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;');
     }
 
-    // Inisialisasi halaman
+    // Inisialisasi halaman: verifikasi admin dan muat data
     async function initUserControl() {
         if (!window.auth) {
             setTimeout(initUserControl, 300);
@@ -353,29 +352,34 @@
         }
         const user = window.auth.currentUser;
         if (!user) {
+            // Tidak login, arahkan ke login
             window.location.href = 'login.html';
             return;
         }
-        currentUserUid = user.uid;
-        const role = await getCurrentUserRole(user.uid);
+        // Ambil role dari database
+        const role = await getUserRole(user.uid);
         if (role !== 'admin') {
-            showMessage('Akses ditolak. Halaman ini hanya untuk admin. Anda akan diarahkan ke dashboard.', true);
-            setTimeout(() => { window.location.href = 'index.html'; }, 2000);
+            showMessage('Akses ditolak. Halaman ini hanya untuk admin. Anda akan diarahkan ke dashboard.', 'error');
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 2000);
             return;
         }
-        // Admin sah, muat data
-        await refreshUserList(user.uid);
+        // Admin sah
+        currentAdminUid = user.uid;
+        currentAdminEmail = user.email;
+        await refreshUserList();
     }
 
-    // Event listener tombol
+    // Tombol kembali ke dashboard
     document.getElementById('backToDashboardBtn').addEventListener('click', () => {
         window.location.href = 'index.html';
     });
     document.getElementById('refreshUsersBtn').addEventListener('click', async () => {
-        const user = window.auth.currentUser;
-        if (user) await refreshUserList(user.uid);
+        await refreshUserList();
     });
 
+    // Jalankan
     initUserControl();
 </script>
 </body>
