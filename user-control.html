@@ -161,44 +161,26 @@
 </div>
 
 <script>
-    // Pastikan hanya admin yang dapat mengakses halaman ini
-    let currentUserRole = 'guest';
-    let usersData = []; // array of { uid, email, role, createdAt }
+    // Menunggu event roleChanged dari auth-check.js
+    let adminUid = null;
 
-    const messageDiv = document.getElementById('messageContainer');
     function showMessage(msg, isError = true) {
+        const messageDiv = document.getElementById('messageContainer');
         messageDiv.innerHTML = `<div class="${isError ? 'error-msg' : 'info-msg'}">${msg}</div>`;
         setTimeout(() => { if (messageDiv.innerHTML) messageDiv.innerHTML = ''; }, 4000);
     }
 
-    // Ambil role user yang sedang login dari database
-    async function getCurrentUserRole(uid) {
-        if (!uid) return 'guest';
-        try {
-            const snapshot = await window.db.ref(`users/${uid}/role`).once('value');
-            return snapshot.val() === 'admin' ? 'admin' : (snapshot.val() === 'user' ? 'user' : 'guest');
-        } catch (err) {
-            console.error("Gagal ambil role user:", err);
-            return 'guest';
-        }
-    }
-
-    // Muat semua user dari /users
     async function loadAllUsers() {
         try {
             const snapshot = await window.db.ref('users').once('value');
             const data = snapshot.val();
-            if (!data) {
-                usersData = [];
-                return [];
-            }
+            if (!data) return [];
             const users = Object.entries(data).map(([uid, info]) => ({
                 uid: uid,
                 email: info.email || 'Tidak ada email',
                 role: info.role || 'guest',
                 createdAt: info.createdAt || '-'
             }));
-            usersData = users;
             return users;
         } catch (err) {
             console.error("Gagal memuat user:", err);
@@ -206,7 +188,6 @@
         }
     }
 
-    // Update role user di database
     async function updateUserRole(uid, newRole) {
         try {
             await window.db.ref(`users/${uid}/role`).set(newRole);
@@ -217,7 +198,6 @@
         }
     }
 
-    // Hapus user dari database (hanya data role, tidak dari Auth)
     async function deleteUserData(uid) {
         try {
             await window.db.ref(`users/${uid}`).remove();
@@ -228,7 +208,6 @@
         }
     }
 
-    // Render tabel pengguna
     function renderUsersTable(users, currentAdminUid) {
         const container = document.getElementById('usersListContainer');
         if (!users.length) {
@@ -264,7 +243,7 @@
         html += `</tbody></table></div>`;
         container.innerHTML = html;
 
-        // Pasang event listener untuk tombol simpan role
+        // Event listeners
         document.querySelectorAll('.btn-edit').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 const uid = btn.getAttribute('data-uid');
@@ -283,7 +262,6 @@
             });
         });
 
-        // Pasang event listener untuk tombol hapus
         document.querySelectorAll('.btn-delete').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 const uid = btn.getAttribute('data-uid');
@@ -314,40 +292,62 @@
         return str.replace(/[&<>]/g, m => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;');
     }
 
-    // Inisialisasi halaman
-    async function initUserControl() {
-        // Tunggu auth siap
-        if (!window.auth) {
-            setTimeout(initUserControl, 300);
-            return;
-        }
-        const user = window.auth.currentUser;
-        if (!user) {
-            // Jika belum login, redirect ke login
-            window.location.href = 'login.html';
-            return;
-        }
-        const role = await getCurrentUserRole(user.uid);
+    // Inisialisasi dengan event roleChanged dari auth-check.js
+    window.addEventListener('roleChanged', async (e) => {
+        const role = e.detail.role;
+        const user = e.detail.user;
         if (role !== 'admin') {
             showMessage('Akses ditolak. Halaman ini hanya untuk admin. Anda akan diarahkan ke dashboard.', true);
             setTimeout(() => { window.location.href = 'index.html'; }, 2000);
             return;
         }
-        // Admin sah, muat data
-        await refreshUserList(user.uid);
-    }
+        // Admin, simpan uid dan muat data
+        if (user) {
+            adminUid = user.uid;
+            await refreshUserList(adminUid);
+        } else {
+            // fallback: ambil dari auth.currentUser
+            const currentUser = window.auth.currentUser;
+            if (currentUser) {
+                adminUid = currentUser.uid;
+                await refreshUserList(adminUid);
+            } else {
+                showMessage('Tidak dapat mengidentifikasi pengguna. Silakan login ulang.', true);
+                setTimeout(() => window.location.href = 'login.html', 1500);
+            }
+        }
+    });
 
-    // Tombol kembali ke dashboard
+    // Jika roleChanged tidak terjadi dalam 2 detik, cek langsung (fallback)
+    setTimeout(async () => {
+        if (!adminUid && window.auth.currentUser) {
+            // cek role
+            const snapshot = await window.db.ref(`users/${window.auth.currentUser.uid}/role`).once('value');
+            const role = snapshot.val();
+            if (role === 'admin') {
+                adminUid = window.auth.currentUser.uid;
+                await refreshUserList(adminUid);
+            } else {
+                showMessage('Akses ditolak. Halaman ini hanya untuk admin.', true);
+                setTimeout(() => window.location.href = 'index.html', 2000);
+            }
+        } else if (!adminUid && !window.auth.currentUser) {
+            // Tidak login, redirect ke login
+            window.location.href = 'login.html';
+        }
+    }, 2000);
+
+    // Tombol kembali
     document.getElementById('backToDashboardBtn').addEventListener('click', () => {
         window.location.href = 'index.html';
     });
     document.getElementById('refreshUsersBtn').addEventListener('click', async () => {
-        const user = window.auth.currentUser;
-        if (user) await refreshUserList(user.uid);
+        if (adminUid) await refreshUserList(adminUid);
+        else if (window.auth.currentUser) {
+            const roleSnap = await window.db.ref(`users/${window.auth.currentUser.uid}/role`).once('value');
+            if (roleSnap.val() === 'admin') await refreshUserList(window.auth.currentUser.uid);
+        }
     });
-
-    // Jalankan
-    initUserControl();
 </script>
 </body>
 </html>
