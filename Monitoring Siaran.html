@@ -16,6 +16,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="firebase-config.js"></script>
+    <script src="log-helper.js"></script> <!-- ✅ TAMBAHKAN LOG HELPER -->
     <script src="auth-check.js"></script>
 
     <style>
@@ -245,7 +246,7 @@
 
     <div class="daily-table-section">
         <div class="table-header" style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
-            <h3 style="font-size: clamp(1rem, 4vw, 1.3rem); color: #1e6f5c;"><i class="fas fa-calendar-day"></i> 📅 Rekap Harian (Laporan Terakhir per Channel)</h3>
+            <h3 style="font-size: clamp(1rem, 4vw, 1.3rem); color: #1e6f5c;"><i class="fas fa-calendar-day"></i> 📅 Rekap Harian (Hari Ini Saja)</h3>
             <div class="export-group" style="display: flex; gap: 8px; flex-wrap: wrap;">
                 <button id="exportDailyCsvBtn" class="btn-outline"><i class="fas fa-file-csv"></i> CSV</button>
                 <button id="exportHtmlRekapOnlyBtn" class="btn-solid"><i class="fas fa-file-code"></i> Ekspor HTML</button>
@@ -572,9 +573,13 @@
         const updatedLogs = [newLog, ...logEntries].slice(0, 500);
         await updateLogsLocallyAndSync(updatedLogs);
         alert(`✅ Laporan ${targetStatus === 'normal' ? 'Normal' : 'Gangguan'} untuk ${channel.name} tersimpan. Firebase: tersinkron`);
+        // LOG: Tambah laporan
+        if (typeof window.logActivity === 'function') {
+            window.logActivity('TAMBAH LAPORAN', `${targetStatus === 'normal' ? 'Normal' : 'Gangguan'} untuk ${channel.name}`, 'Monitoring Siaran');
+        }
     }
 
-    // EDIT LOG UNTUK ADMIN (manipulasi timestamp / tanggal)
+    // EDIT LOG UNTUK ADMIN
     async function editLogEntry(logId) {
         if (userRole !== 'admin') { alert("Hanya admin yang dapat mengedit laporan."); return; }
         const log = logEntries.find(l => l.id == logId);
@@ -586,6 +591,10 @@
             log.edited = true;
             await updateLogsLocallyAndSync(logEntries);
             alert("Timestamp laporan berhasil diubah.");
+            // LOG: Edit timestamp
+            if (typeof window.logActivity === 'function') {
+                window.logActivity('EDIT LAPORAN', `Mengedit timestamp laporan ID ${logId}`, 'Monitoring Siaran');
+            }
         } else if (newTimestamp === null) return;
         const newPetugas = prompt("Edit nama petugas:", log.petugas);
         if (newPetugas && newPetugas !== log.petugas) {
@@ -593,6 +602,10 @@
             log.edited = true;
             await updateLogsLocallyAndSync(logEntries);
             alert("Petugas berhasil diubah.");
+            // LOG: Edit petugas
+            if (typeof window.logActivity === 'function') {
+                window.logActivity('EDIT LAPORAN', `Mengedit petugas laporan ID ${logId} menjadi ${newPetugas}`, 'Monitoring Siaran');
+            }
         }
     }
 
@@ -602,6 +615,10 @@
             const newLogs = logEntries.filter(l => l.id != logId);
             await updateLogsLocallyAndSync(newLogs);
             alert("Laporan dihapus.");
+            // LOG: Hapus laporan
+            if (typeof window.logActivity === 'function') {
+                window.logActivity('HAPUS LAPORAN', `Menghapus laporan ID ${logId}`, 'Monitoring Siaran');
+            }
         }
     }
 
@@ -629,6 +646,10 @@
         if (originalIndex !== -1) updatedLogs[originalIndex].fixed = true;
         await updateLogsLocallyAndSync(updatedLogs);
         alert(`Channel ${channel.name} telah diperbaiki. Status NORMAL.`);
+        // LOG: Perbaikan
+        if (typeof window.logActivity === 'function') {
+            window.logActivity('PERBAIKAN', `Memperbaiki channel ${channel.name} berdasarkan laporan ID ${logId}`, 'Monitoring Siaran');
+        }
     }
 
     // RENDER FUNCTIONS
@@ -640,7 +661,6 @@
 
     function renderChannels() {
         const grid = document.getElementById('channelsGrid');
-        // Nonaktifkan tombol lapor jika role tamu
         const disableButtons = (userRole === 'guest');
         grid.innerHTML = CHANNELS.map(ch => {
             const status = channelStatus[ch.id];
@@ -689,32 +709,42 @@
         }).join('');
     }
 
+    // ========== PERBAIKAN REKAP HARIAN: HANYA HARI INI ==========
+    function getTodayDateISO() {
+        const today = new Date();
+        return `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+    }
+
     function buildDailyReportLastOnly() {
-        const reportsByDate = new Map();
+        // Hanya ambil laporan dengan tanggal hari ini
+        const todayISO = getTodayDateISO();
+        const reportsToday = [];
         logEntries.forEach(log => {
             if (log.type === 'normal' || log.type === 'gangguan') {
                 const datePart = log.timestamp.split(',')[0];
                 let [day, month, year] = datePart.split('/');
                 if (day && month && year) {
                     const isoDate = `${year}-${month.padStart(2,'0')}-${day.padStart(2,'0')}`;
-                    if (!reportsByDate.has(isoDate)) reportsByDate.set(isoDate, []);
-                    reportsByDate.get(isoDate).push(log);
+                    if (isoDate === todayISO) {
+                        reportsToday.push(log);
+                    }
                 }
             }
         });
-        const sortedDates = Array.from(reportsByDate.keys()).sort().reverse();
-        return sortedDates.map(date => {
-            const logs = reportsByDate.get(date);
-            const lastPerChannel = new Map();
-            logs.forEach(log => {
-                const existing = lastPerChannel.get(log.channelId);
-                if (!existing || log.rawTime > existing.rawTime) lastPerChannel.set(log.channelId, log);
-            });
-            return { date, reports: Array.from(lastPerChannel.values()) };
+        // Kelompokkan berdasarkan channel, ambil laporan terbaru per channel
+        const lastPerChannel = new Map();
+        reportsToday.forEach(log => {
+            const existing = lastPerChannel.get(log.channelId);
+            if (!existing || log.rawTime > existing.rawTime) lastPerChannel.set(log.channelId, log);
         });
+        const reports = Array.from(lastPerChannel.values());
+        // Urutkan berdasarkan channel name
+        reports.sort((a,b) => a.channelName.localeCompare(b.channelName));
+        return reports;
     }
 
     function buildAllReportsByDate() {
+        // Untuk export HTML, tetap gunakan semua laporan
         const reportsByDate = new Map();
         logEntries.forEach(log => {
             if (log.type === 'normal' || log.type === 'gangguan') {
@@ -733,26 +763,25 @@
 
     function renderDailyTable() {
         const container = document.getElementById('dailyTableContainer');
-        const dailyData = buildDailyReportLastOnly();
-        if (dailyData.length === 0) { container.innerHTML = '<div style="padding:20px; text-align:center;">Belum ada data laporan harian.</div>'; return; }
-        let html = `<table class="daily-table"><thead><tr><th>Tanggal</th><th>Channel</th><th>Status</th><th>Penyebab</th><th>Petugas</th><th>Foto</th><th>Waktu</th></tr></thead><tbody>`;
-        for (let day of dailyData) {
-            const dateDisplay = day.date.split('-').reverse().join('/');
-            for (let report of day.reports) {
-                const statusBadge = report.type === 'normal' ? '<span class="badge-small badge-normal">✅ Normal</span>' : '<span class="badge-small badge-gangguan">⚠️ Gangguan</span>';
-                const reasonHtml = report.reason ? `<i class="fas fa-comment"></i> ${escapeHtml(report.reason)}` : '-';
-                let photoHtml = '-';
-                if (report.imageBase64) photoHtml = `<img src="${report.imageBase64}" class="photo-thumb" onclick="window.showFullImageModal('${report.imageBase64.replace(/'/g, "\\'")}')" style="cursor:pointer;">`;
-                html += `<tr>
-                    <td>${dateDisplay}</td>
-                    <td><i class="${CHANNELS.find(c=>c.id===report.channelId)?.icon}"></i> ${report.channelName}</td>
-                    <td>${statusBadge}</td>
-                    <td>${reasonHtml}</td>
-                    <td><i class="fas fa-user"></i> ${escapeHtml(report.petugas)}</td>
-                    <td>${photoHtml}</td>
-                    <td>${report.timestamp.split(',')[1] || report.timestamp}</td>
-                </tr>`;
-            }
+        const reportsToday = buildDailyReportLastOnly();
+        if (reportsToday.length === 0) {
+            container.innerHTML = '<div style="padding:20px; text-align:center;">Belum ada laporan untuk hari ini.</div>';
+            return;
+        }
+        let html = `<table class="daily-table"><thead><tr><th>Channel</th><th>Status</th><th>Penyebab</th><th>Petugas</th><th>Foto</th><th>Waktu</th></tr></thead><tbody>`;
+        for (let report of reportsToday) {
+            const statusBadge = report.type === 'normal' ? '<span class="badge-small badge-normal">✅ Normal</span>' : '<span class="badge-small badge-gangguan">⚠️ Gangguan</span>';
+            const reasonHtml = report.reason ? `<i class="fas fa-comment"></i> ${escapeHtml(report.reason)}` : '-';
+            let photoHtml = '-';
+            if (report.imageBase64) photoHtml = `<img src="${report.imageBase64}" class="photo-thumb" onclick="window.showFullImageModal('${report.imageBase64.replace(/'/g, "\\'")}')" style="cursor:pointer;">`;
+            html += `<tr>
+                <td><i class="${CHANNELS.find(c=>c.id===report.channelId)?.icon}"></i> ${report.channelName}</td>
+                <td>${statusBadge}</td>
+                <td>${reasonHtml}</td>
+                <td><i class="fas fa-user"></i> ${escapeHtml(report.petugas)}</td
+                <td>${photoHtml}</td
+                <td>${report.timestamp.split(',')[1] || report.timestamp}</td
+            </tr>`;
         }
         html += `</tbody></table>`;
         container.innerHTML = html;
@@ -826,6 +855,10 @@
                     const newLogs = [sysLog, ...logEntries].slice(0, 500);
                     await updateLogsLocallyAndSync(newLogs);
                     alert("Status semua channel direset ke NORMAL.");
+                    // LOG: Reset status
+                    if (typeof window.logActivity === 'function') {
+                        window.logActivity('RESET STATUS', 'Semua channel direset ke NORMAL', 'Monitoring Siaran');
+                    }
                 } else { alert("Semua channel sudah NORMAL."); }
             }
         });
@@ -836,25 +869,31 @@
             if (!nama) return alert("Nama petugas tidak boleh kosong.");
             await updatePetugasLocallyAndSync(nama);
             alert(`Petugas: ${currentPetugas}`);
+            // LOG: Ubah petugas
+            if (typeof window.logActivity === 'function') {
+                window.logActivity('UBAH PETUGAS', `Petugas diubah menjadi ${nama}`, 'Monitoring Siaran');
+            }
         });
     }
 
     function exportDailyToCSV() {
-        const dailyData = buildDailyReportLastOnly();
-        const rows = [["Tanggal","Channel","Status","Penyebab","Petugas","Foto","Waktu"]];
-        for (let day of dailyData) {
-            const dateDisplay = day.date.split('-').reverse().join('/');
-            for (let r of day.reports) {
-                rows.push([dateDisplay, r.channelName, r.type==='normal'?'Normal':'Gangguan', r.reason||'', r.petugas, r.imageBase64?'Ya':'Tidak', r.timestamp]);
-            }
+        const reportsToday = buildDailyReportLastOnly();
+        if (reportsToday.length === 0) { alert("Tidak ada laporan untuk hari ini."); return; }
+        const rows = [["Channel","Status","Penyebab","Petugas","Foto","Waktu"]];
+        for (let r of reportsToday) {
+            rows.push([r.channelName, r.type==='normal'?'Normal':'Gangguan', r.reason||'', r.petugas, r.imageBase64?'Ya':'Tidak', r.timestamp]);
         }
         const csv = rows.map(row => row.map(cell => `"${cell}"`).join(",")).join("\n");
         const blob = new Blob(["\uFEFF" + csv], {type: "text/csv"});
-        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `tvri_daily_${new Date().toISOString().slice(0,10)}.csv`; a.click(); URL.revokeObjectURL(blob);
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `tvri_harian_${new Date().toISOString().slice(0,10)}.csv`; a.click(); URL.revokeObjectURL(blob);
+        // LOG: Export CSV
+        if (typeof window.logActivity === 'function') {
+            window.logActivity('EXPORT', `Mengekspor laporan harian ke CSV (${reportsToday.length} laporan)`, 'Monitoring Siaran');
+        }
     }
 
     function exportHTMLRekapOnly() {
-        const allReports = buildAllReportsByDate();
+        const allReports = buildAllReportsByDate(); // tetap semua tanggal untuk export
         let rows = '';
         for (let day of allReports) {
             const dateDisplay = day.date.split('-').reverse().join('/');
@@ -866,9 +905,13 @@
                 rows += `<tr><td>${dateDisplay}</td><td>${r.channelName}</td><td>${statusBadge}</td><td>${reasonHtml}</td><td>${escapeHtml(r.petugas)}</td><td>${photoHtml}</td><td>${r.timestamp}</td></tr>`;
             }
         }
-        const htmlContent = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Rekap TVRI</title><style>body{font-family:Inter,sans-serif;padding:20px;} table{border-collapse:collapse;width:100%} th,td{border:1px solid #ccc;padding:8px}</style></head><body><h1>Rekap Laporan TVRI</h1><table border="1"><thead><tr><th>Tanggal</th><th>Channel</th><th>Status</th><th>Penyebab</th><th>Petugas</th><th>Foto</th><th>Waktu</th><tr></thead><tbody>${rows}</tbody></table></body></html>`;
+        const htmlContent = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Rekap TVRI Semua Laporan</title><style>body{font-family:Inter,sans-serif;padding:20px;} table{border-collapse:collapse;width:100%} th,td{border:1px solid #ccc;padding:8px}</style></head><body><h1>Rekap Laporan TVRI (Semua Tanggal)</h1><table border="1"><thead><tr><th>Tanggal</th><th>Channel</th><th>Status</th><th>Penyebab</th><th>Petugas</th><th>Foto</th><th>Waktu</th></tr></thead><tbody>${rows}</tbody></table></body></html>`;
         const blob = new Blob([htmlContent], {type: "text/html"});
-        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `tvri_rekap_${Date.now()}.html`; a.click(); URL.revokeObjectURL(blob);
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `tvri_rekap_lengkap_${Date.now()}.html`; a.click(); URL.revokeObjectURL(blob);
+        // LOG: Export HTML
+        if (typeof window.logActivity === 'function') {
+            window.logActivity('EXPORT', `Mengekspor laporan lengkap ke HTML (${allReports.reduce((acc,day)=>acc+day.reports.length,0)} laporan)`, 'Monitoring Siaran');
+        }
     }
 
     // MULTI-ROLE HANDLER
@@ -880,14 +923,12 @@
             else if (userRole === 'user') roleDisplaySpan.innerHTML = '<i class="fas fa-user"></i> User';
             else roleDisplaySpan.innerHTML = '<i class="fas fa-user-friends"></i> Tamu';
         }
-        // Nonaktifkan input petugas dan tombol simpan jika tamu
         const petugasInput = document.getElementById('namaPetugasInput');
         const simpanPetugasBtn = document.getElementById('simpanPetugasBtn');
         if (petugasInput) petugasInput.disabled = (userRole === 'guest');
         if (simpanPetugasBtn) simpanPetugasBtn.disabled = (userRole === 'guest');
-        // Render ulang channel untuk menonaktifkan tombol lapor jika tamu
         renderChannels();
-        renderLogs(); // untuk menampilkan/hilangkan tombol edit/hapus sesuai role
+        renderLogs();
     });
 
     // INISIALISASI
