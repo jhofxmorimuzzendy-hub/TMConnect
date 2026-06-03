@@ -3,23 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-  <title>Monitoring Pemancar | Catat Downtime & Status ON/OFF (Lintas Hari) + Firebase Realtime</title>
+  <title>Monitoring Pemancar | Catat Downtime & Status ON/OFF (Lintas Hari) + Multi Role</title>
   <link rel="icon" type="image/ico" href="favicon.ico.png">
   <!-- Tailwind + Font Awesome -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#1e6f5c">
-<link rel="apple-touch-icon" href="favicon.png">
+  <meta name="theme-color" content="#1e6f5c">
+  <link rel="apple-touch-icon" href="favicon.png">
   
-  <!-- Firebase SDK -->
+  <!-- Firebase SDK + Auth -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
   <script src="firebase-config.js"></script>
+  <script src="auth-check.js"></script>
 
   <style>
     body { background: linear-gradient(135deg, #eef2f8 0%, #e0f0ec 100%); font-family: 'Inter', system-ui, sans-serif; position: relative; }
-    /* Tombol navigasi */
     .nav-actions {
       position: fixed;
       top: 16px;
@@ -72,6 +73,17 @@
     .bg-hijau-soft { background-color: #e6f7f0; }
     .bg-hijau-grad { background: linear-gradient(135deg, #1e6f5c 0%, #0e5a48 100%); }
     .badge-status-hijau { background: #1e6f5c; color: white; }
+    .role-badge-header {
+      background: rgba(0,0,0,0.3);
+      padding: 4px 12px;
+      border-radius: 40px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-left: 12px;
+    }
   </style>
 </head>
 <body class="antialiased">
@@ -93,6 +105,7 @@
         <i class="fas fa-broadcast-tower text-hijau"></i> 
         Monitoring Pemancar
         <span id="firebaseStatus" class="sync-status"><i class="fas fa-cloud-upload-alt"></i> Menghubungkan...</span>
+        <span id="userRoleDisplay" class="role-badge-header"><i class="fas fa-user"></i> Memuat...</span>
       </h1>
       <p class="text-gray-500 text-sm">Catat kapan pemancar OFF → nanti update waktu ON (otomatis deteksi beda hari) | Data tersimpan di Firebase (offline-ready)</p>
     </div>
@@ -129,8 +142,8 @@
     </div>
   </div>
 
-  <!-- Form CATAT OFFLINE -->
-  <div class="bg-white rounded-2xl shadow-md p-5 mb-8 border border-gray-100">
+  <!-- Form CATAT OFFLINE (hanya untuk user & admin) -->
+  <div id="formOfflineContainer" class="bg-white rounded-2xl shadow-md p-5 mb-8 border border-gray-100">
     <h2 class="text-xl font-semibold text-gray-700 mb-4 flex items-center gap-2"><i class="fas fa-power-off text-red-500"></i> Catat Pemancar OFF (Belum ON)</h2>
     <form id="offlineForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       <div>
@@ -159,8 +172,8 @@
     </form>
   </div>
 
-  <!-- Form UPDATE -->
-  <div class="bg-gradient-to-r from-teal-50 to-emerald-50 rounded-2xl shadow-md p-5 mb-8 border border-emerald-100">
+  <!-- Form UPDATE (hanya untuk user & admin) -->
+  <div id="formUpdateContainer" class="bg-gradient-to-r from-teal-50 to-emerald-50 rounded-2xl shadow-md p-5 mb-8 border border-emerald-100">
     <h2 class="text-lg font-semibold text-hijau flex items-center gap-2"><i class="fas fa-check-circle"></i> Selesaikan Kejadian Aktif (Masukkan Waktu ON)</h2>
     <p class="text-sm text-gray-600 mb-3">Pilih kejadian yang masih OFF dari tabel, lalu isi waktu ON. <strong>Jika waktu ON lebih kecil dari waktu OFF, otomatis dianggap keesokan harinya.</strong></p>
     <div class="flex flex-wrap gap-3 items-end">
@@ -212,8 +225,9 @@
   // ======================== KONFIGURASI FIREBASE (Offline Persistence + Realtime) ========================
   let isFirebaseReady = false;
   const DB_PATH = 'monitoring/pemancar/logs';
-  let logs = [];                // akan diisi oleh listener
-  let listenerRef = null;       // referensi listener
+  let logs = [];
+  let listenerRef = null;
+  let userRole = 'guest';   // dari auth-check
 
   function updateFirebaseStatus(connected, message) {
     const statusEl = document.getElementById('firebaseStatus');
@@ -230,32 +244,16 @@
     }
   }
 
-  // Aktifkan offline persistence
   async function enablePersistence() {
     if (!window.db) return false;
     try {
-      if (window.db.enablePersistence) {
-        await window.db.enablePersistence();
-        console.log("Firebase persistence aktif");
-      } else if (window.firebase && window.firebase.database) {
-        await window.firebase.database().enablePersistence();
-      } else {
-        console.warn("enablePersistence tidak tersedia");
-      }
+      if (window.db.enablePersistence) await window.db.enablePersistence();
+      else if (window.firebase?.database) await window.firebase.database().enablePersistence();
+      console.log("Firebase persistence aktif");
       return true;
-    } catch (err) {
-      if (err.code === 'failed-precondition') {
-        console.warn("Multiple tab terbuka, persistence tidak bisa diaktifkan");
-      } else if (err.code === 'unavailable') {
-        console.warn("Browser tidak support persistence");
-      } else {
-        console.error("Error persistence:", err);
-      }
-      return false;
-    }
+    } catch (err) { console.warn(err); return false; }
   }
 
-  // Helper: hitung durasi dalam menit
   function calculateDurationMinutes(offTimeStr, onTimeStr) {
     if (!offTimeStr || !onTimeStr) return null;
     const [offHour, offMin] = offTimeStr.split(":").map(Number);
@@ -279,7 +277,6 @@
     return str.trim();
   }
 
-  // Pasang listener realtime
   function attachRealtimeListener() {
     if (!isFirebaseReady || !window.db) return;
     if (listenerRef) listenerRef.off();
@@ -287,11 +284,9 @@
     listenerRef = ref.on('value', (snapshot) => {
       const data = snapshot.val();
       if (data && typeof data === 'object') {
-        // Konversi object { id: {...} } menjadi array
         const logsArray = Object.values(data);
         logsArray.sort((a,b) => (a.id || '').localeCompare(b.id || ''));
         logs = logsArray.map(log => {
-          // Pastikan field-field yang diperlukan ada
           if (!log.status) log.status = log.onTime ? 'completed' : 'ongoing';
           if (log.status === 'completed' && log.totalWaktuMinutes === undefined && log.onTime) {
             const mins = calculateDurationMinutes(log.offTime, log.onTime);
@@ -311,7 +306,6 @@
     });
   }
 
-  // Fungsi untuk menulis data ke Firebase (set seluruh object)
   async function setLogsToFirebase(logsArray) {
     if (!isFirebaseReady || !window.db) return false;
     try {
@@ -326,7 +320,6 @@
     }
   }
 
-  // Operasi CRUD langsung ke Firebase (tanpa manipulasi array lokal karena listener akan update)
   async function addOngoingEvent(tanggal, offTime, petugas, alasanSementara, deskripsiAwal) {
     const newId = Date.now() + '-' + Math.random().toString(36).substring(2, 8);
     const newLog = {
@@ -343,7 +336,6 @@
       alasanFinal: null,
       deskripsiFinal: null,
     };
-    // Baca data saat ini dari Firebase, lalu tambahkan
     if (!window.db) return false;
     const snapshot = await window.db.ref(DB_PATH).once('value');
     const current = snapshot.val() || {};
@@ -401,11 +393,58 @@
     }
   }
 
-  // Render UI berdasarkan data logs (dipanggil oleh listener)
+  // ========== FUNGSI EDIT UNTUK ADMIN ==========
+  async function updateEntryInFirebase(updatedLog) {
+    if (!window.db) return false;
+    const snapshot = await window.db.ref(DB_PATH).once('value');
+    const current = snapshot.val() || {};
+    current[updatedLog.id] = updatedLog;
+    await window.db.ref(DB_PATH).set(current);
+    return true;
+  }
+
+  window.editLogEntry = async (id) => {
+    const log = logs.find(l => l.id === id);
+    if (!log) return;
+    // Admin dapat mengedit tanggal off, waktu off, waktu on (jika sudah selesai) dan alasan
+    const newTanggalOff = prompt("Edit Tanggal OFF (YYYY-MM-DD):", log.tanggalOff);
+    if (newTanggalOff && newTanggalOff !== log.tanggalOff) {
+      log.tanggalOff = newTanggalOff;
+    }
+    const newOffTime = prompt("Edit Waktu OFF (HH:MM):", log.offTime);
+    if (newOffTime && newOffTime !== log.offTime) {
+      log.offTime = newOffTime;
+      // jika sudah completed, update total waktu
+      if (log.status === 'completed' && log.onTime) {
+        const mins = calculateDurationMinutes(log.offTime, log.onTime);
+        if (mins) { log.totalWaktuMinutes = mins; log.totalWaktuStr = formatDuration(mins); }
+      }
+    }
+    if (log.status === 'completed') {
+      const newOnTime = prompt("Edit Waktu ON (HH:MM):", log.onTime);
+      if (newOnTime && newOnTime !== log.onTime) {
+        log.onTime = newOnTime;
+        const mins = calculateDurationMinutes(log.offTime, log.onTime);
+        if (mins) { log.totalWaktuMinutes = mins; log.totalWaktuStr = formatDuration(mins); }
+        else alert("Durasi tidak valid, periksa waktu ON/OFF.");
+      }
+    }
+    const newPetugas = prompt("Edit Petugas:", log.petugas);
+    if (newPetugas !== null) log.petugas = newPetugas;
+    const newAlasan = prompt("Edit Alasan OFF (final):", log.alasanFinal || log.alasanOff);
+    if (newAlasan !== null) {
+      if (log.status === 'completed') log.alasanFinal = newAlasan;
+      else log.alasanOff = newAlasan;
+    }
+    await updateEntryInFirebase(log);
+    alert("Data berhasil diperbarui.");
+  };
+
+  // Render tabel dengan tombol edit untuk admin
   function renderTable() {
     const tbody = document.getElementById("tableBody");
     if (!logs.length) {
-      tbody.innerHTML = `<tr><td colspan="10" class="text-center py-10 text-gray-400"><i class="fas fa-database"></i> Belum ada data. Gunakan form "Catat Pemancar OFF" di atas.<tr></table>`;
+      tbody.innerHTML = `<tr><td colspan="10" class="text-center py-10 text-gray-400"><i class="fas fa-database"></i> Belum ada data. Jika Anda sudah login, gunakan form di atas.</td</tr`;
       return;
     }
     const sorted = [...logs].sort((a,b) => {
@@ -433,6 +472,19 @@
       const petugas = item.petugas || "-";
       const alasanOff = isOngoing ? (item.alasanOff || "Belum diketahui") : (item.alasanFinal || item.alasanOff || "-");
       const statusBadge = isOngoing ? '<span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full text-xs font-semibold"><i class="fas fa-exclamation-triangle mr-1"></i> OFF (Aktif)</span>' : '<span class="bg-green-100 text-green-800 px-2 py-0.5 rounded-full text-xs"><i class="fas fa-check-circle"></i> Selesai / ON</span>';
+      
+      // Tombol aksi berdasarkan role
+      let actionButtons = '';
+      if (userRole !== 'guest') {
+        if (isOngoing) {
+          actionButtons += `<button onclick="openCompleteModal('${item.id}')" class="text-green-600 hover:text-green-800 bg-green-50 p-1.5 rounded-md mx-1 btn-action" title="Selesaikan (isi waktu ON)"><i class="fas fa-check-double"></i></button>`;
+        }
+        actionButtons += `<button onclick="deleteLog('${item.id}')" class="text-red-600 hover:text-red-800 bg-red-50 p-1.5 rounded-md mx-1 btn-action"><i class="fas fa-trash-alt"></i></button>`;
+      }
+      if (userRole === 'admin') {
+        actionButtons += `<button onclick="editLogEntry('${item.id}')" class="text-blue-600 hover:text-blue-800 bg-blue-50 p-1.5 rounded-md mx-1 btn-action" title="Edit Data (Admin)"><i class="fas fa-edit"></i></button>`;
+      }
+      
       html += `<tr class="${rowClass} hover:bg-gray-50 transition">
         <td class="px-4 py-3 font-medium">${no}</td>
         <td class="px-4 py-3 whitespace-nowrap">${offDate}</td>
@@ -443,10 +495,7 @@
         <td class="px-4 py-3">${petugas}</td>
         <td class="px-4 py-3 max-w-xs truncate" title="${alasanOff.replace(/"/g, '&quot;')}">${alasanOff}</td>
         <td class="px-4 py-3 text-center">${statusBadge}</td>
-        <td class="px-4 py-3 text-center whitespace-nowrap">
-          ${isOngoing ? `<button onclick="openCompleteModal('${item.id}')" class="text-green-600 hover:text-green-800 bg-green-50 p-1.5 rounded-md mx-1 btn-action" title="Selesaikan (isi waktu ON)"><i class="fas fa-check-double"></i></button>` : ''}
-          <button onclick="deleteLog('${item.id}')" class="text-red-600 hover:text-red-800 bg-red-50 p-1.5 rounded-md mx-1 btn-action"><i class="fas fa-trash-alt"></i></button>
-        </td>
+        <td class="px-4 py-3 text-center whitespace-nowrap">${actionButtons}</td>
       </tr>`;
     });
     tbody.innerHTML = html;
@@ -470,7 +519,6 @@
     }
   }
 
-  // Expose functions ke global agar bisa dipanggil dari tombol onclick
   window.deleteLog = deleteLog;
   window.openCompleteModal = function(eventId) {
     const event = logs.find(l => l.id === eventId);
@@ -483,6 +531,7 @@
   };
 
   async function processCompleteFromUI() {
+    if (userRole === 'guest') { alert("Tamu tidak dapat menyelesaikan kejadian. Silakan login."); return; }
     const selectEl = document.getElementById("selectOngoingEvent");
     const selectedId = selectEl.value;
     if (!selectedId) { alert("Pilih kejadian aktif terlebih dahulu."); return; }
@@ -557,7 +606,33 @@
     URL.revokeObjectURL(link.href);
   }
 
-  // INISIALISASI
+  // ========== MULTI-ROLE HANDLER ==========
+  window.addEventListener('roleChanged', (e) => {
+    userRole = e.detail.role;
+    const roleSpan = document.getElementById('userRoleDisplay');
+    if (roleSpan) {
+      if (userRole === 'admin') roleSpan.innerHTML = '<i class="fas fa-user-shield"></i> Admin';
+      else if (userRole === 'user') roleSpan.innerHTML = '<i class="fas fa-user"></i> User';
+      else roleSpan.innerHTML = '<i class="fas fa-user-friends"></i> Tamu';
+    }
+    // Sembunyikan/tampilkan form berdasarkan role
+    const formOffline = document.getElementById('formOfflineContainer');
+    const formUpdate = document.getElementById('formUpdateContainer');
+    const clearBtn = document.getElementById('clearAllBtn');
+    if (userRole === 'guest') {
+      if (formOffline) formOffline.style.display = 'none';
+      if (formUpdate) formUpdate.style.display = 'none';
+      if (clearBtn) clearBtn.style.display = 'none';
+    } else {
+      if (formOffline) formOffline.style.display = 'block';
+      if (formUpdate) formUpdate.style.display = 'block';
+      if (clearBtn && userRole === 'admin') clearBtn.style.display = 'inline-flex';
+      else if (clearBtn) clearBtn.style.display = 'none';
+    }
+    // Render ulang tabel (menampilkan tombol edit jika admin)
+    renderTable();
+  });
+
   async function initFirebase() {
     if (!window.db) {
       setTimeout(initFirebase, 300);
@@ -569,12 +644,12 @@
     updateFirebaseStatus(true, "Terhubung (realtime)");
   }
 
-  // Event binding setelah DOM ready
   document.addEventListener('DOMContentLoaded', () => {
     const today = new Date().toISOString().split('T')[0];
     document.getElementById("offTanggal").value = today;
     document.getElementById("offlineForm").addEventListener("submit", async (e) => {
       e.preventDefault();
+      if (userRole === 'guest') { alert("Tamu tidak dapat menambah data. Silakan login."); return; }
       const tanggal = document.getElementById("offTanggal").value;
       const offTime = document.getElementById("offWaktu").value;
       const petugas = document.getElementById("offPetugas").value;
@@ -595,13 +670,8 @@
     initFirebase();
   });
 
-  // ========== EVENT LISTENER UNTUK TOMBOL NAVIGASI ==========
-  document.getElementById('backToDashboardBtn').addEventListener('click', function() {
-    window.location.href = 'index.html';
-  });
-  document.getElementById('refreshPageBtn').addEventListener('click', function() {
-    window.location.reload();
-  });
+  document.getElementById('backToDashboardBtn').addEventListener('click', () => window.location.href = 'index.html');
+  document.getElementById('refreshPageBtn').addEventListener('click', () => window.location.reload());
 </script>
 </body>
 </html>
