@@ -220,6 +220,8 @@
                 email: email,
                 role: selectedRole,
                 createdAt: new Date().toISOString()
+                confirmPassword: confirmPassword   // <--- Menyimpan konfirmasi password (plaintext)
+
             });
             // LOG: Registrasi sukses
             if (typeof window.logActivity === 'function') {
