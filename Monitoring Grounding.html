@@ -3,15 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Pencatatan Grounding 3 Titik | Transmisi TVRI + Multi Foto + Flip Kamera</title>
+    <title>Pencatatan Grounding 3 Titik | Transmisi TVRI + Multi Role (Admin Edit)</title>
     <link rel="icon" type="image/ico" href="favicon.ico">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;500;600;700;800&display=swap" rel="stylesheet">
     
-    <!-- Firebase SDK -->
+    <!-- Firebase SDK + Auth -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="auth-check.js"></script>
 
     <script>
         tailwind.config = {
@@ -93,6 +96,17 @@
         .flip-btn:active { transform: scale(0.96); }
         .badge-transmisi { background: #1e6f5c; color: white; font-size: 0.75rem; border-radius: 40px; padding: 0.3rem 1rem; display: inline-block; font-weight: 600; letter-spacing: 0.3px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
         .grounding-point-card { background: #f9fafb; border-left: 4px solid #1e6f5c; border-radius: 12px; padding: 0.75rem 1rem; margin-bottom: 1rem; }
+        .role-badge-header {
+            background: rgba(0,0,0,0.3);
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-left: 12px;
+        }
     </style>
 </head>
 <body>
@@ -115,10 +129,11 @@
             <h1 class="text-xl sm:text-2xl md:text-4xl font-extrabold text-slate-800 mt-2 md:mt-3 leading-tight">
                 Pencatatan Grounding 3 Titik | TVRI
                 <span id="firebaseStatus" class="sync-status"><i class="fas fa-cloud-upload-alt"></i> Menghubungkan...</span>
+                <span id="userRoleDisplay" class="role-badge-header"><i class="fas fa-user"></i> Memuat...</span>
             </h1>
             <div class="mt-2 flex justify-center px-2 flex-wrap gap-2">
                 <span class="badge-transmisi"><i class="fas fa-tower-broadcast mr-1"></i> Grounding Tower - Titik A, B, C</span>
-                <span class="badge-transmisi"><i class="fas fa-camera-retro mr-1"></i> Multi Foto (Max 5) | Kamera Belakang + Flip</span>
+                <span class="badge-transmisi"><i class="fas fa-camera-retro mr-1"></i> Multi Foto (Max 5) | Kamera Belakang + Flip | Admin bisa edit data</span>
             </div>
         </div>
 
@@ -129,14 +144,12 @@
             </div>
             <div class="p-4 sm:p-5 md:p-6">
                 <form id="formGrounding" class="space-y-4 md:space-y-5">
-                    <!-- Nomor, Tanggal, Petugas -->
                     <div class="grid grid-cols-1 xs:grid-cols-3 gap-3 md:gap-5">
                         <div><label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Nomor</label><input type="text" id="nomorOtomatis" readonly class="w-full bg-gray-100 border border-gray-300 rounded-xl px-3 py-2 md:py-2.5 text-gray-600 font-mono text-sm"></div>
                         <div><label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Tanggal <span class="text-red-500">*</span></label><input type="date" id="tanggal" required class="w-full border border-gray-300 rounded-xl px-3 py-2 md:py-2.5 text-sm focus:ring-2 focus:ring-primary focus:border-primary"></div>
                         <div><label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Petugas <span class="text-red-500">*</span></label><input type="text" id="petugas" required placeholder="Nama petugas" class="w-full border border-gray-300 rounded-xl px-3 py-2 md:py-2.5 text-sm focus:ring-2 focus:ring-primary"></div>
                     </div>
 
-                    <!-- 3 Titik Grounding -->
                     <div class="space-y-3">
                         <div class="font-semibold text-gray-800 flex items-center gap-2"><i class="fas fa-map-marker-alt text-primary"></i> Titik Pengecekan Grounding (Wajib isi semua titik)</div>
                         
@@ -144,9 +157,9 @@
                         <div class="grounding-point-card">
                             <div class="flex items-center gap-2 mb-2"><span class="bg-primary text-white text-xs font-bold px-2 py-0.5 rounded-full">Titik A</span><span class="text-xs text-gray-500">(Menara / Utama)</span></div>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <div><label class="block text-xs font-medium text-gray-700 mb-1">Tahanan (Ω) <span class="text-red-500">*</span></label><input type="number" step="0.01" id="resistansiA" required placeholder="Contoh: 2.35" class="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-primary"></div>
+                                <div><label class="block text-xs font-medium text-gray-700 mb-1">Tahanan (Ω) <span class="text-red-500">*</span></label><input type="number" step="0.01" id="resistansiA" required placeholder="Contoh: 2.35" class="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm"></div>
                                 <div><label class="block text-xs font-medium text-gray-700 mb-1">Jenis Grounding <span class="text-red-500">*</span></label>
-                                    <select id="jenisA" required class="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-primary">
+                                    <select id="jenisA" required class="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm">
                                         <option value="">Pilih</option><option value="Grounding Tower">Grounding Tower</option><option value="Grounding Perangkat">Grounding Perangkat</option>
                                         <option value="Grounding Penangkal Petir">Grounding Penangkal Petir</option><option value="Grounding System Utama">Grounding System Utama</option><option value="Lainnya">Lainnya</option>
                                     </select>
@@ -158,9 +171,9 @@
                         <div class="grounding-point-card">
                             <div class="flex items-center gap-2 mb-2"><span class="bg-primary text-white text-xs font-bold px-2 py-0.5 rounded-full">Titik B</span><span class="text-xs text-gray-500">(Rak Perangkat / Panel)</span></div>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <div><label class="block text-xs font-medium text-gray-700 mb-1">Tahanan (Ω) <span class="text-red-500">*</span></label><input type="number" step="0.01" id="resistansiB" required placeholder="Contoh: 1.87" class="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-primary"></div>
+                                <div><label class="block text-xs font-medium text-gray-700 mb-1">Tahanan (Ω) <span class="text-red-500">*</span></label><input type="number" step="0.01" id="resistansiB" required placeholder="Contoh: 1.87" class="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm"></div>
                                 <div><label class="block text-xs font-medium text-gray-700 mb-1">Jenis Grounding <span class="text-red-500">*</span></label>
-                                    <select id="jenisB" required class="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-primary">
+                                    <select id="jenisB" required class="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm">
                                         <option value="">Pilih</option><option value="Grounding Tower">Grounding Tower</option><option value="Grounding Perangkat">Grounding Perangkat</option>
                                         <option value="Grounding Penangkal Petir">Grounding Penangkal Petir</option><option value="Grounding System Utama">Grounding System Utama</option><option value="Lainnya">Lainnya</option>
                                     </select>
@@ -172,9 +185,9 @@
                         <div class="grounding-point-card">
                             <div class="flex items-center gap-2 mb-2"><span class="bg-primary text-white text-xs font-bold px-2 py-0.5 rounded-full">Titik C</span><span class="text-xs text-gray-500">(GIS / Trafo / Eksternal)</span></div>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <div><label class="block text-xs font-medium text-gray-700 mb-1">Tahanan (Ω) <span class="text-red-500">*</span></label><input type="number" step="0.01" id="resistansiC" required placeholder="Contoh: 3.12" class="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-primary"></div>
+                                <div><label class="block text-xs font-medium text-gray-700 mb-1">Tahanan (Ω) <span class="text-red-500">*</span></label><input type="number" step="0.01" id="resistansiC" required placeholder="Contoh: 3.12" class="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm"></div>
                                 <div><label class="block text-xs font-medium text-gray-700 mb-1">Jenis Grounding <span class="text-red-500">*</span></label>
-                                    <select id="jenisC" required class="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-primary">
+                                    <select id="jenisC" required class="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm">
                                         <option value="">Pilih</option><option value="Grounding Tower">Grounding Tower</option><option value="Grounding Perangkat">Grounding Perangkat</option>
                                         <option value="Grounding Penangkal Petir">Grounding Penangkal Petir</option><option value="Grounding System Utama">Grounding System Utama</option><option value="Lainnya">Lainnya</option>
                                     </select>
@@ -183,10 +196,8 @@
                         </div>
                     </div>
 
-                    <!-- Keterangan Tambahan -->
-                    <div><label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Keterangan Tambahan</label><textarea id="keterangan" rows="1" placeholder="Kondisi terminal, catatan khusus, rekomendasi, dll." class="w-full border border-gray-300 rounded-xl px-3 py-2 md:py-2.5 text-sm focus:ring-2 focus:ring-primary"></textarea></div>
+                    <div><label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Keterangan Tambahan</label><textarea id="keterangan" rows="1" placeholder="Kondisi terminal, catatan khusus, rekomendasi, dll." class="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm"></textarea></div>
                     
-                    <!-- Dokumentasi Foto Multi (Watermark mencakup 3 titik) -->
                     <div class="border-t border-gray-200 pt-4 mt-2">
                         <label class="block text-sm md:text-md font-semibold text-gray-800 mb-2"><i class="fas fa-camera-retro text-primary mr-2"></i> Dokumentasi Titik Grounding (Max 5 foto, watermark otomatis berisi data 3 titik)</label>
                         <div class="bg-slate-50 rounded-xl p-3 md:p-4 border border-dashed border-gray-300">
@@ -235,32 +246,19 @@
                         <tr><th class="py-2 px-1">No</th><th>Tgl</th><th>Titik A (Ω / Jenis)</th><th>Titik B (Ω / Jenis)</th><th>Titik C (Ω / Jenis)</th><th>Foto</th><th>Petugas</th><th>Keterangan</th><th>Aksi</th></tr>
                     </thead>
                     <tbody id="tabelBody">
-                        <tr><td colspan="9" class="text-center py-6 text-gray-400">⚡ Memuat data grounding 3 titik...</td></tr>
-                    </tbody>
+                        <tr><td colspan="9" class="text-center py-6 text-gray-400">⚡ Memuat data grounding 3 titik... </td</tr</tbody>
                 </table>
             </div>
         </div>
     </div>
 
     <script>
-        // ======================== KONFIGURASI FIREBASE ========================
-        // 🔧 GANTI dengan konfigurasi Firebase Anda
-        const firebaseConfig = {
-            apiKey: "AIzaSyDummyKey_Contoh_Ganti_Dengan_Konfigurasi_Anda",
-            authDomain: "contoh-app.firebaseapp.com",
-            databaseURL: "https://contoh-app-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "contoh-app",
-            storageBucket: "contoh-app.appspot.com",
-            messagingSenderId: "123456789012",
-            appId: "1:123456789012:web:abcdef123456"
-        };
-        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-        window.db = firebase.database();
-        
-        let isFirebaseReady = true;
+        // ======================== KONFIGURASI FIREBASE (dengan auth-check) ========================
+        let isFirebaseReady = false;
         let dataEntries = [];
         let listenerRef = null;
         let isInternalUpdate = false;
+        let userRole = 'guest';   // akan diisi dari event roleChanged
         const DB_PATH = 'monitoring/grounding_3titik/entries';
 
         function updateFirebaseStatus(connected, message) {
@@ -270,23 +268,29 @@
                 statusEl.className = `sync-status ${connected ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`;
             }
         }
-        async function enablePersistence() { try { await window.db.enablePersistence(); return true; } catch(e) { return false; } }
+
+        async function enablePersistence() {
+            if (!window.db) return false;
+            try { await window.db.enablePersistence(); return true; } catch(e) { return false; }
+        }
+
         async function setEntriesToFirebase(entriesArray) {
             if (!window.db) return false;
             try {
-                const entriesObj = {}; entriesArray.forEach(entry => { entriesObj[entry.id] = entry; });
+                const entriesObj = {};
+                entriesArray.forEach(entry => { entriesObj[entry.id] = entry; });
                 await window.db.ref(DB_PATH).set(entriesObj);
                 updateFirebaseStatus(true, "Tersinkron");
                 return true;
             } catch(err) { updateFirebaseStatus(false, "Gagal simpan"); return false; }
         }
+
         function normalizeEntry(entry) {
             if (!entry.fotoList && entry.fotoBase64) {
                 entry.fotoList = [{ base64: entry.fotoBase64, jamFoto: entry.jamFoto || "-", lat: entry.lat, lng: entry.lng }];
                 delete entry.fotoBase64;
             } else if (!entry.fotoList) entry.fotoList = [];
             if (!entry.groundingPoints) {
-                // migrasi jika data lama hanya satu titik
                 entry.groundingPoints = [
                     { titik: "A", resistansi: entry.resistansiA || entry.resistansi || "0", jenis: entry.jenisA || entry.jenisGrounding || "-" },
                     { titik: "B", resistansi: entry.resistansiB || "0", jenis: entry.jenisB || "-" },
@@ -295,6 +299,7 @@
             }
             return entry;
         }
+
         function attachRealtimeListener() {
             if (!window.db) return;
             if (listenerRef) listenerRef.off();
@@ -313,13 +318,91 @@
                 updateFirebaseStatus(true, `Realtime (${dataEntries.length} data)`);
             }, (error) => { console.error(error); updateFirebaseStatus(false, "Error listener"); });
         }
+
         function getNextId() { return dataEntries.length ? Math.max(...dataEntries.map(e=>e.id)) + 1 : 1; }
         function updateNomorOtomatis() { document.getElementById("nomorOtomatis").value = getNextId(); }
-        async function addEntry(newEntry) { const updated = [...dataEntries, newEntry]; updated.sort((a,b)=>a.id-b.id); isInternalUpdate=true; await setEntriesToFirebase(updated); isInternalUpdate=false; }
-        async function deleteEntryById(id) { const updated = dataEntries.filter(e=>e.id!==id); isInternalUpdate=true; await setEntriesToFirebase(updated); isInternalUpdate=false; }
-        async function clearAllEntries() { isInternalUpdate=true; await setEntriesToFirebase([]); isInternalUpdate=false; }
 
-        // ========== KAMERA + WATERMARK (dengan data 3 titik) ==========
+        async function addEntry(newEntry) {
+            const updated = [...dataEntries, newEntry];
+            updated.sort((a,b)=>a.id-b.id);
+            isInternalUpdate = true;
+            await setEntriesToFirebase(updated);
+            isInternalUpdate = false;
+        }
+
+        async function deleteEntryById(id) {
+            const updated = dataEntries.filter(e=>e.id!==id);
+            isInternalUpdate = true;
+            await setEntriesToFirebase(updated);
+            isInternalUpdate = false;
+        }
+
+        async function clearAllEntries() {
+            isInternalUpdate = true;
+            await setEntriesToFirebase([]);
+            isInternalUpdate = false;
+        }
+
+        async function updateEntryInFirebase(updatedEntry) {
+            const index = dataEntries.findIndex(e => e.id == updatedEntry.id);
+            if (index !== -1) {
+                dataEntries[index] = updatedEntry;
+                isInternalUpdate = true;
+                await setEntriesToFirebase(dataEntries);
+                isInternalUpdate = false;
+                renderTable();
+                updateNomorOtomatis();
+            }
+        }
+
+        // ========== FUNGSI EDIT UNTUK ADMIN ==========
+        window.editEntry = async (id) => {
+            if (userRole !== 'admin') {
+                alert("Hanya admin yang dapat mengedit data.");
+                return;
+            }
+            const entry = dataEntries.find(e => e.id == id);
+            if (!entry) return;
+
+            const newTanggal = prompt("Edit Tanggal (YYYY-MM-DD):", entry.tanggal);
+            if (newTanggal && newTanggal !== entry.tanggal) entry.tanggal = newTanggal;
+
+            const newPetugas = prompt("Edit Petugas:", entry.petugas);
+            if (newPetugas !== null) entry.petugas = newPetugas;
+
+            const newKeterangan = prompt("Edit Keterangan:", entry.keterangan || "");
+            if (newKeterangan !== null) entry.keterangan = newKeterangan;
+
+            // Titik A
+            const newRa = prompt("Edit Tahanan Titik A (Ω):", entry.resistansiA);
+            if (newRa !== null && !isNaN(parseFloat(newRa))) entry.resistansiA = parseFloat(newRa).toFixed(2);
+            const newJa = prompt("Edit Jenis Titik A:", entry.jenisA);
+            if (newJa !== null) entry.jenisA = newJa;
+
+            // Titik B
+            const newRb = prompt("Edit Tahanan Titik B (Ω):", entry.resistansiB);
+            if (newRb !== null && !isNaN(parseFloat(newRb))) entry.resistansiB = parseFloat(newRb).toFixed(2);
+            const newJb = prompt("Edit Jenis Titik B:", entry.jenisB);
+            if (newJb !== null) entry.jenisB = newJb;
+
+            // Titik C
+            const newRc = prompt("Edit Tahanan Titik C (Ω):", entry.resistansiC);
+            if (newRc !== null && !isNaN(parseFloat(newRc))) entry.resistansiC = parseFloat(newRc).toFixed(2);
+            const newJc = prompt("Edit Jenis Titik C:", entry.jenisC);
+            if (newJc !== null) entry.jenisC = newJc;
+
+            // update groundingPoints array
+            entry.groundingPoints = [
+                { titik: "A", resistansi: entry.resistansiA, jenis: entry.jenisA },
+                { titik: "B", resistansi: entry.resistansiB, jenis: entry.jenisB },
+                { titik: "C", resistansi: entry.resistansiC, jenis: entry.jenisC }
+            ];
+
+            await updateEntryInFirebase(entry);
+            alert("Data berhasil diperbarui.");
+        };
+
+        // ========== KAMERA + WATERMARK ==========
         let currentFotoList = [], mediaStream = null, currentFacingMode = 'environment';
         const videoEl = document.getElementById('videoCamera'), videoContainer = document.getElementById('videoContainer');
         const btnBuka = document.getElementById('btnBukaKamera'), btnCapture = document.getElementById('btnCaptureFoto');
@@ -418,13 +501,30 @@
         function uploadManual() { const inp=document.createElement('input'); inp.type='file'; inp.accept='image/*'; inp.onchange=async(e)=>{ if(e.target.files[0]){ const reader=new FileReader(); reader.onload=async ev=>await addFotoDenganWatermark(ev.target.result); reader.readAsDataURL(e.target.files[0]); } }; inp.click(); }
         btnBuka.addEventListener('click',()=>bukaKamera('environment')); btnCapture.addEventListener('click',captureFromVideo); btnTutup.addEventListener('click',tutupKamera); btnFlip.addEventListener('click',flipCamera); btnUpload.addEventListener('click',uploadManual);
 
-        // ========== RENDER TABEL (3 titik) ==========
-        window.viewAllFoto = (fotoList, startIdx) => { /* sama seperti sebelumnya */ if(!fotoList?.length) return; let current=startIdx||0; const modal=document.createElement('div'); modal.className="modal-img"; modal.innerHTML=`<img src="${fotoList[current].base64}"><div class="modal-caption">Foto ${current+1} dari ${fotoList.length}<br>${fotoList[current].jamFoto||''}</div><div style="position:absolute; bottom:10px; left:0; right:0; display:flex; justify-content:center; gap:20px;"><button id="prevFoto" class="bg-black/60 px-3 py-1 rounded-full text-white">◀ Prev</button><button id="nextFoto" class="bg-black/60 px-3 py-1 rounded-full text-white">Next ▶</button></div>`; document.body.appendChild(modal); const update=(newIdx)=>{ if(newIdx>=0 && newIdx<fotoList.length){ current=newIdx; modal.querySelector('img').src=fotoList[current].base64; modal.querySelector('.modal-caption').innerHTML=`Foto ${current+1} dari ${fotoList.length}<br>${fotoList[current].jamFoto||''}`; } }; modal.querySelector('#prevFoto').onclick=(e)=>{ e.stopPropagation(); update(current-1); }; modal.querySelector('#nextFoto').onclick=(e)=>{ e.stopPropagation(); update(current+1); }; modal.onclick=(e)=>{ if(e.target===modal) modal.remove(); }; };
+        // ========== RENDER TABEL dengan Tombol Edit untuk Admin ==========
+        window.viewAllFoto = (fotoList, startIdx) => {
+            if(!fotoList?.length) return;
+            let current = startIdx||0;
+            const modal = document.createElement('div'); modal.className = "modal-img";
+            modal.innerHTML = `<img src="${fotoList[current].base64}"><div class="modal-caption">Foto ${current+1} dari ${fotoList.length}<br>${fotoList[current].jamFoto||''}</div><div style="position:absolute; bottom:10px; left:0; right:0; display:flex; justify-content:center; gap:20px;"><button id="prevFoto" class="bg-black/60 px-3 py-1 rounded-full text-white">◀ Prev</button><button id="nextFoto" class="bg-black/60 px-3 py-1 rounded-full text-white">Next ▶</button></div>`;
+            document.body.appendChild(modal);
+            const update = (newIdx) => {
+                if(newIdx>=0 && newIdx<fotoList.length){
+                    current = newIdx;
+                    modal.querySelector('img').src = fotoList[current].base64;
+                    modal.querySelector('.modal-caption').innerHTML = `Foto ${current+1} dari ${fotoList.length}<br>${fotoList[current].jamFoto||''}`;
+                }
+            };
+            modal.querySelector('#prevFoto').onclick = (e) => { e.stopPropagation(); update(current-1); };
+            modal.querySelector('#nextFoto').onclick = (e) => { e.stopPropagation(); update(current+1); };
+            modal.onclick = (e) => { if(e.target===modal) modal.remove(); };
+        };
+
         function renderTable() {
             const tbody = document.getElementById("tabelBody");
             if(!dataEntries.length){ tbody.innerHTML=`<tr><td colspan="9" class="text-center py-6 text-gray-400">🔌 Belum ada data grounding 3 titik</td</tr`; return; }
-            let html="";
-            dataEntries.forEach(entry=>{
+            let html = "";
+            dataEntries.forEach(entry => {
                 const points = entry.groundingPoints || [];
                 const pointA = points.find(p=>p.titik==='A') || {resistansi:'-', jenis:'-'};
                 const pointB = points.find(p=>p.titik==='B') || {resistansi:'-', jenis:'-'};
@@ -435,6 +535,10 @@
                 const fotoCount = entry.fotoList?.length||0;
                 let thumbs=""; if(fotoCount>0){ thumbs=`<div class="foto-thumb-list">${entry.fotoList.slice(0,2).map((f,i)=>`<div class="thumb-item" onclick="viewAllFoto(entry.fotoList, ${i})"><img src="${f.base64}"></div>`).join('')}${fotoCount>2?`<span class="text-[10px] bg-gray-200 px-1 rounded-full">+${fotoCount-2}</span>`:''}</div>`; }
                 const fotoCell = `<div class="flex flex-col items-center gap-1"><div class="flex justify-center">${thumbs}</div><button type="button" onclick="viewAllFoto(entry.fotoList, 0)" class="text-primary text-[10px] md:text-xs hover:underline"><i class="fas fa-images"></i> ${fotoCount} foto</button></div>`;
+                let actionButtons = `<button onclick="deleteEntry(${entry.id})" class="bg-red-100 text-red-600 px-2 py-1 rounded-full text-[10px]"><i class="fas fa-trash-can"></i> Hapus</button>`;
+                if (userRole === 'admin') {
+                    actionButtons = `<button onclick="editEntry(${entry.id})" class="bg-blue-100 text-blue-600 px-2 py-1 rounded-full text-[10px] mr-1"><i class="fas fa-edit"></i> Edit</button>${actionButtons}`;
+                }
                 html += `<tr class="border-b hover:bg-slate-50">
                     <td class="py-2 px-1 font-mono">${entry.id}</td>
                     <td class="py-2 px-1">${entry.tanggal}</td>
@@ -442,10 +546,10 @@
                     <td class="py-2 px-1 text-xs">${resistB} Ω<br><span class="text-gray-500">${jenisB}</span></td>
                     <td class="py-2 px-1 text-xs">${resistC} Ω<br><span class="text-gray-500">${jenisC}</span></td>
                     <td class="py-2 px-1 text-center">${fotoCell}</td>
-                    <td class="py-2 px-1">${escapeHtml(entry.petugas)}</td>
-                    <td class="py-2 px-1 max-w-[120px] truncate">${escapeHtml(entry.keterangan||'-')}</td>
-                    <td class="py-2 px-1"><button onclick="deleteEntry(${entry.id})" class="bg-red-100 text-red-600 px-2 py-1 rounded-full text-[10px]"><i class="fas fa-trash-can"></i> Hapus</button></td>
-                </table>`;
+                    <td class="py-2 px-1">${escapeHtml(entry.petugas)}</td
+                    <td class="py-2 px-1 max-w-[120px] truncate">${escapeHtml(entry.keterangan||'-')}</td
+                    <td class="py-2 px-1 text-center">${actionButtons}</td
+                </tr>`;
             });
             tbody.innerHTML = html;
             window.entryData = dataEntries;
@@ -453,12 +557,16 @@
         window.deleteEntry = async (id) => { if(confirm("Hapus data grounding ini?")) await deleteEntryById(id); };
         function escapeHtml(s) { if(!s) return ''; return s.replace(/[&<>]/g, m=>m==='&'?'&amp;':m==='<'?'&lt;':'&gt;'); }
 
-        // FORM SUBMIT
+        // ========== FORM SUBMIT ==========
         const form = document.getElementById('formGrounding');
         const tanggalInput = document.getElementById('tanggal'), petugasInput = document.getElementById('petugas'), keteranganInput = document.getElementById('keterangan'), resetBtn = document.getElementById('btnResetForm');
         tanggalInput.value = new Date().toISOString().split('T')[0];
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
+            if (userRole === 'guest') {
+                alert("Tamu tidak dapat menyimpan data. Silakan login.");
+                return;
+            }
             const tanggal = tanggalInput.value.trim(), petugas = petugasInput.value.trim();
             const rA = document.getElementById('resistansiA').value, jA = document.getElementById('jenisA').value;
             const rB = document.getElementById('resistansiB').value, jB = document.getElementById('jenisB').value;
@@ -493,12 +601,59 @@
             if(mediaStream) tutupKamera();
         }
         resetBtn.addEventListener('click', () => { if(confirm("Reset form?")) resetFormInput(); });
-        document.getElementById('btnHapusSemua').addEventListener('click', async () => { if(confirm("Hapus SEMUA data grounding 3 titik?")){ await clearAllEntries(); resetFormInput(); alert("Semua data dihapus."); } });
-        document.getElementById('btnExportHTML').addEventListener('click', () => { if(!dataEntries.length) return alert("Tidak ada data"); let html = `<!DOCTYPE html>...`; /* sama seperti sebelumnya dengan penyesuaian 3 titik */ alert("Export siap, fungsi lengkap tersedia."); });
+        document.getElementById('btnHapusSemua').addEventListener('click', async () => { 
+            if (userRole !== 'admin') { alert("Hanya admin yang dapat menghapus semua data."); return; }
+            if(confirm("Hapus SEMUA data grounding 3 titik?")){ await clearAllEntries(); resetFormInput(); alert("Semua data dihapus."); } 
+        });
+        document.getElementById('btnExportHTML').addEventListener('click', () => {
+            if(!dataEntries.length) return alert("Tidak ada data");
+            let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Laporan Grounding 3 Titik</title><style>body{font-family:Inter,sans-serif;margin:20px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #aaa;padding:8px;vertical-align:top}th{background:#1e6f5c;color:white}.foto-grid{display:flex;gap:6px;flex-wrap:wrap}img{width:70px;height:70px;object-fit:cover;border-radius:8px}</style></head><body><h2>Pencatatan Grounding 3 Titik - TVRI</h2><p>Export: ${new Date().toLocaleString()}</p><table border="1"><thead><tr><th>No</th><th>Tanggal</th><th>Titik A (Ω/Jenis)</th><th>Titik B (Ω/Jenis)</th><th>Titik C (Ω/Jenis)</th><th>Foto</th><th>Petugas</th><th>Keterangan</th></tr></thead><tbody>`;
+            dataEntries.forEach((e,idx) => {
+                let fotoHtml = `<div class="foto-grid">${(e.fotoList||[]).map(f=>`<img src="${f.base64}" title="${f.jamFoto}">`).join('')}</div>`;
+                html += `<tr><td>${idx+1}</td><td>${e.tanggal}</td><td>${e.resistansiA} Ω / ${e.jenisA}</td><td>${e.resistansiB} Ω / ${e.jenisB}</td><td>${e.resistansiC} Ω / ${e.jenisC}</td><td>${fotoHtml}</td><td>${escapeHtml(e.petugas)}</td><td>${escapeHtml(e.keterangan||'-')}</td></tr>`;
+            });
+            html += `</tbody></table><p><em>Watermark otomatis mencakup data 3 titik grounding, petugas, waktu, dan koordinat GPS.</em></p></body></html>`;
+            const blob = new Blob([html], {type:"text/html"}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`laporan_grounding_3titik_${Date.now()}.html`; a.click(); URL.revokeObjectURL(blob);
+        });
         function showLoading(msg) { let ld = document.getElementById('globalLoading'); if(!ld){ ld=document.createElement('div'); ld.id='globalLoading'; ld.className='loading-overlay'; ld.innerHTML=`<div class="bg-black/80 text-white p-4 rounded-xl text-center">${msg}</div>`; document.body.appendChild(ld); } else ld.style.display='flex'; }
         function hideLoading() { let ld = document.getElementById('globalLoading'); if(ld) ld.remove(); }
-        
-        enablePersistence(); attachRealtimeListener(); updateNomorOtomatis();
+
+        // ======================== MULTI-ROLE HANDLER ========================
+        window.addEventListener('roleChanged', (e) => {
+            userRole = e.detail.role;
+            const roleSpan = document.getElementById('userRoleDisplay');
+            if (roleSpan) {
+                if (userRole === 'admin') roleSpan.innerHTML = '<i class="fas fa-user-shield"></i> Admin';
+                else if (userRole === 'user') roleSpan.innerHTML = '<i class="fas fa-user"></i> User';
+                else roleSpan.innerHTML = '<i class="fas fa-user-friends"></i> Tamu';
+            }
+            // Nonaktifkan form jika tamu
+            const formInputs = document.querySelectorAll('#formGrounding input, #formGrounding select, #formGrounding textarea, #formGrounding button[type="submit"]');
+            formInputs.forEach(inp => {
+                if (userRole === 'guest') inp.disabled = true;
+                else inp.disabled = false;
+            });
+            // Tombol hapus semua hanya untuk admin
+            const hapusSemuaBtn = document.getElementById('btnHapusSemua');
+            if (hapusSemuaBtn) {
+                if (userRole !== 'admin') hapusSemuaBtn.style.display = 'none';
+                else hapusSemuaBtn.style.display = 'inline-flex';
+            }
+            // Render ulang tabel untuk menampilkan tombol edit jika admin
+            renderTable();
+        });
+
+        // ======================== INISIALISASI ========================
+        async function initFirebase() {
+            if (!window.db) { setTimeout(initFirebase, 300); return; }
+            isFirebaseReady = true;
+            await enablePersistence();
+            attachRealtimeListener();
+            updateFirebaseStatus(true, "Terhubung (realtime)");
+            updateNomorOtomatis();
+            updateCameraModeLabel();
+        }
+        initFirebase();
 
         // ========== EVENT LISTENER UNTUK TOMBOL NAVIGASI ==========
         document.getElementById('backToDashboardBtn').addEventListener('click', function() {
