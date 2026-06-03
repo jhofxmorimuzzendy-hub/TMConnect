@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>Pencatatan Kerusakan & Perbaikan | Multi Foto + Kamera + Role User + Admin Edit</title>
+    <link rel="icon" type="image/ico" href="favicon.ico">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1e6f5c">
+    <link rel="apple-touch-icon" href="favicon.png">
+    
+    <!-- Firebase SDK + Auth -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="auth-check.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { primary: '#1e6f5c', secondary: '#f5b042', accent: '#0e5a48' },
+                    screens: { 'xs': '480px', 'sm': '640px', 'md': '768px', 'lg': '1024px', 'xl': '1280px' }
+                }
+            }
+        }
+    </script>
+    <style>
+        * { -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #eef2f8 0%, #e0f0ec 100%); position: relative; }
+        /* Tombol navigasi */
+        .nav-actions {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            display: flex;
+            gap: 12px;
+            z-index: 1000;
+        }
+        .nav-btn {
+            background: rgba(30, 111, 92, 0.9);
+            backdrop-filter: blur(4px);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 40px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+        .nav-btn:hover {
+            background: #0e5a48;
+            transform: translateY(-2px);
+        }
+        @media (max-width: 640px) {
+            .nav-btn {
+                padding: 6px 12px;
+                font-size: 0.7rem;
+                gap: 6px;
+            }
+            .nav-actions {
+                top: 10px;
+                right: 10px;
+                gap: 8px;
+            }
+        }
+        .loading-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 999; backdrop-filter: blur(2px); }
+        .table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
+        .status-badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 30px; font-size: 0.7rem; font-weight: 600; white-space: nowrap; }
+        .status-normal { background: #dcfce7; color: #15803d; }
+        .status-pengawasan { background: #fef9e6; color: #b45f1b; }
+        .status-rusak { background: #ffe6e5; color: #b91c1c; }
+        .status-lain { background: #f1f5f9; color: #374151; }
+        .foto-thumb-list { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+        .thumb-item { width: 42px; height: 42px; border-radius: 10px; overflow: hidden; border: 1px solid #ccc; cursor: pointer; background: #f1f5f9; flex-shrink: 0; }
+        .thumb-item img { width: 100%; height: 100%; object-fit: cover; }
+        .foto-preview-grid { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 12px; justify-content: center; }
+        .preview-card { position: relative; width: 85px; height: 85px; border-radius: 14px; overflow: hidden; border: 2px solid #1e6f5c; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+        .preview-card img { width: 100%; height: 100%; object-fit: cover; }
+        .preview-card .remove-btn { position: absolute; top: -8px; right: -8px; background: #ef4444; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; border: 2px solid white; }
+        .modal-img { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: flex; align-items: center; justify-content: center; z-index: 2000; cursor: pointer; flex-direction: column; }
+        .modal-img img { max-width: 92%; max-height: 85%; border-radius: 20px; object-fit: contain; }
+        .modal-caption { background: rgba(0,0,0,0.7); color: white; padding: 8px 16px; border-radius: 40px; margin-top: 16px; font-size: 14px; text-align: center; max-width: 90%; }
+        @media (max-width: 640px) {
+            td, th { font-size: 0.7rem; padding: 0.5rem 0.25rem; }
+            .preview-card { width: 70px; height: 70px; }
+            .thumb-item { width: 36px; height: 36px; }
+            button { font-size: 0.75rem; padding: 0.5rem 0.75rem; }
+            h1 { font-size: 1.6rem; }
+        }
+        input, select, textarea { font-size: 16px !important; }
+        .sync-status { font-size: 0.7rem; padding: 2px 10px; border-radius: 20px; background: rgba(255,255,240,0.3); display: inline-block; margin-left: 12px; vertical-align: middle; }
+        .flip-btn { transition: all 0.2s ease; }
+        .flip-btn:active { transform: scale(0.96); }
+        .role-badge-header {
+            background: rgba(0,0,0,0.3);
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-left: 12px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Tombol navigasi -->
+    <div class="nav-actions">
+        <button id="backToDashboardBtn" class="nav-btn" title="Kembali ke Dashboard">
+            <i class="fas fa-arrow-left"></i> Dashboard
+        </button>
+        <button id="refreshPageBtn" class="nav-btn" title="Refresh Halaman">
+            <i class="fas fa-sync-alt"></i> Refresh
+        </button>
+    </div>
+
+    <div class="container max-w-7xl mx-auto px-3 sm:px-4 md:px-5 py-4 md:py-6">
+        <!-- Header -->
+        <div class="text-center mb-5 md:mb-7">
+            <div class="inline-flex items-center justify-center bg-gradient-to-r from-primary to-accent p-3 rounded-full shadow-md">
+                <i class="fas fa-tools text-white text-xl md:text-2xl"></i>
+            </div>
+            <h1 class="text-xl sm:text-2xl md:text-4xl font-extrabold text-slate-800 mt-2 md:mt-3 leading-tight">
+                Pencatatan Kerusakan & Perbaikan
+                <span id="firebaseStatus" class="sync-status"><i class="fas fa-cloud-upload-alt"></i> Menghubungkan...</span>
+                <span id="userRoleDisplay" class="role-badge-header"><i class="fas fa-user"></i> Memuat...</span>
+            </h1>
+            <div class="mt-2 flex justify-center px-2">
+                <span class="badge-perbaikan bg-primary text-white text-xs md:text-sm rounded-full py-1 px-3 md:px-4 font-semibold"><i class="fas fa-camera-retro mr-1 md:mr-2"></i> Kamera Belakang + Flip | Multi Foto | Role: Admin bisa edit semua data</span>
+            </div>
+        </div>
+
+        <!-- Form Card -->
+        <div class="bg-white rounded-2xl shadow-xl overflow-hidden mb-6 md:mb-8 border border-gray-100">
+            <div class="bg-gradient-to-r from-primary to-accent px-4 py-3 md:px-5 md:py-4">
+                <h2 class="text-base md:text-xl font-semibold text-white"><i class="fas fa-clipboard-list mr-2"></i> Form Laporan Kerusakan / Perbaikan</h2>
+            </div>
+            <div class="p-4 sm:p-5 md:p-6">
+                <form id="formKerusakan" class="space-y-4 md:space-y-5">
+                    <div class="grid grid-cols-1 xs:grid-cols-3 gap-3 md:gap-5">
+                        <div><label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Nomor</label><input type="text" id="nomorOtomatis" readonly class="w-full bg-gray-100 border border-gray-300 rounded-xl px-3 py-2 md:py-2.5 text-gray-600 font-mono text-sm"></div>
+                        <div><label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Tanggal <span class="text-red-500">*</span></label><input type="date" id="tanggal" required class="w-full border border-gray-300 rounded-xl px-3 py-2 md:py-2.5 text-sm focus:ring-2 focus:ring-primary focus:border-primary"></div>
+                        <div><label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Waktu <span class="text-red-500">*</span></label><input type="time" id="waktuKerusakan" required class="w-full border border-gray-300 rounded-xl px-3 py-2 md:py-2.5 text-sm focus:ring-2 focus:ring-primary"></div>
+                    </div>
+                    <div><label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Keterangan Kerusakan <span class="text-red-500">*</span></label><textarea id="kerusakan" rows="2" required placeholder="Jelaskan detail kerusakan..." class="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-primary"></textarea></div>
+                    <div><label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Solusi / Tindakan Perbaikan <span class="text-red-500">*</span></label><textarea id="solusi" rows="2" required placeholder="Langkah perbaikan..." class="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-primary"></textarea></div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-5">
+                        <div>
+                            <label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Status Alat <span class="text-red-500">*</span></label>
+                            <select id="statusAlat" required class="w-full border border-gray-300 rounded-xl px-3 py-2 md:py-2.5 text-sm focus:ring-2 focus:ring-primary">
+                                <option value="" disabled selected>-- Pilih status --</option>
+                                <option value="Berfungsi Normal (100%)">✅ Berfungsi Normal (100%)</option>
+                                <option value="Berfungsi dengan Catatan">⚠️ Berfungsi dengan Catatan</option>
+                                <option value="Perlu Pengawasan Berkala">🔍 Perlu Pengawasan Berkala</option>
+                                <option value="Rusak Parsial (Belum optimal)">❗ Rusak Parsial</option>
+                                <option value="Tidak Dapat Diperbaiki">❌ Tidak Dapat Diperbaiki</option>
+                                <option value="Menunggu Part">⏳ Menunggu Part</option>
+                            </select>
+                        </div>
+                        <div><label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Petugas / Teknisi <span class="text-red-500">*</span></label><input type="text" id="petugas" required placeholder="Nama teknisi" class="w-full border border-gray-300 rounded-xl px-3 py-2 md:py-2.5 text-sm focus:ring-2 focus:ring-primary"></div>
+                    </div>
+
+                    <div class="border-t border-gray-200 pt-4 mt-2">
+                        <label class="block text-sm md:text-md font-semibold text-gray-800 mb-2"><i class="fas fa-camera-retro text-primary mr-2"></i> Dokumentasi Foto (Max 5, watermark otomatis)</label>
+                        <div class="bg-slate-50 rounded-xl p-3 md:p-4 border border-dashed border-gray-300">
+                            <div class="flex flex-wrap gap-2 justify-center">
+                                <button type="button" id="btnBukaKamera" class="bg-primary hover:bg-accent text-white px-3 py-2 rounded-xl text-xs md:text-sm shadow transition"><i class="fas fa-video mr-1"></i> Buka Kamera (Belakang)</button>
+                                <button type="button" id="btnCaptureFoto" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-xl disabled:opacity-50 text-xs md:text-sm shadow transition" disabled><i class="fas fa-camera mr-1"></i> Ambil + WM</button>
+                                <button type="button" id="btnUploadManual" class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-xl text-xs md:text-sm shadow transition"><i class="fas fa-upload mr-1"></i> Upload + WM</button>
+                            </div>
+                            <div id="videoContainer" class="hidden mt-3 rounded-xl overflow-hidden bg-black shadow-lg">
+                                <video id="videoCamera" autoplay playsinline class="w-full max-h-56 object-cover"></video>
+                                <div class="flex justify-between items-center p-2 bg-gray-900 flex-wrap gap-2">
+                                    <span class="text-white text-xs"><i class="fas fa-info-circle"></i> Kamera aktif | <span id="cameraModeLabel">🔴 BELAKANG</span></span>
+                                    <div class="flex gap-2">
+                                        <button type="button" id="btnFlipCamera" class="flip-btn bg-gray-700 hover:bg-gray-600 text-white text-xs px-3 py-1.5 rounded-full shadow transition"><i class="fas fa-sync-alt mr-1"></i> Balik Kamera</button>
+                                        <button type="button" id="btnTutupKamera" class="text-red-400 hover:text-red-300 text-xs bg-gray-800 px-3 py-1.5 rounded-full"><i class="fas fa-times-circle mr-1"></i> Tutup</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="fotoPreviewList" class="foto-preview-grid mt-3"></div>
+                            <p id="fotoCounter" class="text-xs text-gray-500 mt-2 text-center">0 dari 5 foto</p>
+                            <input type="hidden" id="fotoDataArray" value="[]">
+                            <p class="text-[11px] md:text-xs text-gray-500 mt-3 bg-white/70 p-2 rounded text-center"><i class="fas fa-shield-alt text-green-600"></i> <strong>Watermark otomatis</strong> : Logo, petugas, waktu, koordinat GPS</p>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row gap-3 pt-2">
+                        <button type="submit" class="bg-primary hover:bg-accent text-white font-semibold py-2.5 md:py-3 rounded-xl flex-1 transition shadow text-sm md:text-base"><i class="fas fa-save mr-2"></i> Simpan Laporan</button>
+                        <button type="button" id="btnResetForm" class="bg-gray-200 hover:bg-gray-300 text-gray-800 py-2.5 md:py-3 rounded-xl flex-1 transition text-sm md:text-base"><i class="fas fa-undo-alt mr-2"></i> Reset Form</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Daftar Riwayat -->
+        <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
+            <div class="bg-gradient-to-r from-primary to-accent px-4 py-3 md:px-5 md:py-4 flex justify-between items-center flex-wrap gap-2">
+                <h2 class="text-base md:text-xl font-semibold text-white"><i class="fas fa-history mr-2"></i> Riwayat Laporan</h2>
+                <div class="flex gap-2">
+                    <button id="btnExportHTML" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs md:text-sm px-3 py-1.5 rounded-full shadow transition"><i class="fas fa-file-export mr-1"></i> Export</button>
+                    <button id="btnHapusSemua" class="bg-red-600 hover:bg-red-700 text-white text-xs md:text-sm px-3 py-1.5 rounded-full shadow transition"><i class="fas fa-dumpster-fire mr-1"></i> Hapus Semua</button>
+                </div>
+            </div>
+            <div class="table-wrapper p-2 md:p-4">
+                <table class="min-w-[700px] md:min-w-full bg-white border border-gray-200 rounded-xl text-xs md:text-sm">
+                    <thead class="bg-gray-100">
+                        <tr><th class="py-2 px-1 md:py-3 md:px-2">No</th><th>Tgl</th><th>Jam</th><th>Kerusakan</th><th>Solusi</th><th>Status</th><th>Foto</th><th>Petugas</th><th>Aksi</th></tr>
+                    </thead>
+                    <tbody id="tabelBody"><tr><td colspan="9" class="text-center py-6 text-gray-400">🔧 Memuat data... </td</tr</tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ======================== KONFIGURASI FIREBASE + MULTI-ROLE ========================
+        let isFirebaseReady = false;
+        let dataEntries = [];          
+        let listenerRef = null;
+        let isInternalUpdate = false;   
+        let userRole = 'guest'; // akan diisi oleh auth-check.js
+        const DB_PATH = 'monitoring/kerusakan/entries';
+
+        function updateFirebaseStatus(connected, message) {
+            const statusEl = document.getElementById('firebaseStatus');
+            if (statusEl) {
+                if (connected) {
+                    statusEl.innerHTML = `<i class="fas fa-check-circle text-green-600"></i> ${message}`;
+                    statusEl.classList.remove('bg-red-100', 'text-red-700', 'bg-gray-100', 'text-gray-600');
+                    statusEl.classList.add('bg-green-100', 'text-green-700');
+                } else {
+                    statusEl.innerHTML = `<i class="fas fa-exclamation-triangle text-amber-600"></i> ${message}`;
+                    statusEl.classList.remove('bg-green-100', 'text-green-700', 'bg-gray-100', 'text-gray-600');
+                    statusEl.classList.add('bg-red-100', 'text-red-700');
+                }
+            }
+        }
+
+        async function enablePersistence() {
+            if (!window.db) return false;
+            try {
+                if (window.db.enablePersistence) {
+                    await window.db.enablePersistence();
+                    console.log("Firebase persistence aktif (offline support)");
+                } else if (window.firebase && window.firebase.database) {
+                    await window.firebase.database().enablePersistence();
+                } else {
+                    console.warn("enablePersistence tidak tersedia");
+                }
+                return true;
+            } catch (err) {
+                if (err.code === 'failed-precondition') {
+                    console.warn("Multiple tab terbuka, persistence tidak bisa diaktifkan");
+                } else if (err.code === 'unavailable') {
+                    console.warn("Browser tidak support persistence");
+                } else {
+                    console.error("Error persistence:", err);
+                }
+                return false;
+            }
+        }
+
+        async function setEntriesToFirebase(entriesArray) {
+            if (!isFirebaseReady || !window.db) return false;
+            try {
+                const entriesObj = {};
+                entriesArray.forEach(entry => { entriesObj[entry.id] = entry; });
+                await window.db.ref(DB_PATH).set(entriesObj);
+                updateFirebaseStatus(true, "Tersinkron");
+                return true;
+            } catch (err) {
+                console.error("Gagal set entries ke Firebase:", err);
+                updateFirebaseStatus(false, "Gagal simpan");
+                return false;
+            }
+        }
+
+        function attachRealtimeListener() {
+            if (!isFirebaseReady || !window.db) return;
+            if (listenerRef) listenerRef.off();
+            const ref = window.db.ref(DB_PATH);
+            listenerRef = ref.on('value', (snapshot) => {
+                if (isInternalUpdate) return;
+                const data = snapshot.val();
+                if (data && typeof data === 'object') {
+                    const entriesArray = Object.values(data);
+                    entriesArray.sort((a,b) => (a.id || 0) - (b.id || 0));
+                    dataEntries = entriesArray;
+                } else {
+                    dataEntries = [];
+                }
+                renderTable();
+                updateNomorOtomatis();
+                updateFirebaseStatus(true, `Realtime (${dataEntries.length} data)`);
+            }, (error) => {
+                console.error("Listener error:", error);
+                updateFirebaseStatus(false, "Error listener");
+            });
+        }
+
+        function getNextId() { return dataEntries.length ? Math.max(...dataEntries.map(e=>e.id))+1 : 1; }
+        function updateNomorOtomatis() { document.getElementById("nomorOtomatis").value = getNextId(); }
+
+        async function addEntry(newEntry) {
+            const updated = [...dataEntries, newEntry];
+            updated.sort((a,b) => a.id - b.id);
+            isInternalUpdate = true;
+            await setEntriesToFirebase(updated);
+            isInternalUpdate = false;
+        }
+
+        async function deleteEntryById(id) {
+            const updated = dataEntries.filter(e => e.id !== id);
+            isInternalUpdate = true;
+            await setEntriesToFirebase(updated);
+            isInternalUpdate = false;
+        }
+
+        async function clearAllEntries() {
+            isInternalUpdate = true;
+            await setEntriesToFirebase([]);
+            isInternalUpdate = false;
+        }
+
+        async function updateEntryInFirebase(updatedEntry) {
+            const index = dataEntries.findIndex(e => e.id == updatedEntry.id);
+            if (index !== -1) {
+                dataEntries[index] = updatedEntry;
+                isInternalUpdate = true;
+                await setEntriesToFirebase(dataEntries);
+                isInternalUpdate = false;
+                renderTable();
+                updateNomorOtomatis();
+            }
+        }
+
+        // ========== FUNGSI EDIT UNTUK ADMIN ==========
+        window.editEntry = async (id) => {
+            if (userRole !== 'admin') {
+                alert("Hanya admin yang dapat mengedit data.");
+                return;
+            }
+            const entry = dataEntries.find(e => e.id == id);
+            if (!entry) return;
+
+            const newTanggal = prompt("Edit Tanggal (YYYY-MM-DD):", entry.tanggal);
+            if (newTanggal && newTanggal !== entry.tanggal) entry.tanggal = newTanggal;
+
+            const newWaktu = prompt("Edit Waktu (HH:MM):", entry.waktuKerusakan);
+            if (newWaktu && newWaktu !== entry.waktuKerusakan) entry.waktuKerusakan = newWaktu;
+
+            const newKerusakan = prompt("Edit Keterangan Kerusakan:", entry.kerusakan);
+            if (newKerusakan !== null) entry.kerusakan = newKerusakan;
+
+            const newSolusi = prompt("Edit Solusi / Tindakan Perbaikan:", entry.solusi);
+            if (newSolusi !== null) entry.solusi = newSolusi;
+
+            const newStatus = prompt("Edit Status Alat (pilih salah satu):\nBerfungsi Normal (100%)\nBerfungsi dengan Catatan\nPerlu Pengawasan Berkala\nRusak Parsial (Belum optimal)\nTidak Dapat Diperbaiki\nMenunggu Part", entry.statusAlat);
+            if (newStatus !== null && newStatus.trim() !== "") entry.statusAlat = newStatus;
+
+            const newPetugas = prompt("Edit Petugas / Teknisi:", entry.petugas);
+            if (newPetugas !== null) entry.petugas = newPetugas;
+
+            await updateEntryInFirebase(entry);
+            alert("Data berhasil diperbarui.");
+        };
+
+        // ========== KAMERA ==========
+        let currentFotoList = [];
+        let mediaStream = null;
+        let currentFacingMode = 'environment';   
+        const videoEl = document.getElementById('videoCamera');
+        const videoContainer = document.getElementById('videoContainer');
+        const btnBuka = document.getElementById('btnBukaKamera');
+        const btnCapture = document.getElementById('btnCaptureFoto');
+        const btnTutup = document.getElementById('btnTutupKamera');
+        const btnFlip = document.getElementById('btnFlipCamera');
+        const btnUpload = document.getElementById('btnUploadManual');
+        const fotoPreviewDiv = document.getElementById('fotoPreviewList');
+        const fotoCounterSpan = document.getElementById('fotoCounter');
+        const fotoDataArrayHidden = document.getElementById('fotoDataArray');
+        const cameraModeLabel = document.getElementById('cameraModeLabel');
+
+        function updateCameraModeLabel() {
+            if (cameraModeLabel) {
+                cameraModeLabel.innerHTML = currentFacingMode === 'environment' ? '📷 BELAKANG' : '🤳 DEPAN';
+            }
+        }
+
+        async function bukaKamera(desiredMode = currentFacingMode) {
+            const petugas = document.getElementById('petugas').value.trim();
+            if (!petugas) {
+                alert("Isi nama petugas dulu sebelum membuka kamera.");
+                return;
+            }
+            if (mediaStream) tutupKamera();
+            try {
+                const constraints = { video: { facingMode: { exact: desiredMode } } };
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                mediaStream = stream;
+                videoEl.srcObject = stream;
+                videoContainer.classList.remove('hidden');
+                btnCapture.disabled = false;
+                await videoEl.play();
+                currentFacingMode = desiredMode;
+                updateCameraModeLabel();
+            } catch (exactErr) {
+                try {
+                    const fallbackConstraints = { video: { facingMode: desiredMode } };
+                    const stream = await navigator.mediaDevices.getUserMedia(fallbackConstraints);
+                    mediaStream = stream;
+                    videoEl.srcObject = stream;
+                    videoContainer.classList.remove('hidden');
+                    btnCapture.disabled = false;
+                    await videoEl.play();
+                    currentFacingMode = desiredMode;
+                    updateCameraModeLabel();
+                } catch (fallbackErr) {
+                    try {
+                        const defaultStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                        mediaStream = defaultStream;
+                        videoEl.srcObject = defaultStream;
+                        videoContainer.classList.remove('hidden');
+                        btnCapture.disabled = false;
+                        await videoEl.play();
+                        currentFacingMode = 'unknown';
+                        updateCameraModeLabel();
+                        alert("⚠️ Kamera default digunakan (tidak dapat memilih belakang/depan spesifik).");
+                    } catch (finalErr) {
+                        alert("Tidak dapat mengakses kamera: " + finalErr.message);
+                    }
+                }
+            }
+        }
+
+        function tutupKamera() {
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(track => track.stop());
+                mediaStream = null;
+            }
+            videoEl.srcObject = null;
+            videoContainer.classList.add('hidden');
+            btnCapture.disabled = true;
+        }
+
+        async function flipCamera() {
+            if (!videoContainer.classList.contains('hidden') && mediaStream) {
+                const newMode = currentFacingMode === 'environment' ? 'user' : 'environment';
+                await bukaKamera(newMode);
+            } else {
+                alert("Kamera belum aktif. Buka kamera terlebih dahulu.");
+            }
+        }
+
+        async function captureFromVideo() {
+            if (!mediaStream) {
+                alert("Kamera belum terbuka. Buka kamera dulu.");
+                return;
+            }
+            if (videoEl.videoWidth === 0) {
+                alert("Video belum siap, coba sesaat lagi.");
+                return;
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = videoEl.videoWidth;
+            canvas.height = videoEl.videoHeight;
+            canvas.getContext('2d').drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+            const originalDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+            await addFotoFromSource(originalDataUrl);
+        }
+
+        async function addFotoFromSource(sourceBase64) {
+            const petugas = document.getElementById('petugas').value.trim();
+            if (!petugas) { alert("Isi nama petugas dulu."); return false; }
+            if (currentFotoList.length >= 5) { alert("Maksimal 5 foto."); return false; }
+            showLoading("Memproses watermark & lokasi...");
+            try {
+                const fotoObj = await processSingleFoto(sourceBase64, petugas);
+                currentFotoList.push(fotoObj);
+                updatePreviewUI();
+                updateHiddenArray();
+                hideLoading();
+                return true;
+            } catch(e) { hideLoading(); alert("Gagal: "+e.message); return false; }
+        }
+
+        function updatePreviewUI() {
+            fotoPreviewDiv.innerHTML = '';
+            currentFotoList.forEach((foto, idx) => {
+                const card = document.createElement('div');
+                card.className = 'preview-card';
+                card.innerHTML = `<img src="${foto.base64}" alt="foto ${idx+1}"><div class="remove-btn" data-idx="${idx}"><i class="fas fa-times"></i></div>`;
+                fotoPreviewDiv.appendChild(card);
+            });
+            document.querySelectorAll('.remove-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const idx = parseInt(btn.dataset.idx);
+                    currentFotoList.splice(idx, 1);
+                    updatePreviewUI();
+                    updateHiddenArray();
+                });
+            });
+            fotoCounterSpan.innerText = `${currentFotoList.length} dari 5 foto`;
+        }
+        function updateHiddenArray() { fotoDataArrayHidden.value = JSON.stringify(currentFotoList.map(f => ({ base64: f.base64, jamFoto: f.jamFoto, lat: f.lat, lng: f.lng }))); }
+
+        function getCurrentPosition() { return new Promise(resolve => { if (!navigator.geolocation) resolve(null); else navigator.geolocation.getCurrentPosition(pos => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }), () => resolve(null), { timeout: 7000 }); }); }
+        
+        async function applyWatermarkToImage(dataUrl, petugasName, locationCoord, waktuStr) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width; canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    const scale = Math.min(0.24, Math.max(0.15, img.width / 600));
+                    const bigFont = Math.floor(48 * scale);
+                    ctx.font = `800 ${bigFont}px "Inter"`;
+                    ctx.fillStyle = "#1e6f5c";
+                    ctx.fillText("🔧", 18, 28 + bigFont);
+                    const iconW = ctx.measureText("🔧").width;
+                    const radius = Math.floor(38 * scale);
+                    const circleX = 18 + iconW + radius + 2;
+                    const circleY = 28 + bigFont - radius * 0.65;
+                    ctx.beginPath();
+                    ctx.arc(circleX, circleY, radius, 0, 2*Math.PI);
+                    ctx.fillStyle = "#1e6f5c";
+                    ctx.fill();
+                    ctx.font = `800 ${Math.floor(40 * scale)}px "Inter"`;
+                    ctx.fillStyle = "#FFFFFF";
+                    ctx.fillText("PR", circleX - ctx.measureText("PR").width/2, circleY + (Math.floor(34*scale)*0.42));
+                    const small = Math.max(12, Math.floor(img.width / 38));
+                    const lines = [`🛠️ LAPORAN KERUSAKAN`, `👤 ${petugasName}`, `🕒 ${waktuStr}`, `📍 ${locationCoord ? `${locationCoord.lat.toFixed(5)},${locationCoord.lng.toFixed(5)}` : "Lokasi -"}`];
+                    ctx.font = `${small}px "Inter"`;
+                    let maxW = 0; lines.forEach(l => maxW = Math.max(maxW, ctx.measureText(l).width));
+                    const pad = 14, bgW = maxW + pad*2, lineH = small + 5, bgH = lines.length*lineH + pad;
+                    const posX = img.width - bgW - 12, posY = img.height - bgH - 12;
+                    ctx.save();
+                    ctx.globalAlpha = 0.88;
+                    ctx.fillStyle = "#1F1A17";
+                    ctx.shadowBlur = 6;
+                    ctx.beginPath();
+                    if (!CanvasRenderingContext2D.prototype.roundRect) {
+                        CanvasRenderingContext2D.prototype.roundRect = function(x,y,w,h,r) { if (w<2*r) r=w/2; if (h<2*r) r=h/2; this.moveTo(x+r,y); this.lineTo(x+w-r,y); this.quadraticCurveTo(x+w,y,x+w,y+r); this.lineTo(x+w,y+h-r); this.quadraticCurveTo(x+w,y+h,x+w-r,y+h); this.lineTo(x+r,y+h); this.quadraticCurveTo(x,y+h,x,y+h-r); this.lineTo(x,y+r); this.quadraticCurveTo(x,y,x+r,y); return this; };
+                    }
+                    ctx.roundRect(posX, posY, bgW, bgH, 14);
+                    ctx.fill();
+                    ctx.globalAlpha = 1;
+                    ctx.strokeStyle = "#f5b042";
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+                    ctx.fillStyle = "#FEF3C7";
+                    ctx.shadowBlur = 2;
+                    lines.forEach((l,i) => ctx.fillText(l, posX+pad, posY+pad + (i+1)*lineH - 4));
+                    ctx.restore();
+                    resolve(canvas.toDataURL('image/jpeg', 0.86));
+                };
+                img.onerror = reject;
+                img.src = dataUrl;
+            });
+        }
+
+        async function processSingleFoto(originalBase64, petugas) {
+            if (!petugas) throw new Error("Petugas belum diisi");
+            const pos = await getCurrentPosition();
+            const now = new Date();
+            const waktuStr = now.toLocaleString('id-ID', { hour12: false, day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit', second:'2-digit' });
+            const watermarked = await applyWatermarkToImage(originalBase64, petugas, pos, waktuStr);
+            return { base64: watermarked, jamFoto: waktuStr, lat: pos?.lat || null, lng: pos?.lng || null };
+        }
+
+        function uploadManual() { 
+            const inp = document.createElement('input'); 
+            inp.type = 'file'; 
+            inp.accept = 'image/*'; 
+            inp.onchange = async(e) => { 
+                if(e.target.files[0]){ 
+                    const reader = new FileReader(); 
+                    reader.onload = async ev => { 
+                        await addFotoFromSource(ev.target.result); 
+                    }; 
+                    reader.readAsDataURL(e.target.files[0]); 
+                } 
+            }; 
+            inp.click(); 
+        }
+
+        btnBuka.addEventListener('click', () => bukaKamera('environment'));
+        btnCapture.addEventListener('click', captureFromVideo);
+        btnTutup.addEventListener('click', tutupKamera);
+        btnFlip.addEventListener('click', flipCamera);
+        btnUpload.addEventListener('click', uploadManual);
+
+        // ========== RENDER TABEL DENGAN EDIT UNTUK ADMIN ==========
+        function renderTable() {
+            const tbody = document.getElementById("tabelBody");
+            if(!dataEntries.length){ tbody.innerHTML=`<tr><td colspan="9" class="text-center py-6 text-gray-400">📭 Kosong</td</tr`; return; }
+            let html = "";
+            dataEntries.forEach(entry => {
+                const fotoCount = entry.fotoList?.length || 0;
+                let thumbs = ""; 
+                if(fotoCount>0) thumbs = `<div class="foto-thumb-list">${entry.fotoList.slice(0,2).map(f=>`<div class="thumb-item" onclick="viewAllFoto(${entry.id})"><img src="${f.base64}"></div>`).join('')}${fotoCount>2?`<span class="text-[10px] bg-gray-200 px-1 rounded-full">+${fotoCount-2}</span>`:''}</div>`;
+                const fotoCell = `<div class="flex flex-col items-center gap-1"><div class="flex justify-center">${thumbs}</div><button type="button" onclick="viewAllFoto(${entry.id})" class="text-primary text-[10px] md:text-xs hover:underline"><i class="fas fa-images"></i> ${fotoCount} foto</button></div>`;
+                let statusClass = "";
+                if(entry.statusAlat.includes("Normal")) statusClass="status-normal";
+                else if(entry.statusAlat.includes("Catatan")||entry.statusAlat.includes("Pengawasan")) statusClass="status-pengawasan";
+                else if(entry.statusAlat.includes("Rusak")||entry.statusAlat.includes("Tidak")) statusClass="status-rusak";
+                else statusClass="status-lain";
+
+                let actionButtons = `<button onclick="deleteEntry(${entry.id})" class="bg-red-100 text-red-600 px-2 py-1 rounded-full text-[10px] md:text-xs"><i class="fas fa-trash-can"></i> Hapus</button>`;
+                if (userRole === 'admin') {
+                    actionButtons = `<button onclick="editEntry(${entry.id})" class="bg-blue-100 text-blue-600 px-2 py-1 rounded-full text-[10px] md:text-xs mr-1"><i class="fas fa-edit"></i> Edit</button>${actionButtons}`;
+                }
+
+                html += `<tr class="border-b hover:bg-slate-50">
+                    <td class="py-2 px-1 font-mono">${entry.id}</td>
+                    <td class="py-2 px-1">${entry.tanggal}</td>
+                    <td class="py-2 px-1">${entry.waktuKerusakan}</td>
+                    <td class="py-2 px-1 max-w-[120px] truncate" title="${entry.kerusakan.replace(/"/g,'&quot;')}">${entry.kerusakan.substring(0,25)}${entry.kerusakan.length>25?'...':''}</td>
+                    <td class="py-2 px-1 max-w-[120px] truncate">${entry.solusi.substring(0,25)}${entry.solusi.length>25?'...':''}</td>
+                    <td class="py-2 px-1"><span class="status-badge ${statusClass} text-[10px] md:text-xs whitespace-normal">${entry.statusAlat.length>18?entry.statusAlat.substring(0,15)+'...':entry.statusAlat}</span></td>
+                    <td class="py-2 px-1 text-center">${fotoCell}</td>
+                    <td class="py-2 px-1 text-xs">${entry.petugas}</td>
+                    <td class="py-2 px-1 text-center">${actionButtons}</td>
+                </tr>`;
+            });
+            tbody.innerHTML = html;
+        }
+
+        window.deleteEntry = async (id) => { if(confirm("Hapus laporan?")) await deleteEntryById(id); };
+        window.viewAllFoto = (id) => {
+            const entry = dataEntries.find(e=>e.id===id);
+            if(!entry?.fotoList?.length) return alert("Tidak ada foto");
+            let currentIndex = 0;
+            const showModal = (idx) => {
+                const modal = document.createElement('div'); modal.className = "modal-img";
+                modal.innerHTML = `<img src="${entry.fotoList[idx].base64}" style="max-width:92%; max-height:80%;"><div class="modal-caption">Foto ${idx+1} dari ${entry.fotoList.length}<br>${entry.fotoList[idx].jamFoto || ''}</div><div style="position:absolute; bottom:10px; left:0; right:0; text-align:center; color:white; display:flex; justify-content:center; gap:20px;"><button id="prevFoto" style="background:rgba(0,0,0,0.6); padding:8px 16px; border-radius:30px;">◀ Sebelumnya</button><button id="nextFoto" style="background:rgba(0,0,0,0.6); padding:8px 16px; border-radius:30px;">Selanjutnya ▶</button></div>`;
+                document.body.appendChild(modal);
+                const nextBtn = modal.querySelector('#nextFoto'), prevBtn = modal.querySelector('#prevFoto');
+                const updateImg = (newIdx) => { if(newIdx>=0 && newIdx<entry.fotoList.length) { currentIndex=newIdx; modal.querySelector('img').src=entry.fotoList[currentIndex].base64; modal.querySelector('.modal-caption').innerHTML=`Foto ${currentIndex+1} dari ${entry.fotoList.length}<br>${entry.fotoList[currentIndex].jamFoto||''}`; } };
+                nextBtn.onclick = (e) => { e.stopPropagation(); updateImg(currentIndex+1); };
+                prevBtn.onclick = (e) => { e.stopPropagation(); updateImg(currentIndex-1); };
+                modal.onclick = (e) => { if(e.target===modal) modal.remove(); };
+            };
+            showModal(0);
+        };
+
+        // ========== FORM HANDLING ==========
+        const form = document.getElementById('formKerusakan'), tanggalInput=document.getElementById('tanggal'), waktuInput=document.getElementById('waktuKerusakan');
+        const kerusakanInput=document.getElementById('kerusakan'), solusiInput=document.getElementById('solusi'), statusAlatSelect=document.getElementById('statusAlat'), petugasInput=document.getElementById('petugas');
+        const resetBtn=document.getElementById('btnResetForm');
+        tanggalInput.value = new Date().toISOString().split('T')[0];
+        waktuInput.value = new Date().toLocaleTimeString('id-ID',{hour12:false}).slice(0,5);
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (userRole === 'guest') {
+                alert("Tamu tidak dapat menyimpan data. Silakan login.");
+                return;
+            }
+            if(!tanggalInput.value||!waktuInput.value||!kerusakanInput.value||!solusiInput.value||!statusAlatSelect.value||!petugasInput.value) return alert("Lengkapi semua data!");
+            if(currentFotoList.length===0) return alert("Minimal 1 foto dokumentasi.");
+            const newId = getNextId();
+            const newEntry = { 
+                id: newId,
+                tanggal: tanggalInput.value,
+                waktuKerusakan: waktuInput.value,
+                kerusakan: kerusakanInput.value.trim(),
+                solusi: solusiInput.value.trim(),
+                statusAlat: statusAlatSelect.value,
+                petugas: petugasInput.value.trim(),
+                fotoList: [...currentFotoList]
+            };
+            await addEntry(newEntry);
+            resetFormInput();
+            alert(`✅ Tersimpan dengan ${currentFotoList.length} foto. Firebase tersinkron.`);
+        });
+        function resetFormInput() { 
+            tanggalInput.value=new Date().toISOString().split('T')[0]; 
+            waktuInput.value=new Date().toLocaleTimeString('id-ID',{hour12:false}).slice(0,5); 
+            kerusakanInput.value=''; solusiInput.value=''; statusAlatSelect.value=''; petugasInput.value=''; 
+            currentFotoList=[]; updatePreviewUI(); updateHiddenArray(); updateNomorOtomatis(); 
+            if(mediaStream) tutupKamera(); 
+        }
+        resetBtn.addEventListener('click',()=>{ if(confirm("Reset form?")) resetFormInput(); });
+        document.getElementById('btnHapusSemua').addEventListener('click', async () =>{ 
+            if (userRole !== 'admin') { alert("Hanya admin yang dapat menghapus semua data."); return; }
+            if(confirm("Hapus SEMUA data?")){ await clearAllEntries(); resetFormInput(); alert("Semua data dihapus dari Firebase."); } 
+        });
+        document.getElementById('btnExportHTML').addEventListener('click',()=>{
+            if(!dataEntries.length) return alert("Tidak ada data");
+            let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Laporan Kerusakan Multi Foto</title><style>body{font-family:sans-serif;margin:15px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #aaa;padding:8px;vertical-align:top}th{background:#1e6f5c;color:white}.foto-grid{display:flex;gap:6px;flex-wrap:wrap}img{width:70px;height:70px;object-fit:cover;border-radius:8px}</style></head><body><h2>Laporan Kerusakan & Perbaikan</h2><p>Tanggal cetak: ${new Date().toLocaleString()}</p><table border="1"><thead><tr><th>No</th><th>Tgl</th><th>Jam</th><th>Kerusakan</th><th>Solusi</th><th>Status</th><th>Foto</th><th>Petugas</th></tr></thead><tbody>`;
+            dataEntries.forEach(e => { let fotoHtml = `<div class="foto-grid">${e.fotoList.map(f=>`<img src="${f.base64}" title="${f.jamFoto}">`).join('')}</div>`; html += `<tr><td>${e.id}</td><td>${e.tanggal}</td><td>${e.waktuKerusakan}</td><td>${e.kerusakan}</td><td>${e.solusi}</td><td>${e.statusAlat}</td><td>${fotoHtml}</td><td>${e.petugas}</tr>`; });
+            html += `</tbody></table><p><em>Setiap foto memiliki watermark otomatis (teknisi, waktu, koordinat)</em></p></body></html>`;
+            const blob = new Blob([html], {type:"text/html"}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`laporan_multi_foto_${Date.now()}.html`; a.click(); URL.revokeObjectURL(blob);
+        });
+
+        function showLoading(msg) { let ld = document.getElementById('globalLoading'); if(!ld){ ld=document.createElement('div'); ld.id='globalLoading'; ld.className='loading-overlay'; ld.innerHTML=`<div class="bg-black/80 text-white p-4 rounded-xl text-center">${msg}</div>`; document.body.appendChild(ld); } else ld.style.display='flex'; }
+        function hideLoading() { let ld = document.getElementById('globalLoading'); if(ld) ld.remove(); }
+
+        // ========== MULTI-ROLE HANDLER ==========
+        window.addEventListener('roleChanged', (e) => {
+            userRole = e.detail.role;
+            const roleSpan = document.getElementById('userRoleDisplay');
+            if (roleSpan) {
+                if (userRole === 'admin') roleSpan.innerHTML = '<i class="fas fa-user-shield"></i> Admin';
+                else if (userRole === 'user') roleSpan.innerHTML = '<i class="fas fa-user"></i> User';
+                else roleSpan.innerHTML = '<i class="fas fa-user-friends"></i> Tamu';
+            }
+            // Nonaktifkan form jika tamu
+            const formInputs = document.querySelectorAll('#formKerusakan input, #formKerusakan select, #formKerusakan textarea, #formKerusakan button[type="submit"]');
+            formInputs.forEach(inp => {
+                if (userRole === 'guest') inp.disabled = true;
+                else inp.disabled = false;
+            });
+            // Tombol hapus semua hanya untuk admin
+            const hapusSemuaBtn = document.getElementById('btnHapusSemua');
+            if (hapusSemuaBtn) {
+                if (userRole !== 'admin') hapusSemuaBtn.style.display = 'none';
+                else hapusSemuaBtn.style.display = 'inline-flex';
+            }
+            // Render ulang tabel untuk menampilkan tombol edit jika admin
+            renderTable();
+        });
+
+        async function initFirebase() {
+            if (!window.db) {
+                setTimeout(initFirebase, 300);
+                return;
+            }
+            isFirebaseReady = true;
+            await enablePersistence();
+            attachRealtimeListener();
+            updateFirebaseStatus(true, "Terhubung (realtime)");
+            updateNomorOtomatis();
+            updateCameraModeLabel();
+        }
+        initFirebase();
+
+        // ========== EVENT LISTENER UNTUK TOMBOL NAVIGASI ==========
+        document.getElementById('backToDashboardBtn').addEventListener('click', function() {
+            window.location.href = 'index.html';
+        });
+        document.getElementById('refreshPageBtn').addEventListener('click', function() {
+            window.location.reload();
+        });
+    </script>
+</body>
+</html>
