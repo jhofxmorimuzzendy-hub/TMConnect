@@ -130,8 +130,8 @@
             white-space: nowrap;
         }
 
-        /* Tombol Refresh */
-        .btn-refresh {
+        /* Tombol Refresh dan Keluar */
+        .btn-refresh, .btn-logout {
             background: rgba(255, 255, 255, 0.2);
             border: none;
             color: white;
@@ -146,7 +146,7 @@
             gap: 8px;
             backdrop-filter: blur(4px);
         }
-        .btn-refresh:hover {
+        .btn-refresh:hover, .btn-logout:hover {
             background: rgba(255, 255, 255, 0.35);
             transform: translateY(-1px);
         }
@@ -471,7 +471,7 @@
             .header-left { justify-content: space-between; flex-wrap: wrap; }
             .header h1 { font-size: 1.2rem; white-space: normal; word-break: keep-all; }
             .month-picker { justify-content: space-between; width: 100%; }
-            .btn-refresh { align-self: flex-end; }
+            .btn-refresh, .btn-logout { align-self: flex-end; }
             .shift-today-card { margin: 16px 16px 0 16px; padding: 16px; }
             .daily-tasks-card { margin: 16px 16px 0 16px; padding: 16px 20px; }
             .shift-item { min-width: 140px; font-size: 0.8rem; }
@@ -534,7 +534,7 @@
         <div style="display: flex; align-items: center; gap: 16px;">
             <span id="userRoleDisplay" class="badge-status" style="background: rgba(0,0,0,0.3);"><i class="fas fa-user"></i> Memuat...</span>
             <a href="user-control.html" id="adminControlLink" style="display: none; color: white; background: #f5b042; padding: 6px 14px; border-radius: 40px; text-decoration: none; font-size: 0.75rem; font-weight: bold;"><i class="fas fa-shield-alt"></i> User Control</a>
-            <button id="logoutBtn" class="btn-refresh" style="display: none;"><i class="fas fa-sign-out-alt"></i> Logout</button>
+            <button id="logoutBtn" class="btn-logout" style="display: none;"><i class="fas fa-sign-out-alt"></i> Logout</button>
             <button id="refreshPageBtn" class="btn-refresh" title="Refresh Halaman">
                 <i class="fas fa-sync-alt"></i> Refresh
             </button>
@@ -572,29 +572,23 @@
 
 <script>
     // ========== CEK AUTENTIKASI SEBELUM MEMUAT HALAMAN ==========
-    // Fungsi untuk memastikan user sudah login atau dalam mode tamu
     function checkAuthAndRedirect() {
-        // Cek apakah sudah login via Firebase Auth (auth-check.js akan mengisi window.auth.currentUser)
         if (window.auth && window.auth.currentUser) {
             return true;
         }
-        // Cek mode tamu dari localStorage (diset saat login sebagai tamu)
         if (localStorage.getItem('guestMode') === 'true') {
             return true;
         }
-        // Redirect ke halaman login
         window.location.href = 'login.html';
         return false;
     }
 
-    // Jalankan pengecekan di awal (sebelum apapun)
     if (!checkAuthAndRedirect()) {
-        // Jika redirect, hentikan eksekusi script selanjutnya
         throw new Error("Redirecting to login page");
     }
     // ========== AKHIR CEK AUTENTIKASI ==========
 
-    // ========== KONFIGURASI FIREBASE DENGAN PERSISTENCE OFFLINE ==========
+    // ========== KONFIGURASI FIREBASE ==========
     let isFirebaseReady = false;
     let currentShiftListenerRef = null;     
     let currentShiftData = {};               
@@ -832,7 +826,7 @@
         }
     }
     
-    // ==================== NOTIFIKASI TUGAS HARIAN (DINAMIS) ====================
+    // ==================== NOTIFIKASI TUGAS HARIAN ====================
     function getDailyNotifications() {
         const today = new Date();
         const dayOfWeek = today.getDay();     
@@ -907,30 +901,49 @@
         }).join('');
     }
     
-    // ==================== FUNGSI UNTUK MULTI-ROLE (TAMU, USER, ADMIN) ====================
-    // Event listener dari auth-check.js untuk menyesuaikan UI berdasarkan role
+    // ==================== FUNGSI UNTUK MULTI-ROLE ====================
     window.addEventListener('roleChanged', (e) => {
         const role = e.detail.role;
         const manageShiftBtn = document.getElementById('btnManageShift');
         if (manageShiftBtn) {
-            if (role === 'guest') {
-                manageShiftBtn.style.display = 'none';
-            } else {
-                manageShiftBtn.style.display = 'inline-flex';
-            }
+            manageShiftBtn.style.display = (role === 'guest') ? 'none' : 'inline-flex';
         }
-        // Jika role bukan admin, sembunyikan link user control
         const adminLink = document.getElementById('adminControlLink');
         if (adminLink) {
-            adminLink.style.display = role === 'admin' ? 'inline-flex' : 'none';
+            adminLink.style.display = (role === 'admin') ? 'inline-flex' : 'none';
         }
-        // Tampilkan tombol logout hanya jika bukan tamu
+        // Tombol logout / keluar untuk semua role, tapi teks berbeda
         const logoutBtn = document.getElementById('logoutBtn');
         if (logoutBtn) {
-            logoutBtn.style.display = role !== 'guest' ? 'inline-flex' : 'none';
+            logoutBtn.style.display = 'inline-flex';
+            if (role === 'guest') {
+                logoutBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login';
+            } else {
+                logoutBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i> Logout';
+            }
         }
     });
-    
+
+    // Fungsi untuk tombol logout / login (berdasarkan role)
+    async function handleLogoutOrLogin() {
+        const role = (window.currentRole) ? window.currentRole : (localStorage.getItem('userRole') || 'guest');
+        if (role === 'guest') {
+            // Tamu: hapus mode guest, redirect ke login
+            localStorage.removeItem('guestMode');
+            window.location.href = 'login.html';
+        } else {
+            // User atau admin: panggil fungsi logout dari auth-check.js
+            if (typeof window.logoutUser === 'function') {
+                await window.logoutUser();
+            } else {
+                // fallback
+                await window.auth.signOut();
+                localStorage.removeItem('guestMode');
+                window.location.href = 'login.html';
+            }
+        }
+    }
+
     async function initMainMenu() {
         attachShiftListener(currentYear, currentMonth);
         renderModulesGrid();
@@ -943,6 +956,13 @@
         } else {
             const btn = document.getElementById('btnManageShift');
             if (btn) btn.addEventListener('click', () => showManagePanel());
+        }
+        // Pasang event listener untuk tombol logout
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            // Hapus listener lama jika ada
+            logoutBtn.removeEventListener('click', handleLogoutOrLogin);
+            logoutBtn.addEventListener('click', handleLogoutOrLogin);
         }
     }
     
