@@ -14,7 +14,7 @@
     <script src="firebase-config.js"></script>
     <script src="auth-check.js"></script>
     <style>
-        /* (semua style tetap sama seperti yang Anda berikan, tidak diubah) */
+        /* (semua style tetap sama seperti sebelumnya, tidak diubah) */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #eef2f8; padding: 12px; min-height: 100vh; font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; line-height: 1.4; }
         .app-container { max-width: 1400px; margin: 0 auto; background: white; border-radius: 36px; box-shadow: 0 20px 40px -14px rgba(0, 0, 0, 0.15); overflow: hidden; }
@@ -118,39 +118,41 @@
 </div>
 
 <script>
-    // ========== PROTEKSI REDIRECT LOOP ==========
-    (function() {
-        // Deteksi loop menggunakan sessionStorage
-        let redirectCount = sessionStorage.getItem('auth_redirect_count');
-        if (redirectCount) {
-            let count = parseInt(redirectCount);
-            if (count >= 2) {
-                // Loop terdeteksi, force fallback ke mode tamu
-                sessionStorage.removeItem('auth_redirect_count');
-                localStorage.setItem('guestMode', 'true');
-                console.warn("Redirect loop detected, falling back to guest mode");
-                return;
-            } else {
-                sessionStorage.setItem('auth_redirect_count', count + 1);
-            }
+    // ========== PROTEKSI REDIRECT LOOP (SEDERHANA & AMAN) ==========
+    // Hanya mencegah redirect jika terjadi lebih dari 2 kali dalam waktu singkat
+    let redirectCount = sessionStorage.getItem('auth_redirect_count');
+    if (redirectCount) {
+        let count = parseInt(redirectCount);
+        if (count >= 2) {
+            // Loop terdeteksi, hentikan redirect tapi jangan paksa guest mode
+            console.warn("Redirect loop terdeteksi, menghentikan redirect otomatis.");
+            sessionStorage.setItem('auth_loop_blocked', 'true');
+            sessionStorage.removeItem('auth_redirect_count');
         } else {
-            sessionStorage.setItem('auth_redirect_count', '1');
+            sessionStorage.setItem('auth_redirect_count', count + 1);
         }
-    })();
+    } else {
+        sessionStorage.setItem('auth_redirect_count', '1');
+    }
 
-    // Fungsi cek autentikasi yang aman
+    // Fungsi cek autentikasi dengan pendekatan yang lebih sabar
     function checkAuthAndRedirect() {
-        // Jika mode tamu aktif, izinkan akses
+        // Jika loop sudah diblokir, jangan redirect
+        if (sessionStorage.getItem('auth_loop_blocked') === 'true') {
+            console.log("Redirect loop diblokir, melanjutkan tanpa redirect.");
+            return true;
+        }
+        // Mode tamu
         if (localStorage.getItem('guestMode') === 'true') {
             sessionStorage.removeItem('auth_redirect_count');
             return true;
         }
-        // Jika Firebase Auth belum siap, jangan redirect sekarang (akan dicek ulang nanti)
+        // Jika window.auth belum siap, izinkan akses untuk sementara
         if (!window.auth) {
-            console.log("Firebase Auth belum siap, menunda pengecekan");
+            console.log("Firebase Auth belum siap, menunda pengecekan.");
             return true;
         }
-        // Jika user sudah login
+        // User sudah login
         if (window.auth.currentUser) {
             sessionStorage.removeItem('auth_redirect_count');
             return true;
@@ -160,16 +162,21 @@
         return false;
     }
 
-    // Jalankan pengecekan awal
-    if (!checkAuthAndRedirect()) {
-        // Redirect akan terjadi, hentikan eksekusi script lebih lanjut
-        throw new Error("Redirecting to login page");
-    }
-    // Reset counter jika berhasil melewati pengecekan
-    sessionStorage.removeItem('auth_redirect_count');
+    // Jalankan pengecekan setelah memberikan waktu inisialisasi
+    setTimeout(() => {
+        if (!checkAuthAndRedirect()) {
+            throw new Error("Redirecting to login page");
+        }
+    }, 500);
+
+    document.addEventListener('DOMContentLoaded', () => {
+        if (!checkAuthAndRedirect()) {
+            throw new Error("Redirecting to login page");
+        }
+    });
     // ========== AKHIR PROTEKSI LOOP ==========
 
-    // ========== KONFIGURASI FIREBASE (semua kode asli Anda mulai dari sini) ==========
+    // ========== KONFIGURASI FIREBASE ==========
     let isFirebaseReady = false;
     let currentShiftListenerRef = null;     
     let currentShiftData = {};               
@@ -355,7 +362,7 @@
                 </tr>
             `;
         }
-        html += `</tbody></table></div><div style="display: flex; flex-wrap: wrap; gap: 16px; margin-top: 24px;"><button id="btnUpdateSchedule" class="btn-save"><i class="fas fa-save"></i> 💾 Simpan Perubahan Jadwal</button><button id="btnCancelManage" class="btn-outline"><i class="fas fa-arrow-left"></i> Batal & Tutup</button></div>`;
+        html += `</tbody><td></div><div style="display: flex; flex-wrap: wrap; gap: 16px; margin-top: 24px;"><button id="btnUpdateSchedule" class="btn-save"><i class="fas fa-save"></i> 💾 Simpan Perubahan Jadwal</button><button id="btnCancelManage" class="btn-outline"><i class="fas fa-arrow-left"></i> Batal & Tutup</button></div>`;
         containerElement.innerHTML = html;
         
         const updateBtn = document.getElementById('btnUpdateSchedule');
@@ -561,20 +568,27 @@
         refreshShiftTodayDisplay();
     }
     
+    // ========== PERBAIKAN UTAMA: FUNGSI ENABLE PERSISTENCE YANG BENAR ==========
     async function enableFirebasePersistence() {
         if (!window.db) return false;
         try {
-            if (window.db.enablePersistence) {
+            // Gunakan window.db.enablePersistence() (satu‑satunya metode yang valid di compat SDK v10)
+            if (typeof window.db.enablePersistence === 'function') {
                 await window.db.enablePersistence();
-                console.log("Firebase persistence diaktifkan");
-            } else if (window.firebase && window.firebase.database) {
-                await window.firebase.database().enablePersistence();
+                console.log("Firebase persistence diaktifkan (offline support)");
             } else {
-                console.warn("enablePersistence tidak tersedia");
+                console.warn("enablePersistence tidak tersedia, offline mode mungkin terbatas");
             }
             return true;
         } catch (err) {
-            console.warn("Persistence error:", err);
+            // Tangani error umum tanpa crash
+            if (err.code === 'failed-precondition') {
+                console.warn("Multiple tab terbuka, persistence tidak bisa diaktifkan");
+            } else if (err.code === 'unavailable') {
+                console.warn("Browser tidak support persistence");
+            } else {
+                console.error("Error persistence:", err);
+            }
             return false;
         }
     }
