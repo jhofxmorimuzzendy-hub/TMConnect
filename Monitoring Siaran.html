@@ -16,8 +16,10 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="firebase-config.js"></script>
-    <script src="log-helper.js"></script> <!-- ✅ TAMBAHKAN LOG HELPER -->
+    <script src="log-helper.js"></script>
     <script src="auth-check.js"></script>
+    <!-- ✅ TAMBAHKAN timestamp-editor.js untuk admin edit timestamp watermark -->
+    <script src="timestamp-editor.js"></script>
 
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -368,7 +370,7 @@
         renderAll();
     }
 
-    // WATERMARK & KAMERA (sama seperti versi sebelumnya)
+    // WATERMARK & KAMERA (dengan dukungan edit timestamp untuk admin)
     function getCurrentPosition() {
         return new Promise((resolve) => {
             if (!navigator.geolocation) { resolve(null); return; }
@@ -376,7 +378,8 @@
         });
     }
 
-    async function applyWatermarkToImage(dataUrl, petugasName, locationCoord) {
+    // Fungsi watermark yang menerima parameter waktuStr (bisa diedit)
+    async function applyWatermarkWithTimestamp(dataUrl, petugasName, locationCoord, waktuStr) {
         return new Promise((resolve, reject) => {
             const img = new Image();
             img.crossOrigin = "Anonymous";
@@ -388,10 +391,8 @@
                 const smallFontSize = Math.max(13, Math.floor(img.width / 32));
                 const padding = 16;
                 const cornerRadius = 20;
-                const now = new Date();
-                const dateStr = now.toLocaleString('id-ID', { hour12: false });
                 const coordStr = locationCoord ? `${locationCoord.lat.toFixed(6)} , ${locationCoord.lng.toFixed(6)}` : "Lokasi tidak tersedia";
-                const lines = [`📡 TRANSMISI - TANAH MERAH`, `👤 Petugas: ${petugasName}`, `🕒 ${dateStr}`, `📍 ${coordStr}`];
+                const lines = [`📡 TRANSMISI - TANAH MERAH`, `👤 Petugas: ${petugasName}`, `🕒 ${waktuStr}`, `📍 ${coordStr}`];
                 ctx.font = `${smallFontSize}px "Inter", sans-serif`;
                 let maxWidth = 0;
                 lines.forEach(line => { const metrics = ctx.measureText(line); if (metrics.width > maxWidth) maxWidth = metrics.width; });
@@ -455,8 +456,17 @@
         });
     }
 
+    // Fungsi untuk mendapatkan timestamp yang dapat diedit oleh admin
+    async function getEditableTimestampForPhoto() {
+        let now = new Date();
+        if (userRole === 'admin' && typeof window.getEditableTimestamp === 'function') {
+            now = await window.getEditableTimestamp(userRole, now);
+        }
+        return now.toLocaleString('id-ID', { hour12: false });
+    }
+
     async function openNativeCamera(petugasName, locationCoord) {
-        return new Promise((resolve) => {
+        return new Promise(async (resolve) => {
             const modal = document.createElement('div');
             modal.className = 'camera-modal';
             modal.innerHTML = `<div class="camera-container"><div class="camera-preview"><video id="cameraVideo" autoplay playsinline></video></div><div class="camera-controls"><button class="capture-btn" id="capturePhotoBtn"><i class="fas fa-camera"></i></button><button class="close-camera" id="closeCameraBtn"><i class="fas fa-times"></i> Tutup</button></div></div>`;
@@ -479,7 +489,8 @@
                 if (stream) stream.getTracks().forEach(track => track.stop());
                 modal.remove();
                 try {
-                    const watermarked = await applyWatermarkToImage(rawDataUrl, petugasName, locationCoord);
+                    const waktuStr = await getEditableTimestampForPhoto();
+                    const watermarked = await applyWatermarkWithTimestamp(rawDataUrl, petugasName, locationCoord, waktuStr);
                     resolve(watermarked);
                 } catch (e) { resolve(rawDataUrl); }
             };
@@ -498,7 +509,8 @@
                 const reader = new FileReader();
                 reader.onload = async (e) => {
                     try {
-                        const watermarked = await applyWatermarkToImage(e.target.result, petugasName, locationCoord);
+                        const waktuStr = await getEditableTimestampForPhoto();
+                        const watermarked = await applyWatermarkWithTimestamp(e.target.result, petugasName, locationCoord, waktuStr);
                         resolve(watermarked);
                     } catch (err) { resolve(e.target.result); }
                 };
@@ -558,6 +570,7 @@
             channelStatus[channelId] = targetStatus;
             await setStatusToFirebase(channelStatus);
         }
+        // Gunakan timestamp yang sudah dipakai di watermark untuk konsistensi
         const now = new Date();
         const timeStr = now.toLocaleString('id-ID', { hour12: false });
         const message = targetStatus === 'normal' ? `📸 LAPORAN NORMAL: ${channel.name} siaran normal.` : `⚠️ LAPORAN GANGGUAN: ${channel.name} mengalami gangguan.`;
@@ -902,7 +915,7 @@
                 const reasonHtml = r.reason ? escapeHtml(r.reason) : '-';
                 let photoHtml = '-';
                 if (r.imageBase64) photoHtml = `<img src="${r.imageBase64}" style="max-width:70px; border-radius:8px;">`;
-                rows += `<tr><td>${dateDisplay}</td><td>${r.channelName}</td><td>${statusBadge}</td><td>${reasonHtml}</td><td>${escapeHtml(r.petugas)}</td><td>${photoHtml}</td><td>${r.timestamp}</td></tr>`;
+                rows += `<tr><td>${dateDisplay}</td><td>${r.channelName}</td><td>${statusBadge}</td><td>${reasonHtml}</td><td>${escapeHtml(r.petugas)}</td<td>${photoHtml}</td<td>${r.timestamp}</td</tr>`;
             }
         }
         const htmlContent = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Rekap TVRI Semua Laporan</title><style>body{font-family:Inter,sans-serif;padding:20px;} table{border-collapse:collapse;width:100%} th,td{border:1px solid #ccc;padding:8px}</style></head><body><h1>Rekap Laporan TVRI (Semua Tanggal)</h1><table border="1"><thead><tr><th>Tanggal</th><th>Channel</th><th>Status</th><th>Penyebab</th><th>Petugas</th><th>Foto</th><th>Waktu</th></tr></thead><tbody>${rows}</tbody></table></body></html>`;
