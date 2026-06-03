@@ -17,8 +17,10 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="firebase-config.js"></script>
-    <script src="log-helper.js"></script> <!-- ✅ TAMBAHKAN LOG HELPER -->
+    <script src="log-helper.js"></script>
     <script src="auth-check.js"></script>
+    <!-- ✅ TAMBAHKAN timestamp-editor.js untuk admin edit timestamp watermark -->
+    <script src="timestamp-editor.js"></script>
 
     <script>
         tailwind.config = {
@@ -586,10 +588,17 @@
             });
         }
 
+        // ========== FUNGSI UTAMA PROSES FOTO DENGAN EDIT TIMESTAMP UNTUK ADMIN ==========
         async function processSingleFoto(originalBase64, petugas) {
             if (!petugas) throw new Error("Petugas belum diisi");
             const pos = await getCurrentPosition();
-            const now = new Date();
+            let now = new Date();
+            
+            // Jika admin dan fungsi edit timestamp tersedia, tawarkan edit
+            if (userRole === 'admin' && typeof window.getEditableTimestamp === 'function') {
+                now = await window.getEditableTimestamp(userRole, now);
+            }
+            
             const waktuStr = now.toLocaleString('id-ID', { hour12: false, day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit', second:'2-digit' });
             const watermarked = await applyWatermarkToImage(originalBase64, petugas, pos, waktuStr);
             return { base64: watermarked, jamFoto: waktuStr, lat: pos?.lat || null, lng: pos?.lng || null };
@@ -620,7 +629,7 @@
         // ========== RENDER TABEL DENGAN EDIT UNTUK ADMIN ==========
         function renderTable() {
             const tbody = document.getElementById("tabelBody");
-            if(!dataEntries.length){ tbody.innerHTML=`<td><td colspan="9" class="text-center py-6 text-gray-400">📭 Kosong</td</tr`; return; }
+            if(!dataEntries.length){ tbody.innerHTML=`<tr><td colspan="9" class="text-center py-6 text-gray-400">📭 Kosong</td</tr`; return; }
             let html = "";
             dataEntries.forEach(entry => {
                 const fotoCount = entry.fotoList?.length || 0;
