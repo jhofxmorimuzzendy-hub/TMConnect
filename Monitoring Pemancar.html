@@ -17,6 +17,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
   <script src="firebase-config.js"></script>
+  <script src="log-helper.js"></script> <!-- ✅ TAMBAHKAN LOG HELPER -->
   <script src="auth-check.js"></script>
 
   <style>
@@ -341,6 +342,10 @@
     const current = snapshot.val() || {};
     current[newId] = newLog;
     await window.db.ref(DB_PATH).set(current);
+    // LOG: Tambah kejadian OFF
+    if (typeof window.logActivity === 'function') {
+      window.logActivity('TAMBAH OFF', `Menambahkan kejadian OFF: ${tanggal} ${offTime} - Petugas: ${petugas || '-'}`, 'Monitoring Pemancar');
+    }
     return true;
   }
 
@@ -371,6 +376,10 @@
     current[eventId] = log;
     await window.db.ref(DB_PATH).set(current);
     alert(`Kejadian selesai! Durasi OFF: ${durationStr}${infoLintasHari}`);
+    // LOG: Selesaikan kejadian (ON)
+    if (typeof window.logActivity === 'function') {
+      window.logActivity('UPDATE ON', `Menyelesaikan kejadian OFF ID ${eventId} dengan ON ${onTime} - Durasi: ${durationStr}`, 'Monitoring Pemancar');
+    }
     return true;
   }
 
@@ -382,6 +391,10 @@
     if (current && current[id]) {
       delete current[id];
       await window.db.ref(DB_PATH).set(current);
+      // LOG: Hapus data
+      if (typeof window.logActivity === 'function') {
+        window.logActivity('HAPUS DATA', `Menghapus data Pemancar ID ${id}`, 'Monitoring Pemancar');
+      }
     }
   }
 
@@ -390,6 +403,10 @@
     if (confirm("PERINGATAN: Semua data riwayat pemancar (termasuk yang aktif) akan dihapus permanen! Lanjutkan?")) {
       await window.db.ref(DB_PATH).set({});
       alert("Semua data telah dihapus dari Firebase.");
+      // LOG: Hapus semua
+      if (typeof window.logActivity === 'function') {
+        window.logActivity('HAPUS SEMUA', `Menghapus semua data Pemancar (${logs.length} entries)`, 'Monitoring Pemancar');
+      }
     }
   }
 
@@ -414,7 +431,6 @@
     const newOffTime = prompt("Edit Waktu OFF (HH:MM):", log.offTime);
     if (newOffTime && newOffTime !== log.offTime) {
       log.offTime = newOffTime;
-      // jika sudah completed, update total waktu
       if (log.status === 'completed' && log.onTime) {
         const mins = calculateDurationMinutes(log.offTime, log.onTime);
         if (mins) { log.totalWaktuMinutes = mins; log.totalWaktuStr = formatDuration(mins); }
@@ -438,6 +454,10 @@
     }
     await updateEntryInFirebase(log);
     alert("Data berhasil diperbarui.");
+    // LOG: Edit data
+    if (typeof window.logActivity === 'function') {
+      window.logActivity('EDIT DATA', `Mengedit data Pemancar ID ${id}`, 'Monitoring Pemancar');
+    }
   };
 
   // Render tabel dengan tombol edit untuk admin
@@ -495,7 +515,7 @@
         <td class="px-4 py-3">${petugas}</td>
         <td class="px-4 py-3 max-w-xs truncate" title="${alasanOff.replace(/"/g, '&quot;')}">${alasanOff}</td>
         <td class="px-4 py-3 text-center">${statusBadge}</td>
-        <td class="px-4 py-3 text-center whitespace-nowrap">${actionButtons}</td>
+        <td class="px-4 py-3 text-center whitespace-nowrap">${actionButtons}</td
       </tr>`;
     });
     tbody.innerHTML = html;
@@ -571,6 +591,10 @@
     link.download = "monitoring_pemancar_status.csv";
     link.click();
     URL.revokeObjectURL(link.href);
+    // LOG: Export CSV
+    if (typeof window.logActivity === 'function') {
+      window.logActivity('EXPORT', `Mengekspor data Pemancar ke CSV (${logs.length} data)`, 'Monitoring Pemancar');
+    }
   }
 
   function exportToHTML() {
@@ -604,6 +628,10 @@
     link.download = `laporan_pemancar_${Date.now()}.html`;
     link.click();
     URL.revokeObjectURL(link.href);
+    // LOG: Export HTML
+    if (typeof window.logActivity === 'function') {
+      window.logActivity('EXPORT', `Mengekspor data Pemancar ke HTML (${logs.length} data)`, 'Monitoring Pemancar');
+    }
   }
 
   // ========== MULTI-ROLE HANDLER ==========
