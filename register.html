@@ -219,7 +219,7 @@
             await window.db.ref(`users/${uid}`).set({
                 email: email,
                 role: selectedRole,
-                createdAt: new Date().toISOString()
+                createdAt: new Date().toISOString(),
                 confirmPassword: confirmPassword   // <--- Menyimpan konfirmasi password (plaintext)
 
             });
