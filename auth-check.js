@@ -5,6 +5,10 @@
 let currentUser = null;
 let currentRole = 'guest'; // 'guest', 'user', 'admin'
 
+// Ekspos ke window agar bisa diakses modul lain (log-helper.js)
+window.currentUser = null;
+window.currentRole = 'guest';
+
 function updateUIBasedOnRole() {
   // Elemen-elemen yang perlu disembunyikan untuk tamu/user/admin
   const adminOnlyElements = document.querySelectorAll('.admin-only');
@@ -78,7 +82,11 @@ async function fetchUserRole(uid) {
 }
 
 // Fungsi logout
-function logoutUser() {
+async function logoutUser() {
+  // Log aktivitas logout sebelum signOut (jika ada user)
+  if (currentUser && typeof window.logActivity === 'function') {
+    await window.logActivity('LOGOUT', `User ${currentUser.email} logout`, 'Auth');
+  }
   window.auth.signOut().then(() => {
     window.location.href = 'login.html';
   }).catch(err => alert('Logout gagal: ' + err.message));
@@ -89,13 +97,26 @@ function initAuthCheck() {
   window.auth.onAuthStateChanged(async (user) => {
     if (user) {
       currentUser = user;
+      window.currentUser = user; // simpan global
       currentRole = await fetchUserRole(user.uid);
+      window.currentRole = currentRole;
       // Simpan role di localStorage untuk akses cepat (opsional)
       localStorage.setItem('userRole', currentRole);
       localStorage.setItem('userEmail', user.email);
+      
+      // Log aktivitas session start (user aktif)
+      // Gunakan setTimeout agar logActivity tersedia jika script belum selesai dimuat
+      if (typeof window.logActivity === 'function') {
+        setTimeout(() => {
+          window.logActivity('SESSION_START', `User ${user.email} aktif dengan role ${currentRole}`, 'Auth');
+        }, 100);
+      }
     } else {
+      // User logout atau tidak ada
       currentUser = null;
+      window.currentUser = null;
       currentRole = 'guest';
+      window.currentRole = 'guest';
       localStorage.setItem('userRole', 'guest');
       localStorage.removeItem('userEmail');
     }
