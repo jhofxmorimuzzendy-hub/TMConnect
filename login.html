@@ -101,16 +101,16 @@
       margin-bottom: 20px;
     }
     .btn-guest:hover { background: #e6edf5; }
-    .forgot-password {
+    .register-link, .forgot-password {
       text-align: center;
       display: block;
-      margin-top: 16px;
+      margin-top: 12px;
       color: #1e6f5c;
       text-decoration: none;
       font-size: 0.85rem;
       font-weight: 500;
     }
-    .forgot-password:hover { text-decoration: underline; }
+    .register-link:hover, .forgot-password:hover { text-decoration: underline; }
     .error-msg {
       background: #fee2e2;
       color: #b91c1c;
@@ -164,6 +164,8 @@
       <button type="submit" class="btn-login"><i class="fas fa-sign-in-alt"></i> Masuk</button>
     </form>
     <button id="guestBtn" class="btn-guest"><i class="fas fa-user-friends"></i> Masuk sebagai Tamu</button>
+    <!-- TAMBAHAN: Link ke halaman registrasi -->
+    <a href="register.html" class="register-link"><i class="fas fa-user-plus"></i> Belum punya akun? Daftar di sini</a>
     <a href="#" id="forgotPasswordLink" class="forgot-password"><i class="fas fa-question-circle"></i> Lupa Password?</a>
   </div>
   <footer>© Portal Transmisi - Tanah Merah</footer>
@@ -184,7 +186,7 @@
     if (!email || !password) return showMessage('Email dan password harus diisi');
     try {
       await window.auth.signInWithEmailAndPassword(email, password);
-      // Redirect ke halaman utama
+      // Redirect ke halaman utama (dashboard)
       window.location.href = 'index.html';
     } catch (err) {
       console.error(err);
@@ -197,7 +199,6 @@
 
   // Masuk sebagai tamu
   document.getElementById('guestBtn').addEventListener('click', () => {
-    // Simpan status tamu di localStorage, lalu redirect
     localStorage.setItem('guestMode', 'true');
     window.location.href = 'index.html';
   });
