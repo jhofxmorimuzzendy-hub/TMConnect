@@ -3,33 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Monitoring Kebersihan | Transmisi Tanah Merah Ch44 (658) + Multi Foto</title>
+    <title>Monitoring Kebersihan | Transmisi Tanah Merah + Multi Role</title>
     <link rel="icon" type="image/ico" href="favicon.ico">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;500;600;700;800&display=swap" rel="stylesheet">
     
-    <!-- Firebase SDK -->
+    <!-- Firebase SDK + Auth -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
-    <!-- firebase-config.js dapat diganti dengan konfigurasi di bawah, tetapi untuk keperluan demo akan disediakan placeholder -->
-    <script>
-        // ========== KONFIGURASI FIREBASE (SILAKAN GANTI DENGAN MILIK ANDA) ==========
-        const firebaseConfig = {
-            apiKey: "AIzaSyDummyPlaceholderChangeMe",       // Ganti dengan apiKey asli
-            authDomain: "your-project.firebaseapp.com",     // Ganti
-            databaseURL: "https://your-project-default-rtdb.asia-southeast1.firebasedatabase.app", // Ganti dengan URL Realtime Database
-            projectId: "your-project",
-            storageBucket: "your-project.appspot.com",
-            messagingSenderId: "123456789",
-            appId: "1:123456789:web:abcdef"
-        };
-        // Inisialisasi Firebase jika belum ada
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
-        window.db = firebase.database();
-    </script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="auth-check.js"></script>
 
     <script>
         tailwind.config = {
@@ -44,7 +29,6 @@
     <style>
         * { -webkit-tap-highlight-color: transparent; }
         body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #eef2f8 0%, #e0f0ec 100%); position: relative; }
-        /* Tombol navigasi */
         .nav-actions {
             position: fixed;
             top: 16px;
@@ -113,10 +97,20 @@
         .status-bersih { background: #dcfce7; color: #166534; }
         .status-cukup { background: #fef9c3; color: #854d0e; }
         .status-kotor { background: #fee2e2; color: #b91c1c; }
+        .role-badge-header {
+            background: rgba(0,0,0,0.3);
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-left: 12px;
+        }
     </style>
 </head>
 <body>
-    <!-- Tombol navigasi -->
     <div class="nav-actions">
         <button id="backToDashboardBtn" class="nav-btn" title="Kembali ke Dashboard">
             <i class="fas fa-arrow-left"></i> Dashboard
@@ -135,6 +129,7 @@
             <h1 class="text-xl sm:text-2xl md:text-4xl font-extrabold text-slate-800 mt-2 md:mt-3 leading-tight">
                 Monitoring Kebersihan Area Transmisi
                 <span id="firebaseStatus" class="sync-status"><i class="fas fa-cloud-upload-alt"></i> Menghubungkan...</span>
+                <span id="userRoleDisplay" class="role-badge-header"><i class="fas fa-user"></i> Memuat...</span>
             </h1>
             <div class="mt-2 flex justify-center px-2 flex-wrap gap-2">
                 <span class="badge-transmisi"><i class="fas fa-tower-broadcast mr-1"></i> Transmisi - Tanah Merah, Ch 44 (Freq 658)</span>
@@ -246,19 +241,19 @@
                         <tr><th class="py-2 px-1">No</th><th>Tgl</th><th>Petugas</th><th>Genset</th><th>Peralatan</th><th>R.Pemancar</th><th>Lingkungan</th><th>Foto</th><th>Aksi</th></tr>
                     </thead>
                     <tbody id="tabelBody">
-                        <tr><td colspan="9" class="text-center py-6 text-gray-400">🧹 Memuat data kebersihan...</td></tr>
-                    </tbody>
+                        <tr><td colspan="9" class="text-center py-6 text-gray-400">🧹 Memuat data kebersihan...</td</tr</tbody>
                 </table>
             </div>
         </div>
     </div>
 
     <script>
-        // ======================== KONFIGURASI FIREBASE (Offline Persistence + Realtime) ========================
+        // ======================== KONFIGURASI FIREBASE + MULTI-ROLE ========================
         let isFirebaseReady = false;
         let dataEntries = [];
         let listenerRef = null;
         let isInternalUpdate = false;
+        let userRole = 'guest'; // dari auth-check
         const DB_PATH = 'monitoring/kebersihan/entries';
 
         function updateFirebaseStatus(connected, message) {
@@ -316,7 +311,6 @@
             } else if (!entry.fotoList) {
                 entry.fotoList = [];
             }
-            // default value for old entries
             entry.kebersihanGenset = entry.kebersihanGenset || "Bersih";
             entry.kebersihanPeralatan = entry.kebersihanPeralatan || "Bersih";
             entry.kebersihanPemancar = entry.kebersihanPemancar || "Bersih";
@@ -370,7 +364,19 @@
             isInternalUpdate = false;
         }
 
-        // ========== KAMERA MULTI FOTO (SAMA DENGAN REFERENSI) ==========
+        async function updateEntryInFirebase(updatedEntry) {
+            const index = dataEntries.findIndex(e => e.id == updatedEntry.id);
+            if (index !== -1) {
+                dataEntries[index] = updatedEntry;
+                isInternalUpdate = true;
+                await setEntriesToFirebase(dataEntries);
+                isInternalUpdate = false;
+                renderTable();
+                updateNomorOtomatis();
+            }
+        }
+
+        // ========== KAMERA MULTI FOTO ==========
         let currentFotoList = [];
         let mediaStream = null;
         let currentFacingMode = 'environment';
@@ -498,7 +504,6 @@
             });
         }
 
-        // Watermark khusus Transmisi Tanah Merah
         async function applyWatermark(dataUrl, petugasName, locationCoord, waktuStr) {
             return new Promise((resolve, reject) => {
                 const img = new Image();
@@ -572,6 +577,40 @@
         btnFlip.addEventListener('click', flipCamera);
         btnUpload.addEventListener('click', uploadManual);
 
+        // ========== FUNGSI EDIT UNTUK ADMIN ==========
+        window.editEntry = async (id) => {
+            if (userRole !== 'admin') {
+                alert("Hanya admin yang dapat mengedit data.");
+                return;
+            }
+            const entry = dataEntries.find(e => e.id == id);
+            if (!entry) return;
+
+            const newTanggal = prompt("Edit tanggal (YYYY-MM-DD):", entry.tanggal);
+            if (newTanggal && newTanggal !== entry.tanggal) entry.tanggal = newTanggal;
+
+            const newPetugas = prompt("Edit petugas:", entry.petugas);
+            if (newPetugas !== null && newPetugas !== entry.petugas) entry.petugas = newPetugas;
+
+            const newGenset = prompt("Edit kebersihan Genset (Bersih/Cukup Bersih/Kotor):", entry.kebersihanGenset);
+            if (newGenset !== null && ["Bersih","Cukup Bersih","Kotor"].includes(newGenset)) entry.kebersihanGenset = newGenset;
+
+            const newPeralatan = prompt("Edit kebersihan Peralatan (Bersih/Cukup Bersih/Kotor):", entry.kebersihanPeralatan);
+            if (newPeralatan !== null && ["Bersih","Cukup Bersih","Kotor"].includes(newPeralatan)) entry.kebersihanPeralatan = newPeralatan;
+
+            const newPemancar = prompt("Edit kebersihan Ruang Pemancar (Bersih/Cukup Bersih/Kotor):", entry.kebersihanPemancar);
+            if (newPemancar !== null && ["Bersih","Cukup Bersih","Kotor"].includes(newPemancar)) entry.kebersihanPemancar = newPemancar;
+
+            const newLingkungan = prompt("Edit kebersihan Lingkungan (Bersih/Cukup Bersih/Kotor):", entry.kebersihanLingkungan);
+            if (newLingkungan !== null && ["Bersih","Cukup Bersih","Kotor"].includes(newLingkungan)) entry.kebersihanLingkungan = newLingkungan;
+
+            const newKeterangan = prompt("Edit keterangan:", entry.keterangan || "");
+            if (newKeterangan !== null) entry.keterangan = newKeterangan;
+
+            await updateEntryInFirebase(entry);
+            alert("Data berhasil diperbarui.");
+        };
+
         // ========== RENDER TABEL ==========
         window.viewAllFoto = (fotoList, startIdx) => {
             if(!fotoList?.length) return;
@@ -599,7 +638,7 @@
 
         function renderTable() {
             const tbody = document.getElementById("tabelBody");
-            if(!dataEntries.length){ tbody.innerHTML=`<td><td colspan="9" class="text-center py-6 text-gray-400">📭 Belum ada data kebersihan</td</tr`; return; }
+            if(!dataEntries.length){ tbody.innerHTML=`<tr><td colspan="9" class="text-center py-6 text-gray-400">📭 Belum ada data kebersihan</td</tr`; return; }
             let html = "";
             dataEntries.forEach(entry => {
                 const fotoCount = entry.fotoList?.length || 0;
@@ -608,16 +647,20 @@
                     thumbs = `<div class="foto-thumb-list">${entry.fotoList.slice(0,2).map((f,i)=>`<div class="thumb-item" onclick="viewAllFoto(entry.fotoList, ${i})"><img src="${f.base64}"></div>`).join('')}${fotoCount>2?`<span class="text-[10px] bg-gray-200 px-1 rounded-full">+${fotoCount-2}</span>`:''}</div>`;
                 }
                 const fotoCell = `<div class="flex flex-col items-center gap-1"><div class="flex justify-center">${thumbs}</div><button type="button" onclick="viewAllFoto(entry.fotoList, 0)" class="text-primary text-[10px] md:text-xs hover:underline"><i class="fas fa-images"></i> ${fotoCount} foto</button></div>`;
+                let actionButtons = `<button onclick="deleteEntry(${entry.id})" class="bg-red-100 text-red-600 px-2 py-1 rounded-full text-[10px]"><i class="fas fa-trash-can"></i> Hapus</button>`;
+                if (userRole === 'admin') {
+                    actionButtons = `<button onclick="editEntry(${entry.id})" class="bg-blue-100 text-blue-600 px-2 py-1 rounded-full text-[10px] mr-1"><i class="fas fa-edit"></i> Edit</button>${actionButtons}`;
+                }
                 html += `<tr class="border-b hover:bg-slate-50">
                     <td class="py-2 px-1 font-mono">${entry.id}</td>
                     <td class="py-2 px-1">${entry.tanggal}</td>
-                    <td class="py-2 px-1 font-medium">${escapeHtml(entry.petugas)}</td>
-                    <td class="py-2 px-1 text-center">${getStatusBadge(entry.kebersihanGenset)}</td>
-                    <td class="py-2 px-1 text-center">${getStatusBadge(entry.kebersihanPeralatan)}</td>
-                    <td class="py-2 px-1 text-center">${getStatusBadge(entry.kebersihanPemancar)}</td>
-                    <td class="py-2 px-1 text-center">${getStatusBadge(entry.kebersihanLingkungan)}</td>
-                    <td class="py-2 px-1 text-center">${fotoCell}</td>
-                    <td class="py-2 px-1"><button onclick="deleteEntry(${entry.id})" class="bg-red-100 text-red-600 px-2 py-1 rounded-full text-[10px]"><i class="fas fa-trash-can"></i> Hapus</button></td>
+                    <td class="py-2 px-1 font-medium">${escapeHtml(entry.petugas)}</td
+                    <td class="py-2 px-1 text-center">${getStatusBadge(entry.kebersihanGenset)}</td
+                    <td class="py-2 px-1 text-center">${getStatusBadge(entry.kebersihanPeralatan)}</td
+                    <td class="py-2 px-1 text-center">${getStatusBadge(entry.kebersihanPemancar)}</td
+                    <td class="py-2 px-1 text-center">${getStatusBadge(entry.kebersihanLingkungan)}</td
+                    <td class="py-2 px-1 text-center">${fotoCell}</td
+                    <td class="py-2 px-1 text-center">${actionButtons}</td
                 </tr>`;
             });
             tbody.innerHTML = html;
@@ -636,6 +679,10 @@
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
+            if (userRole === 'guest') {
+                alert("Tamu tidak dapat menyimpan data. Silakan login.");
+                return;
+            }
             const tanggal = tanggalInput.value.trim();
             const petugas = petugasInput.value.trim();
             if(!tanggal || !petugas) return alert("Lengkapi tanggal dan nama petugas!");
@@ -672,7 +719,10 @@
             if(mediaStream) tutupKamera();
         }
         resetBtn.addEventListener('click', () => { if(confirm("Reset form?")) resetFormInput(); });
-        document.getElementById('btnHapusSemua').addEventListener('click', async () => { if(confirm("Hapus SEMUA data kebersihan?")){ await clearAllEntries(); resetFormInput(); alert("Semua data dihapus dari Firebase."); } });
+        document.getElementById('btnHapusSemua').addEventListener('click', async () => { 
+            if (userRole !== 'admin') { alert("Hanya admin yang dapat menghapus semua data."); return; }
+            if(confirm("Hapus SEMUA data kebersihan?")){ await clearAllEntries(); resetFormInput(); alert("Semua data dihapus dari Firebase."); } 
+        });
 
         // ========== EXPORT HTML ==========
         document.getElementById('btnExportHTML').addEventListener('click', () => {
@@ -680,7 +730,7 @@
             let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Laporan Kebersihan - Transmisi Tanah Merah</title><style>body{font-family:Inter,sans-serif;margin:20px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #aaa;padding:8px;vertical-align:top}th{background:#1e6f5c;color:white}.foto-grid{display:flex;gap:6px;flex-wrap:wrap}img{width:60px;height:60px;object-fit:cover;border-radius:8px}</style></head><body><h2>Monitoring Kebersihan - Transmisi Tanah Merah Ch44 (658)</h2><p>Export: ${new Date().toLocaleString()}</p><table border="1"><thead><tr><th>No</th><th>Tanggal</th><th>Petugas</th><th>Genset</th><th>Peralatan</th><th>R.Pemancar</th><th>Lingkungan</th><th>Foto</th><th>Keterangan</th></tr></thead><tbody>`;
             dataEntries.forEach((e,idx) => {
                 let fotoHtml = `<div class="foto-grid">${(e.fotoList||[]).map(f=>`<img src="${f.base64}" title="${f.jamFoto}">`).join('')}</div>`;
-                html += `<tr><td>${idx+1}</td><td>${e.tanggal}</td><td>${escapeHtml(e.petugas)}</td><td>${e.kebersihanGenset}</td><td>${e.kebersihanPeralatan}</td><td>${e.kebersihanPemancar}</td><td>${e.kebersihanLingkungan}</td><td>${fotoHtml}</td><td>${escapeHtml(e.keterangan||'-')}</td></tr>`;
+                html += `<tr><td>${idx+1}</td><td>${e.tanggal}</td><td>${escapeHtml(e.petugas)}</td<td>${e.kebersihanGenset}</td<td>${e.kebersihanPeralatan}</td<td>${e.kebersihanPemancar}</td<td>${e.kebersihanLingkungan}</td<td>${fotoHtml}</td<td>${escapeHtml(e.keterangan||'-')}</td</tr>`;
             });
             html += `</tbody></table><p><em>Watermark otomatis: TVRI, transmisi, petugas, waktu, koordinat.</em></p></body></html>`;
             const blob = new Blob([html], {type:"text/html"}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`laporan_kebersihan_${Date.now()}.html`; a.click(); URL.revokeObjectURL(blob);
@@ -688,6 +738,31 @@
 
         function showLoading(msg) { let ld = document.getElementById('globalLoading'); if(!ld){ ld=document.createElement('div'); ld.id='globalLoading'; ld.className='loading-overlay'; ld.innerHTML=`<div class="bg-black/80 text-white p-4 rounded-xl text-center">${msg}</div>`; document.body.appendChild(ld); } else ld.style.display='flex'; }
         function hideLoading() { let ld = document.getElementById('globalLoading'); if(ld) ld.remove(); }
+
+        // ======================== MULTI-ROLE HANDLER ========================
+        window.addEventListener('roleChanged', (e) => {
+            userRole = e.detail.role;
+            const roleSpan = document.getElementById('userRoleDisplay');
+            if (roleSpan) {
+                if (userRole === 'admin') roleSpan.innerHTML = '<i class="fas fa-user-shield"></i> Admin';
+                else if (userRole === 'user') roleSpan.innerHTML = '<i class="fas fa-user"></i> User';
+                else roleSpan.innerHTML = '<i class="fas fa-user-friends"></i> Tamu';
+            }
+            // Nonaktifkan form jika tamu
+            const formInputs = document.querySelectorAll('#formKebersihan input, #formKebersihan select, #formKebersihan textarea, #formKebersihan button[type="submit"]');
+            formInputs.forEach(inp => {
+                if (userRole === 'guest') inp.disabled = true;
+                else inp.disabled = false;
+            });
+            // Tombol hapus semua hanya untuk admin
+            const hapusSemuaBtn = document.getElementById('btnHapusSemua');
+            if (hapusSemuaBtn) {
+                if (userRole !== 'admin') hapusSemuaBtn.style.display = 'none';
+                else hapusSemuaBtn.style.display = 'inline-flex';
+            }
+            // Render ulang tabel untuk menampilkan tombol edit jika admin
+            renderTable();
+        });
 
         // ======================== INISIALISASI FIREBASE ========================
         async function initFirebase() {
