@@ -571,6 +571,29 @@
 </div>
 
 <script>
+    // ========== CEK AUTENTIKASI SEBELUM MEMUAT HALAMAN ==========
+    // Fungsi untuk memastikan user sudah login atau dalam mode tamu
+    function checkAuthAndRedirect() {
+        // Cek apakah sudah login via Firebase Auth (auth-check.js akan mengisi window.auth.currentUser)
+        if (window.auth && window.auth.currentUser) {
+            return true;
+        }
+        // Cek mode tamu dari localStorage (diset saat login sebagai tamu)
+        if (localStorage.getItem('guestMode') === 'true') {
+            return true;
+        }
+        // Redirect ke halaman login
+        window.location.href = 'login.html';
+        return false;
+    }
+
+    // Jalankan pengecekan di awal (sebelum apapun)
+    if (!checkAuthAndRedirect()) {
+        // Jika redirect, hentikan eksekusi script selanjutnya
+        throw new Error("Redirecting to login page");
+    }
+    // ========== AKHIR CEK AUTENTIKASI ==========
+
     // ========== KONFIGURASI FIREBASE DENGAN PERSISTENCE OFFLINE ==========
     let isFirebaseReady = false;
     let currentShiftListenerRef = null;     
