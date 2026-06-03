@@ -15,79 +15,66 @@
     <script src="auth-check.js"></script>
     <style>
         * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #eef2f8 0%, #e0f0ec 100%); padding: 20px; min-height: 100vh; }
+        body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #eef2f8 0%, #e0f0ec 100%); padding: 16px; min-height: 100vh; }
         .container { max-width: 1400px; margin: 0 auto; background: white; border-radius: 36px; box-shadow: 0 20px 40px -12px rgba(0,0,0,0.15); overflow: hidden; }
-        .header { background: linear-gradient(135deg, #1e6f5c 0%, #0e5a48 100%); padding: 20px 28px; color: white; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; }
-        .header h1 { font-size: 1.5rem; font-weight: 700; display: flex; align-items: center; gap: 12px; }
-        .back-btn { background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 20px; border-radius: 60px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: 0.2s; }
-        .back-btn:hover { background: rgba(255,255,255,0.35); transform: translateY(-2px); }
-        .tabs { display: flex; background: #f1f5f9; padding: 0 28px; gap: 8px; border-bottom: 1px solid #e2e8f0; flex-wrap: wrap; }
-        .tab-btn { padding: 12px 24px; background: transparent; border: none; font-weight: 600; cursor: pointer; color: #475569; transition: 0.2s; }
+        .header { background: linear-gradient(135deg, #1e6f5c 0%, #0e5a48 100%); padding: 16px 24px; color: white; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; }
+        .header h1 { font-size: 1.4rem; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+        .back-btn { background: rgba(255,255,255,0.2); border: none; color: white; padding: 6px 16px; border-radius: 40px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; transition: 0.2s; font-size: 0.8rem; }
+        .back-btn:hover { background: rgba(255,255,255,0.35); transform: translateY(-1px); }
+        .tabs { display: flex; background: #f1f5f9; padding: 0 20px; gap: 4px; border-bottom: 1px solid #e2e8f0; flex-wrap: wrap; }
+        .tab-btn { padding: 10px 20px; background: transparent; border: none; font-weight: 600; cursor: pointer; color: #475569; transition: 0.2s; font-size: 0.9rem; }
         .tab-btn.active { color: #1e6f5c; border-bottom: 3px solid #1e6f5c; background: white; }
-        .tab-content { display: none; padding: 28px; }
+        .tab-content { display: none; padding: 20px; }
         .tab-content.active { display: block; }
-        /* User table */
-        .user-table-wrapper, .log-table-wrapper { overflow-x: auto; border-radius: 24px; border: 1px solid #e2e8f0; margin-top: 20px; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: 600px; }
-        th { background: #eef2f5; padding: 14px 12px; text-align: left; border-bottom: 2px solid #cbd5e1; font-weight: 600; }
-        td { padding: 12px; border-bottom: 1px solid #e9edf2; vertical-align: top; }
-        /* Perbaikan tampilan log table */
-        .log-table-wrapper table { min-width: 800px; }
-        .log-table-wrapper th, .log-table-wrapper td { 
-            padding: 10px 8px; 
-            word-break: break-word; 
-            white-space: normal;
-        }
-        .log-table-wrapper th:nth-child(1) { width: 150px; }  /* Waktu */
-        .log-table-wrapper th:nth-child(2) { width: 180px; }  /* User */
-        .log-table-wrapper th:nth-child(3) { width: 80px; }   /* Role */
-        .log-table-wrapper th:nth-child(4) { width: 120px; }  /* Aksi */
-        .log-table-wrapper th:nth-child(5) { width: 140px; }  /* Modul */
-        .log-table-wrapper th:nth-child(6) { min-width: 250px; } /* Detail */
-        @media (max-width: 1000px) {
-            .log-table-wrapper table { min-width: 700px; }
-            .log-table-wrapper th:nth-child(1) { width: 130px; }
-            .log-table-wrapper th:nth-child(2) { width: 150px; }
-            .log-table-wrapper th:nth-child(6) { min-width: 200px; }
-        }
+        /* Tabel User */
+        .user-table-wrapper, .log-table-wrapper { overflow-x: auto; border-radius: 20px; border: 1px solid #e2e8f0; margin-top: 16px; background: white; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        th { background: #eef2f5; padding: 12px 10px; text-align: left; border-bottom: 2px solid #cbd5e1; font-weight: 600; }
+        td { padding: 10px; border-bottom: 1px solid #e9edf2; vertical-align: middle; }
+        /* Sembunyikan kolom "Dibuat" di layar kecil (User table) */
         @media (max-width: 768px) {
-            .log-table-wrapper table { min-width: 650px; }
+            .user-table-wrapper th:nth-child(4), .user-table-wrapper td:nth-child(4) { display: none; }
+        }
+        /* Log table style */
+        .log-table-wrapper { overflow-x: auto; }
+        .log-table-wrapper table { min-width: 800px; white-space: normal; }
+        .log-table-wrapper th, .log-table-wrapper td { padding: 10px 8px; vertical-align: top; }
+        .log-table-wrapper td:last-child { word-break: break-word; white-space: normal; max-width: 300px; }
+        @media (max-width: 640px) {
             .log-table-wrapper th, .log-table-wrapper td { font-size: 0.75rem; padding: 8px 6px; }
         }
-        .role-badge { display: inline-block; background: #e6f7f0; color: #1e6f5c; padding: 4px 12px; border-radius: 40px; font-size: 0.75rem; font-weight: 600; }
+        .role-badge { display: inline-block; background: #e6f7f0; color: #1e6f5c; padding: 4px 12px; border-radius: 40px; font-size: 0.7rem; font-weight: 600; }
         .role-badge.admin { background: #fef3c7; color: #b45309; }
         select, button, input { font-family: inherit; }
-        .select-role { padding: 6px 10px; border-radius: 30px; border: 1px solid #cbd5e1; background: white; font-size: 0.8rem; }
-        .btn-edit, .btn-delete, .btn-reset { background: transparent; border: none; cursor: pointer; padding: 6px 12px; border-radius: 30px; font-size: 0.7rem; font-weight: 600; transition: 0.2s; margin-right: 5px; }
+        .select-role { padding: 5px 8px; border-radius: 30px; border: 1px solid #cbd5e1; background: white; font-size: 0.75rem; }
+        .btn-edit, .btn-delete, .btn-reset { background: transparent; border: none; cursor: pointer; padding: 5px 10px; border-radius: 30px; font-size: 0.7rem; font-weight: 600; transition: 0.2s; margin: 2px; }
         .btn-edit { background: #e6f7f0; color: #1e6f5c; }
         .btn-delete { background: #ffe6e5; color: #b91c1c; }
         .btn-reset { background: #eef2ff; color: #2563eb; }
-        .filter-bar { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; align-items: flex-end; }
+        .filter-bar { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; align-items: flex-end; }
         .filter-group { display: flex; flex-direction: column; gap: 4px; }
         .filter-group label { font-size: 0.7rem; font-weight: 600; color: #475569; }
-        .filter-group input, .filter-group select { padding: 8px 12px; border-radius: 40px; border: 1px solid #cbd5e1; min-width: 150px; background: white; }
-        .action-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 20px; }
-        .refresh-btn { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 8px 18px; border-radius: 40px; cursor: pointer; font-weight: 600; text-decoration: none; color: #1e293b; display: inline-flex; align-items: center; gap: 8px; transition: 0.2s; }
-        .refresh-btn:hover { background: #e2e8f0; transform: translateY(-1px); }
+        .filter-group input, .filter-group select { padding: 6px 10px; border-radius: 30px; border: 1px solid #cbd5e1; min-width: 130px; background: white; font-size: 0.8rem; }
+        .action-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+        .refresh-btn { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 6px 14px; border-radius: 40px; cursor: pointer; font-weight: 600; text-decoration: none; color: #1e293b; display: inline-flex; align-items: center; gap: 6px; transition: 0.2s; font-size: 0.75rem; }
+        .refresh-btn:hover { background: #e2e8f0; }
         .firebase-console-btn { background: #2563eb; color: white; border: none; }
-        .firebase-console-btn:hover { background: #1d4ed8; }
         .delete-old-logs-btn { background: #dc2626; color: white; border: none; }
-        .delete-old-logs-btn:hover { background: #b91c1c; }
         .delete-all-logs-btn { background: #b91c1c; color: white; border: none; }
-        .delete-all-logs-btn:hover { background: #991b1b; }
         .loading, .empty-msg { text-align: center; padding: 40px; color: #5b6e8c; }
-        .error-msg, .info-msg, .success-msg { padding: 12px 18px; border-radius: 60px; margin-bottom: 20px; text-align: center; }
+        .error-msg, .info-msg, .success-msg { padding: 10px 16px; border-radius: 40px; margin-bottom: 16px; text-align: center; font-size: 0.8rem; }
         .error-msg { background: #fee2e2; color: #b91c1c; }
         .info-msg { background: #e6f7f0; color: #1e6f5c; }
         .success-msg { background: #dcfce7; color: #15803d; }
-        footer { text-align: center; padding: 20px; font-size: 0.7rem; color: #7f8c8d; border-top: 1px solid #e2edf2; background: #fafcff; }
+        footer { text-align: center; padding: 16px; font-size: 0.7rem; color: #7f8c8d; border-top: 1px solid #e2edf2; background: #fafcff; }
         @media (max-width: 640px) {
-            .header { padding: 16px 20px; flex-direction: column; align-items: stretch; }
-            .tabs { padding: 0 16px; }
-            .tab-content { padding: 20px; }
-            .filter-group input, .filter-group select { min-width: 120px; }
+            .header h1 { font-size: 1.2rem; }
+            .tab-btn { padding: 8px 12px; font-size: 0.8rem; }
+            .tab-content { padding: 16px; }
+            .filter-group input, .filter-group select { min-width: 100px; }
             .action-bar { flex-direction: column; align-items: stretch; }
             .action-bar div { justify-content: center; }
+            .refresh-btn { justify-content: center; }
         }
     </style>
 </head>
@@ -95,73 +82,72 @@
 <div class="container">
     <div class="header">
         <h1><i class="fas fa-users-cog"></i> Panel Admin</h1>
-        <button id="backToDashboardBtn" class="back-btn"><i class="fas fa-arrow-left"></i> Kembali ke Dashboard</button>
+        <button id="backToDashboardBtn" class="back-btn"><i class="fas fa-arrow-left"></i> Dashboard</button>
     </div>
     <div class="tabs">
         <button class="tab-btn active" data-tab="users">Manajemen User</button>
         <button class="tab-btn" data-tab="logs">Log Aktivitas</button>
     </div>
     <div id="usersTab" class="tab-content active">
-        <div class="content">
-            <div id="userMessageContainer"></div>
-            <div class="action-bar">
-                <span><i class="fas fa-database"></i> Manajemen role & reset password</span>
-                <div style="display: flex; gap: 12px;">
-                    <a href="https://console.firebase.google.com/project/monitoring-tvri-30c22/authentication/users" target="_blank" class="refresh-btn firebase-console-btn"><i class="fas fa-external-link-alt"></i> Buka Firebase Console</a>
-                    <button id="refreshUsersBtn" class="refresh-btn"><i class="fas fa-sync-alt"></i> Refresh</button>
-                </div>
+        <div id="userMessageContainer"></div>
+        <div class="action-bar">
+            <span><i class="fas fa-database"></i> Manajemen role & reset password</span>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <a href="https://console.firebase.google.com/project/monitoring-tvri-30c22/authentication/users" target="_blank" class="refresh-btn firebase-console-btn"><i class="fas fa-external-link-alt"></i> Firebase Console</a>
+                <button id="refreshUsersBtn" class="refresh-btn"><i class="fas fa-sync-alt"></i> Refresh</button>
             </div>
-            <div id="usersListContainer"><div class="loading"><i class="fas fa-spinner fa-pulse"></i> Memuat daftar pengguna...</div></div>
-            <div class="info-msg"><i class="fas fa-info-circle"></i> <strong>Catatan:</strong> Hapus data user hanya dari database. Untuk hapus total dari Authentication, gunakan tombol Firebase Console.</div>
         </div>
+        <div id="usersListContainer"><div class="loading"><i class="fas fa-spinner fa-pulse"></i> Memuat user...</div></div>
+        <div class="info-msg"><i class="fas fa-info-circle"></i> <strong>Catatan:</strong> Hapus data user hanya dari database. Untuk hapus total dari Authentication, gunakan tombol Firebase Console.</div>
     </div>
     <div id="logsTab" class="tab-content">
-        <div class="content">
-            <div id="logMessageContainer"></div>
-            <div class="filter-bar">
-                <div class="filter-group"><label>User Email</label><input type="text" id="filterEmail" placeholder="Cari email..."></div>
-                <div class="filter-group"><label>Modul</label>
-                    <select id="filterModule">
-                        <option value="">Semua</option>
-                        <option value="Monitoring BBM">Monitoring BBM</option><option value="Monitoring Grounding">Monitoring Grounding</option>
-                        <option value="Monitoring Kebersihan">Monitoring Kebersihan</option><option value="Monitoring Kerusakan">Monitoring Kerusakan</option>
-                        <option value="Monitoring Kwh Meter">Monitoring Kwh Meter</option><option value="Monitoring Metering">Monitoring Metering</option>
-                        <option value="Monitoring Multiplexing">Monitoring Multiplexing</option><option value="Monitoring Pemancar">Monitoring Pemancar</option>
-                        <option value="Monitoring Siaran">Monitoring Siaran</option><option value="Monitoring Suhu">Monitoring Suhu</option>
-                        <option value="Dashboard">Dashboard (Shift)</option><option value="Auth">Auth (Login/Logout)</option><option value="User Control">User Control</option>
-                    </select>
-                </div>
-                <div class="filter-group"><label>Aksi</label><input type="text" id="filterAction" placeholder="TAMBAH, EDIT, HAPUS..."></div>
-                <div class="filter-group"><label>Tanggal Mulai</label><input type="date" id="filterStartDate"></div>
-                <div class="filter-group"><label>Tanggal Akhir</label><input type="date" id="filterEndDate"></div>
-                <div class="filter-group">
-                    <button id="applyLogFilterBtn" class="refresh-btn" style="background:#1e6f5c; color:white;"><i class="fas fa-filter"></i> Filter</button>
-                    <button id="resetLogFilterBtn" class="refresh-btn">Reset</button>
-                </div>
+        <div id="logMessageContainer"></div>
+        <div class="filter-bar">
+            <div class="filter-group"><label>Email</label><input type="text" id="filterEmail" placeholder="Cari email"></div>
+            <div class="filter-group"><label>Modul</label>
+                <select id="filterModule">
+                    <option value="">Semua</option>
+                    <option value="Monitoring BBM">Monitoring BBM</option><option value="Monitoring Grounding">Monitoring Grounding</option>
+                    <option value="Monitoring Kebersihan">Monitoring Kebersihan</option><option value="Monitoring Kerusakan">Monitoring Kerusakan</option>
+                    <option value="Monitoring Kwh Meter">Monitoring Kwh Meter</option><option value="Monitoring Metering">Monitoring Metering</option>
+                    <option value="Monitoring Multiplexing">Monitoring Multiplexing</option><option value="Monitoring Pemancar">Monitoring Pemancar</option>
+                    <option value="Monitoring Siaran">Monitoring Siaran</option><option value="Monitoring Suhu">Monitoring Suhu</option>
+                    <option value="Dashboard">Dashboard (Shift)</option><option value="Auth">Auth</option><option value="User Control">User Control</option>
+                </select>
             </div>
-            <div class="action-bar">
-                <span><i class="fas fa-history"></i> Log Aktivitas User</span>
-                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                    <button id="exportLogCsvBtn" class="refresh-btn"><i class="fas fa-file-csv"></i> Export CSV</button>
-                    <button id="exportLogHtmlBtn" class="refresh-btn"><i class="fas fa-file-code"></i> Export HTML</button>
-                    <button id="deleteOldLogsBtn" class="refresh-btn delete-old-logs-btn"><i class="fas fa-trash-alt"></i> Hapus Log > 30 Hari</button>
-                    <button id="deleteAllLogsBtn" class="refresh-btn delete-all-logs-btn"><i class="fas fa-trash-alt"></i> Hapus Semua Log</button>
-                    <button id="refreshLogsBtn" class="refresh-btn"><i class="fas fa-sync-alt"></i> Refresh Log</button>
-                </div>
+            <div class="filter-group"><label>Aksi</label><input type="text" id="filterAction" placeholder="TAMBAH, EDIT..."></div>
+            <div class="filter-group"><label>Tgl Mulai</label><input type="date" id="filterStartDate"></div>
+            <div class="filter-group"><label>Tgl Akhir</label><input type="date" id="filterEndDate"></div>
+            <div class="filter-group">
+                <button id="applyLogFilterBtn" class="refresh-btn" style="background:#1e6f5c; color:white;"><i class="fas fa-filter"></i> Filter</button>
+                <button id="resetLogFilterBtn" class="refresh-btn">Reset</button>
             </div>
-            <div id="logsListContainer"><div class="loading"><i class="fas fa-spinner fa-pulse"></i> Memuat log aktivitas...</div></div>
         </div>
+        <div class="action-bar">
+            <span><i class="fas fa-history"></i> Log Aktivitas</span>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button id="exportLogCsvBtn" class="refresh-btn"><i class="fas fa-file-csv"></i> CSV</button>
+                <button id="exportLogHtmlBtn" class="refresh-btn"><i class="fas fa-file-code"></i> HTML</button>
+                <button id="deleteOldLogsBtn" class="refresh-btn delete-old-logs-btn"><i class="fas fa-trash-alt"></i> Hapus > 30 Hari</button>
+                <button id="deleteAllLogsBtn" class="refresh-btn delete-all-logs-btn"><i class="fas fa-trash-alt"></i> Hapus Semua</button>
+                <button id="refreshLogsBtn" class="refresh-btn"><i class="fas fa-sync-alt"></i> Refresh</button>
+            </div>
+        </div>
+        <div id="logsListContainer"><div class="loading"><i class="fas fa-spinner fa-pulse"></i> Memuat log...</div></div>
     </div>
     <footer>Portal Transmisi - Manajemen User & Log Aktivitas</footer>
 </div>
 
 <script>
-    // ----------------------- VARIABLES -----------------------
+    // Variabel global
     let currentAdminUid = null;
     let allLogs = [];
     let filteredLogs = [];
 
-    // ----------------------- USER MANAGEMENT -----------------------
+    // Helper
+    function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, m => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;'); }
+
+    // User Management
     const userMessageDiv = document.getElementById('userMessageContainer');
     function showUserMessage(msg, type = 'error') {
         let className = type === 'success' ? 'success-msg' : (type === 'info' ? 'info-msg' : 'error-msg');
@@ -179,12 +165,12 @@
         const snapshot = await window.db.ref('users').once('value');
         const data = snapshot.val();
         if (!data) return [];
-        return Object.entries(data).map(([uid, info]) => ({ uid, email: info.email || 'Tidak ada email', role: info.role || 'guest', createdAt: info.createdAt || '-' }));
+        return Object.entries(data).map(([uid, info]) => ({ uid, email: info.email || '-', role: info.role || 'guest', createdAt: info.createdAt || '-' }));
     }
     async function updateUserRole(uid, newRole) { await window.db.ref(`users/${uid}/role`).set(newRole); return true; }
     async function deleteUserData(uid) { await window.db.ref(`users/${uid}`).remove(); return true; }
     async function sendPasswordReset(email) {
-        try { await window.auth.sendPasswordResetEmail(email); return { success: true, message: `Email reset password terkirim ke ${email}` }; } 
+        try { await window.auth.sendPasswordResetEmail(email); return { success: true, message: `Email reset terkirim ke ${email}` }; } 
         catch (err) { return { success: false, message: err.message }; }
     }
     function renderUsersTable(users, adminUid) {
@@ -194,32 +180,33 @@
         for (let user of users) {
             const isCurrent = (user.uid === adminUid);
             html += `<tr>
-                <td>${escapeHtml(user.email)} ${isCurrent ? '<span class="role-badge" style="background:#fef3c7;">(Anda)</span>' : ''}</td>
-                <td><span class="role-badge ${user.role === 'admin' ? 'admin' : ''}">${user.role === 'admin' ? 'Admin' : (user.role === 'user' ? 'User' : 'Tamu')}</span></td>
+                <td>${escapeHtml(user.email)} ${isCurrent ? '<span class="role-badge" style="background:#fef3c7;">(Anda)</span>' : ''}</td
+                <td><span class="role-badge ${user.role === 'admin' ? 'admin' : ''}">${user.role === 'admin' ? 'Admin' : (user.role === 'user' ? 'User' : 'Tamu')}</span></td
                 <td><select class="select-role" data-uid="${user.uid}" ${isCurrent ? 'disabled' : ''}>
                     <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Admin</option>
                     <option value="user" ${user.role === 'user' ? 'selected' : ''}>User</option>
                     <option value="guest" ${user.role === 'guest' ? 'selected' : ''}>Tamu</option>
-                </select></td>
-                <td>${user.createdAt ? new Date(user.createdAt).toLocaleDateString('id') : '-'}</td>
+                </select></td
+                <td>${user.createdAt ? new Date(user.createdAt).toLocaleDateString('id') : '-'}</td
                 <td>
-                    <button class="btn-edit" data-uid="${user.uid}" ${isCurrent ? 'disabled' : ''}><i class="fas fa-save"></i> Simpan Role</button>
-                    <button class="btn-reset" data-email="${user.email}" ${isCurrent ? 'disabled' : ''}><i class="fas fa-key"></i> Reset PW</button>
-                    <button class="btn-delete" data-uid="${user.uid}" ${isCurrent ? 'disabled' : ''}><i class="fas fa-trash-alt"></i> Hapus Data</button>
-                </td>
+                    <button class="btn-edit" data-uid="${user.uid}" ${isCurrent ? 'disabled' : ''}><i class="fas fa-save"></i> Role</button>
+                    <button class="btn-reset" data-email="${user.email}" ${isCurrent ? 'disabled' : ''}><i class="fas fa-key"></i> Reset</button>
+                    <button class="btn-delete" data-uid="${user.uid}" ${isCurrent ? 'disabled' : ''}><i class="fas fa-trash-alt"></i> Hapus</button>
+                 </td
             </tr>`;
         }
         html += `</tbody></table></div>`;
         container.innerHTML = html;
+        // Event listeners
         document.querySelectorAll('.btn-edit').forEach(btn => btn.addEventListener('click', async () => {
             const uid = btn.getAttribute('data-uid');
             const select = document.querySelector(`.select-role[data-uid="${uid}"]`);
             const newRole = select.value;
             if (confirm(`Ubah role menjadi ${newRole.toUpperCase()}?`)) {
                 await updateUserRole(uid, newRole);
-                showUserMessage('Role berhasil diperbarui', 'success');
+                showUserMessage('Role berhasil diubah', 'success');
                 await refreshUserList();
-                if (typeof window.logActivity === 'function') window.logActivity('EDIT ROLE', `Mengubah role user ${uid} menjadi ${newRole}`, 'User Control');
+                if (typeof window.logActivity === 'function') window.logActivity('EDIT ROLE', `Ubah role user ${uid} menjadi ${newRole}`, 'User Control');
             }
         }));
         document.querySelectorAll('.btn-reset').forEach(btn => btn.addEventListener('click', async () => {
@@ -237,7 +224,7 @@
                 await deleteUserData(uid);
                 showUserMessage('Data user dihapus dari database', 'success');
                 await refreshUserList();
-                if (typeof window.logActivity === 'function') window.logActivity('HAPUS USER DATA', `Menghapus data user ${uid} dari database`, 'User Control');
+                if (typeof window.logActivity === 'function') window.logActivity('HAPUS USER DATA', `Hapus data user ${uid}`, 'User Control');
             }
         }));
     }
@@ -246,7 +233,7 @@
         renderUsersTable(users, currentAdminUid);
     }
 
-    // ----------------------- LOG MANAGEMENT -----------------------
+    // Log Management
     const logMessageDiv = document.getElementById('logMessageContainer');
     function showLogMessage(msg, type = 'error') {
         let className = type === 'success' ? 'success-msg' : (type === 'info' ? 'info-msg' : 'error-msg');
@@ -262,7 +249,7 @@
             logs.sort((a,b) => b.timestampDate - a.timestampDate);
             return logs;
         } catch (err) {
-            console.error("Gagal memuat logs:", err);
+            console.error(err);
             showLogMessage('Gagal memuat logs: ' + err.message, 'error');
             return [];
         }
@@ -286,11 +273,7 @@
     function renderLogsTable() {
         const container = document.getElementById('logsListContainer');
         if (!filteredLogs.length) { container.innerHTML = `<div class="empty-msg">Tidak ada log yang cocok.</div>`; return; }
-        let html = `<div class="log-table-wrapper"><table>
-            <thead>
-                <tr><th>Waktu</th><th>User</th><th>Role</th><th>Aksi</th><th>Modul</th><th>Detail</th></tr>
-            </thead>
-            <tbody>`;
+        let html = `<div class="log-table-wrapper"><tr><thead><tr><th>Waktu</th><th>User</th><th>Role</th><th>Aksi</th><th>Modul</th><th>Detail</th></tr></thead><tbody>`;
         for (let log of filteredLogs) {
             const waktu = log.timestampDate.toLocaleString('id-ID');
             const roleClass = log.userRole === 'admin' ? 'role-badge admin' : 'role-badge';
@@ -300,7 +283,7 @@
                 <td><span class="${roleClass}">${escapeHtml(log.userRole || 'guest')}</span></td
                 <td><strong>${escapeHtml(log.action)}</strong></td
                 <td>${escapeHtml(log.module || '-')}</td
-                <td style="word-break:break-word; white-space:normal;">${escapeHtml(log.details || '-')}</td
+                <td style="word-break:break-word;">${escapeHtml(log.details || '-')}</td
             </tr>`;
         }
         html += `</tbody></table></div>`;
@@ -312,87 +295,86 @@
         showLogMessage(`Memuat ${allLogs.length} log.`, 'info');
     }
 
-    // Hapus log > 30 hari
+    // Hapus log >30 hari
     async function deleteOldLogs(days = 30) {
-        if (!confirm(`⚠️ PERINGATAN: Anda akan menghapus semua log yang berusia lebih dari ${days} hari. Tindakan ini permanen. Lanjutkan?`)) return;
-        const cutoffDate = Date.now() - (days * 24 * 60 * 60 * 1000);
-        const logsToDelete = allLogs.filter(log => log.timestampDate.getTime() < cutoffDate);
-        if (logsToDelete.length === 0) { showLogMessage(`Tidak ada log yang berusia lebih dari ${days} hari.`, 'info'); return; }
-        if (!confirm(`Akan menghapus ${logsToDelete.length} log. Yakin?`)) return;
-        showLogMessage(`Menghapus ${logsToDelete.length} log...`, 'info');
+        if (!confirm(`⚠️ Hapus semua log yang berusia lebih dari ${days} hari?`)) return;
+        const cutoff = Date.now() - (days * 24 * 60 * 60 * 1000);
+        const toDelete = allLogs.filter(l => l.timestampDate.getTime() < cutoff);
+        if (toDelete.length === 0) { showLogMessage(`Tidak ada log > ${days} hari.`, 'info'); return; }
+        if (!confirm(`Akan menghapus ${toDelete.length} log. Lanjutkan?`)) return;
+        showLogMessage(`Menghapus ${toDelete.length} log...`, 'info');
         let deleted = 0, errors = 0;
-        for (let log of logsToDelete) {
-            try { await window.db.ref(`logs/${log.id}`).remove(); deleted++; } 
-            catch (err) { errors++; console.error(err); }
+        for (let log of toDelete) {
+            try { await window.db.ref(`logs/${log.id}`).remove(); deleted++; } catch(e) { errors++; }
         }
-        showLogMessage(`✅ Selesai: ${deleted} log dihapus. Gagal: ${errors}.`, deleted > 0 ? 'success' : 'error');
-        if (typeof window.logActivity === 'function') window.logActivity('HAPUS LOG LAMA', `Menghapus ${deleted} log (usia > ${days} hari)`, 'User Control');
+        showLogMessage(`✅ ${deleted} log dihapus. Gagal: ${errors}.`, deleted > 0 ? 'success' : 'error');
+        if (typeof window.logActivity === 'function') window.logActivity('HAPUS LOG LAMA', `Hapus ${deleted} log > ${days} hari`, 'User Control');
         await refreshLogs();
     }
-
     // Hapus semua log
     async function deleteAllLogs() {
-        if (!confirm(`⚠️ PERINGATAN: Anda akan menghapus SEMUA log! Tindakan ini permanen. Lanjutkan?`)) return;
+        if (!confirm(`⚠️ Hapus SEMUA log? Tindakan permanen.`)) return;
         const total = allLogs.length;
-        if (total === 0) { showLogMessage('Tidak ada log untuk dihapus.', 'info'); return; }
-        if (!confirm(`Akan menghapus ${total} log. Yakin?`)) return;
-        showLogMessage(`Menghapus ${total} log... Mohon tunggu.`, 'info');
+        if (total === 0) { showLogMessage('Tidak ada log.', 'info'); return; }
+        if (!confirm(`Hapus ${total} log?`)) return;
+        showLogMessage(`Menghapus ${total} log...`, 'info');
         let deleted = 0, errors = 0;
         for (let log of allLogs) {
-            try { await window.db.ref(`logs/${log.id}`).remove(); deleted++; } 
-            catch (err) { errors++; console.error(err); }
+            try { await window.db.ref(`logs/${log.id}`).remove(); deleted++; } catch(e) { errors++; }
         }
-        showLogMessage(`✅ Selesai: ${deleted} log dihapus. Gagal: ${errors}.`, deleted > 0 ? 'success' : 'error');
-        if (typeof window.logActivity === 'function') window.logActivity('HAPUS SEMUA LOG', `Menghapus ${deleted} log`, 'User Control');
+        showLogMessage(`✅ ${deleted} log dihapus. Gagal: ${errors}.`, deleted > 0 ? 'success' : 'error');
+        if (typeof window.logActivity === 'function') window.logActivity('HAPUS SEMUA LOG', `Hapus ${deleted} log`, 'User Control');
         await refreshLogs();
     }
 
+    // Export
     function exportLogsToCSV() {
-        if (!filteredLogs.length) { alert('Tidak ada data untuk diekspor.'); return; }
-        const headers = ['Waktu', 'User Email', 'Role', 'Aksi', 'Modul', 'Detail', 'User Agent', 'URL'];
-        const rows = filteredLogs.map(log => [
-            log.timestampDate.toLocaleString('id-ID'), log.userEmail || '', log.userRole || '', log.action || '',
-            log.module || '', log.details || '', log.userAgent || '', log.pageUrl || ''
+        if (!filteredLogs.length) { alert('Tidak ada data'); return; }
+        const headers = ['Waktu','User','Role','Aksi','Modul','Detail','User Agent','URL'];
+        const rows = filteredLogs.map(l => [
+            l.timestampDate.toLocaleString('id-ID'), l.userEmail || '', l.userRole || '', l.action || '',
+            l.module || '', l.details || '', l.userAgent || '', l.pageUrl || ''
         ]);
-        const csvContent = [headers, ...rows].map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
-        const blob = new Blob(["\uFEFF" + csvContent], {type: 'text/csv'});
-        const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `log_aktivitas_${new Date().toISOString().slice(0,19)}.csv`; link.click(); URL.revokeObjectURL(link.href);
+        const csv = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+        const blob = new Blob(["\uFEFF"+csv], {type:'text/csv'});
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `log_${Date.now()}.csv`; a.click(); URL.revokeObjectURL(blob);
     }
     function exportLogsToHTML() {
-        if (!filteredLogs.length) { alert('Tidak ada data untuk diekspor.'); return; }
-        let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Log Aktivitas</title><style>body{font-family:Inter,sans-serif;margin:20px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccc;padding:8px}th{background:#1e6f5c;color:white}</style></head><body><h1>Log Aktivitas User</h1><p>Export: ${new Date().toLocaleString()}</p><table border="1"><thead><tr><th>Waktu</th><th>User</th><th>Role</th><th>Aksi</th><th>Modul</th><th>Detail</th></tr></thead><tbody>`;
-        for (let log of filteredLogs) {
+        if (!filteredLogs.length) { alert('Tidak ada data'); return; }
+        let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Log Aktivitas</title><style>body{font-family:Inter;margin:20px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccc;padding:8px}th{background:#1e6f5c;color:white}</style></head><body><h1>Log Aktivitas</h1><p>Export: ${new Date().toLocaleString()}</p><table border="1"><thead><tr><th>Waktu</th><th>User</th><th>Role</th><th>Aksi</th><th>Modul</th><th>Detail</th></tr></thead><tbody>`;
+        for (let l of filteredLogs) {
             html += `<tr>
-                <td>${escapeHtml(log.timestampDate.toLocaleString('id-ID'))}</td>
-                <td>${escapeHtml(log.userEmail || '-')}</td>
-                <td>${escapeHtml(log.userRole || '-')}</td>
-                <td>${escapeHtml(log.action)}</td>
-                <td>${escapeHtml(log.module || '-')}</td>
-                <td>${escapeHtml(log.details || '-')}</td>
+                <td>${escapeHtml(l.timestampDate.toLocaleString('id-ID'))}</td
+                <td>${escapeHtml(l.userEmail||'-')}</td
+                <td>${escapeHtml(l.userRole||'-')}</td
+                <td>${escapeHtml(l.action)}</td
+                <td>${escapeHtml(l.module||'-')}</td
+                <td>${escapeHtml(l.details||'-')}</td
             </tr>`;
         }
         html += `</tbody></table></body></html>`;
-        const blob = new Blob([html], {type: 'text/html'});
-        const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `log_aktivitas_${new Date().toISOString().slice(0,19)}.html`; link.click(); URL.revokeObjectURL(link.href);
+        const blob = new Blob([html], {type:'text/html'});
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `log_${Date.now()}.html`; a.click(); URL.revokeObjectURL(blob);
     }
-
-    function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, m => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;'); }
 
     // Event listeners
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             btn.classList.add('active');
-            const tabId = btn.getAttribute('data-tab');
-            document.getElementById(`${tabId}Tab`).classList.add('active');
-            if (tabId === 'logs') refreshLogs();
+            const id = btn.getAttribute('data-tab');
+            document.getElementById(`${id}Tab`).classList.add('active');
+            if (id === 'logs') refreshLogs();
         });
     });
     document.getElementById('applyLogFilterBtn').addEventListener('click', applyFilters);
     document.getElementById('resetLogFilterBtn').addEventListener('click', () => {
-        document.getElementById('filterEmail').value = ''; document.getElementById('filterModule').value = ''; document.getElementById('filterAction').value = '';
-        document.getElementById('filterStartDate').value = ''; document.getElementById('filterEndDate').value = '';
+        document.getElementById('filterEmail').value = '';
+        document.getElementById('filterModule').value = '';
+        document.getElementById('filterAction').value = '';
+        document.getElementById('filterStartDate').value = '';
+        document.getElementById('filterEndDate').value = '';
         applyFilters();
     });
     document.getElementById('exportLogCsvBtn').addEventListener('click', exportLogsToCSV);
@@ -418,7 +400,7 @@
             await refreshUserList();
             await refreshLogs();
             if (typeof window.logActivity === 'function') {
-                window.logActivity('BUKA USER CONTROL', 'Admin mengakses panel kontrol', 'User Control');
+                window.logActivity('BUKA USER CONTROL', 'Admin buka panel kontrol', 'User Control');
             }
         });
     }
