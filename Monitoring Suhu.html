@@ -17,6 +17,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="firebase-config.js"></script>
+    <script src="log-helper.js"></script> <!-- ✅ TAMBAHKAN LOG HELPER -->
     <script src="auth-check.js"></script>
 
     <script>
@@ -202,9 +203,8 @@
                     <thead class="bg-gray-100">
                         <tr><th class="py-2 px-1">No</th><th>Tgl</th><th>Suhu</th><th>Foto</th><th>Petugas</th><th>Keterangan</th><th>Aksi</th></tr>
                     </thead>
-                    <tbody id="tabelBody"><tr><td colspan="7" class="text-center py-6 text-gray-400">🌡️ Memuat data...</td></tr>
-                </tbody>
-            </table>
+                    <tbody id="tabelBody"><tr><td colspan="7" class="text-center py-6 text-gray-400">🌡️ Memuat data...</td</tr</tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -307,6 +307,10 @@
             isInternalUpdate = true;
             await setEntriesToFirebase(updated);
             isInternalUpdate = false;
+            // LOG: Tambah data
+            if (typeof window.logActivity === 'function') {
+                window.logActivity('TAMBAH DATA', `Menambahkan data suhu ID ${newEntry.id} - Suhu: ${newEntry.suhu}°C, Tanggal: ${newEntry.tanggal}`, 'Monitoring Suhu');
+            }
         }
 
         async function deleteEntryById(id) {
@@ -314,12 +318,21 @@
             isInternalUpdate = true;
             await setEntriesToFirebase(updated);
             isInternalUpdate = false;
+            // LOG: Hapus data
+            if (typeof window.logActivity === 'function') {
+                window.logActivity('HAPUS DATA', `Menghapus data suhu ID ${id}`, 'Monitoring Suhu');
+            }
         }
 
         async function clearAllEntries() {
+            const count = dataEntries.length;
             isInternalUpdate = true;
             await setEntriesToFirebase([]);
             isInternalUpdate = false;
+            // LOG: Hapus semua
+            if (typeof window.logActivity === 'function') {
+                window.logActivity('HAPUS SEMUA', `Menghapus semua data suhu (${count} entries)`, 'Monitoring Suhu');
+            }
         }
 
         // ========== KAMERA MULTI FOTO ==========
@@ -544,6 +557,10 @@
                 entry.tanggal = newTanggal;
                 await updateEntryInFirebase(entry);
                 alert("Tanggal berhasil diubah.");
+                // LOG: Edit data
+                if (typeof window.logActivity === 'function') {
+                    window.logActivity('EDIT DATA', `Mengedit data suhu ID ${id} - Tanggal menjadi ${newTanggal}`, 'Monitoring Suhu');
+                }
             }
         };
 
@@ -584,15 +601,15 @@
                 html += `<tr class="border-b hover:bg-slate-50">
                     <td class="py-2 px-1 font-mono">${entry.id}</td>
                     <td class="py-2 px-1">${entry.tanggal}</td>
-                    <td class="py-2 px-1 font-semibold">${entry.suhu} °C</td>
-                    <td class="py-2 px-1 text-center">${fotoCell}</td>
-                    <td class="py-2 px-1">${escapeHtml(entry.petugas)}</td>
-                    <td class="py-2 px-1 max-w-[120px] truncate">${escapeHtml(entry.keterangan||'-')}</td>
+                    <td class="py-2 px-1 font-semibold">${entry.suhu} °C</td
+                    <td class="py-2 px-1 text-center">${fotoCell}</td
+                    <td class="py-2 px-1">${escapeHtml(entry.petugas)}</td
+                    <td class="py-2 px-1 max-w-[120px] truncate">${escapeHtml(entry.keterangan||'-')}</td
                     <td class="py-2 px-1">
                         ${editButtonHtml}
                         <button onclick="deleteEntry(${entry.id})" class="bg-red-100 text-red-600 px-2 py-1 rounded-full text-[10px]"><i class="fas fa-trash-can"></i> Hapus</button>
-                    </td>
-                </table>`;
+                    </td
+                </tr>`;
             });
             tbody.innerHTML = html;
             window.entryData = dataEntries;
@@ -648,7 +665,14 @@
             if(mediaStream) tutupKamera();
         }
         resetBtn.addEventListener('click', () => { if(confirm("Reset form?")) resetFormInput(); });
-        document.getElementById('btnHapusSemua').addEventListener('click', async () => { if(confirm("Hapus SEMUA data suhu?")){ await clearAllEntries(); resetFormInput(); alert("Semua data dihapus dari Firebase."); } });
+        document.getElementById('btnHapusSemua').addEventListener('click', async () => { 
+            if (userRole !== 'admin') { alert("Hanya admin yang dapat menghapus semua data."); return; }
+            if(confirm("Hapus SEMUA data suhu?")){ 
+                await clearAllEntries(); 
+                resetFormInput(); 
+                alert("Semua data dihapus dari Firebase.");
+            } 
+        });
 
         // ========== EXPORT HTML ==========
         document.getElementById('btnExportHTML').addEventListener('click', () => {
@@ -656,10 +680,14 @@
             let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Laporan Suhu - Transmisi Tanah Merah</title><style>body{font-family:Inter,sans-serif;margin:20px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #aaa;padding:8px;vertical-align:top}th{background:#1e6f5c;color:white}.foto-grid{display:flex;gap:6px;flex-wrap:wrap}img{width:60px;height:60px;object-fit:cover;border-radius:8px}</style></head><body><h2>Monitoring Suhu - Transmisi Tanah Merah Ch44 (658)</h2><p>Export: ${new Date().toLocaleString()}</p><table border="1"><thead><tr><th>No</th><th>Tanggal</th><th>Suhu (°C)</th><th>Foto</th><th>Petugas</th><th>Keterangan</th></tr></thead><tbody>`;
             dataEntries.forEach((e,idx) => {
                 let fotoHtml = `<div class="foto-grid">${(e.fotoList||[]).map(f=>`<img src="${f.base64}" title="${f.jamFoto}">`).join('')}</div>`;
-                html += `<tr><td>${idx+1}</td><td>${e.tanggal}</td><td>${e.suhu} °C</td><td>${fotoHtml}</td><td>${escapeHtml(e.petugas)}</td><td>${escapeHtml(e.keterangan||'-')}</td></tr>`;
+                html += `<tr><td>${idx+1}</td><td>${e.tanggal}</td><td>${e.suhu} °C</td<td>${fotoHtml}</td<td>${escapeHtml(e.petugas)}</td<td>${escapeHtml(e.keterangan||'-')}</td</tr>`;
             });
-            html += `</tbody></table><p><em>Watermark otomatis: TVRI, transmisi, petugas, waktu, koordinat.</em></p></body></html>`;
+            html += `</tbody><tr><p><em>Watermark otomatis: TVRI, transmisi, petugas, waktu, koordinat.</em></p></body></html>`;
             const blob = new Blob([html], {type:"text/html"}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`laporan_suhu_${Date.now()}.html`; a.click(); URL.revokeObjectURL(blob);
+            // LOG: Export data
+            if (typeof window.logActivity === 'function') {
+                window.logActivity('EXPORT', `Mengekspor data suhu ke HTML (${dataEntries.length} data)`, 'Monitoring Suhu');
+            }
         });
 
         function showLoading(msg) { let ld = document.getElementById('globalLoading'); if(!ld){ ld=document.createElement('div'); ld.id='globalLoading'; ld.className='loading-overlay'; ld.innerHTML=`<div class="bg-black/80 text-white p-4 rounded-xl text-center">${msg}</div>`; document.body.appendChild(ld); } else ld.style.display='flex'; }
