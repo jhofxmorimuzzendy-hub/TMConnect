@@ -49,7 +49,7 @@ function updateUIBasedOnRole() {
     else if (currentRole === 'admin') userInfoSpan.innerHTML = `<i class="fas fa-user-shield"></i> Admin: ${currentUser?.email || 'Admin'}`;
   }
 
-  // Tampilkan tombol logout
+  // Tampilkan tombol logout: hanya untuk user/admin, tidak untuk tamu
   const logoutBtn = document.getElementById('logoutBtn');
   if (logoutBtn) {
     if (currentRole !== 'guest') logoutBtn.style.display = 'inline-flex';
@@ -70,38 +70,64 @@ async function fetchUserRole(uid) {
   try {
     const snapshot = await window.db.ref(`users/${uid}/role`).once('value');
     const role = snapshot.val();
-    return role === 'admin' ? 'admin' : (role === 'user' ? 'user' : 'guest');
+    return (role === 'admin' || role === 'user') ? role : 'guest';
   } catch (err) {
     console.error("Gagal mengambil role:", err);
     return 'guest';
   }
 }
 
-// Fungsi logout
+// Fungsi logout (membersihkan storage dan redirect ke login)
 function logoutUser() {
+  // Hapus semua data sesi
+  localStorage.removeItem('guestMode');
+  localStorage.removeItem('userRole');
+  localStorage.removeItem('userEmail');
+  sessionStorage.removeItem('auth_redirect_count');
+  sessionStorage.removeItem('login_redirect_count');
+  // Sign out dari Firebase
   window.auth.signOut().then(() => {
     window.location.href = 'login.html';
-  }).catch(err => alert('Logout gagal: ' + err.message));
+  }).catch(err => {
+    console.error('Logout error:', err);
+    // tetap redirect meskipun ada error
+    window.location.href = 'login.html';
+  });
 }
 
 // Inisialisasi auth state observer
 function initAuthCheck() {
   window.auth.onAuthStateChanged(async (user) => {
     if (user) {
+      // User login via Firebase
       currentUser = user;
       currentRole = await fetchUserRole(user.uid);
-      // Simpan role di localStorage untuk akses cepat (opsional)
+      // Simpan di localStorage untuk akses cepat (opsional)
       localStorage.setItem('userRole', currentRole);
       localStorage.setItem('userEmail', user.email);
+      // Pastikan guestMode dihapus
+      localStorage.removeItem('guestMode');
+      // Hapus flag redirect loop jika ada
+      sessionStorage.removeItem('auth_redirect_count');
+      sessionStorage.removeItem('login_redirect_count');
     } else {
-      currentUser = null;
-      currentRole = 'guest';
-      localStorage.setItem('userRole', 'guest');
-      localStorage.removeItem('userEmail');
+      // Tidak ada user login, cek apakah mode tamu aktif
+      if (localStorage.getItem('guestMode') === 'true') {
+        currentUser = null;
+        currentRole = 'guest';
+        localStorage.setItem('userRole', 'guest');
+      } else {
+        // Tidak login dan bukan tamu -> biarkan sebagai guest juga (tanpa redirect)
+        // Halaman login akan menangani redirect jika perlu
+        currentUser = null;
+        currentRole = 'guest';
+        localStorage.setItem('userRole', 'guest');
+      }
     }
+    // Update UI berdasarkan role
     updateUIBasedOnRole();
     
-    // Event custom untuk modul-modul yang butuh reaksi perubahan role
+    // Kirim event custom untuk memberi tahu komponen lain
     window.dispatchEvent(new CustomEvent('roleChanged', { detail: { role: currentRole, user: currentUser } }));
   });
 }
@@ -111,5 +137,9 @@ document.addEventListener('DOMContentLoaded', () => {
   initAuthCheck();
   // Pasang event listener untuk tombol logout (jika ada)
   const logoutBtn = document.getElementById('logoutBtn');
-  if (logoutBtn) logoutBtn.addEventListener('click', logoutUser);
+  if (logoutBtn) {
+    // Hapus listener lama untuk menghindari duplikasi
+    logoutBtn.removeEventListener('click', logoutUser);
+    logoutBtn.addEventListener('click', logoutUser);
+  }
 });
