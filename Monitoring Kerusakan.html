@@ -17,6 +17,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="firebase-config.js"></script>
+    <script src="log-helper.js"></script> <!-- ✅ TAMBAHKAN LOG HELPER -->
     <script src="auth-check.js"></script>
 
     <script>
@@ -326,12 +327,20 @@
             isInternalUpdate = true;
             await setEntriesToFirebase(updated);
             isInternalUpdate = false;
+            // LOG: Hapus data
+            if (typeof window.logActivity === 'function') {
+                window.logActivity('HAPUS DATA', `Menghapus data Kerusakan ID ${id}`, 'Monitoring Kerusakan');
+            }
         }
 
         async function clearAllEntries() {
             isInternalUpdate = true;
             await setEntriesToFirebase([]);
             isInternalUpdate = false;
+            // LOG: Hapus semua
+            if (typeof window.logActivity === 'function') {
+                window.logActivity('HAPUS SEMUA', `Menghapus semua data Kerusakan (${dataEntries.length} entries)`, 'Monitoring Kerusakan');
+            }
         }
 
         async function updateEntryInFirebase(updatedEntry) {
@@ -375,6 +384,10 @@
 
             await updateEntryInFirebase(entry);
             alert("Data berhasil diperbarui.");
+            // LOG: Edit data
+            if (typeof window.logActivity === 'function') {
+                window.logActivity('EDIT DATA', `Mengedit data Kerusakan ID ${id} (Status: ${entry.statusAlat})`, 'Monitoring Kerusakan');
+            }
         };
 
         // ========== KAMERA ==========
@@ -607,7 +620,7 @@
         // ========== RENDER TABEL DENGAN EDIT UNTUK ADMIN ==========
         function renderTable() {
             const tbody = document.getElementById("tabelBody");
-            if(!dataEntries.length){ tbody.innerHTML=`<tr><td colspan="9" class="text-center py-6 text-gray-400">📭 Kosong</td</tr`; return; }
+            if(!dataEntries.length){ tbody.innerHTML=`<td><td colspan="9" class="text-center py-6 text-gray-400">📭 Kosong</td</tr`; return; }
             let html = "";
             dataEntries.forEach(entry => {
                 const fotoCount = entry.fotoList?.length || 0;
@@ -686,6 +699,10 @@
             await addEntry(newEntry);
             resetFormInput();
             alert(`✅ Tersimpan dengan ${currentFotoList.length} foto. Firebase tersinkron.`);
+            // LOG: Tambah data
+            if (typeof window.logActivity === 'function') {
+                window.logActivity('TAMBAH DATA', `Menambahkan data Kerusakan ID ${newId} (Status: ${newEntry.statusAlat})`, 'Monitoring Kerusakan');
+            }
         });
         function resetFormInput() { 
             tanggalInput.value=new Date().toISOString().split('T')[0]; 
@@ -697,7 +714,11 @@
         resetBtn.addEventListener('click',()=>{ if(confirm("Reset form?")) resetFormInput(); });
         document.getElementById('btnHapusSemua').addEventListener('click', async () =>{ 
             if (userRole !== 'admin') { alert("Hanya admin yang dapat menghapus semua data."); return; }
-            if(confirm("Hapus SEMUA data?")){ await clearAllEntries(); resetFormInput(); alert("Semua data dihapus dari Firebase."); } 
+            if(confirm("Hapus SEMUA data?")){ 
+                await clearAllEntries(); 
+                resetFormInput(); 
+                alert("Semua data dihapus dari Firebase.");
+            } 
         });
         document.getElementById('btnExportHTML').addEventListener('click',()=>{
             if(!dataEntries.length) return alert("Tidak ada data");
@@ -705,6 +726,10 @@
             dataEntries.forEach(e => { let fotoHtml = `<div class="foto-grid">${e.fotoList.map(f=>`<img src="${f.base64}" title="${f.jamFoto}">`).join('')}</div>`; html += `<tr><td>${e.id}</td><td>${e.tanggal}</td><td>${e.waktuKerusakan}</td><td>${e.kerusakan}</td><td>${e.solusi}</td><td>${e.statusAlat}</td><td>${fotoHtml}</td><td>${e.petugas}</tr>`; });
             html += `</tbody></table><p><em>Setiap foto memiliki watermark otomatis (teknisi, waktu, koordinat)</em></p></body></html>`;
             const blob = new Blob([html], {type:"text/html"}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`laporan_multi_foto_${Date.now()}.html`; a.click(); URL.revokeObjectURL(blob);
+            // LOG: Export data
+            if (typeof window.logActivity === 'function') {
+                window.logActivity('EXPORT', `Mengekspor data Kerusakan ke HTML (${dataEntries.length} data)`, 'Monitoring Kerusakan');
+            }
         });
 
         function showLoading(msg) { let ld = document.getElementById('globalLoading'); if(!ld){ ld=document.createElement('div'); ld.id='globalLoading'; ld.className='loading-overlay'; ld.innerHTML=`<div class="bg-black/80 text-white p-4 rounded-xl text-center">${msg}</div>`; document.body.appendChild(ld); } else ld.style.display='flex'; }
