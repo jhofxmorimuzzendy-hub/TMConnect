@@ -164,7 +164,7 @@
       <button type="submit" class="btn-login"><i class="fas fa-sign-in-alt"></i> Masuk</button>
     </form>
     <button id="guestBtn" class="btn-guest"><i class="fas fa-user-friends"></i> Masuk sebagai Tamu</button>
-    <!-- Link ke halaman registrasi -->
+    <!-- TAMBAHAN: Link ke halaman registrasi -->
     <a href="register.html" class="register-link"><i class="fas fa-user-plus"></i> Belum punya akun? Daftar di sini</a>
     <a href="#" id="forgotPasswordLink" class="forgot-password"><i class="fas fa-question-circle"></i> Lupa Password?</a>
   </div>
@@ -172,32 +172,6 @@
 </div>
 
 <script>
-  // ========== PROTEKSI REDIRECT LOOP ==========
-  (function() {
-    // Jika sudah dalam mode tamu, biarkan akses login (tamu tidak perlu login)
-    if (localStorage.getItem('guestMode') === 'true') {
-      // Tamu tidak perlu berada di halaman login, redirect ke index
-      window.location.href = 'index.html';
-      return;
-    }
-    // Deteksi loop menggunakan sessionStorage
-    let redirectCount = sessionStorage.getItem('login_redirect_count');
-    if (redirectCount) {
-      let count = parseInt(redirectCount);
-      if (count >= 2) {
-        // Loop terdeteksi, force clear storage dan reload
-        sessionStorage.clear();
-        localStorage.removeItem('guestMode');
-        console.warn("Redirect loop detected, clearing storage");
-        return;
-      } else {
-        sessionStorage.setItem('login_redirect_count', count + 1);
-      }
-    } else {
-      sessionStorage.setItem('login_redirect_count', '1');
-    }
-  })();
-
   const messageBox = document.getElementById('messageBox');
   function showMessage(msg, isError = true) {
     messageBox.innerHTML = `<div class="${isError ? 'error-msg' : 'info-msg'}">${msg}</div>`;
@@ -210,36 +184,22 @@
     const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
     if (!email || !password) return showMessage('Email dan password harus diisi');
-    // Disable button sementara
-    const submitBtn = e.target.querySelector('.btn-login');
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> Memproses...';
     try {
       await window.auth.signInWithEmailAndPassword(email, password);
-      // Hapus guestMode jika ada, dan bersihkan sessionStorage
-      localStorage.removeItem('guestMode');
-      sessionStorage.removeItem('login_redirect_count');
-      sessionStorage.removeItem('auth_redirect_count');
-      // Redirect ke halaman utama
+      // Redirect ke halaman utama (dashboard)
       window.location.href = 'index.html';
     } catch (err) {
       console.error(err);
       if (err.code === 'auth/user-not-found') showMessage('Email tidak terdaftar');
       else if (err.code === 'auth/wrong-password') showMessage('Password salah');
       else if (err.code === 'auth/invalid-email') showMessage('Format email tidak valid');
-      else if (err.code === 'auth/too-many-requests') showMessage('Terlalu banyak percobaan. Coba lagi nanti.');
       else showMessage('Gagal login: ' + err.message);
-    } finally {
-      submitBtn.disabled = false;
-      submitBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Masuk';
     }
   });
 
   // Masuk sebagai tamu
   document.getElementById('guestBtn').addEventListener('click', () => {
     localStorage.setItem('guestMode', 'true');
-    sessionStorage.removeItem('login_redirect_count');
-    sessionStorage.removeItem('auth_redirect_count');
     window.location.href = 'index.html';
   });
 
@@ -259,16 +219,9 @@
     }
   });
 
-  // Jika sudah login, redirect ke index (dengan proteksi loop)
-  // Gunakan setTimeout untuk menghindari konflik dengan proteksi loop di awal
+  // Jika sudah login, redirect ke index
   window.auth.onAuthStateChanged((user) => {
-    if (user) {
-      // Hapus guestMode jika ada
-      localStorage.removeItem('guestMode');
-      sessionStorage.removeItem('login_redirect_count');
-      sessionStorage.removeItem('auth_redirect_count');
-      window.location.href = 'index.html';
-    }
+    if (user) window.location.href = 'index.html';
   });
 </script>
 </body>
