@@ -17,6 +17,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="firebase-config.js"></script>
+    <script src="log-helper.js"></script> <!-- ✅ TAMBAHKAN LOG HELPER -->
     <script src="auth-check.js"></script>
 
     <script>
@@ -444,9 +445,15 @@
         newEntry.createdAt = new Date().toISOString();
         entries.push(newEntry);
         await recalculateAndUpdate();
+        // LOG: Tambah data
+        if (typeof window.logActivity === 'function') {
+            window.logActivity('TAMBAH DATA', `Menambahkan data Multiplexing (${newEntry.urutan || 'ID:'+newEntry.id})`, 'Monitoring Multiplexing');
+        }
     }
     
     async function deleteEntryById(id) {
+        const deletedEntry = entries.find(e => e.id === id);
+        const urutanInfo = deletedEntry ? `(No urut ${deletedEntry.urutan})` : '';
         entries = entries.filter(e=>e.id !== id);
         if(entries.length === 0) {
             isInternalUpdate = true;
@@ -457,15 +464,24 @@
         }
         renderTable();
         updateNomorOtomatis();
+        // LOG: Hapus data
+        if (typeof window.logActivity === 'function') {
+            window.logActivity('HAPUS DATA', `Menghapus data Multiplexing ID ${id} ${urutanInfo}`, 'Monitoring Multiplexing');
+        }
     }
     
     async function clearAllEntries() {
+        const count = entries.length;
         entries = [];
         isInternalUpdate = true;
         await setEntriesToFirebase([]);
         isInternalUpdate = false;
         renderTable();
         updateNomorOtomatis();
+        // LOG: Hapus semua
+        if (typeof window.logActivity === 'function') {
+            window.logActivity('HAPUS SEMUA', `Menghapus semua data Multiplexing (${count} entries)`, 'Monitoring Multiplexing');
+        }
     }
     
     async function updateEntryInFirebase(updatedEntry) {
@@ -477,6 +493,10 @@
             isInternalUpdate = false;
             renderTable();
             updateNomorOtomatis();
+            // LOG: Edit data
+            if (typeof window.logActivity === 'function') {
+                window.logActivity('EDIT DATA', `Mengedit data Multiplexing ID ${updatedEntry.id} (No urut ${updatedEntry.urutan})`, 'Monitoring Multiplexing');
+            }
         }
     }
     
@@ -551,6 +571,7 @@
         
         await updateEntryInFirebase(entry);
         alert("Data berhasil diperbarui.");
+        // LOG sudah di dalam updateEntryInFirebase
     };
     
     function autoFillFromLatest() {
@@ -612,7 +633,7 @@
             if (userRole === 'admin') {
                 actionButtons = `<button onclick="editEntry('${e.id}')" class="bg-blue-100 text-blue-600 px-2 py-1 rounded-full text-[10px] mr-1"><i class="fas fa-edit"></i> Edit</button>${actionButtons}`;
             }
-            html += `<tr class="border-b"><td class="py-2 px-1">${e.urutan}</td><td class="py-2 px-1">${e.tanggal}</td><td class="py-2 px-1">${escapeHtml(e.petugas)}</td><td class="text-[10px]">${ird1Str}</td><td class="text-[10px]">${ird2Str}</td><td class="text-[10px]">${ird3Str}</td><td class="text-[10px]">${cableIpSummary}</td><td class="text-center">${fotoCell}</td><td class="text-center">${actionButtons}</td></tr>`;
+            html += `<tr class="border-b"><td class="py-2 px-1">${e.urutan}</td><td class="py-2 px-1">${e.tanggal}</td><td class="py-2 px-1">${escapeHtml(e.petugas)}</td<td class="text-[10px]">${ird1Str}</td<td class="text-[10px]">${ird2Str}</td<td class="text-[10px]">${ird3Str}</td<td class="text-[10px]">${cableIpSummary}</td<td class="text-center">${fotoCell}</td<td class="text-center">${actionButtons}</td<tr>`;
         }
         tbody.innerHTML = html;
     }
@@ -699,7 +720,15 @@
     document.getElementById('btnResetForm').addEventListener('click', () => { if(confirm("Reset form (kosongkan semua)?")) resetFormInput(false); });
     document.getElementById('btnCopyLast').addEventListener('click', () => { if(autoFillFromLatest()) alert("Data IP dan Kabel telah disalin dari riwayat terakhir."); else alert("Belum ada data riwayat."); });
     document.getElementById('btnHapusSemua').addEventListener('click', async()=>{ if(confirm("Hapus SEMUA data?")){ await clearAllEntries(); resetFormInput(false); alert("Semua data dihapus."); } });
-    document.getElementById('btnExportHTML').addEventListener('click',()=>{ if(!entries.length) return alert("Tidak ada data"); let html=`<html><head><title>Laporan Multiplexing</title><style>table{border-collapse:collapse}td,th{border:1px solid #aaa;padding:6px}</style></head><body><h2>Monitoring Multiplexing (Segmen Dinamis)</h2>${document.querySelector('table').outerHTML}</body></html>`; const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([html],{type:"text/html"})); a.download=`laporan_multiplexing_${Date.now()}.html`; a.click(); URL.revokeObjectURL(a.href); });
+    document.getElementById('btnExportHTML').addEventListener('click',()=>{
+        if(!entries.length) return alert("Tidak ada data");
+        let html=`<html><head><title>Laporan Multiplexing</title><style>table{border-collapse:collapse}td,th{border:1px solid #aaa;padding:6px}</style></head><body><h2>Monitoring Multiplexing (Segmen Dinamis)</h2>${document.querySelector('table').outerHTML}</body></html>`;
+        const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([html],{type:"text/html"})); a.download=`laporan_multiplexing_${Date.now()}.html`; a.click(); URL.revokeObjectURL(a.href);
+        // LOG: Export data
+        if (typeof window.logActivity === 'function') {
+            window.logActivity('EXPORT', `Mengekspor data Multiplexing ke HTML (${entries.length} data)`, 'Monitoring Multiplexing');
+        }
+    });
     document.getElementById('backToDashboardBtn').addEventListener('click',()=>window.location.href='index.html');
     document.getElementById('refreshPageBtn').addEventListener('click',()=>window.location.reload());
     
