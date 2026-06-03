@@ -14,6 +14,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="firebase-config.js"></script>
+    <script src="log-helper.js"></script> <!-- ✅ TAMBAHKAN LOG HELPER -->
     <script src="auth-check.js"></script>
 
     <script>
@@ -335,12 +336,20 @@
             isInternalUpdate = true;
             await setEntriesToFirebase(updated);
             isInternalUpdate = false;
+            // LOG: Hapus data
+            if (typeof window.logActivity === 'function') {
+                window.logActivity('HAPUS DATA', `Menghapus data Grounding ID ${id}`, 'Monitoring Grounding');
+            }
         }
 
         async function clearAllEntries() {
             isInternalUpdate = true;
             await setEntriesToFirebase([]);
             isInternalUpdate = false;
+            // LOG: Hapus semua
+            if (typeof window.logActivity === 'function') {
+                window.logActivity('HAPUS SEMUA', `Menghapus semua data Grounding (${dataEntries.length} entries)`, 'Monitoring Grounding');
+            }
         }
 
         async function updateEntryInFirebase(updatedEntry) {
@@ -400,6 +409,10 @@
 
             await updateEntryInFirebase(entry);
             alert("Data berhasil diperbarui.");
+            // LOG: Edit data
+            if (typeof window.logActivity === 'function') {
+                window.logActivity('EDIT DATA', `Mengedit data Grounding ID ${id} (Titik A: ${entry.resistansiA}Ω, B: ${entry.resistansiB}Ω, C: ${entry.resistansiC}Ω)`, 'Monitoring Grounding');
+            }
         };
 
         // ========== KAMERA + WATERMARK ==========
@@ -590,6 +603,10 @@
             await addEntry(newEntry);
             resetFormInput();
             alert(`✅ Data grounding 3 titik tersimpan dengan ${currentFotoList.length} foto. Firebase tersinkron.`);
+            // LOG: Tambah data
+            if (typeof window.logActivity === 'function') {
+                window.logActivity('TAMBAH DATA', `Menambahkan data Grounding (ID ${newId}): A=${rA}Ω ${jA}, B=${rB}Ω ${jB}, C=${rC}Ω ${jC}`, 'Monitoring Grounding');
+            }
         });
         function resetFormInput() {
             tanggalInput.value = new Date().toISOString().split('T')[0];
@@ -603,7 +620,11 @@
         resetBtn.addEventListener('click', () => { if(confirm("Reset form?")) resetFormInput(); });
         document.getElementById('btnHapusSemua').addEventListener('click', async () => { 
             if (userRole !== 'admin') { alert("Hanya admin yang dapat menghapus semua data."); return; }
-            if(confirm("Hapus SEMUA data grounding 3 titik?")){ await clearAllEntries(); resetFormInput(); alert("Semua data dihapus."); } 
+            if(confirm("Hapus SEMUA data grounding 3 titik?")){ 
+                await clearAllEntries(); 
+                resetFormInput(); 
+                alert("Semua data dihapus.");
+            } 
         });
         document.getElementById('btnExportHTML').addEventListener('click', () => {
             if(!dataEntries.length) return alert("Tidak ada data");
@@ -614,6 +635,10 @@
             });
             html += `</tbody></table><p><em>Watermark otomatis mencakup data 3 titik grounding, petugas, waktu, dan koordinat GPS.</em></p></body></html>`;
             const blob = new Blob([html], {type:"text/html"}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`laporan_grounding_3titik_${Date.now()}.html`; a.click(); URL.revokeObjectURL(blob);
+            // LOG: Export data
+            if (typeof window.logActivity === 'function') {
+                window.logActivity('EXPORT', `Mengekspor data Grounding ke HTML (${dataEntries.length} data)`, 'Monitoring Grounding');
+            }
         });
         function showLoading(msg) { let ld = document.getElementById('globalLoading'); if(!ld){ ld=document.createElement('div'); ld.id='globalLoading'; ld.className='loading-overlay'; ld.innerHTML=`<div class="bg-black/80 text-white p-4 rounded-xl text-center">${msg}</div>`; document.body.appendChild(ld); } else ld.style.display='flex'; }
         function hideLoading() { let ld = document.getElementById('globalLoading'); if(ld) ld.remove(); }
