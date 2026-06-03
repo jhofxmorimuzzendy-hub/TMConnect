@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Kontrol Pengguna + Log Aktivitas - Portal Transmisi</title>
+    <title>Kontrol Admin - Portal Transmisi</title>
     <link rel="icon" type="image/ico" href="favicon.ico">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;500;600;700;800&display=swap" rel="stylesheet">
@@ -14,67 +14,271 @@
     <script src="log-helper.js"></script>
     <script src="auth-check.js"></script>
     <style>
-        * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #eef2f8 0%, #e0f0ec 100%); padding: 16px; min-height: 100vh; }
-        .container { max-width: 1400px; margin: 0 auto; background: white; border-radius: 36px; box-shadow: 0 20px 40px -12px rgba(0,0,0,0.15); overflow: hidden; }
-        .header { background: linear-gradient(135deg, #1e6f5c 0%, #0e5a48 100%); padding: 16px 24px; color: white; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; }
-        .header h1 { font-size: 1.4rem; font-weight: 700; display: flex; align-items: center; gap: 10px; }
-        .back-btn { background: rgba(255,255,255,0.2); border: none; color: white; padding: 6px 16px; border-radius: 40px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; transition: 0.2s; font-size: 0.8rem; }
-        .back-btn:hover { background: rgba(255,255,255,0.35); transform: translateY(-1px); }
-        .tabs { display: flex; background: #f1f5f9; padding: 0 20px; gap: 4px; border-bottom: 1px solid #e2e8f0; flex-wrap: wrap; }
-        .tab-btn { padding: 10px 20px; background: transparent; border: none; font-weight: 600; cursor: pointer; color: #475569; transition: 0.2s; font-size: 0.9rem; }
-        .tab-btn.active { color: #1e6f5c; border-bottom: 3px solid #1e6f5c; background: white; }
-        .tab-content { display: none; padding: 20px; }
-        .tab-content.active { display: block; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #eef2f8 0%, #e0f0ec 100%);
+            padding: 16px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 32px;
+            box-shadow: 0 20px 40px -12px rgba(0,0,0,0.15);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #1e6f5c 0%, #0e5a48 100%);
+            padding: 16px 24px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .back-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.2s;
+        }
+        .back-btn:hover {
+            background: rgba(255,255,255,0.35);
+            transform: translateY(-2px);
+        }
+        .tabs {
+            display: flex;
+            background: #f1f5f9;
+            padding: 0 24px;
+            gap: 8px;
+            border-bottom: 1px solid #e2e8f0;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            padding: 12px 24px;
+            background: transparent;
+            border: none;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            color: #475569;
+            transition: 0.2s;
+        }
+        .tab-btn.active {
+            color: #1e6f5c;
+            border-bottom: 3px solid #1e6f5c;
+            background: white;
+        }
+        .tab-content {
+            display: none;
+            padding: 24px;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        /* Filter bar */
+        .filter-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: flex-end;
+            margin-bottom: 24px;
+            background: #f8fafc;
+            padding: 16px;
+            border-radius: 28px;
+        }
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .filter-group label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #475569;
+        }
+        .filter-group input, .filter-group select {
+            padding: 8px 12px;
+            border-radius: 40px;
+            border: 1px solid #cbd5e1;
+            background: white;
+            font-size: 0.85rem;
+            min-width: 140px;
+        }
+        /* Tabel umum */
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 20px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            margin-top: 16px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+        th {
+            background: #eef2f5;
+            padding: 14px 12px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #cbd5e1;
+        }
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e9edf2;
+            vertical-align: middle;
+        }
         /* Tabel User */
-        .user-table-wrapper, .log-table-wrapper { overflow-x: auto; border-radius: 20px; border: 1px solid #e2e8f0; margin-top: 16px; background: white; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-        th { background: #eef2f5; padding: 12px 10px; text-align: left; border-bottom: 2px solid #cbd5e1; font-weight: 600; }
-        td { padding: 10px; border-bottom: 1px solid #e9edf2; vertical-align: middle; }
-        /* Sembunyikan kolom "Dibuat" di layar kecil (User table) */
-        @media (max-width: 768px) {
-            .user-table-wrapper th:nth-child(4), .user-table-wrapper td:nth-child(4) { display: none; }
+        .user-table th:nth-child(4) { /* kolom Dibuat */
+            width: 110px;
         }
-        /* Log table style */
-        .log-table-wrapper { overflow-x: auto; }
-        .log-table-wrapper table { min-width: 800px; white-space: normal; }
-        .log-table-wrapper th, .log-table-wrapper td { padding: 10px 8px; vertical-align: top; }
-        .log-table-wrapper td:last-child { word-break: break-word; white-space: normal; max-width: 300px; }
-        @media (max-width: 640px) {
-            .log-table-wrapper th, .log-table-wrapper td { font-size: 0.75rem; padding: 8px 6px; }
+        @media (max-width: 800px) {
+            .user-table th:nth-child(4), .user-table td:nth-child(4) {
+                display: none;
+            }
         }
-        .role-badge { display: inline-block; background: #e6f7f0; color: #1e6f5c; padding: 4px 12px; border-radius: 40px; font-size: 0.7rem; font-weight: 600; }
-        .role-badge.admin { background: #fef3c7; color: #b45309; }
-        select, button, input { font-family: inherit; }
-        .select-role { padding: 5px 8px; border-radius: 30px; border: 1px solid #cbd5e1; background: white; font-size: 0.75rem; }
-        .btn-edit, .btn-delete, .btn-reset { background: transparent; border: none; cursor: pointer; padding: 5px 10px; border-radius: 30px; font-size: 0.7rem; font-weight: 600; transition: 0.2s; margin: 2px; }
+        /* Tabel Log */
+        .log-table {
+            min-width: 800px;
+        }
+        .log-table th:nth-child(1) { width: 150px; } /* Waktu */
+        .log-table th:nth-child(2) { width: 180px; } /* User */
+        .log-table th:nth-child(3) { width: 80px; }  /* Role */
+        .log-table th:nth-child(4) { width: 110px; } /* Aksi */
+        .log-table th:nth-child(5) { width: 130px; } /* Modul */
+        .log-table td:last-child {
+            word-break: break-word;
+            white-space: normal;
+            max-width: 300px;
+        }
+        /* Badge & tombol */
+        .role-badge {
+            display: inline-block;
+            background: #e6f7f0;
+            color: #1e6f5c;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+        .role-badge.admin {
+            background: #fef3c7;
+            color: #b45309;
+        }
+        select.select-role {
+            padding: 6px 10px;
+            border-radius: 30px;
+            border: 1px solid #cbd5e1;
+            background: white;
+            font-size: 0.75rem;
+        }
+        .action-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .btn-small {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            transition: 0.2s;
+        }
         .btn-edit { background: #e6f7f0; color: #1e6f5c; }
         .btn-delete { background: #ffe6e5; color: #b91c1c; }
         .btn-reset { background: #eef2ff; color: #2563eb; }
-        .filter-bar { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; align-items: flex-end; }
-        .filter-group { display: flex; flex-direction: column; gap: 4px; }
-        .filter-group label { font-size: 0.7rem; font-weight: 600; color: #475569; }
-        .filter-group input, .filter-group select { padding: 6px 10px; border-radius: 30px; border: 1px solid #cbd5e1; min-width: 130px; background: white; font-size: 0.8rem; }
-        .action-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
-        .refresh-btn { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 6px 14px; border-radius: 40px; cursor: pointer; font-weight: 600; text-decoration: none; color: #1e293b; display: inline-flex; align-items: center; gap: 6px; transition: 0.2s; font-size: 0.75rem; }
-        .refresh-btn:hover { background: #e2e8f0; }
-        .firebase-console-btn { background: #2563eb; color: white; border: none; }
+        .action-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        .refresh-btn {
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            padding: 8px 16px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.2s;
+            font-size: 0.8rem;
+            text-decoration: none;
+            color: #1e293b;
+        }
+        .refresh-btn:hover {
+            background: #e2e8f0;
+            transform: translateY(-1px);
+        }
+        .firebase-console-btn {
+            background: #2563eb;
+            color: white;
+            border: none;
+        }
         .delete-old-logs-btn { background: #dc2626; color: white; border: none; }
         .delete-all-logs-btn { background: #b91c1c; color: white; border: none; }
-        .loading, .empty-msg { text-align: center; padding: 40px; color: #5b6e8c; }
-        .error-msg, .info-msg, .success-msg { padding: 10px 16px; border-radius: 40px; margin-bottom: 16px; text-align: center; font-size: 0.8rem; }
+        .loading, .empty-msg {
+            text-align: center;
+            padding: 40px;
+            color: #5b6e8c;
+        }
+        .error-msg, .info-msg, .success-msg {
+            padding: 12px 18px;
+            border-radius: 60px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 0.85rem;
+        }
         .error-msg { background: #fee2e2; color: #b91c1c; }
         .info-msg { background: #e6f7f0; color: #1e6f5c; }
         .success-msg { background: #dcfce7; color: #15803d; }
-        footer { text-align: center; padding: 16px; font-size: 0.7rem; color: #7f8c8d; border-top: 1px solid #e2edf2; background: #fafcff; }
+        footer {
+            text-align: center;
+            padding: 20px;
+            font-size: 0.7rem;
+            color: #7f8c8d;
+            border-top: 1px solid #e2edf2;
+            background: #fafcff;
+        }
         @media (max-width: 640px) {
             .header h1 { font-size: 1.2rem; }
-            .tab-btn { padding: 8px 12px; font-size: 0.8rem; }
+            .tab-btn { padding: 8px 16px; font-size: 0.85rem; }
             .tab-content { padding: 16px; }
-            .filter-group input, .filter-group select { min-width: 100px; }
+            .filter-group input, .filter-group select { min-width: 110px; font-size: 0.75rem; padding: 6px 10px; }
             .action-bar { flex-direction: column; align-items: stretch; }
             .action-bar div { justify-content: center; }
             .refresh-btn { justify-content: center; }
+            .btn-small { padding: 4px 8px; }
         }
     </style>
 </head>
@@ -92,12 +296,12 @@
         <div id="userMessageContainer"></div>
         <div class="action-bar">
             <span><i class="fas fa-database"></i> Manajemen role & reset password</span>
-            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                 <a href="https://console.firebase.google.com/project/monitoring-tvri-30c22/authentication/users" target="_blank" class="refresh-btn firebase-console-btn"><i class="fas fa-external-link-alt"></i> Firebase Console</a>
                 <button id="refreshUsersBtn" class="refresh-btn"><i class="fas fa-sync-alt"></i> Refresh</button>
             </div>
         </div>
-        <div id="usersListContainer"><div class="loading"><i class="fas fa-spinner fa-pulse"></i> Memuat user...</div></div>
+        <div id="usersListContainer"><div class="loading"><i class="fas fa-spinner fa-pulse"></i> Memuat pengguna...</div></div>
         <div class="info-msg"><i class="fas fa-info-circle"></i> <strong>Catatan:</strong> Hapus data user hanya dari database. Untuk hapus total dari Authentication, gunakan tombol Firebase Console.</div>
     </div>
     <div id="logsTab" class="tab-content">
@@ -139,63 +343,62 @@
 </div>
 
 <script>
-    // Variabel global
-    let currentAdminUid = null;
-    let allLogs = [];
-    let filteredLogs = [];
-
-    // Helper
+    // ======================== Helper ========================
     function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, m => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;'); }
-
-    // User Management
+    
+    // ======================== USER MANAGEMENT ========================
+    let currentAdminUid = null;
     const userMessageDiv = document.getElementById('userMessageContainer');
     function showUserMessage(msg, type = 'error') {
-        let className = type === 'success' ? 'success-msg' : (type === 'info' ? 'info-msg' : 'error-msg');
+        const className = type === 'success' ? 'success-msg' : (type === 'info' ? 'info-msg' : 'error-msg');
         userMessageDiv.innerHTML = `<div class="${className}">${msg}</div>`;
         setTimeout(() => { if (userMessageDiv.innerHTML) userMessageDiv.innerHTML = ''; }, 4000);
     }
     async function getUserRole(uid) {
         if (!uid) return 'guest';
         try {
-            const snapshot = await window.db.ref(`users/${uid}/role`).once('value');
-            return snapshot.val() === 'admin' ? 'admin' : (snapshot.val() === 'user' ? 'user' : 'guest');
-        } catch (err) { return 'guest'; }
+            const snap = await window.db.ref(`users/${uid}/role`).once('value');
+            const role = snap.val();
+            return role === 'admin' ? 'admin' : (role === 'user' ? 'user' : 'guest');
+        } catch { return 'guest'; }
     }
     async function loadAllUsers() {
-        const snapshot = await window.db.ref('users').once('value');
-        const data = snapshot.val();
+        const snap = await window.db.ref('users').once('value');
+        const data = snap.val();
         if (!data) return [];
-        return Object.entries(data).map(([uid, info]) => ({ uid, email: info.email || '-', role: info.role || 'guest', createdAt: info.createdAt || '-' }));
+        return Object.entries(data).map(([uid, info]) => ({
+            uid, email: info.email || '-', role: info.role || 'guest', createdAt: info.createdAt || '-'
+        }));
     }
     async function updateUserRole(uid, newRole) { await window.db.ref(`users/${uid}/role`).set(newRole); return true; }
     async function deleteUserData(uid) { await window.db.ref(`users/${uid}`).remove(); return true; }
     async function sendPasswordReset(email) {
-        try { await window.auth.sendPasswordResetEmail(email); return { success: true, message: `Email reset terkirim ke ${email}` }; } 
+        try { await window.auth.sendPasswordResetEmail(email); return { success: true, message: `Email reset terkirim ke ${email}` }; }
         catch (err) { return { success: false, message: err.message }; }
     }
     function renderUsersTable(users, adminUid) {
         const container = document.getElementById('usersListContainer');
         if (!users.length) { container.innerHTML = `<div class="info-msg">Belum ada pengguna terdaftar.</div>`; return; }
-        let html = `<div class="user-table-wrapper"><td><thead><tr><th>Email</th><th>Role</th><th>Ubah Role</th><th>Dibuat</th><th>Aksi</th></tr></thead><tbody>`;
-        for (let user of users) {
+        let html = `<div class="table-wrapper">\n<table class="user-table">\n<thead>\n<tr><th>Email</th><th>Role</th><th>Ubah Role</th><th>Dibuat</th><th>Aksi</th></tr>\n</thead>\n<tbody>`;
+        for (const user of users) {
             const isCurrent = (user.uid === adminUid);
             html += `<tr>
-                <td>${escapeHtml(user.email)} ${isCurrent ? '<span class="role-badge" style="background:#fef3c7;">(Anda)</span>' : ''}</td
-                <td><span class="role-badge ${user.role === 'admin' ? 'admin' : ''}">${user.role === 'admin' ? 'Admin' : (user.role === 'user' ? 'User' : 'Tamu')}</span></td
+                <td>${escapeHtml(user.email)} ${isCurrent ? '<span class="role-badge" style="background:#fef3c7;">(Anda)</span>' : ''}</td>
+                <td><span class="role-badge ${user.role === 'admin' ? 'admin' : ''}">${user.role === 'admin' ? 'Admin' : (user.role === 'user' ? 'User' : 'Tamu')}</span></td>
                 <td><select class="select-role" data-uid="${user.uid}" ${isCurrent ? 'disabled' : ''}>
                     <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Admin</option>
                     <option value="user" ${user.role === 'user' ? 'selected' : ''}>User</option>
                     <option value="guest" ${user.role === 'guest' ? 'selected' : ''}>Tamu</option>
-                </select></td
-                <td>${user.createdAt ? new Date(user.createdAt).toLocaleDateString('id') : '-'}</td
-                <td>
-                    <button class="btn-edit" data-uid="${user.uid}" ${isCurrent ? 'disabled' : ''}><i class="fas fa-save"></i> Role</button>
-                    <button class="btn-reset" data-email="${user.email}" ${isCurrent ? 'disabled' : ''}><i class="fas fa-key"></i> Reset</button>
-                    <button class="btn-delete" data-uid="${user.uid}" ${isCurrent ? 'disabled' : ''}><i class="fas fa-trash-alt"></i> Hapus</button>
-                 </td
+                </select></td>
+                <td>${user.createdAt ? new Date(user.createdAt).toLocaleDateString('id') : '-'}</td>
+                <td class="action-buttons">
+                    <button class="btn-small btn-edit" data-uid="${user.uid}" ${isCurrent ? 'disabled' : ''}><i class="fas fa-save"></i> Simpan</button>
+                    <button class="btn-small btn-reset" data-email="${user.email}" ${isCurrent ? 'disabled' : ''}><i class="fas fa-key"></i> Reset</button>
+                    <button class="btn-small btn-delete" data-uid="${user.uid}" ${isCurrent ? 'disabled' : ''}><i class="fas fa-trash-alt"></i> Hapus</button>
+                </td>
             </tr>`;
         }
-        html += `</tbody></table></div>`;
+        html += `</tbody>\n</table>\n</div>`;
         container.innerHTML = html;
         // Event listeners
         document.querySelectorAll('.btn-edit').forEach(btn => btn.addEventListener('click', async () => {
@@ -213,8 +416,7 @@
             const email = btn.getAttribute('data-email');
             if (confirm(`Kirim reset password ke ${email}?`)) {
                 const res = await sendPasswordReset(email);
-                if (res.success) showUserMessage(res.message, 'success');
-                else showUserMessage(res.message, 'error');
+                showUserMessage(res.message, res.success ? 'success' : 'error');
                 if (res.success && typeof window.logActivity === 'function') window.logActivity('RESET PASSWORD', `Reset password untuk ${email}`, 'User Control');
             }
         }));
@@ -233,10 +435,11 @@
         renderUsersTable(users, currentAdminUid);
     }
 
-    // Log Management
+    // ======================== LOG MANAGEMENT ========================
+    let allLogs = [], filteredLogs = [];
     const logMessageDiv = document.getElementById('logMessageContainer');
     function showLogMessage(msg, type = 'error') {
-        let className = type === 'success' ? 'success-msg' : (type === 'info' ? 'info-msg' : 'error-msg');
+        const className = type === 'success' ? 'success-msg' : (type === 'info' ? 'info-msg' : 'error-msg');
         logMessageDiv.innerHTML = `<div class="${className}">${msg}</div>`;
         setTimeout(() => { if (logMessageDiv.innerHTML) logMessageDiv.innerHTML = ''; }, 4000);
     }
@@ -273,20 +476,20 @@
     function renderLogsTable() {
         const container = document.getElementById('logsListContainer');
         if (!filteredLogs.length) { container.innerHTML = `<div class="empty-msg">Tidak ada log yang cocok.</div>`; return; }
-        let html = `<div class="log-table-wrapper"><tr><thead><tr><th>Waktu</th><th>User</th><th>Role</th><th>Aksi</th><th>Modul</th><th>Detail</th></tr></thead><tbody>`;
-        for (let log of filteredLogs) {
+        let html = `<div class="table-wrapper">\n<table class="log-table">\n<thead>\n<tr><th>Waktu</th><th>User</th><th>Role</th><th>Aksi</th><th>Modul</th><th>Detail</th></tr>\n</thead>\n<tbody>`;
+        for (const log of filteredLogs) {
             const waktu = log.timestampDate.toLocaleString('id-ID');
             const roleClass = log.userRole === 'admin' ? 'role-badge admin' : 'role-badge';
             html += `<tr>
-                <td style="white-space:nowrap;">${escapeHtml(waktu)}</td
-                <td>${escapeHtml(log.userEmail || '-')}</td
-                <td><span class="${roleClass}">${escapeHtml(log.userRole || 'guest')}</span></td
-                <td><strong>${escapeHtml(log.action)}</strong></td
-                <td>${escapeHtml(log.module || '-')}</td
-                <td style="word-break:break-word;">${escapeHtml(log.details || '-')}</td
+                <td style="white-space:nowrap;">${escapeHtml(waktu)}</td>
+                <td>${escapeHtml(log.userEmail || '-')}</td>
+                <td><span class="${roleClass}">${escapeHtml(log.userRole || 'guest')}</span></td>
+                <td><strong>${escapeHtml(log.action)}</strong></td>
+                <td>${escapeHtml(log.module || '-')}</td>
+                <td style="word-break:break-word;">${escapeHtml(log.details || '-')}</td>
             </tr>`;
         }
-        html += `</tbody></table></div>`;
+        html += `</tbody>\n</table>\n</div>`;
         container.innerHTML = html;
     }
     async function refreshLogs() {
@@ -295,7 +498,7 @@
         showLogMessage(`Memuat ${allLogs.length} log.`, 'info');
     }
 
-    // Hapus log >30 hari
+    // ======================== HAPUS LOG ========================
     async function deleteOldLogs(days = 30) {
         if (!confirm(`⚠️ Hapus semua log yang berusia lebih dari ${days} hari?`)) return;
         const cutoff = Date.now() - (days * 24 * 60 * 60 * 1000);
@@ -304,14 +507,13 @@
         if (!confirm(`Akan menghapus ${toDelete.length} log. Lanjutkan?`)) return;
         showLogMessage(`Menghapus ${toDelete.length} log...`, 'info');
         let deleted = 0, errors = 0;
-        for (let log of toDelete) {
+        for (const log of toDelete) {
             try { await window.db.ref(`logs/${log.id}`).remove(); deleted++; } catch(e) { errors++; }
         }
         showLogMessage(`✅ ${deleted} log dihapus. Gagal: ${errors}.`, deleted > 0 ? 'success' : 'error');
         if (typeof window.logActivity === 'function') window.logActivity('HAPUS LOG LAMA', `Hapus ${deleted} log > ${days} hari`, 'User Control');
         await refreshLogs();
     }
-    // Hapus semua log
     async function deleteAllLogs() {
         if (!confirm(`⚠️ Hapus SEMUA log? Tindakan permanen.`)) return;
         const total = allLogs.length;
@@ -319,7 +521,7 @@
         if (!confirm(`Hapus ${total} log?`)) return;
         showLogMessage(`Menghapus ${total} log...`, 'info');
         let deleted = 0, errors = 0;
-        for (let log of allLogs) {
+        for (const log of allLogs) {
             try { await window.db.ref(`logs/${log.id}`).remove(); deleted++; } catch(e) { errors++; }
         }
         showLogMessage(`✅ ${deleted} log dihapus. Gagal: ${errors}.`, deleted > 0 ? 'success' : 'error');
@@ -327,7 +529,7 @@
         await refreshLogs();
     }
 
-    // Export
+    // ======================== EKSPORT ========================
     function exportLogsToCSV() {
         if (!filteredLogs.length) { alert('Tidak ada data'); return; }
         const headers = ['Waktu','User','Role','Aksi','Modul','Detail','User Agent','URL'];
@@ -342,22 +544,15 @@
     function exportLogsToHTML() {
         if (!filteredLogs.length) { alert('Tidak ada data'); return; }
         let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Log Aktivitas</title><style>body{font-family:Inter;margin:20px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccc;padding:8px}th{background:#1e6f5c;color:white}</style></head><body><h1>Log Aktivitas</h1><p>Export: ${new Date().toLocaleString()}</p><table border="1"><thead><tr><th>Waktu</th><th>User</th><th>Role</th><th>Aksi</th><th>Modul</th><th>Detail</th></tr></thead><tbody>`;
-        for (let l of filteredLogs) {
-            html += `<tr>
-                <td>${escapeHtml(l.timestampDate.toLocaleString('id-ID'))}</td
-                <td>${escapeHtml(l.userEmail||'-')}</td
-                <td>${escapeHtml(l.userRole||'-')}</td
-                <td>${escapeHtml(l.action)}</td
-                <td>${escapeHtml(l.module||'-')}</td
-                <td>${escapeHtml(l.details||'-')}</td
-            </tr>`;
+        for (const l of filteredLogs) {
+            html += `<tr><td>${escapeHtml(l.timestampDate.toLocaleString('id-ID'))}</td><td>${escapeHtml(l.userEmail||'-')}</td><td>${escapeHtml(l.userRole||'-')}</td><td>${escapeHtml(l.action)}</td><td>${escapeHtml(l.module||'-')}</td><td>${escapeHtml(l.details||'-')}</td></tr>`;
         }
         html += `</tbody></table></body></html>`;
         const blob = new Blob([html], {type:'text/html'});
         const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `log_${Date.now()}.html`; a.click(); URL.revokeObjectURL(blob);
     }
 
-    // Event listeners
+    // ======================== EVENT LISTENERS & INIT ========================
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -385,7 +580,6 @@
     document.getElementById('deleteOldLogsBtn').addEventListener('click', () => deleteOldLogs(30));
     document.getElementById('deleteAllLogsBtn').addEventListener('click', deleteAllLogs);
 
-    // Init
     async function init() {
         if (!window.auth || !window.db) { setTimeout(init, 300); return; }
         window.auth.onAuthStateChanged(async (user) => {
