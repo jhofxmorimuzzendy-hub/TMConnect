@@ -34,7 +34,6 @@
         .month-picker { background: rgba(255,255,255,0.2); backdrop-filter: blur(4px); padding: 8px 16px; border-radius: 60px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
         .month-picker select { background: white; border: none; padding: 8px 14px; border-radius: 40px; font-weight: 600; color: #0b2b40; cursor: pointer; }
         .badge-status { background: #f5b042; color: #1e3a4d; padding: 6px 14px; border-radius: 40px; font-size: 0.75rem; font-weight: bold; }
-        /* Warna role display lebih terang */
         #userRoleDisplay {
             background: rgba(0,0,0,0.5);
             color: #fef9c3;
@@ -56,17 +55,96 @@
             transition: 0.2s;
         }
         .btn-refresh:hover, .btn-logout:hover { background: rgba(255,255,255,0.35); transform: translateY(-1px); }
-        /* Container tombol aksi header */
         .header-actions {
             display: flex;
             align-items: center;
             gap: 12px;
             flex-wrap: wrap;
         }
-        .shift-today-card { background: #fef9e6; margin: 20px 24px 0 24px; padding: 20px 24px; border-radius: 32px; border-left: 8px solid #f5b042; }
-        .shift-today-card h3 { color: #b45f1b; font-size: 1.25rem; margin-bottom: 16px; display: flex; align-items: center; gap: 12px; }
-        .shift-detail { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
-        .shift-item { background: white; padding: 10px 18px; border-radius: 48px; font-weight: 500; min-width: 180px; }
+        /* Style untuk navigasi shift harian */
+        .shift-navigation {
+            background: #fef9e6;
+            margin: 20px 24px 0 24px;
+            padding: 20px 24px;
+            border-radius: 32px;
+            border-left: 8px solid #f5b042;
+        }
+        .shift-navigation h3 {
+            color: #b45f1b;
+            font-size: 1.25rem;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .shift-date-controls {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            background: white;
+            padding: 12px 18px;
+            border-radius: 60px;
+            justify-content: space-between;
+        }
+        .date-nav-buttons {
+            display: flex;
+            gap: 12px;
+        }
+        .date-nav-buttons button, .date-picker-wrapper button {
+            background: #eef2f5;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 40px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-family: inherit;
+        }
+        .date-nav-buttons button:hover, .date-picker-wrapper button:hover {
+            background: #e2e8f0;
+            transform: translateY(-2px);
+        }
+        .date-picker-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #f8fafc;
+            padding: 5px 15px;
+            border-radius: 50px;
+        }
+        .date-picker-wrapper input {
+            border: 1px solid #cbd5e6;
+            padding: 8px 12px;
+            border-radius: 40px;
+            font-size: 0.9rem;
+        }
+        .shift-detail-card {
+            background: white;
+            border-radius: 28px;
+            padding: 18px 22px;
+            margin-top: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+        }
+        .shift-detail {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+        }
+        .shift-item {
+            background: #f8fafc;
+            padding: 10px 18px;
+            border-radius: 48px;
+            font-weight: 500;
+            min-width: 180px;
+            border: 1px solid #e2edf2;
+        }
         .daily-tasks-card { background: #ffffff; margin: 20px 24px 0 24px; padding: 20px 24px; border-radius: 28px; border: 1px solid #edf2f7; }
         .daily-tasks-card h3 { font-size: 1.2rem; font-weight: 600; color: #1a4a3f; display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
         .daily-tasks-list { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
@@ -96,89 +174,26 @@
         .info-message { background: #e6f7f0; color: #1e6f5c; border-left: 5px solid #1e6f5c; }
         footer { text-align: center; padding: 20px; font-size: 0.7rem; color: #7f8c8d; border-top: 1px solid #e2edf2; background: #fafcff; }
 
-        /* ========== RESPONSIF UNTUK HP ========== */
         @media (max-width: 780px) {
             body { padding: 8px; }
-            .header { 
-                padding: 16px 18px; 
-                flex-direction: column; 
-                align-items: stretch; 
-                gap: 12px;
-            }
-            .header-left { 
-                justify-content: space-between; 
-                flex-wrap: wrap;
-            }
-            .header h1 { 
-                font-size: 1.2rem; 
-                white-space: normal;
-                text-align: center;
-            }
-            .month-picker { 
-                justify-content: space-between; 
-                width: 100%;
-                flex-wrap: wrap;
-            }
-            .month-picker select { 
-                flex: 1;
-                min-width: 100px;
-            }
-            .header-actions {
-                justify-content: flex-end;
-                width: 100%;
-                gap: 8px;
-            }
-            .btn-refresh, .btn-logout, .badge-status {
-                padding: 6px 12px;
-                font-size: 0.7rem;
-            }
-            .shift-today-card { margin: 16px 16px 0 16px; padding: 16px; }
-            .daily-tasks-card { margin: 16px 16px 0 16px; padding: 16px 20px; }
-            .shift-item { min-width: 140px; font-size: 0.8rem; }
-            .action-bar { padding: 16px 16px 0 16px; }
-            .content-area { padding: 8px 16px 20px 16px; }
-            .modules-section { padding: 24px 16px 28px 16px; }
-            .modules-grid { gap: 14px; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
-            .btn-save, .btn-outline { padding: 10px 22px; font-size: 0.85rem; }
-            .task-badge { padding: 6px 16px; font-size: 0.8rem; }
-        }
-
-        @media (max-width: 580px) {
-            .header-logo { height: 50px; max-width: 150px; }
+            .header { padding: 16px 18px; flex-direction: column; align-items: stretch; gap: 12px; }
+            .header-left { justify-content: space-between; flex-wrap: wrap; }
+            .header h1 { font-size: 1.2rem; white-space: normal; text-align: center; }
+            .month-picker { justify-content: space-between; width: 100%; flex-wrap: wrap; }
+            .shift-navigation { margin: 16px 16px 0 16px; padding: 16px; }
+            .shift-date-controls { flex-direction: column; align-items: stretch; border-radius: 28px; }
+            .date-nav-buttons { justify-content: center; }
+            .date-picker-wrapper { justify-content: center; }
             .shift-detail { flex-direction: column; align-items: stretch; }
             .shift-item { text-align: center; }
+        }
+        @media (max-width: 580px) {
+            .header-logo { height: 50px; max-width: 150px; }
             .daily-tasks-list { flex-direction: column; }
             .task-badge { justify-content: center; width: 100%; }
-            .shift-table { min-width: 520px; }
-            .shift-table input { min-width: 100px; font-size: 0.75rem; padding: 8px 4px; }
-            .module-card { padding: 12px 14px; gap: 12px; }
-            .module-icon { width: 48px; height: 48px; font-size: 1.6rem; }
-            .module-info h4 { font-size: 0.85rem; }
-            .badge-status { font-size: 0.7rem; padding: 4px 10px; }
-            .month-picker select { padding: 6px 10px; font-size: 0.75rem; }
-            .header-actions {
-                justify-content: center;
-            }
+            .module-card { padding: 12px 14px; }
         }
-
-        @media (max-width: 420px) {
-            .header h1 { font-size: 1rem; gap: 5px; }
-            .sync-status { font-size: 0.6rem; margin-left: 5px; }
-            .modules-grid { grid-template-columns: 1fr; }
-            .btn-save, .btn-outline { width: 100%; justify-content: center; }
-            .action-bar { display: flex; flex-direction: column; gap: 10px; }
-            .header-actions {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            .btn-refresh, .btn-logout, .badge-status {
-                text-align: center;
-                justify-content: center;
-            }
-        }
-
         button, .module-card, select, .task-badge { touch-action: manipulation; }
-        button:focus-visible, .module-card:focus-visible, select:focus-visible, .task-badge:focus-visible { outline: 3px solid #f5b042; outline-offset: 2px; }
     </style>
 </head>
 <body>
@@ -208,10 +223,26 @@
 
     <div id="mainMenuPanel">
         <div class="main-menu-container">
-            <div class="shift-today-card">
-                <h3><i class="fas fa-calendar-alt"></i> Jadwal Shift Hari Ini</h3>
-                <div id="shiftDetailContainer">Memuat data shift...</div>
+            <!-- KARTU NAVIGASI SHIFT HARIAN (DENGAN TOMBOL NEXT/PREV & DATE PICKER) -->
+            <div class="shift-navigation">
+                <h3><i class="fas fa-calendar-alt"></i> Jadwal Shift</h3>
+                <div class="shift-date-controls">
+                    <div class="date-nav-buttons">
+                        <button id="prevDayBtn" title="Hari Sebelumnya"><i class="fas fa-chevron-left"></i> Sebelumnya</button>
+                        <button id="nextDayBtn" title="Hari Berikutnya">Berikutnya <i class="fas fa-chevron-right"></i></button>
+                    </div>
+                    <div class="date-picker-wrapper">
+                        <i class="fas fa-calendar-day"></i>
+                        <input type="date" id="datePickerInput" style="border-radius: 40px; padding: 8px 12px; border: 1px solid #cbd5e6;">
+                        <button id="goToDateBtn"><i class="fas fa-eye"></i> Tampilkan</button>
+                    </div>
+                </div>
+                <div id="shiftDetailContainer" class="shift-detail-card">
+                    <!-- Isi shift akan dirender di sini -->
+                    <div class="info-message"><i class="fas fa-spinner fa-pulse"></i> Memuat jadwal...</div>
+                </div>
             </div>
+
             <div class="daily-tasks-card" id="dailyTasksCard">
                 <h3><i class="fas fa-tasks"></i> Tugas Monitoring Hari Ini</h3>
                 <div id="dailyTasksList" class="daily-tasks-list">
@@ -232,7 +263,7 @@
 </div>
 
 <script>
-    // ========== PROTEKSI REDIRECT LOOP (SEDERHANA) ==========
+    // ========== PROTEKSI REDIRECT LOOP ==========
     (function() {
         let redirectCount = sessionStorage.getItem('auth_redirect_count');
         if (redirectCount) {
@@ -266,48 +297,37 @@
         window.location.href = 'login.html';
         return false;
     }
-
-    if (!checkAuthAndRedirect()) {
-        throw new Error("Redirecting to login page");
-    }
+    if (!checkAuthAndRedirect()) throw new Error("Redirecting");
     sessionStorage.removeItem('auth_redirect_count');
-    // ========== AKHIR PROTEKSI LOOP ==========
 
-    // ========== KONFIGURASI FIREBASE ==========
+    // ========== KONFIGURASI FIREBASE & GLOBAL ==========
     let isFirebaseReady = false;
     let currentShiftListenerRef = null;     
     let currentShiftData = {};               
     let isManagePanelOpen = false;            
     let currentYear = new Date().getFullYear();
     let currentMonth = new Date().getMonth() + 1;
-
+    let selectedDateObj = new Date(); // default hari ini (sesuai zona lokal)
+    
     const DB_PATH_SHIFT = 'monitoring/shift';   
 
     function updateFirebaseStatus(connected, message) {
         const statusEl = document.getElementById('firebaseStatus');
         if (statusEl) {
-            if (connected) {
-                statusEl.innerHTML = `<i class="fas fa-check-circle"></i> ${message}`;
-                statusEl.style.background = "rgba(0,0,0,0.2)";
-            } else {
-                statusEl.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${message}`;
-                statusEl.style.background = "rgba(220,50,50,0.5)";
-            }
+            if (connected) statusEl.innerHTML = `<i class="fas fa-check-circle"></i> ${message}`;
+            else statusEl.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${message}`;
         }
     }
 
     async function syncShiftToFirebase(year, month, scheduleObj) {
-        if (!isFirebaseReady || !window.db) {
-            console.warn("Firebase belum siap, data tidak tersimpan.");
-            return false;
-        }
+        if (!isFirebaseReady || !window.db) return false;
         try {
             const path = `${DB_PATH_SHIFT}/${year}/${String(month).padStart(2,'0')}`;
             await window.db.ref(path).set(scheduleObj);
             updateFirebaseStatus(true, "Tersinkron");
             return true;
         } catch (err) {
-            console.error("Gagal sync shift ke Firebase:", err);
+            console.error("Gagal sync shift:", err);
             updateFirebaseStatus(false, "Gagal sync");
             return false;
         }
@@ -326,38 +346,21 @@
 
     function onShiftDataChanged(snapshot) {
         const data = snapshot.val();
-        if (data && typeof data === 'object') {
-            currentShiftData = data;
-        } else {
-            currentShiftData = {};
-        }
-        refreshShiftTodayDisplay();
+        currentShiftData = (data && typeof data === 'object') ? data : {};
+        refreshShiftForSelectedDate();  // update tampilan dengan tanggal yg dipilih
         if (isManagePanelOpen) {
             const dynamicDiv = document.getElementById('dynamicContent');
-            if (dynamicDiv && dynamicDiv.style.display === 'block') {
-                renderManageShiftPanel(dynamicDiv);
-            }
+            if (dynamicDiv && dynamicDiv.style.display === 'block') renderManageShiftPanel(dynamicDiv);
         }
     }
 
     function attachShiftListener(year, month) {
-        if (!isFirebaseReady || !window.db) {
-            console.warn("Firebase belum siap, tidak bisa pasang listener");
-            return;
-        }
+        if (!isFirebaseReady || !window.db) return;
         detachShiftListener();
-        const path = getShiftPath(year, month);
-        const ref = window.db.ref(path);
+        const ref = window.db.ref(getShiftPath(year, month));
         currentShiftListenerRef = ref;
-        ref.on('value', (snapshot) => {
-            onShiftDataChanged(snapshot);
-        }, (error) => {
-            console.error("Listener error:", error);
-            updateFirebaseStatus(false, "Error listener");
-        });
-        ref.once('value').then(snapshot => {
-            onShiftDataChanged(snapshot);
-        }).catch(err => console.warn("once value error", err));
+        ref.on('value', onShiftDataChanged, (error) => updateFirebaseStatus(false, "Error listener"));
+        ref.once('value').then(onShiftDataChanged).catch(err => console.warn(err));
     }
 
     function getDaysInMonth(year, month) {
@@ -370,13 +373,12 @@
 
     function getDayName(year, month, day) {
         const date = new Date(year, month - 1, day);
-        const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-        return days[date.getDay()];
+        return ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'][date.getDay()];
     }
 
     function escapeHtml(str) {
         if (!str) return '';
-        return str.replace(/[&<>]/g, function (m) {
+        return str.replace(/[&<>]/g, function(m) {
             if (m === '&') return '&amp;';
             if (m === '<') return '&lt;';
             if (m === '>') return '&gt;';
@@ -384,35 +386,107 @@
         });
     }
 
-    function getTodayMappedInSelectedMonth() {
-        const today = new Date();
-        const currentDay = today.getDate();
-        const daysInSelected = getDaysInMonth(currentYear, currentMonth);
-        let mappedDay = currentDay;
-        if (mappedDay > daysInSelected) mappedDay = daysInSelected;
-        return formatDateStr(currentYear, currentMonth, mappedDay);
+    // ---------- FITUR NAVIGASI SHIFT HARIAN BARU ----------
+    function updateSelectedDateFromPickers() {
+        const datePicker = document.getElementById('datePickerInput');
+        if (datePicker && datePicker.value) {
+            const parts = datePicker.value.split('-');
+            if (parts.length === 3) {
+                const newYear = parseInt(parts[0]);
+                const newMonth = parseInt(parts[1]);
+                const newDay = parseInt(parts[2]);
+                if (!isNaN(newYear) && !isNaN(newMonth) && !isNaN(newDay)) {
+                    if (newYear !== currentYear || newMonth !== currentMonth) {
+                        // Ganti bulan/tahun terlebih dahulu
+                        currentYear = newYear;
+                        currentMonth = newMonth;
+                        // Sinkronkan dropdown bulan/tahun
+                        document.getElementById('yearSelect').value = currentYear;
+                        document.getElementById('monthSelect').value = currentMonth;
+                        attachShiftListener(currentYear, currentMonth);
+                    }
+                    selectedDateObj = new Date(newYear, newMonth - 1, newDay);
+                    refreshShiftForSelectedDate();
+                }
+            }
+        }
     }
 
-    async function refreshShiftTodayDisplay() {
+    function goToPrevDay() {
+        const newDate = new Date(selectedDateObj);
+        newDate.setDate(selectedDateObj.getDate() - 1);
+        applyNewDate(newDate);
+    }
+
+    function goToNextDay() {
+        const newDate = new Date(selectedDateObj);
+        newDate.setDate(selectedDateObj.getDate() + 1);
+        applyNewDate(newDate);
+    }
+
+    function applyNewDate(date) {
+        const targetYear = date.getFullYear();
+        const targetMonth = date.getMonth() + 1;
+        const targetDay = date.getDate();
+        let needReload = (targetYear !== currentYear || targetMonth !== currentMonth);
+        if (needReload) {
+            currentYear = targetYear;
+            currentMonth = targetMonth;
+            document.getElementById('yearSelect').value = currentYear;
+            document.getElementById('monthSelect').value = currentMonth;
+            attachShiftListener(currentYear, currentMonth);
+        }
+        selectedDateObj = new Date(targetYear, targetMonth - 1, targetDay);
+        // update input date picker
+        const datePicker = document.getElementById('datePickerInput');
+        if (datePicker) {
+            let yyyy = selectedDateObj.getFullYear();
+            let mm = String(selectedDateObj.getMonth() + 1).padStart(2, '0');
+            let dd = String(selectedDateObj.getDate()).padStart(2, '0');
+            datePicker.value = `${yyyy}-${mm}-${dd}`;
+        }
+        refreshShiftForSelectedDate();
+    }
+
+    function refreshShiftForSelectedDate() {
         const container = document.getElementById('shiftDetailContainer');
         if (!container) return;
+        const year = selectedDateObj.getFullYear();
+        const month = selectedDateObj.getMonth() + 1;
+        const day = selectedDateObj.getDate();
+        const dateKey = formatDateStr(year, month, day);
+        const dayName = getDayName(year, month, day);
+        
+        // Cek apakah data untuk bulan yang aktif tersedia (currentShiftData milik currentYear/currentMonth)
+        // Jika bulan yang dipilih berbeda dengan currentMonth (karena navigasi cepat), pastikan data yang benar.
+        if (year !== currentYear || month !== currentMonth) {
+            container.innerHTML = `<div class="warning-message"><i class="fas fa-sync-alt"></i> Mengganti periode ke ${year}-${String(month).padStart(2,'0')} ...</div>`;
+            // sinkronkan global dan reload listener
+            currentYear = year;
+            currentMonth = month;
+            document.getElementById('yearSelect').value = currentYear;
+            document.getElementById('monthSelect').value = currentMonth;
+            attachShiftListener(currentYear, currentMonth);
+            // setelah listener terpasang, akan memanggil refreshShiftForSelectedDate lagi via onShiftDataChanged, jadi return dulu
+            return;
+        }
+        
+        // Sekarang currentShiftData sudah sesuai dengan tahun/bulan yang dipilih
         if (!currentShiftData || Object.keys(currentShiftData).length === 0) {
-            container.innerHTML = `<div class="warning-message"><i class="fas fa-exclamation-triangle"></i> ⚠️ Belum ada jadwal shift untuk periode ${currentYear}-${String(currentMonth).padStart(2, '0')}. Silakan isi melalui tombol "Kelola Jadwal Shift".</div>`;
+            container.innerHTML = `<div class="warning-message"><i class="fas fa-exclamation-triangle"></i> ⚠️ Belum ada jadwal shift untuk periode ${currentYear}-${String(currentMonth).padStart(2,'0')}. Silakan isi melalui tombol "Kelola Jadwal Shift".</div>`;
             return;
         }
-        const targetDateKey = getTodayMappedInSelectedMonth();
-        const shiftData = currentShiftData[targetDateKey];
+        const shiftData = currentShiftData[dateKey];
         if (!shiftData) {
-            container.innerHTML = `<div class="warning-message"><i class="fas fa-calendar-times"></i> ⚠️ Data shift untuk tanggal ${targetDateKey} tidak ditemukan. Harap lengkapi jadwal melalui "Kelola Jadwal Shift".</div>`;
+            container.innerHTML = `<div class="warning-message"><i class="fas fa-calendar-times"></i> ⚠️ Data shift untuk tanggal ${dateKey} (${dayName}) tidak ditemukan. Harap lengkapi jadwal melalui "Kelola Jadwal Shift".</div>`;
             return;
         }
-        const dayName = getDayName(currentYear, currentMonth, parseInt(targetDateKey.split('-')[2]));
         container.innerHTML = `
             <div class="shift-detail">
-                <div class="shift-item">📆 ${targetDateKey} (${dayName})</div>
-                <div class="shift-item">🕛 Shift 1 (00:00 - 08:00) : <strong>${escapeHtml(shiftData.shift1 || '-')}</strong></div>
-                <div class="shift-item">🕗 Shift 2 (08:00 - 16:00) : <strong>${escapeHtml(shiftData.shift2 || '-')}</strong></div>
-                <div class="shift-item">🕓 Shift 3 (16:00 - 00:00) : <strong>${escapeHtml(shiftData.shift3 || '-')}</strong></div>
+                <div class="shift-item"><i class="fas fa-calendar-check"></i> 📅 ${dateKey} (${dayName})</div>
+                <div class="shift-item"><i class="fas fa-moon"></i> Shift 1 (00:00 - 08:00) : <strong>${escapeHtml(shiftData.shift1 || '-')}</strong></div>
+                <div class="shift-item"><i class="fas fa-sun"></i> Shift 2 (08:00 - 16:00) : <strong>${escapeHtml(shiftData.shift2 || '-')}</strong></div>
+                <div class="shift-item"><i class="fas fa-cloud-moon"></i> Shift 3 (16:00 - 00:00) : <strong>${escapeHtml(shiftData.shift3 || '-')}</strong></div>
             </div>
         `;
     }
@@ -430,75 +504,41 @@
         if (!containerElement) return;
         const daysCount = getDaysInMonth(currentYear, currentMonth);
         const existing = currentShiftData || {};
-        
-        let html = `
-            <div style="margin-bottom:20px;">
-                <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; align-items: center;">
-                    <h3 style="font-size: 1.3rem; color:#0b2b40; margin:0;"><i class="fas fa-calendar-edit"></i> Edit Jadwal Shift - ${currentYear}/${String(currentMonth).padStart(2,'0')}</h3>
-                    <button id="closeManagePanel" class="btn-outline" style="padding:8px 20px;"><i class="fas fa-times"></i> Tutup</button>
-                </div>
-                <div class="info-message" style="margin-top: 16px;"><i class="fas fa-info-circle"></i> Isi nama petugas untuk setiap shift. Perubahan langsung tersimpan ke Firebase dan tersinkron otomatis.</div>
-            </div>
-            <div class="shift-table-container">
-                <table class="shift-table">
-                    <thead><tr><th>Tanggal</th><th>Hari</th><th>Shift 1 (00-08)</th><th>Shift 2 (08-16)</th><th>Shift 3 (16-00)</th></tr>
-                    </thead>
-                    <tbody>
-        `;
+        let html = `<div style="margin-bottom:20px;"><div style="display: flex; justify-content: space-between; flex-wrap: wrap;"><h3><i class="fas fa-calendar-edit"></i> Edit Jadwal Shift - ${currentYear}/${String(currentMonth).padStart(2,'0')}</h3><button id="closeManagePanel" class="btn-outline"><i class="fas fa-times"></i> Tutup</button></div><div class="info-message"><i class="fas fa-info-circle"></i> Isi nama petugas untuk setiap shift. Perubahan langsung tersimpan.</div></div>
+        <div class="shift-table-container"><table class="shift-table"><thead><tr><th>Tanggal</th><th>Hari</th><th>Shift 1 (00-08)</th><th>Shift 2 (08-16)</th><th>Shift 3 (16-00)</th></tr></thead><tbody>`;
         for (let d = 1; d <= daysCount; d++) {
             const dateKey = formatDateStr(currentYear, currentMonth, d);
             const shift = existing[dateKey] || { shift1: '', shift2: '', shift3: '' };
             const dayName = getDayName(currentYear, currentMonth, d);
-            html += `
-                <tr>
-                    <td><strong>${dateKey}</strong></td>
-                    <td>${dayName}</td>
-                    <td><input type="text" class="manage-shift-inp" data-date="${dateKey}" data-shift="shift1" value="${escapeHtml(shift.shift1)}" placeholder="Nama petugas" autocomplete="off"></td>
-                    <td><input type="text" class="manage-shift-inp" data-date="${dateKey}" data-shift="shift2" value="${escapeHtml(shift.shift2)}" placeholder="Nama petugas" autocomplete="off"></td>
-                    <td><input type="text" class="manage-shift-inp" data-date="${dateKey}" data-shift="shift3" value="${escapeHtml(shift.shift3)}" placeholder="Nama petugas" autocomplete="off"></td>
-                </tr>
-            `;
+            html += `<tr><td><strong>${dateKey}</strong></td><td>${dayName}</td><td><input type="text" class="manage-shift-inp" data-date="${dateKey}" data-shift="shift1" value="${escapeHtml(shift.shift1)}" placeholder="Petugas"></td>
+            <td><input type="text" class="manage-shift-inp" data-date="${dateKey}" data-shift="shift2" value="${escapeHtml(shift.shift2)}" placeholder="Petugas"></td>
+            <td><input type="text" class="manage-shift-inp" data-date="${dateKey}" data-shift="shift3" value="${escapeHtml(shift.shift3)}" placeholder="Petugas"></td></tr>`;
         }
-        html += `</tbody></table></div><div style="display: flex; flex-wrap: wrap; gap: 16px; margin-top: 24px;"><button id="btnUpdateSchedule" class="btn-save"><i class="fas fa-save"></i> 💾 Simpan Perubahan Jadwal</button><button id="btnCancelManage" class="btn-outline"><i class="fas fa-arrow-left"></i> Batal & Tutup</button></div>`;
+        html += `</tbody></table></div><div style="display:flex; gap:16px; margin-top:24px;"><button id="btnUpdateSchedule" class="btn-save"><i class="fas fa-save"></i> Simpan Perubahan</button><button id="btnCancelManage" class="btn-outline"><i class="fas fa-arrow-left"></i> Batal</button></div>`;
         containerElement.innerHTML = html;
-        
-        const updateBtn = document.getElementById('btnUpdateSchedule');
-        if (updateBtn) {
-            updateBtn.addEventListener('click', async () => {
-                const newData = {};
-                let hasEmpty = false;
-                const inputs = document.querySelectorAll('.manage-shift-inp');
-                inputs.forEach(inp => {
-                    const date = inp.getAttribute('data-date');
-                    const shiftType = inp.getAttribute('data-shift');
-                    if (!newData[date]) newData[date] = { shift1: '', shift2: '', shift3: '' };
-                    newData[date][shiftType] = inp.value.trim();
-                });
-                for (let d = 1; d <= daysCount; d++) {
-                    const dateKey = formatDateStr(currentYear, currentMonth, d);
-                    const dayShift = newData[dateKey];
-                    if (dayShift && (dayShift.shift1 === "" || dayShift.shift2 === "" || dayShift.shift3 === "")) {
-                        hasEmpty = true;
-                        break;
-                    }
-                }
-                if (hasEmpty) {
-                    if (!confirm("⚠️ Ada shift yang kosong pada beberapa tanggal. Data tetap bisa disimpan, namun shift kosong akan menampilkan '-' di menu utama. Lanjutkan?")) return;
-                }
-                const success = await syncShiftToFirebase(currentYear, currentMonth, newData);
-                if (success) {
-                    alert("✅ Jadwal shift berhasil diperbarui dan tersinkron ke Firebase (termasuk offline cache).");
-                    await refreshShiftTodayDisplay();
-                    closeManagePanel();
-                } else {
-                    alert("❌ Gagal menyimpan jadwal. Periksa koneksi atau konfigurasi Firebase.");
-                }
+        document.getElementById('btnUpdateSchedule')?.addEventListener('click', async () => {
+            const newData = {};
+            let hasEmpty = false;
+            document.querySelectorAll('.manage-shift-inp').forEach(inp => {
+                const date = inp.dataset.date;
+                const shiftType = inp.dataset.shift;
+                if (!newData[date]) newData[date] = { shift1: '', shift2: '', shift3: '' };
+                newData[date][shiftType] = inp.value.trim();
             });
-        }
-        const cancelBtn = document.getElementById('btnCancelManage');
-        if (cancelBtn) cancelBtn.addEventListener('click', () => closeManagePanel());
-        const closeBtn = document.getElementById('closeManagePanel');
-        if (closeBtn) closeBtn.addEventListener('click', () => closeManagePanel());
+            for (let d = 1; d <= daysCount; d++) {
+                const dateKey = formatDateStr(currentYear, currentMonth, d);
+                const dayShift = newData[dateKey];
+                if (dayShift && (!dayShift.shift1 || !dayShift.shift2 || !dayShift.shift3)) hasEmpty = true;
+            }
+            if (hasEmpty && !confirm("⚠️ Ada shift kosong. Lanjutkan?")) return;
+            if (await syncShiftToFirebase(currentYear, currentMonth, newData)) {
+                alert("✅ Jadwal shift tersimpan.");
+                refreshShiftForSelectedDate();
+                closeManagePanel();
+            } else alert("❌ Gagal menyimpan.");
+        });
+        document.getElementById('btnCancelManage')?.addEventListener('click', () => closeManagePanel());
+        document.getElementById('closeManagePanel')?.addEventListener('click', () => closeManagePanel());
     }
     
     async function showManagePanel() {
@@ -507,15 +547,15 @@
             dynamicDiv.style.display = 'block';
             isManagePanelOpen = true;
             await renderManageShiftPanel(dynamicDiv);
-            dynamicDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            dynamicDiv.scrollIntoView({ behavior: 'smooth' });
         }
     }
     
-    // ==================== NOTIFIKASI TUGAS HARIAN ====================
+    // TUGAS HARIAN
     function getDailyNotifications() {
         const today = new Date();
-        const dayOfWeek = today.getDay();     
-        const currentDate = today.getDate();  
+        const dayOfWeek = today.getDay();
+        const currentDate = today.getDate();
         const tasks = [
             { text: "Monitoring Suhu", link: "Monitoring Suhu.html", icon: "fa-temperature-high" },
             { text: "Monitoring Metering", link: "Monitoring Metering.html", icon: "fa-chart-line" },
@@ -533,18 +573,8 @@
         const container = document.getElementById('dailyTasksList');
         if (!container) return;
         const tasks = getDailyNotifications();
-        if (tasks.length === 0) {
-            container.innerHTML = `<span class="task-badge empty-msg"><i class="fas fa-check-circle"></i> Tidak ada tugas tambahan hari ini</span>`;
-            return;
-        }
-        const tasksHtml = tasks.map(task => {
-            const isExternal = task.link.startsWith('http');
-            const targetAttr = isExternal ? ' target="_blank" rel="noopener noreferrer"' : ' target="_self"';
-            return `<a href="${task.link}"${targetAttr} class="task-badge">
-                <i class="fas ${task.icon}"></i> ${escapeHtml(task.text)}
-            </a>`;
-        }).join('');
-        container.innerHTML = tasksHtml;
+        if (!tasks.length) { container.innerHTML = `<span class="task-badge"><i class="fas fa-check-circle"></i> Tidak ada tugas tambahan hari ini</span>`; return; }
+        container.innerHTML = tasks.map(task => `<a href="${task.link}" ${task.link.startsWith('http') ? 'target="_blank" rel="noopener"' : 'target="_self"' } class="task-badge"><i class="fas ${task.icon}"></i> ${escapeHtml(task.text)}</a>`).join('');
     }
     
     const modulesList = [
@@ -555,163 +585,94 @@
         { name: "Monitoring Siaran", icon: "fas fa-satellite-dish", file: "Monitoring Siaran.html", desc: "Status channel & laporan" },
         { name: "Monitoring Kerusakan", icon: "fas fa-tools", file: "Monitoring Kerusakan.html", desc: "Multi foto & status alat" },
         { name: "Monitoring BBM", icon: "fas fa-gas-pump", file: "Monitoring BBM.html", desc: "Genset & konsumsi BBM" },
-        { name: "Monitoring Multiplexing", icon: "fas fa-network-wired", file: "Monitoring Multiplexing.html", desc: "Pantau 3 IRD, MUX, Kabel & IP + watermark" },
-        { name: "Monitoring Kebersihan", icon: "fas fa-broom", file: "Monitoring Kebersihan.html", desc: "Pantau kebersihan area transmisi" },
-        { name: "Monitoring Grounding", icon: "fas fa-bolt", file: "Monitoring Grounding.html", desc: "Pencatatan grounding 3 titik + foto" },
-        { name: "Monitoring Dashboard TVRI", icon: "fas fa-tv", file: "https://tvri.lodagency.co.id/", desc: "Akses dashboard monitoring TVRI" }
+        { name: "Monitoring Multiplexing", icon: "fas fa-network-wired", file: "Monitoring Multiplexing.html", desc: "Pantau 3 IRD, MUX, Kabel & IP" },
+        { name: "Monitoring Kebersihan", icon: "fas fa-broom", file: "Monitoring Kebersihan.html", desc: "Pantau kebersihan area" },
+        { name: "Monitoring Grounding", icon: "fas fa-bolt", file: "Monitoring Grounding.html", desc: "Pencatatan grounding 3 titik" },
+        { name: "Monitoring Dashboard TVRI", icon: "fas fa-tv", file: "https://tvri.lodagency.co.id/", desc: "Akses dashboard TVRI" }
     ];
     
     function renderModulesGrid() {
         const grid = document.getElementById('modulesGrid');
-        if (!grid) return;
-        grid.innerHTML = modulesList.map(mod => {
-            const isExternal = mod.file.startsWith('http');
-            const targetAttr = isExternal ? ' target="_blank" rel="noopener noreferrer"' : ' target="_self"';
-            return `<a href="${mod.file}"${targetAttr} class="module-card">
-                <div class="module-icon"><i class="${mod.icon}"></i></div>
-                <div class="module-info">
-                    <h4>${mod.name}</h4>
-                    <p>${mod.desc}</p>
-                </div>
-            </a>`;
-        }).join('');
+        if (grid) grid.innerHTML = modulesList.map(mod => `<a href="${mod.file}" ${mod.file.startsWith('http') ? 'target="_blank"' : 'target="_self"'} class="module-card"><div class="module-icon"><i class="${mod.icon}"></i></div><div class="module-info"><h4>${mod.name}</h4><p>${mod.desc}</p></div></a>`).join('');
     }
     
     window.addEventListener('roleChanged', (e) => {
         const role = e.detail.role;
-        const manageShiftBtn = document.getElementById('btnManageShift');
-        if (manageShiftBtn) manageShiftBtn.style.display = (role === 'guest') ? 'none' : 'inline-flex';
-        const adminLink = document.getElementById('adminControlLink');
-        if (adminLink) adminLink.style.display = (role === 'admin') ? 'inline-flex' : 'none';
+        document.getElementById('btnManageShift').style.display = (role === 'guest') ? 'none' : 'inline-flex';
+        document.getElementById('adminControlLink').style.display = (role === 'admin') ? 'inline-flex' : 'none';
         const logoutBtn = document.getElementById('logoutBtn');
         if (logoutBtn) {
             logoutBtn.style.display = 'inline-flex';
             logoutBtn.innerHTML = (role === 'guest') ? '<i class="fas fa-sign-in-alt"></i> Login' : '<i class="fas fa-sign-out-alt"></i> Logout';
         }
-        // Ubah warna teks userRoleDisplay menjadi lebih terang sesuai role (opsional)
         const roleSpan = document.getElementById('userRoleDisplay');
-        if (roleSpan) {
-            if (role === 'admin') roleSpan.innerHTML = '<i class="fas fa-user-shield"></i> Admin';
-            else if (role === 'user') roleSpan.innerHTML = '<i class="fas fa-user"></i> User';
-            else roleSpan.innerHTML = '<i class="fas fa-user-friends"></i> Tamu';
-        }
+        if (roleSpan) roleSpan.innerHTML = (role === 'admin') ? '<i class="fas fa-user-shield"></i> Admin' : (role === 'user' ? '<i class="fas fa-user"></i> User' : '<i class="fas fa-user-friends"></i> Tamu');
     });
 
     async function handleLogoutOrLogin() {
-        const role = (window.currentRole) ? window.currentRole : (localStorage.getItem('userRole') || 'guest');
-        if (role === 'guest') {
-            localStorage.removeItem('guestMode');
-            window.location.href = 'login.html';
-        } else {
-            if (typeof window.logoutUser === 'function') {
-                await window.logoutUser();
-            } else {
-                await window.auth.signOut();
-                localStorage.removeItem('guestMode');
-                window.location.href = 'login.html';
-            }
-        }
-    }
-
-    async function initMainMenu() {
-        attachShiftListener(currentYear, currentMonth);
-        renderModulesGrid();
-        renderDailyNotifications(); 
-        const manageBtn = document.getElementById('btnManageShift');
-        if (manageBtn) {
-            manageBtn.replaceWith(manageBtn.cloneNode(true));
-            const newBtn = document.getElementById('btnManageShift');
-            if (newBtn) newBtn.addEventListener('click', () => showManagePanel());
-        } else {
-            const btn = document.getElementById('btnManageShift');
-            if (btn) btn.addEventListener('click', () => showManagePanel());
-        }
-        const logoutBtn = document.getElementById('logoutBtn');
-        if (logoutBtn) {
-            logoutBtn.removeEventListener('click', handleLogoutOrLogin);
-            logoutBtn.addEventListener('click', handleLogoutOrLogin);
-        }
+        const role = window.currentRole || localStorage.getItem('userRole') || 'guest';
+        if (role === 'guest') { localStorage.removeItem('guestMode'); window.location.href = 'login.html'; }
+        else { if (typeof window.logoutUser === 'function') await window.logoutUser(); else await window.auth.signOut(); localStorage.removeItem('guestMode'); window.location.href = 'login.html'; }
     }
     
     function populateMonthYearSelectors() {
-        const monthSelect = document.getElementById('monthSelect');
-        const yearSelect = document.getElementById('yearSelect');
-        if (!monthSelect || !yearSelect) return;
-        monthSelect.innerHTML = '';
-        for (let i = 1; i <= 12; i++) {
-            const option = document.createElement('option');
-            option.value = i;
-            option.textContent = new Date(2000, i - 1, 1).toLocaleString('id', { month: 'long' });
-            if (i === currentMonth) option.selected = true;
-            monthSelect.appendChild(option);
-        }
+        const monthSelect = document.getElementById('monthSelect'), yearSelect = document.getElementById('yearSelect');
+        for (let i = 1; i <= 12; i++) { let opt = document.createElement('option'); opt.value = i; opt.textContent = new Date(2000, i-1, 1).toLocaleString('id', { month: 'long' }); if (i === currentMonth) opt.selected = true; monthSelect.appendChild(opt); }
         const nowYear = new Date().getFullYear();
-        yearSelect.innerHTML = '';
-        for (let y = nowYear - 1; y <= nowYear + 3; y++) {
-            const opt = document.createElement('option');
-            opt.value = y;
-            opt.textContent = y;
-            if (y === currentYear) opt.selected = true;
-            yearSelect.appendChild(opt);
-        }
-        monthSelect.addEventListener('change', async (e) => {
-            currentMonth = parseInt(e.target.value);
-            await reloadBySelection();
-        });
-        yearSelect.addEventListener('change', async (e) => {
-            currentYear = parseInt(e.target.value);
-            await reloadBySelection();
-        });
+        for (let y = nowYear - 1; y <= nowYear + 3; y++) { let opt = document.createElement('option'); opt.value = y; opt.textContent = y; if (y === currentYear) opt.selected = true; yearSelect.appendChild(opt); }
+        monthSelect.addEventListener('change', async (e) => { currentMonth = parseInt(e.target.value); await reloadBySelection(); });
+        yearSelect.addEventListener('change', async (e) => { currentYear = parseInt(e.target.value); await reloadBySelection(); });
     }
     
     async function reloadBySelection() {
         closeManagePanel();
         attachShiftListener(currentYear, currentMonth);
-        const statusBadge = document.getElementById('statusBadge');
-        if (statusBadge) statusBadge.innerText = `📅 ${currentYear}-${String(currentMonth).padStart(2, '0')}`;
-        refreshShiftTodayDisplay();
+        document.getElementById('statusBadge').innerText = `📅 ${currentYear}-${String(currentMonth).padStart(2, '0')}`;
+        // Set selectedDate ke tanggal 1 bulan yg baru
+        selectedDateObj = new Date(currentYear, currentMonth - 1, 1);
+        const picker = document.getElementById('datePickerInput');
+        if (picker) picker.value = `${currentYear}-${String(currentMonth).padStart(2,'0')}-01`;
+        refreshShiftForSelectedDate();
     }
     
-    // ========== PERBAIKAN UTAMA: FUNGSI ENABLE PERSISTENCE ==========
     async function enableFirebasePersistence() {
-        if (!window.db) return false;
-        if (typeof window.db.enablePersistence === 'function') {
-            try {
-                await window.db.enablePersistence();
-                console.log("Firebase persistence diaktifkan (offline support)");
-            } catch (err) {
-                console.log("Persistence tidak diaktifkan:", err.message);
-            }
-        } else {
-            console.log("Persistence tidak didukung browser");
+        if (window.db && typeof window.db.enablePersistence === 'function') {
+            try { await window.db.enablePersistence(); console.log("Persistence aktif"); } catch(e) { console.log(e.message); }
         }
-        return true;
     }
-
+    
     function waitForFirebaseAndLoad() {
         if (window.db) {
             isFirebaseReady = true;
-            enableFirebasePersistence().then(() => {
-                updateFirebaseStatus(true, "Terhubung (Offline Ready)");
-                initMainMenu();
-            }).catch(() => {
-                updateFirebaseStatus(true, "Terhubung");
-                initMainMenu();
-            });
-        } else {
-            setTimeout(waitForFirebaseAndLoad, 300);
+            enableFirebasePersistence().then(() => updateFirebaseStatus(true, "Offline Ready")).catch(() => updateFirebaseStatus(true, "Terhubung"));
+            initMainMenu();
+        } else setTimeout(waitForFirebaseAndLoad, 300);
+    }
+    
+    async function initMainMenu() {
+        attachShiftListener(currentYear, currentMonth);
+        renderModulesGrid();
+        renderDailyNotifications();
+        document.getElementById('btnManageShift')?.addEventListener('click', () => showManagePanel());
+        document.getElementById('logoutBtn')?.addEventListener('click', handleLogoutOrLogin);
+        document.getElementById('prevDayBtn')?.addEventListener('click', goToPrevDay);
+        document.getElementById('nextDayBtn')?.addEventListener('click', goToNextDay);
+        document.getElementById('goToDateBtn')?.addEventListener('click', () => updateSelectedDateFromPickers());
+        const datePicker = document.getElementById('datePickerInput');
+        if (datePicker) {
+            let today = new Date();
+            let yyyy = today.getFullYear(), mm = String(today.getMonth()+1).padStart(2,'0'), dd = String(today.getDate()).padStart(2,'0');
+            datePicker.value = `${yyyy}-${mm}-${dd}`;
+            selectedDateObj = new Date(yyyy, today.getMonth(), today.getDate());
         }
+        refreshShiftForSelectedDate();
     }
     
     document.addEventListener('DOMContentLoaded', () => {
         populateMonthYearSelectors();
-        const statusBadge = document.getElementById('statusBadge');
-        if (statusBadge) statusBadge.innerText = `📅 ${currentYear}-${String(currentMonth).padStart(2, '0')}`;
+        document.getElementById('statusBadge').innerText = `📅 ${currentYear}-${String(currentMonth).padStart(2, '0')}`;
         waitForFirebaseAndLoad();
-        const refreshBtn = document.getElementById('refreshPageBtn');
-        if (refreshBtn) {
-            refreshBtn.addEventListener('click', () => location.reload());
-        }
+        document.getElementById('refreshPageBtn')?.addEventListener('click', () => location.reload());
     });
 </script>
 </body>
