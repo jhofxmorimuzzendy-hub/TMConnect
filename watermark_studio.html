@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Watermark Studio - Kamera Depan/Belakang + Canvas Responsif</title>
+    <title>Watermark Studio - Stabil & Responsif</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
@@ -228,8 +228,8 @@
 <div class="container">
     <div class="top-bar">
         <div>
-            <h1>✍️ Watermark Studio Pro</h1>
-            <div style="font-size:0.7rem;">Canvas mengikuti ukuran foto | Watermark posisi relatif | Kamera depan/belakang</div>
+            <h1>✍️ Watermark Studio Pro - Stabil</h1>
+            <div style="font-size:0.7rem;">Desain di canvas 700x500, hasil otomatis skala ke ukuran foto</div>
         </div>
         <div class="toolbar">
             <button id="refreshStampBtn" class="btn btn-warning">🔄 Refresh Stamp</button>
@@ -278,14 +278,14 @@
         </div>
         <div class="glass-card">
             <div class="card-header">
-                <span>✨ Canvas (Klik/Shift pilih, drag, resize via handle)</span>
+                <span>✨ Canvas Desain (700x500) - Klik/Shift pilih, drag, resize via handle</span>
                 <span id="selectionCount" style="font-size:0.7rem;">0 terpilih</span>
             </div>
             <div class="canvas-container" id="canvasContainer">
                 <canvas id="mainCanvas" width="700" height="500"></canvas>
             </div>
             <div class="btn-group">
-                <button id="downloadBtn" class="btn btn-primary" disabled>💾 Unduh PNG</button>
+                <button id="downloadBtn" class="btn btn-primary" disabled>💾 Unduh PNG (desain)</button>
                 <button id="resetPhotoBtn" class="btn btn-secondary" disabled>🖼 Hapus BG</button>
                 <button id="deleteSelectedBtn" class="btn btn-danger">🗑️ Hapus</button>
                 <button id="duplicateSelectedBtn" class="btn">📑 Duplikasi</button>
@@ -335,7 +335,7 @@
             <div id="propContent">Klik watermark untuk edit</div>
         </div>
     </div>
-    <footer>📱 Canvas mengikuti ukuran foto | Watermark posisi relatif | Kamera HP depan/belakang berfungsi</footer>
+    <footer>📱 Desain di canvas 700x500, saat ambil foto, watermark diskalakan proporsional ke ukuran foto.</footer>
 </div>
 
 <div id="mapModal" class="modal">
@@ -397,7 +397,7 @@
     const cameraModeLabel = document.getElementById('cameraModeLabel');
     
     // ======================== STATE ========================
-    let elements = [];
+    let elements = [];      // elemen dengan koordinat absolut (pixel) di canvas 700x500
     let nextId = 1;
     let selectedIds = new Set();
     let isDragging = false;
@@ -422,9 +422,6 @@
 
     const fontFamilies = ['Inter','Roboto','Open Sans','Montserrat','Lobster','Arial','Times New Roman','Courier New','Georgia','Verdana'];
 
-    // Helper functions
-    function relToAbs(relVal, total) { return relVal * total; }
-    function absToRel(absVal, total) { return total === 0 ? 0 : absVal / total; }
     function fixColor(c) { if(!c) return '#000000'; if(c==='#000') return '#000000'; if(c==='#fff') return '#ffffff'; return c; }
 
     function showLoadingToast(msg, dur=2000){
@@ -558,10 +555,10 @@
         if(updated){ redrawAll(); saveHistory(); updateUI(); }
         isRefreshing=false;
     }
-    function addDateStamp(){ addElement({ type:'text', text:getDateStr(), xRel:0.03, yRel:0.85, fontSizeRel:0.03, fontFamily:'Inter', color:'#ffffff', stampType:'date', isLive:true }); }
-    function addTimeStamp(){ addElement({ type:'text', text:getTimeStr(), xRel:0.03, yRel:0.92, fontSizeRel:0.05, fontFamily:'Montserrat', fontWeight:'bold', color:'#ffffff', stampType:'time', isLive:true }); }
-    function addDayStamp(){ addElement({ type:'text', text:getDayStr(), xRel:0.03, yRel:0.78, fontSizeRel:0.03, fontFamily:'Montserrat', fontWeight:'bold', color:'#ffffff', stampType:'day', isLive:true }); }
-    async function addCoordinateStamp(){ const coord=await getCoordinates(); addElement({ type:'text', text:coord, xRel:0.03, yRel:0.96, fontSizeRel:0.025, fontFamily:'Inter', color:'#ffffff', stampType:'coordinate', isLive:true }); }
+    function addDateStamp(){ addElement({ type:'text', text:getDateStr(), x:20, y:canvas.height-70, fontSize:14, fontFamily:'Inter', color:'#ffffff', stampType:'date', isLive:true }); }
+    function addTimeStamp(){ addElement({ type:'text', text:getTimeStr(), x:20, y:canvas.height-50, fontSize:14, fontFamily:'Montserrat', fontWeight:'bold', color:'#ffffff', stampType:'time', isLive:true }); }
+    function addDayStamp(){ addElement({ type:'text', text:getDayStr(), x:20, y:canvas.height-90, fontSize:14, fontFamily:'Montserrat', fontWeight:'bold', color:'#ffffff', stampType:'day', isLive:true }); }
+    async function addCoordinateStamp(){ const coord=await getCoordinates(); addElement({ type:'text', text:coord, x:20, y:canvas.height-30, fontSize:14, fontFamily:'Inter', color:'#ffffff', stampType:'coordinate', isLive:true }); }
 
     // ======================== Peta ========================
     const mapModal=document.getElementById('mapModal'), realMapDiv=document.getElementById('realMap'), searchLocation=document.getElementById('searchLocation');
@@ -594,21 +591,24 @@
         },100);
     }
     function captureMap(){
-        html2canvas(realMapDiv,{scale:2}).then(c=>{ const imgData=c.toDataURL(); const img=new Image(); img.onload=()=>addElement({type:'image', imageElement:img, imageData:imgData, widthRel:0.4, heightRel:0.3, xRel:0.1, yRel:0.1, opacity:0.9}); img.src=imgData; mapModal.style.display='none'; }).catch(()=>alert("Gagal"));
+        html2canvas(realMapDiv,{scale:2}).then(c=>{ const imgData=c.toDataURL(); const img=new Image(); img.onload=()=>addElement({type:'image', imageElement:img, imageData:imgData, width:200, height:150, x:50, y:50, opacity:0.9}); img.src=imgData; mapModal.style.display='none'; }).catch(()=>alert("Gagal"));
     }
     document.getElementById('captureMapBtn').onclick=captureMap;
     document.getElementById('closeMapBtn').onclick=()=>{ mapModal.style.display='none'; if(mapInstance) mapInstance.remove(); };
 
-    // ======================== Drawing dengan koordinat relatif ========================
+    // ======================== Drawing di canvas 700x500 ========================
     function drawElement(el){
         try{
             ctx.save();
             ctx.globalAlpha = el.opacity ?? 1;
-            const w=canvas.width, h=canvas.height;
-            const x = relToAbs(el.xRel, w);
-            const y = relToAbs(el.yRel, h);
+            if(el.shadowBlur){ ctx.shadowBlur = el.shadowBlur; ctx.shadowColor = el.shadowColor || '#000000'; }
+            if(el.rotation){
+                const bounds = getElementBounds(el);
+                const cx = bounds.x + bounds.w/2, cy = bounds.y + bounds.h/2;
+                ctx.translate(cx, cy); ctx.rotate(el.rotation * Math.PI/180); ctx.translate(-cx, -cy);
+            }
             if(el.type==='text'){
-                let fontSize = relToAbs(el.fontSizeRel || 0.04, Math.min(w,h));
+                let fontSize = el.fontSize || 28;
                 let fontFamily = el.fontFamily || 'Inter';
                 let fontWeight = el.fontWeight || 'normal';
                 let fontStyle = el.fontStyle || 'normal';
@@ -619,75 +619,61 @@
                 const lines = el.text.split('\n');
                 const lineH = fontSize * 1.2;
                 for(let i=0;i<lines.length;i++){
-                    if(el.strokeColor && el.strokeWidth) ctx.strokeText(lines[i], x, y+i*lineH);
-                    ctx.fillText(lines[i], x, y+i*lineH);
+                    if(el.strokeColor && el.strokeWidth) ctx.strokeText(lines[i], el.x, el.y + i*lineH);
+                    ctx.fillText(lines[i], el.x, el.y + i*lineH);
                     if(el.textDecoration==='underline'){
                         const metrics = ctx.measureText(lines[i]);
-                        ctx.beginPath(); ctx.moveTo(x, y+i*lineH+fontSize*0.15); ctx.lineTo(x+metrics.width, y+i*lineH+fontSize*0.15); ctx.strokeStyle = fixColor(el.color); ctx.lineWidth=Math.max(1, fontSize/12); ctx.stroke();
+                        ctx.beginPath(); ctx.moveTo(el.x, el.y + i*lineH + fontSize*0.15); ctx.lineTo(el.x+metrics.width, el.y + i*lineH + fontSize*0.15); ctx.strokeStyle = fixColor(el.color); ctx.lineWidth=Math.max(1, fontSize/12); ctx.stroke();
                     }
                 }
             } else if(el.type==='shape'){
-                let wAbs = relToAbs(el.widthRel || 0.12, w);
-                let hAbs = relToAbs(el.heightRel || 0.12, h);
                 ctx.fillStyle = fixColor(el.fillColor || '#ffaa44');
                 ctx.strokeStyle = fixColor(el.strokeColor || '#ffffff');
                 ctx.lineWidth = el.strokeWidth || 2;
-                if(el.shapeType==='rectangle') ctx.rect(x, y, wAbs, hAbs);
-                else if(el.shapeType==='circle') ctx.arc(x+wAbs/2, y+hAbs/2, Math.min(wAbs,hAbs)/2, 0, 2*Math.PI);
-                else if(el.shapeType==='triangle'){ ctx.moveTo(x+wAbs/2, y); ctx.lineTo(x+wAbs, y+hAbs); ctx.lineTo(x, y+hAbs); ctx.closePath(); }
-                else if(el.shapeType==='line'){ ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x+wAbs, y+hAbs); ctx.strokeStyle=fixColor(el.strokeColor||'#000'); ctx.lineWidth=el.strokeWidth||3; ctx.stroke(); ctx.restore(); return; }
+                const w = el.width || 80, h = el.height || 80;
+                ctx.beginPath();
+                if(el.shapeType==='rectangle') ctx.rect(el.x, el.y, w, h);
+                else if(el.shapeType==='circle') ctx.arc(el.x + w/2, el.y + h/2, Math.min(w,h)/2, 0, 2*Math.PI);
+                else if(el.shapeType==='triangle'){ ctx.moveTo(el.x + w/2, el.y); ctx.lineTo(el.x + w, el.y + h); ctx.lineTo(el.x, el.y + h); ctx.closePath(); }
+                else if(el.shapeType==='line'){ ctx.beginPath(); ctx.moveTo(el.x, el.y); ctx.lineTo(el.x + w, el.y + h); ctx.strokeStyle=fixColor(el.strokeColor||'#000'); ctx.lineWidth=el.strokeWidth||3; ctx.stroke(); ctx.restore(); return; }
                 else if(el.shapeType==='star'){
-                    let spikes=5, outerR=Math.min(wAbs,hAbs)/2, innerR=outerR/2, cx=x+wAbs/2, cy=y+hAbs/2;
+                    let spikes=5, outerR=Math.min(w,h)/2, innerR=outerR/2, cx=el.x+w/2, cy=el.y+h/2;
                     for(let i=0;i<spikes*2;i++){ let r=i%2===0?outerR:innerR; let angle=Math.PI*2*i/(spikes*2)-Math.PI/2; let px=cx+r*Math.cos(angle), py=cy+r*Math.sin(angle); if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py); } ctx.closePath();
                 } else if(el.shapeType==='heart'){
-                    let cx=x+wAbs/2, cy=y+hAbs/2, scale=Math.min(wAbs,hAbs)/100;
+                    let cx=el.x+w/2, cy=el.y+h/2, scale=Math.min(w,h)/100;
                     ctx.moveTo(cx,cy+20*scale); ctx.bezierCurveTo(cx-50*scale,cy-30*scale,cx-90*scale,cy+30*scale,cx,cy+80*scale); ctx.bezierCurveTo(cx+90*scale,cy+30*scale,cx+50*scale,cy-30*scale,cx,cy+20*scale);
-                } else if(el.shapeType==='oval') ctx.ellipse(x+wAbs/2, y+hAbs/2, wAbs/2, hAbs/2, 0, 0, 2*Math.PI);
-                else if(el.shapeType==='diamond'){ ctx.moveTo(x+wAbs/2, y); ctx.lineTo(x+wAbs, y+hAbs/2); ctx.lineTo(x+wAbs/2, y+hAbs); ctx.lineTo(x, y+hAbs/2); ctx.closePath(); }
+                } else if(el.shapeType==='oval') ctx.ellipse(el.x+w/2, el.y+h/2, w/2, h/2, 0, 0, 2*Math.PI);
+                else if(el.shapeType==='diamond'){ ctx.moveTo(el.x+w/2, el.y); ctx.lineTo(el.x+w, el.y+h/2); ctx.lineTo(el.x+w/2, el.y+h); ctx.lineTo(el.x, el.y+h/2); ctx.closePath(); }
                 ctx.fill(); if(el.shapeType!=='line') ctx.stroke();
             } else if(el.type==='icon'){
-                let size = relToAbs(el.sizeRel || 0.07, Math.min(w,h));
+                let size = el.size || 40;
                 ctx.font = `${size}px "Segoe UI Emoji"`;
                 ctx.fillStyle = fixColor(el.color || '#ffffff');
-                if(el.strokeColor && el.strokeWidth){ ctx.strokeStyle = fixColor(el.strokeColor); ctx.lineWidth = el.strokeWidth; ctx.strokeText(el.iconChar, x, y); }
-                ctx.fillText(el.iconChar, x, y);
+                if(el.strokeColor && el.strokeWidth){ ctx.strokeStyle = fixColor(el.strokeColor); ctx.lineWidth = el.strokeWidth; ctx.strokeText(el.iconChar, el.x, el.y); }
+                ctx.fillText(el.iconChar, el.x, el.y);
             } else if(el.type==='image' && el.imageElement && el.imageElement.complete && el.imageElement.naturalWidth>0){
-                let iw = relToAbs(el.widthRel || 0.3, w);
-                let ih = relToAbs(el.heightRel || 0.2, h);
-                ctx.drawImage(el.imageElement, x, y, iw, ih);
+                ctx.drawImage(el.imageElement, el.x, el.y, el.width || 200, el.height || 150);
             }
             ctx.restore();
         } catch(e){ console.warn(e); ctx.restore(); }
     }
 
     function getElementBounds(el){
-        const w=canvas.width, h=canvas.height;
-        let x = relToAbs(el.xRel, w);
-        let y = relToAbs(el.yRel, h);
         if(el.type==='text'){
-            let fontSize = relToAbs(el.fontSizeRel || 0.04, Math.min(w,h));
+            let fontSize = el.fontSize || 28;
             let fontFamily = el.fontFamily || 'Inter';
             ctx.font = `${el.fontWeight||'normal'} ${el.fontStyle||'normal'} ${fontSize}px "${fontFamily}", system-ui`;
             const lines = el.text.split('\n');
             let maxW=0; for(let l of lines) maxW = Math.max(maxW, ctx.measureText(l).width);
-            return { x, y, w: maxW+10, h: lines.length * fontSize * 1.2 };
+            return { x: el.x, y: el.y, w: maxW+10, h: lines.length * fontSize * 1.2 };
         }
         if(el.type==='shape'){
-            let wAbs = relToAbs(el.widthRel || 0.12, w);
-            let hAbs = relToAbs(el.heightRel || 0.12, h);
-            if(el.shapeType==='line') return { x, y, w: wAbs, h: hAbs };
-            return { x, y, w: wAbs, h: hAbs };
+            if(el.shapeType==='line') return { x: el.x, y: el.y, w: el.width || 100, h: el.height || 2 };
+            return { x: el.x, y: el.y, w: el.width || 80, h: el.height || 80 };
         }
-        if(el.type==='icon'){
-            let size = relToAbs(el.sizeRel || 0.07, Math.min(w,h));
-            return { x, y, w: size, h: size };
-        }
-        if(el.type==='image'){
-            let iw = relToAbs(el.widthRel || 0.3, w);
-            let ih = relToAbs(el.heightRel || 0.2, h);
-            return { x, y, w: iw, h: ih };
-        }
-        return { x, y, w: 60, h: 60 };
+        if(el.type==='icon') return { x: el.x, y: el.y, w: el.size || 40, h: el.size || 40 };
+        if(el.type==='image') return { x: el.x, y: el.y, w: el.width || 200, h: el.height || 150 };
+        return { x: el.x, y: el.y, w: 60, h: 60 };
     }
 
     function drawBackground(){
@@ -703,7 +689,6 @@
     }
 
     function redrawAll(){
-        if(!canvas.width || !canvas.height) return;
         ctx.clearRect(0,0,canvas.width,canvas.height);
         drawBackground();
         for(let el of elements) drawElement(el);
@@ -725,7 +710,7 @@
         }
     }
 
-    // ======================== Mouse (drag & resize) ========================
+    // ======================== Mouse (drag & resize) absolut ========================
     function getMouseCoord(e){
         const rect = canvas.getBoundingClientRect();
         const scaleX = canvas.width / rect.width;
@@ -752,7 +737,7 @@
         return null;
     }
     let dragTargetId=null;
-    let resizeStart = { w:0, h:0, x:0, y:0, wRel:0, hRel:0, xRel:0, yRel:0 };
+    let resizeStart = { w:0, h:0, x:0, y:0, fontSize:0, width:0, height:0, size:0 };
     canvas.addEventListener('mousedown', function(e) {
         e.preventDefault();
         const {x,y}=getMouseCoord(e);
@@ -763,7 +748,7 @@
                 if(handle){
                     isResizing=true; resizeHandle=handle; dragTargetId=sel.id;
                     const b=getElementBounds(sel);
-                    resizeStart={ w:b.w, h:b.h, x:sel.xRel*canvas.width, y:sel.yRel*canvas.height, wRel:sel.widthRel, hRel:sel.heightRel, xRel:sel.xRel, yRel:sel.yRel };
+                    resizeStart={ w:b.w, h:b.h, x:sel.x, y:sel.y, fontSize:sel.fontSize, width:sel.width, height:sel.height, size:sel.size };
                     dragStartMouse={x,y};
                     return;
                 }
@@ -781,7 +766,7 @@
             dragStartPositions.clear();
             for(let id of dragStartSelected){
                 let el=elements.find(e=>e.id===id);
-                if(el) dragStartPositions.set(id, { xRel: el.xRel, yRel: el.yRel });
+                if(el) dragStartPositions.set(id, { x: el.x, y: el.y });
             }
             dragStartMouse={x,y};
             isDragging=true;
@@ -802,16 +787,15 @@
                 if(resizeHandle==='bl'){ newW=resizeStart.w-dx; newX=resizeStart.x+dx; newH=resizeStart.h+dy; }
                 newW=Math.max(10,newW); newH=Math.max(10,newH);
                 if(el.type==='text'){
-                    let newFontSizeRel = (newW/3) / Math.min(canvas.width, canvas.height);
-                    el.fontSizeRel = Math.max(0.02, Math.min(0.2, newFontSizeRel));
+                    el.fontSize = Math.max(12, newW/3);
                 } else if(el.type==='shape' || el.type==='image'){
-                    el.widthRel = newW / canvas.width;
-                    el.heightRel = newH / canvas.height;
+                    el.width = newW;
+                    el.height = newH;
                 } else if(el.type==='icon'){
-                    el.sizeRel = newW / Math.min(canvas.width, canvas.height);
+                    el.size = Math.max(16, newW);
                 }
-                el.xRel = (newX + (resizeStart.w - newW)/2) / canvas.width;
-                el.yRel = (newY + (resizeStart.h - newH)/2) / canvas.height;
+                el.x = newX;
+                el.y = newY;
                 redrawAll();
             }
         } else if(isDragging){
@@ -821,12 +805,8 @@
             for(let [id, start] of dragStartPositions){
                 let el=elements.find(e=>e.id===id);
                 if(el){
-                    let newXRel = start.xRel + (dx / canvas.width);
-                    let newYRel = start.yRel + (dy / canvas.height);
-                    newXRel = Math.min(0.95, Math.max(0.01, newXRel));
-                    newYRel = Math.min(0.95, Math.max(0.01, newYRel));
-                    el.xRel = newXRel;
-                    el.yRel = newYRel;
+                    el.x = start.x + dx;
+                    el.y = start.y + dy;
                 }
             }
             redrawAll();
@@ -839,13 +819,6 @@
 
     // ======================== CRUD ========================
     function addElement(el){
-        const w=canvas.width||700, h=canvas.height||500;
-        if(el.xRel===undefined && el.x) el.xRel = el.x / w;
-        if(el.yRel===undefined && el.y) el.yRel = el.y / h;
-        if(el.fontSizeRel===undefined && el.fontSize) el.fontSizeRel = el.fontSize / Math.min(w,h);
-        if(el.widthRel===undefined && el.width) el.widthRel = el.width / w;
-        if(el.heightRel===undefined && el.height) el.heightRel = el.height / h;
-        if(el.sizeRel===undefined && el.size) el.sizeRel = el.size / Math.min(w,h);
         if(el.color && (el.color==='#000'||el.color==='#fff')) el.color = (el.color==='#000')?'#000000':'#ffffff';
         if(el.fillColor && (el.fillColor==='#000'||el.fillColor==='#fff')) el.fillColor = (el.fillColor==='#000')?'#000000':'#ffffff';
         if(el.strokeColor && (el.strokeColor==='#000'||el.strokeColor==='#fff')) el.strokeColor = (el.strokeColor==='#000')?'#000000':'#ffffff';
@@ -862,8 +835,8 @@
             if(orig){
                 let copy=JSON.parse(JSON.stringify(orig));
                 copy.id=nextId++;
-                copy.xRel = Math.min(0.9, copy.xRel+0.05);
-                copy.yRel = Math.min(0.9, copy.yRel+0.05);
+                copy.x += 20;
+                copy.y += 20;
                 if(copy.imageElement) copy.imageElement=null;
                 newElems.push(copy);
             }
@@ -876,9 +849,9 @@
     function ungroup(){ let newElems=[]; for(let id of selectedIds){ let el=elements.find(e=>e.id===id); if(el && el.type==='group'){ for(let cid of el.children){ let child=elements.find(e=>e.id===cid); if(child) newElems.push(child); } elements=elements.filter(e=>e.id!==id); } } elements.push(...newElems); selectedIds.clear(); newElems.forEach(e=>selectedIds.add(e.id)); saveHistory(); redrawAll(); updateUI(); }
     function layerUp(){ let sel=Array.from(selectedIds); for(let id of sel){ let idx=elements.findIndex(e=>e.id===id); if(idx!==-1 && idx<elements.length-1) [elements[idx],elements[idx+1]]=[elements[idx+1],elements[idx]]; } saveHistory(); redrawAll(); updateUI(); }
     function layerDown(){ let sel=Array.from(selectedIds); for(let id of sel){ let idx=elements.findIndex(e=>e.id===id); if(idx!==-1 && idx>0) [elements[idx],elements[idx-1]]=[elements[idx-1],elements[idx]]; } saveHistory(); redrawAll(); updateUI(); }
-    function alignLeft(){ if(selectedIds.size===0) return; let minX=Math.min(...Array.from(selectedIds).map(id=>elements.find(e=>e.id===id)?.xRel)); for(let id of selectedIds){ let el=elements.find(e=>e.id===id); if(el) el.xRel=minX; } redrawAll(); saveHistory(); }
-    function alignCenter(){ if(selectedIds.size===0) return; let avgX=Array.from(selectedIds).map(id=>elements.find(e=>e.id===id)?.xRel).reduce((a,b)=>a+b,0)/selectedIds.size; for(let id of selectedIds){ let el=elements.find(e=>e.id===id); if(el) el.xRel=avgX; } redrawAll(); saveHistory(); }
-    function alignRight(){ if(selectedIds.size===0) return; let maxX=Math.max(...Array.from(selectedIds).map(id=>{ let el=elements.find(e=>e.id===id); if(el){ let b=getElementBounds(el); return b.x+b.w; } return 0; })); for(let id of selectedIds){ let el=elements.find(e=>e.id===id); if(el){ let b=getElementBounds(el); el.xRel = (maxX - b.w) / canvas.width; } } redrawAll(); saveHistory(); }
+    function alignLeft(){ if(selectedIds.size===0) return; let minX=Math.min(...Array.from(selectedIds).map(id=>elements.find(e=>e.id===id)?.x)); for(let id of selectedIds){ let el=elements.find(e=>e.id===id); if(el) el.x=minX; } redrawAll(); saveHistory(); }
+    function alignCenter(){ if(selectedIds.size===0) return; let avgX=Array.from(selectedIds).map(id=>elements.find(e=>e.id===id)?.x).reduce((a,b)=>a+b,0)/selectedIds.size; for(let id of selectedIds){ let el=elements.find(e=>e.id===id); if(el) el.x=avgX; } redrawAll(); saveHistory(); }
+    function alignRight(){ if(selectedIds.size===0) return; let maxX=Math.max(...Array.from(selectedIds).map(id=>{ let el=elements.find(e=>e.id===id); if(el){ let b=getElementBounds(el); return b.x+b.w; } return 0; })); for(let id of selectedIds){ let el=elements.find(e=>e.id===id); if(el){ let b=getElementBounds(el); el.x = maxX - b.w; } } redrawAll(); saveHistory(); }
 
     function updateUI(){
         selectionCountSpan.innerText=`${selectedIds.size} terpilih`;
@@ -898,7 +871,7 @@
             propContentDiv.innerHTML = `
                 <div class="flex-row"><div class="control-group"><label>Teks</label><textarea id="propText" rows="2">${el.text}</textarea></div></div>
                 <div class="flex-row"><div class="control-group"><label>Font</label><select id="propFontFamily">${fontFamilies.map(f=>`<option value="${f}" ${el.fontFamily===f?'selected':''}>${f}</option>`).join('')}</select></div>
-                <div class="control-group"><label>Ukuran</label><input type="range" id="propFontSize" min="0.01" max="0.15" step="0.001" value="${el.fontSizeRel||0.04}"><span>${Math.round((el.fontSizeRel||0.04)*100)}%</span></div></div>
+                <div class="control-group"><label>Ukuran</label><input type="range" id="propFontSize" min="8" max="120" value="${el.fontSize||28}"><span>${el.fontSize||28}px</span></div></div>
                 <div class="flex-row"><div class="control-group"><label>Warna</label><input type="color" id="propColor" value="${fixColor(el.color)}"></div>
                 <div class="control-group"><label>Opacity</label><input type="range" id="propOpacity" min="0" max="1" step="0.01" value="${el.opacity||1}"><span>${Math.round((el.opacity||1)*100)}%</span></div></div>
                 <div class="flex-row"><div class="control-group"><label>Stroke</label><input type="color" id="propStrokeColor" value="${el.strokeColor||''}"><input type="range" id="propStrokeWidth" min="0" max="10" value="${el.strokeWidth||0}"></div></div>
@@ -906,7 +879,7 @@
             `;
             document.getElementById('propText')?.addEventListener('input',function(e){ el.text=e.target.value; redrawAll(); saveHistory(); });
             document.getElementById('propFontFamily')?.addEventListener('change',function(e){ el.fontFamily=e.target.value; redrawAll(); });
-            document.getElementById('propFontSize')?.addEventListener('input',function(e){ el.fontSizeRel=parseFloat(e.target.value); redrawAll(); });
+            document.getElementById('propFontSize')?.addEventListener('input',function(e){ el.fontSize=parseInt(e.target.value); redrawAll(); });
             document.getElementById('propColor')?.addEventListener('input',function(e){ el.color=e.target.value; redrawAll(); });
             document.getElementById('propOpacity')?.addEventListener('input',function(e){ el.opacity=parseFloat(e.target.value); redrawAll(); });
             document.getElementById('propStrokeColor')?.addEventListener('input',function(e){ el.strokeColor=e.target.value; redrawAll(); });
@@ -925,7 +898,7 @@
         }
     }
 
-    // ======================== Ambil foto ========================
+    // ======================== Ambil foto & kirim ========================
     function captureAndSend(){
         if(!mediaStream || !video.videoWidth){ alert("Kamera belum aktif"); return; }
         showLoadingToast("Mengambil foto...",1000);
@@ -935,16 +908,69 @@
         tempCanvas.getContext('2d').drawImage(video,0,0);
         const img = new Image();
         img.onload = () => {
-            backgroundImage = img;
-            backgroundColor = null;
-            canvas.width = img.width;
-            canvas.height = img.height;
-            hasPhoto = true;
-            downloadBtn.disabled = false;
-            resetPhotoBtn.disabled = false;
-            redrawAll();
-            saveHistory();
-            const finalImage = canvas.toDataURL('image/png');
+            // Buat canvas baru seukuran foto
+            const newCanvas = document.createElement('canvas');
+            newCanvas.width = img.width;
+            newCanvas.height = img.height;
+            const newCtx = newCanvas.getContext('2d');
+            // Gambar foto sebagai background
+            newCtx.drawImage(img, 0, 0);
+            // Hitung skala
+            const scaleX = newCanvas.width / canvas.width;
+            const scaleY = newCanvas.height / canvas.height;
+            // Gambar ulang semua elemen watermark dengan skala
+            for(let el of elements){
+                newCtx.save();
+                newCtx.globalAlpha = el.opacity ?? 1;
+                if(el.type==='text'){
+                    let fontSize = (el.fontSize || 28) * Math.min(scaleX, scaleY);
+                    let x = (el.x || 0) * scaleX;
+                    let y = (el.y || 0) * scaleY;
+                    newCtx.font = `${el.fontStyle||'normal'} ${el.fontWeight||'normal'} ${fontSize}px "${el.fontFamily||'Inter'}", system-ui`;
+                    newCtx.fillStyle = fixColor(el.color);
+                    if(el.strokeColor && el.strokeWidth){ newCtx.strokeStyle = fixColor(el.strokeColor); newCtx.lineWidth = el.strokeWidth * Math.min(scaleX, scaleY); }
+                    newCtx.textAlign = 'left'; newCtx.textBaseline = 'top';
+                    const lines = el.text.split('\n');
+                    const lineH = fontSize * 1.2;
+                    for(let i=0;i<lines.length;i++){
+                        if(el.strokeColor && el.strokeWidth) newCtx.strokeText(lines[i], x, y + i*lineH);
+                        newCtx.fillText(lines[i], x, y + i*lineH);
+                        if(el.textDecoration==='underline'){
+                            const metrics = newCtx.measureText(lines[i]);
+                            newCtx.beginPath(); newCtx.moveTo(x, y + i*lineH + fontSize*0.15); newCtx.lineTo(x+metrics.width, y + i*lineH + fontSize*0.15); newCtx.strokeStyle = fixColor(el.color); newCtx.lineWidth=Math.max(1, fontSize/12); newCtx.stroke();
+                        }
+                    }
+                } else if(el.type==='shape'){
+                    let w = (el.width || 80) * scaleX;
+                    let h = (el.height || 80) * scaleY;
+                    let x = (el.x || 0) * scaleX;
+                    let y = (el.y || 0) * scaleY;
+                    newCtx.fillStyle = fixColor(el.fillColor || '#ffaa44');
+                    newCtx.strokeStyle = fixColor(el.strokeColor || '#ffffff');
+                    newCtx.lineWidth = (el.strokeWidth || 2) * Math.min(scaleX, scaleY);
+                    if(el.shapeType==='rectangle') newCtx.fillRect(x, y, w, h);
+                    else if(el.shapeType==='circle') newCtx.arc(x+w/2, y+h/2, Math.min(w,h)/2, 0, 2*Math.PI);
+                    // sederhanakan, cukup rectangle dulu untuk kecepatan
+                    else newCtx.fillRect(x, y, w, h);
+                    newCtx.fill();
+                    if(el.shapeType!=='line') newCtx.stroke();
+                } else if(el.type==='icon'){
+                    let size = (el.size || 40) * Math.min(scaleX, scaleY);
+                    let x = (el.x || 0) * scaleX;
+                    let y = (el.y || 0) * scaleY;
+                    newCtx.font = `${size}px "Segoe UI Emoji"`;
+                    newCtx.fillStyle = fixColor(el.color || '#ffffff');
+                    newCtx.fillText(el.iconChar, x, y);
+                } else if(el.type==='image' && el.imageElement){
+                    let w = (el.width || 200) * scaleX;
+                    let h = (el.height || 150) * scaleY;
+                    let x = (el.x || 0) * scaleX;
+                    let y = (el.y || 0) * scaleY;
+                    newCtx.drawImage(el.imageElement, x, y, w, h);
+                }
+                newCtx.restore();
+            }
+            const finalImage = newCanvas.toDataURL('image/png');
             sendToOpener(finalImage);
             showLoadingToast("✅ Foto dikirim!",2000);
         };
@@ -953,14 +979,14 @@
 
     function resetPhoto(){ backgroundImage=null; backgroundColor=null; hasPhoto=false; downloadBtn.disabled=true; resetPhotoBtn.disabled=true; redrawAll(); }
     function setBackgroundColor(){ let col=prompt('Background color (hex):','#2d3748'); if(col){ backgroundColor=col; backgroundImage=null; hasPhoto=true; downloadBtn.disabled=false; resetPhotoBtn.disabled=false; redrawAll(); } }
-    function downloadImage(){ if(!hasPhoto) alert("Tidak ada background"); else{ const a=document.createElement('a'); a.download=`watermark_${Date.now()}.png`; a.href=canvas.toDataURL('image/png'); a.click(); } }
-    async function addQR(){ let text=prompt("QR text:"); if(!text) return; const qc=document.createElement('canvas'); if(window.QRCode){ QRCode.toCanvas(qc,text,{width:120},(err)=>{ if(!err){ const img=new Image(); const imgData=qc.toDataURL(); img.onload=()=>addElement({type:'image', imageElement:img, imageData:imgData, widthRel:0.2, heightRel:0.2, xRel:0.1, yRel:0.1, opacity:0.9}); img.src=imgData; } }); } else alert("QR lib error"); }
+    function downloadImage(){ if(!hasPhoto) alert("Tidak ada background"); else{ const a=document.createElement('a'); a.download=`watermark_design_${Date.now()}.png`; a.href=canvas.toDataURL('image/png'); a.click(); } }
+    async function addQR(){ let text=prompt("QR text:"); if(!text) return; const qc=document.createElement('canvas'); if(window.QRCode){ QRCode.toCanvas(qc,text,{width:120},(err)=>{ if(!err){ const img=new Image(); const imgData=qc.toDataURL(); img.onload=()=>addElement({type:'image', imageElement:img, imageData:imgData, width:120, height:120, x:50, y:50, opacity:0.9}); img.src=imgData; } }); } else alert("QR lib error"); }
     function resetAllWatermark(){ if(confirm("Hapus semua watermark?")){ elements=[]; selectedIds.clear(); nextId=1; saveHistory(); redrawAll(); updateUI(); showLoadingToast("Watermark dihapus",1500); } }
 
     // ======================== JSON ========================
     function exportToJson(){
         const exportElements = elements.map(el=>{ const copy={...el}; if(el.imageElement) copy.imageData = el.imageElement.src; delete copy.imageElement; return copy; });
-        const presetData = { version:3, nextId, elements:exportElements, background:{ type:backgroundImage?'image':(backgroundColor?'color':null), value:backgroundImage?'backgroundImage':backgroundColor } };
+        const presetData = { version:1, nextId, elements:exportElements, background:{ type:backgroundImage?'image':(backgroundColor?'color':null), value:backgroundImage?'backgroundImage':backgroundColor } };
         const jsonStr=JSON.stringify(presetData,null,2);
         const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([jsonStr],{type:'application/json'})); a.download=`watermark_preset_${Date.now()}.json`; a.click(); URL.revokeObjectURL(a.href);
         alert("Ekspor JSON berhasil");
@@ -979,14 +1005,9 @@
                         if(el.type==='image' && el.imageData){
                             await new Promise(res=>{ const img=new Image(); img.onload=()=>{ el.imageElement=img; res(); }; img.onerror=()=>res(); img.src=el.imageData; });
                         }
-                        if(el.x!==undefined && el.xRel===undefined) el.xRel = el.x / (canvas.width||700);
-                        if(el.y!==undefined && el.yRel===undefined) el.yRel = el.y / (canvas.height||500);
-                        if(el.fontSize!==undefined && el.fontSizeRel===undefined) el.fontSizeRel = el.fontSize / Math.min(canvas.width||700, canvas.height||500);
-                        if(el.width!==undefined && el.widthRel===undefined) el.widthRel = el.width / (canvas.width||700);
-                        if(el.height!==undefined && el.heightRel===undefined) el.heightRel = el.height / (canvas.height||500);
-                        if(el.color && (el.color==='#000'||el.color==='#fff')) el.color = (el.color==='#000')?'#000000':'#ffffff';
-                        if(el.fillColor && (el.fillColor==='#000'||el.fillColor==='#fff')) el.fillColor = (el.fillColor==='#000')?'#000000':'#ffffff';
-                        if(el.strokeColor && (el.strokeColor==='#000'||el.strokeColor==='#fff')) el.strokeColor = (el.strokeColor==='#000')?'#000000':'#ffffff';
+                        if(el.color && (el.color==='#000'||el.color==='#fff')) el.color=(el.color==='#000')?'#000000':'#ffffff';
+                        if(el.fillColor && (el.fillColor==='#000'||el.fillColor==='#fff')) el.fillColor=(el.fillColor==='#000')?'#000000':'#ffffff';
+                        if(el.strokeColor && (el.strokeColor==='#000'||el.strokeColor==='#fff')) el.strokeColor=(el.strokeColor==='#000')?'#000000':'#ffffff';
                     }
                     elements = loaded;
                     nextId = data.nextId || (Math.max(...loaded.map(e=>e.id),0)+1);
@@ -1003,30 +1024,60 @@
     }
 
     // ======================== PRESET BAWAAN ========================
-    const embeddedPreset = {
-        "version":3,
+    const defaultPreset = {
+        "version":1,
         "nextId":32,
         "elements":[
-            {"type":"shape","shapeType":"circle","xRel":0.11,"yRel":0.54,"widthRel":0.062,"heightRel":0.085,"fillColor":"#10008a","strokeColor":"#ffffff","strokeWidth":2,"opacity":1,"id":5},
-            {"type":"text","text":"TV","xRel":0.059,"yRel":0.56,"fontSizeRel":0.055,"fontFamily":"Inter","fontWeight":"bold","color":"#10008a","strokeColor":"#ffffff","strokeWidth":3,"id":4},
-            {"type":"text","text":"RI","xRel":0.123,"yRel":0.563,"fontSizeRel":0.052,"fontFamily":"Inter","fontWeight":"bold","color":"#10008a","strokeColor":"#ffffff","strokeWidth":3,"id":8},
-            {"type":"text","text":"PAPUA","xRel":0.08,"yRel":0.64,"fontSizeRel":0.025,"fontFamily":"Inter","fontWeight":"bold","color":"#10008a","strokeColor":"#ffffff","strokeWidth":3,"id":9},
-            {"type":"shape","shapeType":"rectangle","xRel":0.228,"yRel":0.69,"widthRel":0.007,"heightRel":0.069,"fillColor":"#ffae00","strokeColor":"#ffae00","strokeWidth":0,"id":12},
-            {"type":"text","text":"05/06/2026","xRel":0.256,"yRel":0.695,"fontSizeRel":0.024,"fontFamily":"Montserrat","fontWeight":"bold","color":"#ffffff","id":14,"strokeColor":"#ffffff"},
-            {"type":"text","text":"Jumat","xRel":0.256,"yRel":0.732,"fontSizeRel":0.028,"fontFamily":"Montserrat","fontWeight":"bold","color":"#ffffff","id":15,"strokeColor":"#ffffff"},
-            {"type":"text","text":"Persatuan, Kecamatan, Mandobo, Kabupaten\nBoven Digoel, Papua Selatan 99663","xRel":0.06,"yRel":0.78,"fontSizeRel":0.022,"fontFamily":"Inter","color":"#ffffff","id":16,"strokeColor":"#ffffff"},
-            {"type":"icon","iconChar":"📍","xRel":0.047,"yRel":0.87,"sizeRel":0.04,"color":"#ffffff","id":18},
-            {"type":"text","text":"22:33","xRel":0.056,"yRel":0.69,"fontSizeRel":0.077,"fontFamily":"Montserrat","fontWeight":"bold","color":"#ffffff","stampType":"time","isLive":true,"id":25,"strokeColor":"#ffffff"},
-            {"type":"text","text":"6.087949'S, 140.300440'E","xRel":0.09,"yRel":0.908,"fontSizeRel":0.022,"fontFamily":"Inter","color":"#ffffff","id":27,"strokeColor":"#ffffff"},
-            {"type":"shape","shapeType":"rectangle","xRel":0.061,"yRel":0.061,"widthRel":0.128,"heightRel":0.18,"fillColor":"#10b981","strokeColor":"#ffffff","strokeWidth":2,"id":29},
-            {"type":"text","text":"24.095695, 91.289673","xRel":0.09,"yRel":0.854,"fontSizeRel":0.028,"fontFamily":"Inter","color":"#ffffff","stampType":"coordinate","isLive":true,"id":31,"strokeColor":"#ffffff"}
+            {"type":"shape","shapeType":"circle","x":77,"y":271,"width":43,"height":42,"fillColor":"#10008a","strokeColor":"#ffffff","strokeWidth":2,"opacity":1,"id":5},
+            {"type":"text","text":"TV","x":41,"y":281,"fontSize":28,"fontFamily":"Inter","fontWeight":"bold","color":"#10008a","strokeColor":"#ffffff","strokeWidth":3,"id":4},
+            {"type":"text","text":"RI","x":86,"y":281,"fontSize":26,"fontFamily":"Inter","fontWeight":"bold","color":"#10008a","strokeColor":"#ffffff","strokeWidth":3,"id":8},
+            {"type":"text","text":"PAPUA","x":56,"y":319,"fontSize":13,"fontFamily":"Inter","fontWeight":"bold","color":"#10008a","strokeColor":"#ffffff","strokeWidth":3,"id":9},
+            {"type":"shape","shapeType":"rectangle","x":160,"y":345,"width":5,"height":34,"fillColor":"#ffae00","strokeColor":"#ffae00","strokeWidth":0,"id":12},
+            {"type":"text","text":"05/06/2026","x":179,"y":347,"fontSize":12,"fontFamily":"Montserrat","fontWeight":"bold","color":"#ffffff","id":14,"strokeColor":"#ffffff"},
+            {"type":"text","text":"Jumat","x":179,"y":366,"fontSize":14,"fontFamily":"Montserrat","fontWeight":"bold","color":"#ffffff","id":15,"strokeColor":"#ffffff"},
+            {"type":"text","text":"Persatuan, Kecamatan, Mandobo, Kabupaten\nBoven Digoel, Papua Selatan 99663","x":42,"y":391,"fontSize":11,"fontFamily":"Inter","color":"#ffffff","id":16,"strokeColor":"#ffffff"},
+            {"type":"icon","iconChar":"📍","x":32,"y":435,"size":20,"color":"#ffffff","id":18},
+            {"type":"text","text":"22:33","x":38,"y":344,"fontSize":38,"fontFamily":"Montserrat","fontWeight":"bold","color":"#ffffff","stampType":"time","isLive":true,"id":25,"strokeColor":"#ffffff"},
+            {"type":"text","text":"6.087949'S, 140.300440'E","x":63,"y":454,"fontSize":11,"fontFamily":"Inter","color":"#ffffff","id":27,"strokeColor":"#ffffff"},
+            {"type":"shape","shapeType":"rectangle","x":42,"y":30,"width":90,"height":90,"fillColor":"#10b981","strokeColor":"#ffffff","strokeWidth":2,"id":29},
+            {"type":"text","text":"24.095695, 91.289673","x":62,"y":427,"fontSize":14,"fontFamily":"Inter","color":"#ffffff","stampType":"coordinate","isLive":true,"id":31,"strokeColor":"#ffffff"}
         ],
         "background":{"type":"image","value":"backgroundImage"}
     };
 
-    async function loadEmbeddedPreset(){
+    async function loadDefaultPreset(){
         try{
-            const data=embeddedPreset;
+            const resp=await fetch('watermark_preset_tanah_merah.json?t='+Date.now());
+            if(resp.ok){
+                const data=await resp.json();
+                if(data.elements){
+                    for(let el of data.elements){
+                        if(el.type==='image' && el.imageData){
+                            await new Promise(resolve=>{
+                                const img=new Image();
+                                img.onload=()=>{ el.imageElement=img; resolve(); };
+                                img.onerror=()=>resolve();
+                                img.src=el.imageData;
+                            });
+                        }
+                        if(el.color && (el.color==='#000'||el.color==='#fff')) el.color=(el.color==='#000')?'#000000':'#ffffff';
+                        if(el.fillColor && (el.fillColor==='#000'||el.fillColor==='#fff')) el.fillColor=(el.fillColor==='#000')?'#000000':'#ffffff';
+                        if(el.strokeColor && (el.strokeColor==='#000'||el.strokeColor==='#fff')) el.strokeColor=(el.strokeColor==='#000')?'#000000':'#ffffff';
+                    }
+                    elements = data.elements;
+                    nextId = data.nextId || (Math.max(...data.elements.map(e=>e.id),0)+1);
+                    selectedIds.clear();
+                    if(data.background && data.background.type==='color'){ backgroundColor=data.background.value; backgroundImage=null; hasPhoto=true; downloadBtn.disabled=false; resetPhotoBtn.disabled=false; }
+                    await refreshLiveStamps();
+                    saveHistory(); redrawAll(); updateUI();
+                    showLoadingToast("✅ Preset eksternal dimuat",2000);
+                    return;
+                }
+            }
+            throw new Error();
+        } catch(e){
+            // Gunakan preset bawaan
+            const data = defaultPreset;
             for(let el of data.elements){
                 if(el.type==='image' && el.imageData){
                     await new Promise(resolve=>{
@@ -1046,48 +1097,6 @@
             if(data.background && data.background.type==='color'){ backgroundColor=data.background.value; backgroundImage=null; hasPhoto=true; downloadBtn.disabled=false; resetPhotoBtn.disabled=false; }
             await refreshLiveStamps();
             saveHistory(); redrawAll(); updateUI();
-            return true;
-        } catch(e){ return false; }
-    }
-
-    async function loadDefaultPreset(){
-        // Coba load file eksternal, jika gagal pakai bawaan
-        try{
-            const resp=await fetch('watermark_preset_tanah_merah.json?t='+Date.now());
-            if(resp.ok){
-                const data=await resp.json();
-                if(data.elements){
-                    for(let el of data.elements){
-                        if(el.type==='image' && el.imageData){
-                            await new Promise(resolve=>{
-                                const img=new Image();
-                                img.onload=()=>{ el.imageElement=img; resolve(); };
-                                img.onerror=()=>resolve();
-                                img.src=el.imageData;
-                            });
-                        }
-                        if(el.x!==undefined && el.xRel===undefined) el.xRel = el.x / (canvas.width||700);
-                        if(el.y!==undefined && el.yRel===undefined) el.yRel = el.y / (canvas.height||500);
-                        if(el.fontSize!==undefined && el.fontSizeRel===undefined) el.fontSizeRel = el.fontSize / Math.min(canvas.width||700, canvas.height||500);
-                        if(el.width!==undefined && el.widthRel===undefined) el.widthRel = el.width / (canvas.width||700);
-                        if(el.height!==undefined && el.heightRel===undefined) el.heightRel = el.height / (canvas.height||500);
-                        if(el.color && (el.color==='#000'||el.color==='#fff')) el.color=(el.color==='#000')?'#000000':'#ffffff';
-                        if(el.fillColor && (el.fillColor==='#000'||el.fillColor==='#fff')) el.fillColor=(el.fillColor==='#000')?'#000000':'#ffffff';
-                        if(el.strokeColor && (el.strokeColor==='#000'||el.strokeColor==='#fff')) el.strokeColor=(el.strokeColor==='#000')?'#000000':'#ffffff';
-                    }
-                    elements=data.elements;
-                    nextId=data.nextId || (Math.max(...data.elements.map(e=>e.id),0)+1);
-                    selectedIds.clear();
-                    if(data.background && data.background.type==='color'){ backgroundColor=data.background.value; backgroundImage=null; hasPhoto=true; downloadBtn.disabled=false; resetPhotoBtn.disabled=false; }
-                    await refreshLiveStamps();
-                    saveHistory(); redrawAll(); updateUI();
-                    showLoadingToast("✅ Preset eksternal dimuat",2000);
-                    return;
-                }
-            }
-            throw new Error('External not found');
-        } catch(e){
-            await loadEmbeddedPreset();
             showLoadingToast("⚠️ Pakai preset bawaan",3000);
         }
     }
@@ -1128,12 +1137,12 @@
     addRealMapBtn.onclick=showMapModal;
     refreshStampBtn.onclick=()=>{ refreshLiveStamps().then(()=>alert("Stamp diperbarui")); };
     resetAllWatermarkBtn.onclick=resetAllWatermark;
-    document.getElementById('addTextBtn').onclick=()=>addElement({type:'text', text:'Teks Baru', xRel:0.2, yRel:0.2, fontSizeRel:0.05, fontFamily:'Inter', color:'#000000'});
-    document.getElementById('addShapeBtn').onclick=()=>addElement({type:'shape', shapeType:'rectangle', xRel:0.3, yRel:0.3, widthRel:0.1, heightRel:0.1, fillColor:'#4f46e5', strokeColor:'#ffffff'});
-    addLineBtn.onclick=()=>addElement({type:'shape', shapeType:'line', xRel:0.2, yRel:0.5, widthRel:0.2, heightRel:0, strokeColor:'#ff0000', strokeWidth:4});
-    document.getElementById('addIconBtn').onclick=()=>addElement({type:'icon', iconChar:'😎', xRel:0.4, yRel:0.4, sizeRel:0.08, color:'#facc15'});
-    document.querySelectorAll('.shape-item').forEach(s=>s.addEventListener('click',()=>addElement({type:'shape', shapeType:s.dataset.shape, xRel:0.2, yRel:0.6, widthRel:0.12, heightRel:0.12, fillColor:'#10b981', strokeColor:'#ffffff'})));
-    document.querySelectorAll('.icon-option').forEach(ic=>ic.addEventListener('click',()=>addElement({type:'icon', iconChar:ic.dataset.icon, xRel:0.5, yRel:0.5, sizeRel:0.08, color:'#ffffff'})));
+    document.getElementById('addTextBtn').onclick=()=>addElement({type:'text', text:'Teks Baru', x:100, y:100, fontSize:32, fontFamily:'Inter', color:'#000000'});
+    document.getElementById('addShapeBtn').onclick=()=>addElement({type:'shape', shapeType:'rectangle', x:150, y:150, width:80, height:80, fillColor:'#4f46e5', strokeColor:'#ffffff'});
+    addLineBtn.onclick=()=>addElement({type:'shape', shapeType:'line', x:100, y:100, width:150, height:0, strokeColor:'#ff0000', strokeWidth:4});
+    document.getElementById('addIconBtn').onclick=()=>addElement({type:'icon', iconChar:'😎', x:200, y:200, size:48, color:'#facc15'});
+    document.querySelectorAll('.shape-item').forEach(s=>s.addEventListener('click',()=>addElement({type:'shape', shapeType:s.dataset.shape, x:120, y:120, width:90, height:90, fillColor:'#10b981', strokeColor:'#ffffff'})));
+    document.querySelectorAll('.icon-option').forEach(ic=>ic.addEventListener('click',()=>addElement({type:'icon', iconChar:ic.dataset.icon, x:140, y:140, size:44, color:'#ffffff'})));
 
     // ======================== INIT ========================
     canvas.width = 700;
