@@ -751,8 +751,9 @@
         if(check(b.x+b.w,b.y+b.h)) return 'br';
         return null;
     }
-    let dragTargetId=null, resizeStart={w:0,h:0,x:0,y:0,wRel:0,hRel:0,xRel:0,yRel:0};
-    canvas.addEventListener('mousedown',(e)=>{
+    let dragTargetId=null;
+    let resizeStart = { w:0, h:0, x:0, y:0, wRel:0, hRel:0, xRel:0, yRel:0 };
+    canvas.addEventListener('mousedown', function(e) {
         e.preventDefault();
         const {x,y}=getMouseCoord(e);
         if(selectedIds.size===1){
@@ -787,7 +788,7 @@
             redrawAll(); updateUI();
         } else if(!e.shiftKey){ selectedIds.clear(); redrawAll(); updateUI(); }
     });
-    window.addEventListener('mousemove',(e)=>{
+    window.addEventListener('mousemove', function(e) {
         if(isResizing && dragTargetId){
             const el=elements.find(e=>e.id===dragTargetId);
             if(el){
@@ -831,7 +832,7 @@
             redrawAll();
         }
     });
-    window.addEventListener('mouseup',()=>{
+    window.addEventListener('mouseup', function() {
         if(isDragging || isResizing) saveHistory();
         isDragging=false; isResizing=false; dragTargetId=null;
     });
@@ -903,24 +904,24 @@
                 <div class="flex-row"><div class="control-group"><label>Stroke</label><input type="color" id="propStrokeColor" value="${el.strokeColor||''}"><input type="range" id="propStrokeWidth" min="0" max="10" value="${el.strokeWidth||0}"></div></div>
                 <div class="flex-row"><span class="style-btn ${el.fontWeight==='bold'?'active':''}" id="boldBtn">B</span><span class="style-btn ${el.fontStyle==='italic'?'active':''}" id="italicBtn">I</span><span class="style-btn ${el.textDecoration==='underline'?'active':''}" id="underlineBtn">U</span></div>
             `;
-            document.getElementById('propText')?.addEventListener('input',e=>{ el.text=e.target.value; redrawAll(); saveHistory(); });
-            document.getElementById('propFontFamily')?.addEventListener('change',e=>{ el.fontFamily=e.target.value; redrawAll(); });
-            document.getElementById('propFontSize')?.addEventListener('input',e=>{ el.fontSizeRel=parseFloat(e.target.value); redrawAll(); });
-            document.getElementById('propColor')?.addEventListener('input',e=>{ el.color=e.target.value; redrawAll(); });
-            document.getElementById('propOpacity')?.addEventListener('input',e=>{ el.opacity=parseFloat(e.target.value); redrawAll(); });
-            document.getElementById('propStrokeColor')?.addEventListener('input',e=>{ el.strokeColor=e.target.value; redrawAll(); });
-            document.getElementById('propStrokeWidth')?.addEventListener('input',e=>{ el.strokeWidth=parseInt(e.target.value); redrawAll(); });
-            document.getElementById('boldBtn')?.onclick=()=>{ el.fontWeight=el.fontWeight==='bold'?'normal':'bold'; updateUI(); redrawAll(); };
-            document.getElementById('italicBtn')?.onclick=()=>{ el.fontStyle=el.fontStyle==='italic'?'normal':'italic'; updateUI(); redrawAll(); };
-            document.getElementById('underlineBtn')?.onclick=()=>{ el.textDecoration=el.textDecoration==='underline'?'none':'underline'; updateUI(); redrawAll(); };
+            document.getElementById('propText')?.addEventListener('input',function(e){ el.text=e.target.value; redrawAll(); saveHistory(); });
+            document.getElementById('propFontFamily')?.addEventListener('change',function(e){ el.fontFamily=e.target.value; redrawAll(); });
+            document.getElementById('propFontSize')?.addEventListener('input',function(e){ el.fontSizeRel=parseFloat(e.target.value); redrawAll(); });
+            document.getElementById('propColor')?.addEventListener('input',function(e){ el.color=e.target.value; redrawAll(); });
+            document.getElementById('propOpacity')?.addEventListener('input',function(e){ el.opacity=parseFloat(e.target.value); redrawAll(); });
+            document.getElementById('propStrokeColor')?.addEventListener('input',function(e){ el.strokeColor=e.target.value; redrawAll(); });
+            document.getElementById('propStrokeWidth')?.addEventListener('input',function(e){ el.strokeWidth=parseInt(e.target.value); redrawAll(); });
+            document.getElementById('boldBtn')?.addEventListener('click',function(){ el.fontWeight=el.fontWeight==='bold'?'normal':'bold'; updateUI(); redrawAll(); });
+            document.getElementById('italicBtn')?.addEventListener('click',function(){ el.fontStyle=el.fontStyle==='italic'?'normal':'italic'; updateUI(); redrawAll(); });
+            document.getElementById('underlineBtn')?.addEventListener('click',function(){ el.textDecoration=el.textDecoration==='underline'?'none':'underline'; updateUI(); redrawAll(); });
         } else {
             propContentDiv.innerHTML = `<div class="flex-row"><div class="control-group"><label>Warna</label><input type="color" id="propColor" value="${fixColor(el.fillColor||el.color||'#ffaa44')}"></div>
             <div class="control-group"><label>Opacity</label><input type="range" id="propOpacity" min="0" max="1" step="0.01" value="${el.opacity||1}"></div></div>
             <div class="flex-row"><div class="control-group"><label>Stroke</label><input type="color" id="propStroke" value="${el.strokeColor||''}"><input type="range" id="propStrokeW" min="0" max="10" value="${el.strokeWidth||0}"></div></div>`;
-            document.getElementById('propColor')?.addEventListener('input',e=>{ if(el.type==='shape') el.fillColor=e.target.value; else el.color=e.target.value; redrawAll(); });
-            document.getElementById('propOpacity')?.addEventListener('input',e=>{ el.opacity=parseFloat(e.target.value); redrawAll(); });
-            document.getElementById('propStroke')?.addEventListener('input',e=>{ el.strokeColor=e.target.value; redrawAll(); });
-            document.getElementById('propStrokeW')?.addEventListener('input',e=>{ el.strokeWidth=parseInt(e.target.value); redrawAll(); });
+            document.getElementById('propColor')?.addEventListener('input',function(e){ if(el.type==='shape') el.fillColor=e.target.value; else el.color=e.target.value; redrawAll(); });
+            document.getElementById('propOpacity')?.addEventListener('input',function(e){ el.opacity=parseFloat(e.target.value); redrawAll(); });
+            document.getElementById('propStroke')?.addEventListener('input',function(e){ el.strokeColor=e.target.value; redrawAll(); });
+            document.getElementById('propStrokeW')?.addEventListener('input',function(e){ el.strokeWidth=parseInt(e.target.value); redrawAll(); });
         }
     }
 
@@ -1028,7 +1029,12 @@
             const data=embeddedPreset;
             for(let el of data.elements){
                 if(el.type==='image' && el.imageData){
-                    await new Promise(res=>{ const img=new Image(); img.onload=()=>{ el.imageElement=img; res(); }; img.onerror=()=>res(); img.src=el.imageData; });
+                    await new Promise(resolve=>{
+                        const img=new Image();
+                        img.onload=()=>{ el.imageElement=img; resolve(); };
+                        img.onerror=()=>resolve();
+                        img.src=el.imageData;
+                    });
                 }
                 if(el.color && (el.color==='#000'||el.color==='#fff')) el.color=(el.color==='#000')?'#000000':'#ffffff';
                 if(el.fillColor && (el.fillColor==='#000'||el.fillColor==='#fff')) el.fillColor=(el.fillColor==='#000')?'#000000':'#ffffff';
@@ -1044,39 +1050,46 @@
         } catch(e){ return false; }
     }
 
-    async function loadExternalPreset(){
-        const url='watermark_preset_tanah_merah.json';
-        try{
-            const resp=await fetch(url+'?t='+Date.now());
-            if(!resp.ok) throw new Error();
-            const data=await resp.json();
-            for(let el of data.elements){
-                if(el.type==='image' && el.imageData){
-                    await new Promise(res=>{ const img=new Image(); img.onload=()=>{ el.imageElement=img; res(); }; img.onerror=()=>res(); img.src=el.imageData; });
-                }
-                if(el.x!==undefined && el.xRel===undefined) el.xRel = el.x / (canvas.width||700);
-                if(el.y!==undefined && el.yRel===undefined) el.yRel = el.y / (canvas.height||500);
-                if(el.fontSize!==undefined && el.fontSizeRel===undefined) el.fontSizeRel = el.fontSize / Math.min(canvas.width||700, canvas.height||500);
-                if(el.width!==undefined && el.widthRel===undefined) el.widthRel = el.width / (canvas.width||700);
-                if(el.height!==undefined && el.heightRel===undefined) el.heightRel = el.height / (canvas.height||500);
-                if(el.color && (el.color==='#000'||el.color==='#fff')) el.color=(el.color==='#000')?'#000000':'#ffffff';
-                if(el.fillColor && (el.fillColor==='#000'||el.fillColor==='#fff')) el.fillColor=(el.fillColor==='#000')?'#000000':'#ffffff';
-                if(el.strokeColor && (el.strokeColor==='#000'||el.strokeColor==='#fff')) el.strokeColor=(el.strokeColor==='#000')?'#000000':'#ffffff';
-            }
-            elements=data.elements;
-            nextId=data.nextId;
-            selectedIds.clear();
-            if(data.background && data.background.type==='color'){ backgroundColor=data.background.value; backgroundImage=null; hasPhoto=true; downloadBtn.disabled=false; resetPhotoBtn.disabled=false; }
-            await refreshLiveStamps();
-            saveHistory(); redrawAll(); updateUI();
-            showLoadingToast("✅ Preset eksternal dimuat",2000);
-            return true;
-        } catch(e){ return false; }
-    }
-
     async function loadDefaultPreset(){
-        const ok=await loadExternalPreset();
-        if(!ok){ await loadEmbeddedPreset(); showLoadingToast("⚠️ Pakai preset bawaan",3000); }
+        // Coba load file eksternal, jika gagal pakai bawaan
+        try{
+            const resp=await fetch('watermark_preset_tanah_merah.json?t='+Date.now());
+            if(resp.ok){
+                const data=await resp.json();
+                if(data.elements){
+                    for(let el of data.elements){
+                        if(el.type==='image' && el.imageData){
+                            await new Promise(resolve=>{
+                                const img=new Image();
+                                img.onload=()=>{ el.imageElement=img; resolve(); };
+                                img.onerror=()=>resolve();
+                                img.src=el.imageData;
+                            });
+                        }
+                        if(el.x!==undefined && el.xRel===undefined) el.xRel = el.x / (canvas.width||700);
+                        if(el.y!==undefined && el.yRel===undefined) el.yRel = el.y / (canvas.height||500);
+                        if(el.fontSize!==undefined && el.fontSizeRel===undefined) el.fontSizeRel = el.fontSize / Math.min(canvas.width||700, canvas.height||500);
+                        if(el.width!==undefined && el.widthRel===undefined) el.widthRel = el.width / (canvas.width||700);
+                        if(el.height!==undefined && el.heightRel===undefined) el.heightRel = el.height / (canvas.height||500);
+                        if(el.color && (el.color==='#000'||el.color==='#fff')) el.color=(el.color==='#000')?'#000000':'#ffffff';
+                        if(el.fillColor && (el.fillColor==='#000'||el.fillColor==='#fff')) el.fillColor=(el.fillColor==='#000')?'#000000':'#ffffff';
+                        if(el.strokeColor && (el.strokeColor==='#000'||el.strokeColor==='#fff')) el.strokeColor=(el.strokeColor==='#000')?'#000000':'#ffffff';
+                    }
+                    elements=data.elements;
+                    nextId=data.nextId || (Math.max(...data.elements.map(e=>e.id),0)+1);
+                    selectedIds.clear();
+                    if(data.background && data.background.type==='color'){ backgroundColor=data.background.value; backgroundImage=null; hasPhoto=true; downloadBtn.disabled=false; resetPhotoBtn.disabled=false; }
+                    await refreshLiveStamps();
+                    saveHistory(); redrawAll(); updateUI();
+                    showLoadingToast("✅ Preset eksternal dimuat",2000);
+                    return;
+                }
+            }
+            throw new Error('External not found');
+        } catch(e){
+            await loadEmbeddedPreset();
+            showLoadingToast("⚠️ Pakai preset bawaan",3000);
+        }
     }
 
     // ======================== Event binding ========================
