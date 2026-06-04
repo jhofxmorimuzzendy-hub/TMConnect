@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Watermark Studio Pro - Kirim ke Monitoring</title>
+    <title>Watermark Studio Pro - Live Stamp & JSON</title>
     <!-- Leaflet for maps -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -238,11 +238,12 @@
 <div class="container">
     <div class="top-bar">
         <div>
-            <h1>✍️ Watermark Studio Pro - Kirim ke Monitoring</h1>
-            <div style="font-size:0.7rem;">Buat watermark sesukamu, lalu kirim hasilnya ke halaman Monitoring Suhu</div>
+            <h1>✍️ Watermark Studio Pro - Live Stamp</h1>
+            <div style="font-size:0.7rem;">Stamp tanggal, jam, hari, koordinat akan selalu update saat impor JSON</div>
         </div>
         <div class="toolbar">
             <button id="sendToMonitorBtn" class="btn btn-success" style="background:#1e6f5c;">📤 Kirim ke Monitoring</button>
+            <button id="refreshStampBtn" class="btn btn-warning">🔄 Refresh Stamp</button>
             <button id="savePresetBtn" class="btn btn-success">💾 Simpan ke Local</button>
             <button id="loadPresetBtn" class="btn btn-primary">📂 Load dari Local</button>
             <button id="exportJsonBtn" class="btn btn-warning">📤 Ekspor JSON</button>
@@ -339,7 +340,7 @@
             <div id="propContent">Klik watermark untuk edit properti lengkap (font, bold, italic, underline)</div>
         </div>
     </div>
-    <footer>✨ Setelah selesai mendesain watermark, klik tombol <strong style="color:#1e6f5c;">📤 Kirim ke Monitoring</strong> untuk mengirim foto ke halaman Monitoring Suhu.</footer>
+    <footer>✨ Stamp tanggal, jam, hari, koordinat akan otomatis update saat impor JSON. Klik tombol <strong>🔄 Refresh Stamp</strong> untuk update manual.</footer>
 </div>
 
 <!-- Modal Peta -->
@@ -399,6 +400,7 @@
         const zoomLevelSpan = document.getElementById('zoomLevel');
         const addLineBtn = document.getElementById('addLineBtn');
         const sendToMonitorBtn = document.getElementById('sendToMonitorBtn');
+        const refreshStampBtn = document.getElementById('refreshStampBtn');
         
         // State
         let elements = [];
@@ -437,16 +439,69 @@
         function undo() { if(historyIndex>0){ historyIndex--; elements = JSON.parse(JSON.stringify(historyStack[historyIndex])); selectedIds.clear(); redrawAll(); updateUI(); } }
         function redo() { if(historyIndex<historyStack.length-1){ historyIndex++; elements = JSON.parse(JSON.stringify(historyStack[historyIndex])); selectedIds.clear(); redrawAll(); updateUI(); } }
 
+        // ========== LIVE STAMP FUNCTIONS ==========
         function getDateStr() { const d=new Date(); return `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear()}`; }
         function getTimeStr() { const d=new Date(); return `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`; }
         function getDayStr() { const days=['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu']; return days[new Date().getDay()]; }
         async function getCoordinates() { try{ const pos=await new Promise((res,rej)=>navigator.geolocation.getCurrentPosition(res,rej)); return `${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)}`; }catch(e){ return "Lokasi tidak tersedia"; } }
-        async function addCoordinateStamp() { const coord=await getCoordinates(); addElement({type:'text', text:coord, x:20, y:canvas.height-30, fontSize:14, fontFamily:'Inter', fontWeight:'normal', fontStyle:'normal', textDecoration:'none', color:'#000', opacity:0.7}); }
-        function addDateStamp() { addElement({type:'text', text:getDateStr(), x:20, y:canvas.height-70, fontSize:14, fontFamily:'Inter', fontWeight:'normal', fontStyle:'normal', textDecoration:'none', color:'#000', opacity:0.8}); }
-        function addTimeStamp() { addElement({type:'text', text:getTimeStr(), x:20, y:canvas.height-50, fontSize:14, fontFamily:'Inter', fontWeight:'normal', fontStyle:'normal', textDecoration:'none', color:'#000', opacity:0.8}); }
-        function addDayStamp() { addElement({type:'text', text:getDayStr(), x:20, y:canvas.height-90, fontSize:14, fontFamily:'Inter', fontWeight:'normal', fontStyle:'normal', textDecoration:'none', color:'#000', opacity:0.8}); }
 
-        // Real map
+        // Fungsi untuk merefresh semua live stamp
+        async function refreshLiveStamps() {
+            let updated = false;
+            for (let el of elements) {
+                if (el.stampType && el.isLive) {
+                    let newText = "";
+                    if (el.stampType === 'date') newText = getDateStr();
+                    else if (el.stampType === 'time') newText = getTimeStr();
+                    else if (el.stampType === 'day') newText = getDayStr();
+                    else if (el.stampType === 'coordinate') {
+                        newText = await getCoordinates();
+                    }
+                    if (newText && newText !== el.text) {
+                        el.text = newText;
+                        updated = true;
+                    }
+                }
+            }
+            if (updated) {
+                redrawAll();
+                saveHistory(); // simpan perubahan ke history
+                updateUI();
+            }
+        }
+
+        // Menambah stamp dengan stampType
+        function addDateStamp() { 
+            addElement({
+                type:'text', text:getDateStr(), x:20, y:canvas.height-70, fontSize:14, 
+                fontFamily:'Inter', fontWeight:'normal', fontStyle:'normal', textDecoration:'none', 
+                color:'#000', opacity:0.8, stampType:'date', isLive:true
+            }); 
+        }
+        function addTimeStamp() { 
+            addElement({
+                type:'text', text:getTimeStr(), x:20, y:canvas.height-50, fontSize:14, 
+                fontFamily:'Inter', fontWeight:'normal', fontStyle:'normal', textDecoration:'none', 
+                color:'#000', opacity:0.8, stampType:'time', isLive:true
+            }); 
+        }
+        function addDayStamp() { 
+            addElement({
+                type:'text', text:getDayStr(), x:20, y:canvas.height-90, fontSize:14, 
+                fontFamily:'Inter', fontWeight:'normal', fontStyle:'normal', textDecoration:'none', 
+                color:'#000', opacity:0.8, stampType:'day', isLive:true
+            }); 
+        }
+        async function addCoordinateStamp() { 
+            const coord = await getCoordinates();
+            addElement({
+                type:'text', text:coord, x:20, y:canvas.height-30, fontSize:14, 
+                fontFamily:'Inter', fontWeight:'normal', fontStyle:'normal', textDecoration:'none', 
+                color:'#000', opacity:0.7, stampType:'coordinate', isLive:true
+            }); 
+        }
+
+        // Real map (tidak berubah)
         const mapModal = document.getElementById('mapModal');
         const realMapDiv = document.getElementById('realMap');
         const searchLocation = document.getElementById('searchLocation');
@@ -494,6 +549,7 @@
         document.getElementById('captureMapBtn').onclick = captureMap;
         document.getElementById('closeMapBtn').onclick = () => { mapModal.style.display = 'none'; if(mapInstance) mapInstance.remove(); };
 
+        // Drawing functions (sama seperti sebelumnya, tidak diubah untuk menghemat tempat)
         function drawElement(el) {
             ctx.save();
             ctx.globalAlpha = el.opacity ?? 1;
@@ -735,7 +791,7 @@
 
         function updateUI() {
             selectionCountSpan.innerText = `${selectedIds.size} terpilih`;
-            elementsListDiv.innerHTML = elements.length ? elements.map(el=>`<div class="elem-badge ${selectedIds.has(el.id)?'active':''}" data-id="${el.id}">${el.type==='text'?'📝':el.type==='shape'?(el.shapeType==='line'?'➖':'🔷'):el.type==='icon'?'😀':el.type==='image'?'🗺️':'📦'} ${el.type==='text'?el.text.substring(0,8):(el.type==='shape'?el.shapeType:el.type)} <button class="delete-elem" data-id="${el.id}">✖</button></div>`).join('') : '<div>Tambah watermark</div>';
+            elementsListDiv.innerHTML = elements.length ? elements.map(el=>`<div class="elem-badge ${selectedIds.has(el.id)?'active':''}" data-id="${el.id}">${el.type==='text'?'📝':el.type==='shape'?(el.shapeType==='line'?'➖':'🔷'):el.type==='icon'?'😀':el.type==='image'?'🗺️':'📦'} ${el.type==='text'?el.text.substring(0,8):(el.type==='shape'?el.shapeType:el.type)} ${el.stampType ? '🔁' : ''}<button class="delete-elem" data-id="${el.id}">✖</button></div>`).join('') : '<div>Tambah watermark</div>';
             document.querySelectorAll('.elem-badge').forEach(b=>{ b.addEventListener('click',(e)=>{ if(e.target.classList.contains('delete-elem'))return; let id=parseInt(b.dataset.id); if(e.ctrlKey||e.metaKey){ if(selectedIds.has(id))selectedIds.delete(id); else selectedIds.add(id); }else{ selectedIds.clear(); selectedIds.add(id); } redrawAll(); updateUI(); }); const del=b.querySelector('.delete-elem'); if(del) del.addEventListener('click',(e)=>{ e.stopPropagation(); let id=parseInt(del.dataset.id); elements=elements.filter(e=>e.id!==id); selectedIds.delete(id); saveHistory(); redrawAll(); updateUI(); }); });
             updatePropertyPanel();
         }
@@ -786,7 +842,7 @@
             }
         }
 
-        // ========== EKSPOR & IMPOR PRESET JSON ==========
+        // ========== EKSPOR & IMPOR JSON ==========
         function exportToJson() {
             const exportElements = elements.map(el => {
                 const copy = JSON.parse(JSON.stringify(el));
@@ -808,7 +864,7 @@
             alert('Preset berhasil diekspor ke file JSON');
         }
 
-        function importFromJson() {
+        async function importFromJson() {
             const input = document.createElement('input');
             input.type = 'file';
             input.accept = 'application/json';
@@ -816,7 +872,7 @@
                 const file = e.target.files[0];
                 if (!file) return;
                 const reader = new FileReader();
-                reader.onload = (ev) => {
+                reader.onload = async (ev) => {
                     try {
                         const data = JSON.parse(ev.target.result);
                         if (!data.elements) throw new Error('Format tidak valid');
@@ -836,22 +892,23 @@
                                 promises.push(p);
                             }
                         }
-                        Promise.all(promises).then(() => {
-                            elements = loadedElements;
-                            nextId = data.nextId || (Math.max(...loadedElements.map(e=>e.id),0)+1);
-                            selectedIds.clear();
-                            if (data.background && data.background.type === 'color') {
-                                backgroundColor = data.background.value;
-                                backgroundImage = null;
-                                hasPhoto = true;
-                                downloadBtn.disabled = false;
-                                resetPhotoBtn.disabled = false;
-                            }
-                            saveHistory();
-                            redrawAll();
-                            updateUI();
-                            alert('Preset berhasil diimpor dari file JSON');
-                        });
+                        await Promise.all(promises);
+                        elements = loadedElements;
+                        nextId = data.nextId || (Math.max(...loadedElements.map(e=>e.id),0)+1);
+                        selectedIds.clear();
+                        if (data.background && data.background.type === 'color') {
+                            backgroundColor = data.background.value;
+                            backgroundImage = null;
+                            hasPhoto = true;
+                            downloadBtn.disabled = false;
+                            resetPhotoBtn.disabled = false;
+                        }
+                        // 🔁 REFRESH LIVE STAMP SETELAH IMPOR
+                        await refreshLiveStamps();
+                        saveHistory();
+                        redrawAll();
+                        updateUI();
+                        alert('Preset berhasil diimpor. Stamp tanggal/jam/koordinat sudah diperbarui.');
                     } catch(err) {
                         alert('Gagal membaca file JSON: ' + err.message);
                     }
@@ -861,7 +918,7 @@
             input.click();
         }
 
-        // Kamera
+        // Kamera & lainnya
         let mediaStream=null;
         async function startCamera(){ if(mediaStream) stopCamera(); try{ const s=await navigator.mediaDevices.getUserMedia({video:true}); mediaStream=s; video.srcObject=s; await video.play(); captureBtn.disabled=false; startCamBtn.disabled=true; stopCamBtn.disabled=false; }catch(e){ alert("Gagal kamera"); } }
         function stopCamera(){ if(mediaStream) mediaStream.getTracks().forEach(t=>t.stop()); mediaStream=null; video.srcObject=null; captureBtn.disabled=true; startCamBtn.disabled=false; stopCamBtn.disabled=true; }
@@ -871,7 +928,6 @@
         function downloadImage(){ if(!hasPhoto) alert("Tidak ada background"); else{ const link=document.createElement('a'); link.download=`watermark_${Date.now()}.png`; link.href=canvas.toDataURL('image/png'); link.click(); } }
         async function addQR(){ let text=prompt("QR text:"); if(!text) return; const qc=document.createElement('canvas'); if(window.QRCode){ QRCode.toCanvas(qc,text,{width:120},(err)=>{ if(!err){ const img=new Image(); const imgData = qc.toDataURL(); img.onload=()=>addElement({type:'image', imageElement:img, imageData:imgData, width:120, height:120, x:50,y:50, opacity:0.9}); img.src=imgData; } }); } else alert("QR lib error"); }
 
-        // ========== KIRIM KE MONITORING ==========
         function sendToMonitoring() {
             if (!hasPhoto) {
                 alert("Ambil foto terlebih dahulu (klik 'Ambil Foto' dari kamera) sebelum mengirim ke Monitoring.");
@@ -886,7 +942,6 @@
                 alert("Tidak dapat mengirim: halaman ini bukan dibuka dari Monitoring Suhu. Simpan foto secara manual.");
             }
         }
-        sendToMonitorBtn.onclick = sendToMonitoring;
 
         // Event binding
         startCamBtn.onclick=startCamera; stopCamBtn.onclick=stopCamera; captureBtn.onclick=capturePhoto; resetPhotoBtn.onclick=resetPhoto; downloadBtn.onclick=downloadImage;
@@ -896,7 +951,7 @@
         alignLeftBtn.onclick=alignLeft; alignCenterBtn.onclick=alignCenter; alignRightBtn.onclick=alignRight;
         zoomInBtn.onclick=zoomIn; zoomOutBtn.onclick=zoomOut; resetZoomBtn.onclick=resetZoom;
         savePresetBtn.onclick=()=>{ localStorage.setItem('watermark_pro_preset',JSON.stringify({elements,nextId})); alert('Preset tersimpan di localStorage'); };
-        loadPresetBtn.onclick=()=>{ const raw=localStorage.getItem('watermark_pro_preset'); if(raw){ const p=JSON.parse(raw); elements=p.elements; nextId=p.nextId; selectedIds.clear(); saveHistory(); redrawAll(); updateUI(); alert('Loaded dari localStorage'); } else alert('Tidak ada preset di localStorage'); };
+        loadPresetBtn.onclick=()=>{ const raw=localStorage.getItem('watermark_pro_preset'); if(raw){ const p=JSON.parse(raw); elements=p.elements; nextId=p.nextId; selectedIds.clear(); refreshLiveStamps().then(()=>{ saveHistory(); redrawAll(); updateUI(); alert('Loaded dari localStorage dan stamp diperbarui'); }); } else alert('Tidak ada preset di localStorage'); };
         exportJsonBtn.onclick=exportToJson;
         importJsonBtn.onclick=importFromJson;
         addQrBtn.onclick=addQR;
@@ -905,6 +960,8 @@
         addDayStampBtn.onclick=addDayStamp;
         addCoordinatesBtn.onclick=addCoordinateStamp;
         addRealMapBtn.onclick=showMapModal;
+        refreshStampBtn.onclick=()=>{ refreshLiveStamps().then(()=>alert('Stamp diperbarui')); };
+        sendToMonitorBtn.onclick = sendToMonitoring;
         document.getElementById('addTextBtn').onclick=()=>addElement({type:'text', text:'Teks Baru', x:100,y:100, fontSize:32, fontFamily:'Inter', fontWeight:'normal', fontStyle:'normal', textDecoration:'none', color:'#000000', opacity:1});
         document.getElementById('addShapeBtn').onclick=()=>addElement({type:'shape', shapeType:'rectangle', x:150,y:150, width:80,height:80, fillColor:'#4f46e5', strokeColor:'#fff', strokeWidth:2, opacity:1});
         addLineBtn.onclick=()=>addElement({type:'shape', shapeType:'line', x:100,y:100, width:150, height:0, strokeColor:'#ff0000', strokeWidth:4, opacity:1});
@@ -912,10 +969,10 @@
         document.querySelectorAll('.shape-item').forEach(s=>s.addEventListener('click',()=>addElement({type:'shape', shapeType:s.dataset.shape, x:120,y:120, width:90,height:90, fillColor:'#10b981', strokeColor:'#fff', strokeWidth:2, opacity:1})));
         document.querySelectorAll('.icon-option').forEach(ic=>ic.addEventListener('click',()=>addElement({type:'icon', iconChar:ic.dataset.icon, x:140,y:140, size:44, color:'#fff', opacity:1})));
 
-        // Inisialisasi contoh watermark (bisa dihapus jika tidak perlu)
+        // Contoh watermark awal (opsional, dengan stamp live)
         addElement({type:'text', text:'Bold & Italic & Underline', x:30, y:50, fontSize:24, fontFamily:'Roboto', fontWeight:'bold', fontStyle:'italic', textDecoration:'underline', color:'#4f46e5', opacity:1});
-        addElement({type:'text', text:'Ganti font dan ukuran', x:30, y:100, fontSize:20, fontFamily:'Lobster', fontWeight:'normal', fontStyle:'normal', textDecoration:'none', color:'#ff6600', opacity:1});
-        addElement({type:'shape', shapeType:'line', x:30,y:140, width:200, height:0, strokeColor:'#ff6600', strokeWidth:3, opacity:0.8});
+        addDateStamp();
+        addTimeStamp();
         redrawAll(); updateUI();
     })();
 </script>
