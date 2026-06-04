@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Watermark Studio Pro - Auto Load Preset Eksternal</title>
+    <title>Watermark Studio Pro - Auto Load JSON Eksternal</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
@@ -270,8 +270,8 @@
 <div class="container">
     <div class="top-bar">
         <div>
-            <h1>✍️ Watermark Studio Pro - Eksternal Preset</h1>
-            <div style="font-size:0.7rem;">Muat preset dari file JSON (update dengan ganti file). Ambil foto & kirim ke Monitoring.</div>
+            <h1>✍️ Watermark Studio Pro - Auto Load JSON Eksternal</h1>
+            <div style="font-size:0.7rem;">Memuat preset dari file watermark_preset_tanah_merah.json (refresh setiap buka)</div>
         </div>
         <div class="toolbar">
             <button id="refreshStampBtn" class="btn btn-warning">🔄 Refresh Stamp</button>
@@ -377,7 +377,7 @@
             <div id="propContent">Klik watermark untuk edit properti lengkap (font, bold, italic, underline)</div>
         </div>
     </div>
-    <footer>✨ Preset dimuat dari file "watermark_preset_tanah_merah.json" (jika ada), jika tidak pakai bawaan.</footer>
+    <footer>✨ Preset dimuat dari file <strong>watermark_preset_tanah_merah.json</strong> setiap halaman dimuat. Ganti file JSON di server, maka watermark akan berubah setelah refresh.</footer>
 </div>
 
 <!-- Modal Peta -->
@@ -941,10 +941,15 @@
 
         // ======================== CRUD Elements ========================
         function addElement(el) { 
-            if(el.color && el.color === '#000') el.color = '#000000';
-            if(el.fillColor && el.fillColor === '#000') el.fillColor = '#000000';
-            if(el.strokeColor && el.strokeColor === '#fff') el.strokeColor = '#ffffff';
-            if(el.strokeColor && el.strokeColor === '#000') el.strokeColor = '#000000';
+            if(el.color && (el.color === '#000' || el.color === '#fff')) {
+                el.color = (el.color === '#000') ? '#000000' : '#ffffff';
+            }
+            if(el.fillColor && (el.fillColor === '#000' || el.fillColor === '#fff')) {
+                el.fillColor = (el.fillColor === '#000') ? '#000000' : '#ffffff';
+            }
+            if(el.strokeColor && (el.strokeColor === '#000' || el.strokeColor === '#fff')) {
+                el.strokeColor = (el.strokeColor === '#000') ? '#000000' : '#ffffff';
+            }
             el.id = nextId++; 
             elements.push(el); 
             selectedIds.clear(); 
@@ -1146,259 +1151,19 @@
             input.click();
         }
 
-        // ======================== DEFAULT PRESET (fallback jika eksternal gagal) ========================
-        const defaultPreset = {
-          "version": 2,
-          "nextId": 32,
-          "elements": [
-            {
-              "type": "shape",
-              "shapeType": "circle",
-              "x": 77.26708074534162,
-              "y": 271.7355371900827,
-              "width": 43.29192546583853,
-              "height": 42.39669421487605,
-              "fillColor": "#10008a",
-              "strokeColor": "#ffffff",
-              "strokeWidth": 2,
-              "opacity": 1,
-              "id": 5
-            },
-            {
-              "type": "text",
-              "text": "TV",
-              "x": 41.35057876905704,
-              "y": 281.54302767939134,
-              "fontSize": 27.751437959216886,
-              "fontFamily": "Inter",
-              "fontWeight": "bold",
-              "fontStyle": "normal",
-              "textDecoration": "none",
-              "color": "#10008a",
-              "opacity": 1,
-              "id": 4,
-              "strokeColor": "#ffffff",
-              "strokeWidth": 3
-            },
-            {
-              "type": "shape",
-              "shapeType": "line",
-              "x": 78.13664596273294,
-              "y": 284.46280991735546,
-              "width": 5,
-              "height": 14.892561983471012,
-              "strokeColor": "#10008a",
-              "strokeWidth": 4,
-              "opacity": 1,
-              "id": 6,
-              "fillColor": "#10008a"
-            },
-            {
-              "type": "shape",
-              "shapeType": "line",
-              "x": 80.24844720496898,
-              "y": 283.63636363636374,
-              "width": 19.90683229813662,
-              "height": 19.851239669421375,
-              "strokeColor": "#10008a",
-              "strokeWidth": 4,
-              "opacity": 1,
-              "id": 7,
-              "fillColor": "#10008a"
-            },
-            {
-              "type": "text",
-              "text": "RI",
-              "x": 86.19529926595146,
-              "y": 281.70831693558966,
-              "fontSize": 25.883953434093154,
-              "fontFamily": "Inter",
-              "fontWeight": "bold",
-              "fontStyle": "normal",
-              "textDecoration": "none",
-              "color": "#10008a",
-              "opacity": 1,
-              "id": 8,
-              "strokeColor": "#ffffff",
-              "strokeWidth": 3
-            },
-            {
-              "type": "text",
-              "text": "PAPUA",
-              "x": 56.381634669678164,
-              "y": 319.39426734881283,
-              "fontSize": 12.759891486315993,
-              "fontFamily": "Inter",
-              "fontWeight": "bold",
-              "fontStyle": "normal",
-              "textDecoration": "none",
-              "color": "#10008a",
-              "opacity": 1,
-              "id": 9,
-              "strokeColor": "#ffffff",
-              "strokeWidth": 3
-            },
-            {
-              "type": "shape",
-              "shapeType": "rectangle",
-              "x": 159.75155279503107,
-              "y": 345.12396694214885,
-              "width": 5,
-              "height": 34.462809917355344,
-              "fillColor": "#ffae00",
-              "strokeColor": "#ffae00",
-              "strokeWidth": 0,
-              "opacity": 1,
-              "id": 12
-            },
-            {
-              "type": "text",
-              "text": "04/06/2026",
-              "x": 179.0062111801242,
-              "y": 347.5206611570248,
-              "fontSize": 12,
-              "fontFamily": "Montserrat",
-              "fontWeight": "bold",
-              "fontStyle": "normal",
-              "textDecoration": "none",
-              "color": "#ffffff",
-              "opacity": 1,
-              "id": 14,
-              "strokeColor": "#ffffff"
-            },
-            {
-              "type": "text",
-              "text": "Kamis",
-              "x": 179.00621118012427,
-              "y": 366.198347107438,
-              "fontSize": 14,
-              "fontFamily": "Montserrat",
-              "fontWeight": "bold",
-              "fontStyle": "normal",
-              "textDecoration": "none",
-              "color": "#ffffff",
-              "opacity": 1,
-              "id": 15,
-              "strokeColor": "#ffffff"
-            },
-            {
-              "type": "text",
-              "text": "Persatuan, Kecamatan, Mandobo, Kabupaten\nBoven Digoel, Papua Selatan 99663",
-              "x": 42.36024844720498,
-              "y": 391.57024793388433,
-              "fontSize": 11,
-              "fontFamily": "Inter",
-              "fontWeight": "normal",
-              "fontStyle": "normal",
-              "textDecoration": "none",
-              "color": "#ffffff",
-              "opacity": 1,
-              "id": 16,
-              "strokeColor": "#ffffff"
-            },
-            {
-              "type": "icon",
-              "iconChar": "📍",
-              "x": 32.67080745341613,
-              "y": 435.5371900826446,
-              "size": 20.14906832298135,
-              "color": "#ffffff",
-              "opacity": 1,
-              "id": 18
-            },
-            {
-              "type": "text",
-              "text": "22:33",
-              "x": 38.88198757763975,
-              "y": 344.7107438016528,
-              "fontSize": 38.58453084815361,
-              "fontFamily": "Montserrat",
-              "fontWeight": "bold",
-              "fontStyle": "normal",
-              "textDecoration": "none",
-              "color": "#ffffff",
-              "opacity": 1,
-              "stampType": "time",
-              "isLive": true,
-              "id": 25,
-              "strokeWidth": 1,
-              "strokeColor": "#ffffff"
-            },
-            {
-              "type": "text",
-              "text": "6.087949'S, 140.300440'E",
-              "x": 63.229813664596264,
-              "y": 454.0495867768595,
-              "fontSize": 11,
-              "fontFamily": "Inter",
-              "fontWeight": "normal",
-              "fontStyle": "normal",
-              "textDecoration": "none",
-              "color": "#ffffff",
-              "opacity": 1,
-              "id": 27,
-              "strokeColor": "#ffffff"
-            },
-            {
-              "type": "shape",
-              "shapeType": "rectangle",
-              "x": 42.484472049689444,
-              "y": 30.743801652892557,
-              "width": 90,
-              "height": 90,
-              "fillColor": "#10b981",
-              "strokeColor": "#ffffff",
-              "strokeWidth": 2,
-              "opacity": 1,
-              "id": 29
-            },
-            {
-              "type": "image",
-              "imageData": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABgAAAAMgCAYAAADleqn6AAAQAElEQVR4Aezde5zed30X8KOVJcu2mjgOxpXsxHRwbOq46XTsDsyEFBuSlKQlw3RCCkwDzGSGyR9N27S0UDpDE8qkhYQW2gEKmYGkMExL66ExrUObaeOQpjfbdVy7uTqO5YtkWbEtObJkXaxFZ2VJu6u9vJfncs7vfDKs9e77Ps85v+/nbPnj+eqysDjA/06ePLl49OjRxUOHDi0eOHBgce/evYuPPvro4sMPP7z4la98xRcDPwN+BvwM+BnwM+BnwM+AnwE/A34G/Az4GfAz0O/PAF++fgb8DPgZ8DPgZ2CEn4H8DDw/C8/PxPOz8fyMPD8rz8/MB3g0v7iQevjfqVOn0vPPP5+efPLJdDpg2rNnTzodMH3ta19Lzz33XDodMJ04cSKdDtjD7pYkQIAAAQIENhbwKQECBAgQIECAAAECBAgQIDCEQH4Gnp+F52fi+dl4fkaen5XnZ+b52Xl+hp6fpedn6t3Pk1JnBUAOkkM88cQT6ZFHHkn79+9PR44c6WNmaxIgQIAAAQIECBAgQIAAAQLTCLiWAAECBAgQKFIgP0PPz9LzM/X8bD0/Y8/P2rsadu4CIA9z+PDhpYf++/btS8eOHetqNusQIECAAAECPQhYkgABAgQIECBAgAABAgQIEChPID9bz8/YcxmQn7nnZ+/zTJnvnasAyAPlYZ566il/nU/W9EWAAAECBAgQIECAAAECBMoTMBEBAgQIECBQkUB+8J+fuedn7/kZ/Dyjz1QA5AHy31WU/0hCfj3PAO4lQIAAAQIEhhSwFwECBAgQIECAAAECBAgQIFCDQH72np/B52fx+fV0M5+5euoCIP+DBfkfKMj/YMGZJfyXAAECBAgQIECAAAECBAgQKFbAYAQIECBAgEDVAvlZfH4mn5/NTxtkqgLg61//enrsscfSqVOnpt3H9QQIECBAgEABAkYgQIAAAQIECBAgQIAAAQIE6hPIz+Tzs/n8bwNMMv3ZayYuAA4ePJgOHDhw9j6/EiBAgAABAgQIECBAgAABAuULmJAAAQIECBAIJJD/bYD8rH7SSBMVAE8//XR65plnJl3TdQQIECBAgECRAoYiQIAAAQIECBAgQIAAAQIEahfIz+rz1/o5zn+yaQFw6NChlL/O3+IVAQIECBAgQIAAAQIECBAgUIWAIQkQIECAAIGQAvlPAUzy3H7DAuDIkSMp/+7/kEJCECBAgACBxgTEJUCAAAECBAgQIECAAAECBOII5Gf3R48evSDQ8jfWLQBOnjyZnnzyyeXXek2AAAECBAgQIECAAAECBAjUI2BSAgQIECBAILjAvn37Un6Wv17MNQuAxcXF9Pjjj693j/cJECBAgACB6gQMTIAAAQIECBAgQIAAAQIECEQUyM/y8zP9M9lW/nfNAuDAgQPp1KlTK6/0HQECBAgQIECAAAECBAgQIFCPgEkJECBAgACBJgTys/z8TH+tsBcUAMePH0+HDx9e61rvESBAgACBSpUMTYAAAQIECBAgQIAAAQIECEQWyM/28zP+1QkvKAD8vf+rifxMgAABAgQIECBAgAABAgSqEzAwAQIECBAg0JjAWs/2VxQAR48e3fAfDGjMS1wCBAgQIBBEQAwCBAgQIECAAAECBAgQIEAgusDJkydTfsa/POeKAuCpp55a/pnXBAgQIECAAAECBAgQIECAQI0CZiZAgAABAgSaFFj9jH9FAXDw4MGU/4qeyy+/PH3gAx9Ib3vb29Lb3/72UF85U862bdu2pcKjS5cu+SJAgAABAgQIECBAgECcAjIRIECAAAEC7QnknxjLz3r/7M/+bOWPQL3nPe9pL0CDifMz5h/5kR9JOWvOdO7rF37hF9Jtt93W4OqWJkCAAAECBAgQIECAAIHgAuIRIECAAAEC7QrkZ435Ge8dd9xxRYA/+7M/u+J99byR8zz88MOXJ1/9+g//8A8/97u/+7v1hPk+BAgQIECAAAECBAgQiCogFwECBAgQIFC9QH5W9cQTT1zKkf9O9l/5lV9Jhw8fTmH/VMJ//+//PT377LPrZvjzP//zdPjw4XWv8QEBAgQIECBAgAABAgQI1C9gQgIECBAgQKAdgbf+gZ///M//nN76H/+c6y78bd/2bSl//d3f/V06depUuvzyy9MXv/jFdN9996W/+7u/S19++d9+WtrO/3//4T/8h3TnnXem//W//lf6+te/nt761remn/u5n0s/+7M/mz71qU+lF154IeV//4cAAQIECBAgQIAAAQIEWhaQnQABAgQIEAgh8P73vz/ddNNN6U//9E/Tn/zJn6Q77rgj/f7v/376/d///fTFL34xHT58OP3wD/9w+sf/+B+H+NdcmkP99E//dHrHO95x6dUf/dEfpdfey5/+6Z+mxx9/PD311FMp/64AAAAgAElEQVTpS1/6UvrSl76Urr322vSOd7wj/dIv/VL66Z/+6XTTTTele+65Jx0+fDg99dRTKf87/hAgQIAAAQIECBAgQIBAywKyEyBAgAABAmEE3vnOd6Z/+A//YXrnn/2NfW9960/L+38BAAD//wQblTwAAAAGSURBVAMAQ4TVsB8CAOcAAAAASUVORK5CYII=",
-              "width": 90.31055900621116,
-              "height": 87.93388429752065,
-              "x": 43.04347826086958,
-              "y": 32.14876033057852,
-              "opacity": 0.9,
-              "id": 30
-            },
-            {
-              "type": "text",
-              "text": "24.095695, 91.289673",
-              "x": 62.73291925465843,
-              "y": 427.1900826446281,
-              "fontSize": 14,
-              "fontFamily": "Inter",
-              "fontWeight": "normal",
-              "fontStyle": "normal",
-              "textDecoration": "none",
-              "color": "#ffffff",
-              "opacity": 1,
-              "stampType": "coordinate",
-              "isLive": true,
-              "id": 31,
-              "strokeColor": "#ffffff"
-            }
-          ],
-          "background": {
-            "type": "image",
-            "value": "backgroundImage"
-          }
-        };
-
-        // Fungsi untuk load preset dari data (eksternal atau fallback)
-        async function loadPresetData(data) {
+        // ======================== LOAD PRESET DARI FILE EKSTERNAL ========================
+        async function loadDefaultPreset() {
+            const presetUrl = 'watermark_preset_tanah_merah.json'; // nama file di server
             try {
+                showLoadingToast("Memuat preset dari server...", 1500);
+                const response = await fetch(presetUrl);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
                 if (!data.elements) throw new Error('Invalid preset format');
-                console.log('Loading preset...');
+                console.log('Loading preset from external JSON...');
                 const loadedElements = data.elements;
                 const imagePromises = [];
                 for (let el of loadedElements) {
-                    // Perbaiki warna
-                    if (el.color === '#000') el.color = '#000000';
-                    if (el.fillColor === '#000') el.fillColor = '#000000';
-                    if (el.strokeColor === '#fff') el.strokeColor = '#ffffff';
-                    if (el.strokeColor === '#000') el.strokeColor = '#000000';
                     if (el.type === 'image' && el.imageData) {
                         const promise = new Promise((resolve) => {
                             const img = new Image();
@@ -1414,6 +1179,16 @@
                         });
                         imagePromises.push(promise);
                     }
+                    // Perbaiki warna jika perlu
+                    if(el.color && (el.color === '#000' || el.color === '#fff')) {
+                        el.color = (el.color === '#000') ? '#000000' : '#ffffff';
+                    }
+                    if(el.fillColor && (el.fillColor === '#000' || el.fillColor === '#fff')) {
+                        el.fillColor = (el.fillColor === '#000') ? '#000000' : '#ffffff';
+                    }
+                    if(el.strokeColor && (el.strokeColor === '#000' || el.strokeColor === '#fff')) {
+                        el.strokeColor = (el.strokeColor === '#000') ? '#000000' : '#ffffff';
+                    }
                 }
                 await Promise.all(imagePromises);
                 elements = loadedElements;
@@ -1425,37 +1200,23 @@
                     hasPhoto = true;
                     downloadBtn.disabled = false;
                     resetPhotoBtn.disabled = false;
+                } else if (data.background && data.background.type === 'image') {
+                    // Background image tidak di-load otomatis
                 }
                 await refreshLiveStamps();
                 saveHistory();
                 redrawAll();
                 updateUI();
-                console.log('Preset loaded successfully');
-                return true;
+                showLoadingToast("✅ Preset berhasil dimuat dari server", 2000);
+                console.log('External preset loaded successfully');
             } catch(err) {
-                console.warn('Gagal load preset data', err);
-                return false;
-            }
-        }
-
-        async function loadDefaultPreset() {
-            // Coba fetch dari file eksternal
-            try {
-                const response = await fetch('watermark_preset_tanah_merah.json');
-                if (response.ok) {
-                    const data = await response.json();
-                    const success = await loadPresetData(data);
-                    if (success) {
-                        showLoadingToast("Preset dari file eksternal dimuat", 1500);
-                        return;
-                    }
-                }
-                throw new Error('File not found or invalid');
-            } catch (err) {
-                console.warn('Gagal fetch preset eksternal, menggunakan bawaan', err);
-                // Fallback ke defaultPreset yang sudah di-embed
-                await loadPresetData(defaultPreset);
-                showLoadingToast("Menggunakan preset bawaan (file eksternal tidak ditemukan)", 2000);
+                console.warn('Gagal load preset eksternal, menggunakan watermark contoh', err);
+                showLoadingToast("⚠️ Gagal load preset, menggunakan contoh", 3000);
+                // Fallback: buat watermark contoh sederhana
+                addElement({type:'text', text:'Contoh Watermark', x:30, y:30, fontSize:24, fontFamily:'Roboto', fontWeight:'bold', fontStyle:'italic', textDecoration:'underline', color:'#4f46e5', opacity:1});
+                addDateStamp();
+                addTimeStamp();
+                redrawAll(); updateUI();
             }
         }
 
@@ -1511,6 +1272,7 @@
         document.querySelectorAll('.icon-option').forEach(ic=>ic.addEventListener('click',()=>addElement({type:'icon', iconChar:ic.dataset.icon, x:140,y:140, size:44, color:'#ffffff', opacity:1})));
 
         // ======================== INISIALISASI ========================
+        // Muat preset dari file JSON eksternal setiap halaman dimuat
         loadDefaultPreset();
     })();
 </script>
