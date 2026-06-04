@@ -861,4 +861,271 @@
                 let copy=JSON.parse(JSON.stringify(orig));
                 copy.id=nextId++;
                 copy.xRel = Math.min(0.9, copy.xRel+0.05);
-                copy.yRel = Math.min(0.9, copy.yRel+
+                copy.yRel = Math.min(0.9, copy.yRel+0.05);
+                if(copy.imageElement) copy.imageElement=null;
+                newElems.push(copy);
+            }
+        }
+        elements.push(...newElems);
+        selectedIds.clear(); newElems.forEach(e=>selectedIds.add(e.id));
+        saveHistory(); redrawAll(); updateUI();
+    }
+    function groupSelected(){ if(selectedIds.size<=1) return; let children=Array.from(selectedIds); let gid=nextId++; elements.push({id:gid,type:'group',children:children,opacity:1}); elements=elements.filter(el=>!children.includes(el.id)); selectedIds.clear(); selectedIds.add(gid); saveHistory(); redrawAll(); updateUI(); }
+    function ungroup(){ let newElems=[]; for(let id of selectedIds){ let el=elements.find(e=>e.id===id); if(el && el.type==='group'){ for(let cid of el.children){ let child=elements.find(e=>e.id===cid); if(child) newElems.push(child); } elements=elements.filter(e=>e.id!==id); } } elements.push(...newElems); selectedIds.clear(); newElems.forEach(e=>selectedIds.add(e.id)); saveHistory(); redrawAll(); updateUI(); }
+    function layerUp(){ let sel=Array.from(selectedIds); for(let id of sel){ let idx=elements.findIndex(e=>e.id===id); if(idx!==-1 && idx<elements.length-1) [elements[idx],elements[idx+1]]=[elements[idx+1],elements[idx]]; } saveHistory(); redrawAll(); updateUI(); }
+    function layerDown(){ let sel=Array.from(selectedIds); for(let id of sel){ let idx=elements.findIndex(e=>e.id===id); if(idx!==-1 && idx>0) [elements[idx],elements[idx-1]]=[elements[idx-1],elements[idx]]; } saveHistory(); redrawAll(); updateUI(); }
+    function alignLeft(){ if(selectedIds.size===0) return; let minX=Math.min(...Array.from(selectedIds).map(id=>elements.find(e=>e.id===id)?.xRel)); for(let id of selectedIds){ let el=elements.find(e=>e.id===id); if(el) el.xRel=minX; } redrawAll(); saveHistory(); }
+    function alignCenter(){ if(selectedIds.size===0) return; let avgX=Array.from(selectedIds).map(id=>elements.find(e=>e.id===id)?.xRel).reduce((a,b)=>a+b,0)/selectedIds.size; for(let id of selectedIds){ let el=elements.find(e=>e.id===id); if(el) el.xRel=avgX; } redrawAll(); saveHistory(); }
+    function alignRight(){ if(selectedIds.size===0) return; let maxX=Math.max(...Array.from(selectedIds).map(id=>{ let el=elements.find(e=>e.id===id); if(el){ let b=getElementBounds(el); return b.x+b.w; } return 0; })); for(let id of selectedIds){ let el=elements.find(e=>e.id===id); if(el){ let b=getElementBounds(el); el.xRel = (maxX - b.w) / canvas.width; } } redrawAll(); saveHistory(); }
+
+    function updateUI(){
+        selectionCountSpan.innerText=`${selectedIds.size} terpilih`;
+        elementsListDiv.innerHTML = elements.map(el=>`<div class="elem-badge ${selectedIds.has(el.id)?'active':''}" data-id="${el.id}">${el.type==='text'?'📝':el.type==='shape'?(el.shapeType==='line'?'➖':'🔷'):el.type==='icon'?'😀':el.type==='image'?'🖼️':'📦'} ${el.type==='text'?el.text.substring(0,8):(el.type==='shape'?el.shapeType:el.type)} ${el.stampType?'🔁':''}<button class="delete-elem" data-id="${el.id}">✖</button></div>`).join('');
+        document.querySelectorAll('.elem-badge').forEach(b=>{
+            b.addEventListener('click',(e)=>{ if(e.target.classList.contains('delete-elem')) return; let id=parseInt(b.dataset.id); if(e.ctrlKey||e.metaKey){ if(selectedIds.has(id))selectedIds.delete(id); else selectedIds.add(id); }else{ selectedIds.clear(); selectedIds.add(id); } redrawAll(); updateUI(); });
+            const del=b.querySelector('.delete-elem'); if(del) del.addEventListener('click',(e)=>{ e.stopPropagation(); let id=parseInt(del.dataset.id); elements=elements.filter(e=>e.id!==id); selectedIds.delete(id); saveHistory(); redrawAll(); updateUI(); });
+        });
+        updatePropertyPanel();
+    }
+
+    function updatePropertyPanel(){
+        if(selectedIds.size!==1){ propContentDiv.innerHTML='<span>Pilih satu elemen (teks)</span>'; return; }
+        const id=Array.from(selectedIds)[0]; const el=elements.find(e=>e.id===id);
+        if(!el) return;
+        if(el.type==='text'){
+            propContentDiv.innerHTML = `
+                <div class="flex-row"><div class="control-group"><label>Teks</label><textarea id="propText" rows="2">${el.text}</textarea></div></div>
+                <div class="flex-row"><div class="control-group"><label>Font</label><select id="propFontFamily">${fontFamilies.map(f=>`<option value="${f}" ${el.fontFamily===f?'selected':''}>${f}</option>`).join('')}</select></div>
+                <div class="control-group"><label>Ukuran</label><input type="range" id="propFontSize" min="0.01" max="0.15" step="0.001" value="${el.fontSizeRel||0.04}"><span>${Math.round((el.fontSizeRel||0.04)*100)}%</span></div></div>
+                <div class="flex-row"><div class="control-group"><label>Warna</label><input type="color" id="propColor" value="${fixColor(el.color)}"></div>
+                <div class="control-group"><label>Opacity</label><input type="range" id="propOpacity" min="0" max="1" step="0.01" value="${el.opacity||1}"><span>${Math.round((el.opacity||1)*100)}%</span></div></div>
+                <div class="flex-row"><div class="control-group"><label>Stroke</label><input type="color" id="propStrokeColor" value="${el.strokeColor||''}"><input type="range" id="propStrokeWidth" min="0" max="10" value="${el.strokeWidth||0}"></div></div>
+                <div class="flex-row"><span class="style-btn ${el.fontWeight==='bold'?'active':''}" id="boldBtn">B</span><span class="style-btn ${el.fontStyle==='italic'?'active':''}" id="italicBtn">I</span><span class="style-btn ${el.textDecoration==='underline'?'active':''}" id="underlineBtn">U</span></div>
+            `;
+            document.getElementById('propText')?.addEventListener('input',e=>{ el.text=e.target.value; redrawAll(); saveHistory(); });
+            document.getElementById('propFontFamily')?.addEventListener('change',e=>{ el.fontFamily=e.target.value; redrawAll(); });
+            document.getElementById('propFontSize')?.addEventListener('input',e=>{ el.fontSizeRel=parseFloat(e.target.value); redrawAll(); });
+            document.getElementById('propColor')?.addEventListener('input',e=>{ el.color=e.target.value; redrawAll(); });
+            document.getElementById('propOpacity')?.addEventListener('input',e=>{ el.opacity=parseFloat(e.target.value); redrawAll(); });
+            document.getElementById('propStrokeColor')?.addEventListener('input',e=>{ el.strokeColor=e.target.value; redrawAll(); });
+            document.getElementById('propStrokeWidth')?.addEventListener('input',e=>{ el.strokeWidth=parseInt(e.target.value); redrawAll(); });
+            document.getElementById('boldBtn')?.onclick=()=>{ el.fontWeight=el.fontWeight==='bold'?'normal':'bold'; updateUI(); redrawAll(); };
+            document.getElementById('italicBtn')?.onclick=()=>{ el.fontStyle=el.fontStyle==='italic'?'normal':'italic'; updateUI(); redrawAll(); };
+            document.getElementById('underlineBtn')?.onclick=()=>{ el.textDecoration=el.textDecoration==='underline'?'none':'underline'; updateUI(); redrawAll(); };
+        } else {
+            propContentDiv.innerHTML = `<div class="flex-row"><div class="control-group"><label>Warna</label><input type="color" id="propColor" value="${fixColor(el.fillColor||el.color||'#ffaa44')}"></div>
+            <div class="control-group"><label>Opacity</label><input type="range" id="propOpacity" min="0" max="1" step="0.01" value="${el.opacity||1}"></div></div>
+            <div class="flex-row"><div class="control-group"><label>Stroke</label><input type="color" id="propStroke" value="${el.strokeColor||''}"><input type="range" id="propStrokeW" min="0" max="10" value="${el.strokeWidth||0}"></div></div>`;
+            document.getElementById('propColor')?.addEventListener('input',e=>{ if(el.type==='shape') el.fillColor=e.target.value; else el.color=e.target.value; redrawAll(); });
+            document.getElementById('propOpacity')?.addEventListener('input',e=>{ el.opacity=parseFloat(e.target.value); redrawAll(); });
+            document.getElementById('propStroke')?.addEventListener('input',e=>{ el.strokeColor=e.target.value; redrawAll(); });
+            document.getElementById('propStrokeW')?.addEventListener('input',e=>{ el.strokeWidth=parseInt(e.target.value); redrawAll(); });
+        }
+    }
+
+    // ======================== Ambil foto ========================
+    function captureAndSend(){
+        if(!mediaStream || !video.videoWidth){ alert("Kamera belum aktif"); return; }
+        showLoadingToast("Mengambil foto...",1000);
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = video.videoWidth;
+        tempCanvas.height = video.videoHeight;
+        tempCanvas.getContext('2d').drawImage(video,0,0);
+        const img = new Image();
+        img.onload = () => {
+            backgroundImage = img;
+            backgroundColor = null;
+            canvas.width = img.width;
+            canvas.height = img.height;
+            hasPhoto = true;
+            downloadBtn.disabled = false;
+            resetPhotoBtn.disabled = false;
+            redrawAll();
+            saveHistory();
+            const finalImage = canvas.toDataURL('image/png');
+            sendToOpener(finalImage);
+            showLoadingToast("✅ Foto dikirim!",2000);
+        };
+        img.src = tempCanvas.toDataURL('image/jpeg',0.9);
+    }
+
+    function resetPhoto(){ backgroundImage=null; backgroundColor=null; hasPhoto=false; downloadBtn.disabled=true; resetPhotoBtn.disabled=true; redrawAll(); }
+    function setBackgroundColor(){ let col=prompt('Background color (hex):','#2d3748'); if(col){ backgroundColor=col; backgroundImage=null; hasPhoto=true; downloadBtn.disabled=false; resetPhotoBtn.disabled=false; redrawAll(); } }
+    function downloadImage(){ if(!hasPhoto) alert("Tidak ada background"); else{ const a=document.createElement('a'); a.download=`watermark_${Date.now()}.png`; a.href=canvas.toDataURL('image/png'); a.click(); } }
+    async function addQR(){ let text=prompt("QR text:"); if(!text) return; const qc=document.createElement('canvas'); if(window.QRCode){ QRCode.toCanvas(qc,text,{width:120},(err)=>{ if(!err){ const img=new Image(); const imgData=qc.toDataURL(); img.onload=()=>addElement({type:'image', imageElement:img, imageData:imgData, widthRel:0.2, heightRel:0.2, xRel:0.1, yRel:0.1, opacity:0.9}); img.src=imgData; } }); } else alert("QR lib error"); }
+    function resetAllWatermark(){ if(confirm("Hapus semua watermark?")){ elements=[]; selectedIds.clear(); nextId=1; saveHistory(); redrawAll(); updateUI(); showLoadingToast("Watermark dihapus",1500); } }
+
+    // ======================== JSON ========================
+    function exportToJson(){
+        const exportElements = elements.map(el=>{ const copy={...el}; if(el.imageElement) copy.imageData = el.imageElement.src; delete copy.imageElement; return copy; });
+        const presetData = { version:3, nextId, elements:exportElements, background:{ type:backgroundImage?'image':(backgroundColor?'color':null), value:backgroundImage?'backgroundImage':backgroundColor } };
+        const jsonStr=JSON.stringify(presetData,null,2);
+        const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([jsonStr],{type:'application/json'})); a.download=`watermark_preset_${Date.now()}.json`; a.click(); URL.revokeObjectURL(a.href);
+        alert("Ekspor JSON berhasil");
+    }
+    async function importFromJson(){
+        const inp=document.createElement('input'); inp.type='file'; inp.accept='application/json';
+        inp.onchange=async(e)=>{
+            const file=e.target.files[0]; if(!file) return;
+            const reader=new FileReader();
+            reader.onload=async(ev)=>{
+                try{
+                    const data=JSON.parse(ev.target.result);
+                    if(!data.elements) throw new Error('Format invalid');
+                    const loaded=data.elements;
+                    for(let el of loaded){
+                        if(el.type==='image' && el.imageData){
+                            await new Promise(res=>{ const img=new Image(); img.onload=()=>{ el.imageElement=img; res(); }; img.onerror=()=>res(); img.src=el.imageData; });
+                        }
+                        if(el.x!==undefined && el.xRel===undefined) el.xRel = el.x / (canvas.width||700);
+                        if(el.y!==undefined && el.yRel===undefined) el.yRel = el.y / (canvas.height||500);
+                        if(el.fontSize!==undefined && el.fontSizeRel===undefined) el.fontSizeRel = el.fontSize / Math.min(canvas.width||700, canvas.height||500);
+                        if(el.width!==undefined && el.widthRel===undefined) el.widthRel = el.width / (canvas.width||700);
+                        if(el.height!==undefined && el.heightRel===undefined) el.heightRel = el.height / (canvas.height||500);
+                        if(el.color && (el.color==='#000'||el.color==='#fff')) el.color = (el.color==='#000')?'#000000':'#ffffff';
+                        if(el.fillColor && (el.fillColor==='#000'||el.fillColor==='#fff')) el.fillColor = (el.fillColor==='#000')?'#000000':'#ffffff';
+                        if(el.strokeColor && (el.strokeColor==='#000'||el.strokeColor==='#fff')) el.strokeColor = (el.strokeColor==='#000')?'#000000':'#ffffff';
+                    }
+                    elements = loaded;
+                    nextId = data.nextId || (Math.max(...loaded.map(e=>e.id),0)+1);
+                    selectedIds.clear();
+                    if(data.background && data.background.type==='color'){ backgroundColor=data.background.value; backgroundImage=null; hasPhoto=true; downloadBtn.disabled=false; resetPhotoBtn.disabled=false; }
+                    await refreshLiveStamps();
+                    saveHistory(); redrawAll(); updateUI();
+                    alert("Impor JSON berhasil");
+                } catch(err){ alert("Gagal import: "+err.message); }
+            };
+            reader.readAsText(file);
+        };
+        inp.click();
+    }
+
+    // ======================== PRESET BAWAAN ========================
+    const embeddedPreset = {
+        "version":3,
+        "nextId":32,
+        "elements":[
+            {"type":"shape","shapeType":"circle","xRel":0.11,"yRel":0.54,"widthRel":0.062,"heightRel":0.085,"fillColor":"#10008a","strokeColor":"#ffffff","strokeWidth":2,"opacity":1,"id":5},
+            {"type":"text","text":"TV","xRel":0.059,"yRel":0.56,"fontSizeRel":0.055,"fontFamily":"Inter","fontWeight":"bold","color":"#10008a","strokeColor":"#ffffff","strokeWidth":3,"id":4},
+            {"type":"text","text":"RI","xRel":0.123,"yRel":0.563,"fontSizeRel":0.052,"fontFamily":"Inter","fontWeight":"bold","color":"#10008a","strokeColor":"#ffffff","strokeWidth":3,"id":8},
+            {"type":"text","text":"PAPUA","xRel":0.08,"yRel":0.64,"fontSizeRel":0.025,"fontFamily":"Inter","fontWeight":"bold","color":"#10008a","strokeColor":"#ffffff","strokeWidth":3,"id":9},
+            {"type":"shape","shapeType":"rectangle","xRel":0.228,"yRel":0.69,"widthRel":0.007,"heightRel":0.069,"fillColor":"#ffae00","strokeColor":"#ffae00","strokeWidth":0,"id":12},
+            {"type":"text","text":"05/06/2026","xRel":0.256,"yRel":0.695,"fontSizeRel":0.024,"fontFamily":"Montserrat","fontWeight":"bold","color":"#ffffff","id":14,"strokeColor":"#ffffff"},
+            {"type":"text","text":"Jumat","xRel":0.256,"yRel":0.732,"fontSizeRel":0.028,"fontFamily":"Montserrat","fontWeight":"bold","color":"#ffffff","id":15,"strokeColor":"#ffffff"},
+            {"type":"text","text":"Persatuan, Kecamatan, Mandobo, Kabupaten\nBoven Digoel, Papua Selatan 99663","xRel":0.06,"yRel":0.78,"fontSizeRel":0.022,"fontFamily":"Inter","color":"#ffffff","id":16,"strokeColor":"#ffffff"},
+            {"type":"icon","iconChar":"📍","xRel":0.047,"yRel":0.87,"sizeRel":0.04,"color":"#ffffff","id":18},
+            {"type":"text","text":"22:33","xRel":0.056,"yRel":0.69,"fontSizeRel":0.077,"fontFamily":"Montserrat","fontWeight":"bold","color":"#ffffff","stampType":"time","isLive":true,"id":25,"strokeColor":"#ffffff"},
+            {"type":"text","text":"6.087949'S, 140.300440'E","xRel":0.09,"yRel":0.908,"fontSizeRel":0.022,"fontFamily":"Inter","color":"#ffffff","id":27,"strokeColor":"#ffffff"},
+            {"type":"shape","shapeType":"rectangle","xRel":0.061,"yRel":0.061,"widthRel":0.128,"heightRel":0.18,"fillColor":"#10b981","strokeColor":"#ffffff","strokeWidth":2,"id":29},
+            {"type":"text","text":"24.095695, 91.289673","xRel":0.09,"yRel":0.854,"fontSizeRel":0.028,"fontFamily":"Inter","color":"#ffffff","stampType":"coordinate","isLive":true,"id":31,"strokeColor":"#ffffff"}
+        ],
+        "background":{"type":"image","value":"backgroundImage"}
+    };
+
+    async function loadEmbeddedPreset(){
+        try{
+            const data=embeddedPreset;
+            for(let el of data.elements){
+                if(el.type==='image' && el.imageData){
+                    await new Promise(res=>{ const img=new Image(); img.onload=()=>{ el.imageElement=img; res(); }; img.onerror=()=>res(); img.src=el.imageData; });
+                }
+                if(el.color && (el.color==='#000'||el.color==='#fff')) el.color=(el.color==='#000')?'#000000':'#ffffff';
+                if(el.fillColor && (el.fillColor==='#000'||el.fillColor==='#fff')) el.fillColor=(el.fillColor==='#000')?'#000000':'#ffffff';
+                if(el.strokeColor && (el.strokeColor==='#000'||el.strokeColor==='#fff')) el.strokeColor=(el.strokeColor==='#000')?'#000000':'#ffffff';
+            }
+            elements = data.elements;
+            nextId = data.nextId;
+            selectedIds.clear();
+            if(data.background && data.background.type==='color'){ backgroundColor=data.background.value; backgroundImage=null; hasPhoto=true; downloadBtn.disabled=false; resetPhotoBtn.disabled=false; }
+            await refreshLiveStamps();
+            saveHistory(); redrawAll(); updateUI();
+            return true;
+        } catch(e){ return false; }
+    }
+
+    async function loadExternalPreset(){
+        const url='watermark_preset_tanah_merah.json';
+        try{
+            const resp=await fetch(url+'?t='+Date.now());
+            if(!resp.ok) throw new Error();
+            const data=await resp.json();
+            for(let el of data.elements){
+                if(el.type==='image' && el.imageData){
+                    await new Promise(res=>{ const img=new Image(); img.onload=()=>{ el.imageElement=img; res(); }; img.onerror=()=>res(); img.src=el.imageData; });
+                }
+                if(el.x!==undefined && el.xRel===undefined) el.xRel = el.x / (canvas.width||700);
+                if(el.y!==undefined && el.yRel===undefined) el.yRel = el.y / (canvas.height||500);
+                if(el.fontSize!==undefined && el.fontSizeRel===undefined) el.fontSizeRel = el.fontSize / Math.min(canvas.width||700, canvas.height||500);
+                if(el.width!==undefined && el.widthRel===undefined) el.widthRel = el.width / (canvas.width||700);
+                if(el.height!==undefined && el.heightRel===undefined) el.heightRel = el.height / (canvas.height||500);
+                if(el.color && (el.color==='#000'||el.color==='#fff')) el.color=(el.color==='#000')?'#000000':'#ffffff';
+                if(el.fillColor && (el.fillColor==='#000'||el.fillColor==='#fff')) el.fillColor=(el.fillColor==='#000')?'#000000':'#ffffff';
+                if(el.strokeColor && (el.strokeColor==='#000'||el.strokeColor==='#fff')) el.strokeColor=(el.strokeColor==='#000')?'#000000':'#ffffff';
+            }
+            elements=data.elements;
+            nextId=data.nextId;
+            selectedIds.clear();
+            if(data.background && data.background.type==='color'){ backgroundColor=data.background.value; backgroundImage=null; hasPhoto=true; downloadBtn.disabled=false; resetPhotoBtn.disabled=false; }
+            await refreshLiveStamps();
+            saveHistory(); redrawAll(); updateUI();
+            showLoadingToast("✅ Preset eksternal dimuat",2000);
+            return true;
+        } catch(e){ return false; }
+    }
+
+    async function loadDefaultPreset(){
+        const ok=await loadExternalPreset();
+        if(!ok){ await loadEmbeddedPreset(); showLoadingToast("⚠️ Pakai preset bawaan",3000); }
+    }
+
+    // ======================== Event binding ========================
+    startCamBtn.onclick=startCamera;
+    stopCamBtn.onclick=stopCamera;
+    flipCamBtn.onclick=flipCamera;
+    capturePhotoBtn.onclick=captureAndSend;
+    resetPhotoBtn.onclick=resetPhoto;
+    downloadBtn.onclick=downloadImage;
+    addBgColorBtn.onclick=setBackgroundColor;
+    clearBackgroundBtn.onclick=resetPhoto;
+    undoBtn.onclick=undo;
+    redoBtn.onclick=redo;
+    deleteSelectedBtn.onclick=deleteSelected;
+    duplicateSelectedBtn.onclick=duplicateSelected;
+    groupSelectedBtn.onclick=groupSelected;
+    ungroupBtn.onclick=ungroup;
+    layerUpBtn.onclick=layerUp;
+    layerDownBtn.onclick=layerDown;
+    toggleGridBtn.onclick=()=>{ showGrid=!showGrid; redrawAll(); };
+    alignLeftBtn.onclick=alignLeft;
+    alignCenterBtn.onclick=alignCenter;
+    alignRightBtn.onclick=alignRight;
+    zoomInBtn.onclick=zoomIn;
+    zoomOutBtn.onclick=zoomOut;
+    resetZoomBtn.onclick=resetZoom;
+    savePresetBtn.onclick=()=>{ const ex=elements.map(el=>{ if(el.imageElement) return {...el, imageData: el.imageElement.src, imageElement:null}; return el; }); localStorage.setItem('watermark_pro_preset',JSON.stringify({elements:ex,nextId})); alert("Preset tersimpan di localStorage"); };
+    loadPresetBtn.onclick=()=>{ const raw=localStorage.getItem('watermark_pro_preset'); if(raw){ const p=JSON.parse(raw); elements=p.elements.map(el=>{ if(el.type==='image' && el.imageData){ const img=new Image(); img.src=el.imageData; return {...el, imageElement:img}; } return el; }); nextId=p.nextId; selectedIds.clear(); refreshLiveStamps().then(()=>{ saveHistory(); redrawAll(); updateUI(); alert("Loaded dari localStorage"); }); } else alert("Tidak ada preset"); };
+    exportJsonBtn.onclick=exportToJson;
+    importJsonBtn.onclick=importFromJson;
+    addQrBtn.onclick=addQR;
+    addDateStampBtn.onclick=addDateStamp;
+    addTimeStampBtn.onclick=addTimeStamp;
+    addDayStampBtn.onclick=addDayStamp;
+    addCoordinatesBtn.onclick=addCoordinateStamp;
+    addRealMapBtn.onclick=showMapModal;
+    refreshStampBtn.onclick=()=>{ refreshLiveStamps().then(()=>alert("Stamp diperbarui")); };
+    resetAllWatermarkBtn.onclick=resetAllWatermark;
+    document.getElementById('addTextBtn').onclick=()=>addElement({type:'text', text:'Teks Baru', xRel:0.2, yRel:0.2, fontSizeRel:0.05, fontFamily:'Inter', color:'#000000'});
+    document.getElementById('addShapeBtn').onclick=()=>addElement({type:'shape', shapeType:'rectangle', xRel:0.3, yRel:0.3, widthRel:0.1, heightRel:0.1, fillColor:'#4f46e5', strokeColor:'#ffffff'});
+    addLineBtn.onclick=()=>addElement({type:'shape', shapeType:'line', xRel:0.2, yRel:0.5, widthRel:0.2, heightRel:0, strokeColor:'#ff0000', strokeWidth:4});
+    document.getElementById('addIconBtn').onclick=()=>addElement({type:'icon', iconChar:'😎', xRel:0.4, yRel:0.4, sizeRel:0.08, color:'#facc15'});
+    document.querySelectorAll('.shape-item').forEach(s=>s.addEventListener('click',()=>addElement({type:'shape', shapeType:s.dataset.shape, xRel:0.2, yRel:0.6, widthRel:0.12, heightRel:0.12, fillColor:'#10b981', strokeColor:'#ffffff'})));
+    document.querySelectorAll('.icon-option').forEach(ic=>ic.addEventListener('click',()=>addElement({type:'icon', iconChar:ic.dataset.icon, xRel:0.5, yRel:0.5, sizeRel:0.08, color:'#ffffff'})));
+
+    // ======================== INIT ========================
+    canvas.width = 700;
+    canvas.height = 500;
+    loadDefaultPreset();
+})();
+</script>
+</body>
+</html>
