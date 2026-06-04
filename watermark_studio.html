@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Watermark Studio - Responsif + Kamera Depan/Belakang</title>
+    <title>Watermark Studio - Responsif + Kamera Depan/Belakang (Fix)</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
@@ -404,7 +404,7 @@
     let isResizing = false;
     let resizeHandle = null;
     let dragStartMouse = { x: 0, y: 0 };
-    let dragStartPositions = new Map();
+    let dragStartPositions = new Map(); // store initial relative positions
     let showGrid = false;
     let backgroundImage = null;
     let backgroundColor = null;
@@ -751,6 +751,7 @@
         return null;
     }
     let dragTargetId=null, resizeStart={w:0,h:0,x:0,y:0,wRel:0,hRel:0,xRel:0,yRel:0};
+    let dragStartSelectedIds = new Set(); // store selected ids at drag start
     canvas.addEventListener('mousedown',(e)=>{
         e.preventDefault();
         const {x,y}=getMouseCoord(e);
@@ -775,9 +776,11 @@
             } else {
                 if(!selectedIds.has(hit.id)){ selectedIds.clear(); selectedIds.add(hit.id); }
             }
-            let dragStartSelected = new Set(selectedIds);
+            // store initial positions
+            dragStartSelectedIds.clear();
             dragStartPositions.clear();
-            for(let id of dragStartSelected){
+            for(let id of selectedIds){
+                dragStartSelectedIds.add(id);
                 let el=elements.find(e=>e.id===id);
                 if(el) dragStartPositions.set(id, { xRel: el.xRel, yRel: el.yRel });
             }
@@ -816,9 +819,10 @@
             const {x,y}=getMouseCoord(e);
             const dx=x-dragStartMouse.x;
             const dy=y-dragStartMouse.y;
-            for(let [id, start] of dragStartPositions){
+            for(let id of dragStartSelectedIds){
                 let el=elements.find(e=>e.id===id);
-                if(el){
+                let start = dragStartPositions.get(id);
+                if(el && start){
                     let newXRel = start.xRel + (dx / canvas.width);
                     let newYRel = start.yRel + (dy / canvas.height);
                     newXRel = Math.min(0.95, Math.max(0.01, newXRel));
@@ -833,6 +837,7 @@
     window.addEventListener('mouseup',()=>{
         if(isDragging || isResizing) saveHistory();
         isDragging=false; isResizing=false; dragTargetId=null;
+        dragStartSelectedIds.clear();
     });
 
     // ======================== CRUD ========================
