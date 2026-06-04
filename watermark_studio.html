@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Watermark Studio Pro - Kamera Depan/Belakang HP</title>
+    <title>Watermark Studio Pro - Canvas Sesuai HP & Watermark Mengikuti Arah</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
@@ -97,6 +97,8 @@
             border: 2px solid #6366f1;
             transform-origin: 0 0;
             transition: transform 0.05s linear;
+            max-width: 100%;
+            height: auto;
         }
         .btn-group {
             display: flex;
@@ -271,8 +273,8 @@
 <div class="container">
     <div class="top-bar">
         <div>
-            <h1>✍️ Watermark Studio Pro - Kamera HP (Depan/Belakang)</h1>
-            <div style="font-size:0.7rem;">Mendukung flip kamera depan/belakang | Auto load preset eksternal + fallback</div>
+            <h1>✍️ Watermark Studio Pro - Responsif & Orientasi</h1>
+            <div style="font-size:0.7rem;">Canvas menyesuaikan ukuran HP, watermark mengikuti arah foto</div>
         </div>
         <div class="toolbar">
             <button id="refreshStampBtn" class="btn btn-warning">🔄 Refresh Stamp</button>
@@ -382,7 +384,7 @@
             <div id="propContent">Klik watermark untuk edit properti lengkap (font, bold, italic, underline)</div>
         </div>
     </div>
-    <footer>✨ Kamera HP dengan flip depan/belakang | Preset: coba file eksternal, fallback ke bawaan</footer>
+    <footer>✨ Canvas otomatis menyesuaikan ukuran foto. Watermark tetap di posisi relatif.</footer>
 </div>
 
 <!-- Modal Peta -->
@@ -468,7 +470,7 @@
         let isRefreshing = false;
         let sentPhotos = [];
         let mediaStream = null;
-        let currentFacingMode = 'environment'; // 'environment' = belakang, 'user' = depan
+        let currentFacingMode = 'environment';
 
         const fontFamilies = [
             'Inter', 'Roboto', 'Open Sans', 'Montserrat', 'Lobster',
@@ -511,14 +513,11 @@
             }
         }
 
-        // ======================== Kamera dengan flip depan/belakang ========================
+        // ======================== Kamera dengan flip ========================
         async function startCamera() {
             if (mediaStream) stopCamera();
             try {
-                // Coba dengan exact facingMode (paling akurat untuk HP)
-                const constraints = {
-                    video: { facingMode: { exact: currentFacingMode } }
-                };
+                const constraints = { video: { facingMode: { exact: currentFacingMode } } };
                 const stream = await navigator.mediaDevices.getUserMedia(constraints);
                 mediaStream = stream;
                 video.srcObject = stream;
@@ -529,11 +528,8 @@
                 stopCamBtn.disabled = false;
                 updateCameraLabel();
             } catch (err) {
-                console.warn('Exact facingMode gagal, mencoba tanpa exact', err);
                 try {
-                    const constraints = {
-                        video: { facingMode: currentFacingMode }
-                    };
+                    const constraints = { video: { facingMode: currentFacingMode } };
                     const stream = await navigator.mediaDevices.getUserMedia(constraints);
                     mediaStream = stream;
                     video.srcObject = stream;
@@ -544,7 +540,6 @@
                     stopCamBtn.disabled = false;
                     updateCameraLabel();
                 } catch (fallbackErr) {
-                    console.warn('Fallback facingMode gagal, coba default kamera', fallbackErr);
                     try {
                         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
                         mediaStream = stream;
@@ -578,9 +573,7 @@
                 alert('Kamera belum aktif. Mulai kamera dulu.');
                 return;
             }
-            // Toggle mode
             currentFacingMode = currentFacingMode === 'environment' ? 'user' : 'environment';
-            // Restart kamera dengan mode baru
             await startCamera();
         }
 
@@ -707,7 +700,7 @@
             }); 
         }
 
-        // ======================== Peta dengan Lokasi Device ========================
+        // ======================== Peta ========================
         const mapModal = document.getElementById('mapModal');
         const realMapDiv = document.getElementById('realMap');
         const searchLocation = document.getElementById('searchLocation');
@@ -926,7 +919,7 @@
             }
         }
 
-        // ======================== Mouse Handlers (drag & resize) ========================
+        // ======================== Mouse Handlers ========================
         function getMouseCoord(e) {
             const rect = canvas.getBoundingClientRect();
             const scaleX = canvas.width / rect.width;
@@ -1111,12 +1104,13 @@
             }
         }
 
-        // ======================== Ambil Foto Baru & Kirim Otomatis ========================
+        // ======================== Ambil Foto Baru ========================
         function resetPhoto(){ backgroundImage=null; backgroundColor=null; hasPhoto=false; downloadBtn.disabled=true; resetPhotoBtn.disabled=true; redrawAll(); }
         function setBackgroundColor(){ let col=prompt('Background color (hex, name):','#2d3748'); if(col){ backgroundColor=col; backgroundImage=null; hasPhoto=true; downloadBtn.disabled=false; resetPhotoBtn.disabled=false; redrawAll(); } }
         function downloadImage(){ if(!hasPhoto) alert("Tidak ada background"); else{ const link=document.createElement('a'); link.download=`watermark_${Date.now()}.png`; link.href=canvas.toDataURL('image/png'); link.click(); } }
         async function addQR(){ let text=prompt("QR text:"); if(!text) return; const qc=document.createElement('canvas'); if(window.QRCode){ QRCode.toCanvas(qc,text,{width:120},(err)=>{ if(!err){ const img=new Image(); const imgData = qc.toDataURL(); img.onload=()=>addElement({type:'image', imageElement:img, imageData:imgData, width:120, height:120, x:50,y:50, opacity:0.9}); img.src=imgData; } }); } else alert("QR lib error"); }
 
+        // Fungsi capture yang menyesuaikan canvas dengan ukuran video (termasuk orientasi)
         function captureAndSend() {
             if (!mediaStream || !video.videoWidth) {
                 alert("Kamera belum aktif. Mulai kamera dulu.");
@@ -1124,19 +1118,23 @@
             }
             showLoadingToast("Mengambil foto...", 1000);
             const tempCanvas = document.createElement('canvas');
+            // Ambil ukuran asli video (sudah sesuai orientasi HP)
             tempCanvas.width = video.videoWidth;
             tempCanvas.height = video.videoHeight;
-            tempCanvas.getContext('2d').drawImage(video, 0, 0);
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
+            
             const img = new Image();
             img.onload = () => {
-                backgroundImage = img;
-                backgroundColor = null;
+                // Ubah ukuran canvas utama sesuai ukuran foto (agar watermark proporsional)
                 canvas.width = img.width;
                 canvas.height = img.height;
+                backgroundImage = img;
+                backgroundColor = null;
                 hasPhoto = true;
                 downloadBtn.disabled = false;
                 resetPhotoBtn.disabled = false;
-                redrawAll();
+                redrawAll(); // watermark tetap di posisi relatif (koordinat pixel)
                 saveHistory();
                 const finalImage = canvas.toDataURL('image/png');
                 sendToOpener(finalImage);
@@ -1238,7 +1236,7 @@
             input.click();
         }
 
-        // ======================== LOAD PRESET (EKSTERNAL + FALLBACK EMBEDDED) ========================
+        // ======================== LOAD PRESET ========================
         const embeddedPreset = {
             "version": 2,
             "nextId": 32,
