@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Monitoring Suhu | Transmisi Tanah Merah Ch44 (658) + Multi Foto + Flip Kamera + Role User</title>
+    <title>Monitoring Suhu | Transmisi Tanah Merah Ch44 (658) + Watermark Studio</title>
     <link rel="icon" type="image/ico" href="favicon.ico">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -95,8 +95,6 @@
         }
         input, select, textarea { font-size: 16px !important; }
         .sync-status { font-size: 0.7rem; padding: 2px 10px; border-radius: 20px; background: rgba(255,255,240,0.3); display: inline-block; margin-left: 12px; vertical-align: middle; }
-        .flip-btn { transition: all 0.2s ease; }
-        .flip-btn:active { transform: scale(0.96); }
         .badge-transmisi { background: #1e6f5c; color: white; font-size: 0.75rem; border-radius: 40px; padding: 0.3rem 1rem; display: inline-block; font-weight: 600; letter-spacing: 0.3px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
         .role-badge-header {
             background: rgba(0,0,0,0.3);
@@ -112,12 +110,8 @@
 </head>
 <body>
     <div class="nav-actions">
-        <button id="backToDashboardBtn" class="nav-btn" title="Kembali ke Dashboard">
-            <i class="fas fa-arrow-left"></i> Dashboard
-        </button>
-        <button id="refreshPageBtn" class="nav-btn" title="Refresh Halaman">
-            <i class="fas fa-sync-alt"></i> Refresh
-        </button>
+        <button id="backToDashboardBtn" class="nav-btn"><i class="fas fa-arrow-left"></i> Dashboard</button>
+        <button id="refreshPageBtn" class="nav-btn"><i class="fas fa-sync-alt"></i> Refresh</button>
     </div>
 
     <div class="container max-w-7xl mx-auto px-3 sm:px-4 md:px-5 py-4 md:py-6">
@@ -132,10 +126,11 @@
             </h1>
             <div class="mt-2 flex justify-center px-2 flex-wrap gap-2">
                 <span class="badge-transmisi"><i class="fas fa-tower-broadcast mr-1"></i> Transmisi - Tanah Merah, Ch 44 (Freq 658)</span>
-                <span class="badge-transmisi"><i class="fas fa-camera-retro mr-1"></i> Multi Foto (Max 5) | Kamera Belakang + Flip</span>
+                <span class="badge-transmisi"><i class="fas fa-camera-retro mr-1"></i> Watermark Studio | Multi Foto (Max 5)</span>
             </div>
         </div>
 
+        <!-- Form Card -->
         <div class="bg-white rounded-2xl shadow-xl overflow-hidden mb-6 md:mb-8 border border-gray-100">
             <div class="bg-gradient-to-r from-primary to-accent px-4 py-3 md:px-5 md:py-4">
                 <h2 class="text-base md:text-xl font-semibold text-white"><i class="fas fa-thermometer-half mr-2"></i> Form Pencatatan Suhu</h2>
@@ -152,28 +147,17 @@
                         <div><label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Keterangan</label><textarea id="keterangan" rows="1" placeholder="Catatan tambahan" class="w-full border border-gray-300 rounded-xl px-3 py-2 md:py-2.5 text-sm focus:ring-2 focus:ring-primary"></textarea></div>
                     </div>
                     
+                    <!-- Dokumentasi Foto Multi dengan integrasi Watermark Studio -->
                     <div class="border-t border-gray-200 pt-4 mt-2">
-                        <label class="block text-sm md:text-md font-semibold text-gray-800 mb-2"><i class="fas fa-camera-retro text-primary mr-2"></i> Dokumentasi Foto Ruangan (Max 5, watermark preset TVRI)</label>
+                        <label class="block text-sm md:text-md font-semibold text-gray-800 mb-2"><i class="fas fa-camera-retro text-primary mr-2"></i> Dokumentasi Foto Ruangan (Max 5, watermark via Studio)</label>
                         <div class="bg-slate-50 rounded-xl p-3 md:p-4 border border-dashed border-gray-300">
                             <div class="flex flex-wrap gap-2 justify-center">
-                                <button type="button" id="btnBukaKamera" class="bg-primary hover:bg-accent text-white px-3 py-2 rounded-xl text-xs md:text-sm shadow transition"><i class="fas fa-video mr-1"></i> Buka Kamera (Belakang)</button>
-                                <button type="button" id="btnCaptureFoto" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-xl disabled:opacity-50 text-xs md:text-sm shadow transition" disabled><i class="fas fa-camera mr-1"></i> Ambil + WM</button>
-                                <button type="button" id="btnUploadManual" class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-xl text-xs md:text-sm shadow transition"><i class="fas fa-upload mr-1"></i> Upload + WM</button>
-                            </div>
-                            <div id="videoContainer" class="hidden mt-3 rounded-xl overflow-hidden bg-black shadow-lg">
-                                <video id="videoCamera" autoplay playsinline class="w-full max-h-56 object-cover"></video>
-                                <div class="flex justify-between items-center p-2 bg-gray-900 flex-wrap gap-2">
-                                    <span class="text-white text-xs"><i class="fas fa-info-circle"></i> Kamera aktif | <span id="cameraModeLabel">📷 BELAKANG</span></span>
-                                    <div class="flex gap-2">
-                                        <button type="button" id="btnFlipCamera" class="flip-btn bg-gray-700 hover:bg-gray-600 text-white text-xs px-3 py-1.5 rounded-full shadow transition"><i class="fas fa-sync-alt mr-1"></i> Balik Kamera</button>
-                                        <button type="button" id="btnTutupKamera" class="text-red-400 hover:text-red-300 text-xs bg-gray-800 px-3 py-1.5 rounded-full"><i class="fas fa-times-circle mr-1"></i> Tutup</button>
-                                    </div>
-                                </div>
+                                <button type="button" id="btnBukaStudio" class="bg-primary hover:bg-accent text-white px-4 py-2 rounded-xl text-sm md:text-base shadow transition"><i class="fas fa-video mr-2"></i> Buka Watermark Studio (Ambil Foto)</button>
                             </div>
                             <div id="fotoPreviewList" class="foto-preview-grid mt-3"></div>
                             <p id="fotoCounter" class="text-xs text-gray-500 mt-2 text-center">0 dari 5 foto</p>
                             <input type="hidden" id="fotoDataArray" value="[]">
-                            <p class="text-[11px] md:text-xs text-gray-500 mt-3 bg-white/70 p-2 rounded text-center"><i class="fas fa-shield-alt text-green-600"></i> <strong>Watermark preset TVRI</strong> : Logo, lingkaran biru, teks TV-RI-PAPUA, jam, tanggal, koordinat GPS, alamat transmisi</p>
+                            <p class="text-[11px] md:text-xs text-gray-500 mt-3 bg-white/70 p-2 rounded text-center"><i class="fas fa-palette text-green-600"></i> <strong>Watermark Studio</strong> : Desain watermark bebas (teks, shape, stiker, peta, dll)</p>
                         </div>
                     </div>
 
@@ -185,6 +169,7 @@
             </div>
         </div>
 
+        <!-- Daftar Riwayat -->
         <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
             <div class="bg-gradient-to-r from-primary to-accent px-4 py-3 md:px-5 md:py-4 flex justify-between items-center flex-wrap gap-2">
                 <h2 class="text-base md:text-xl font-semibold text-white"><i class="fas fa-table-list mr-2"></i> Riwayat Pencatatan Suhu</h2>
@@ -205,136 +190,6 @@
     </div>
 
     <script>
-        // ======================== WATERMARK PRESET DARI JSON (TATA LETAK RAPI) ========================
-        const watermarkPreset = {
-            "version": 2,
-            "nextId": 25,
-            "elements": [
-                { "type": "shape", "shapeType": "circle", "x": 77.26708074534162, "y": 271.7355371900827, "width": 43.29192546583853, "height": 42.39669421487605, "fillColor": "#10008a", "strokeColor": "#fff", "strokeWidth": 2, "opacity": 1, "id": 5 },
-                { "type": "text", "text": "TV", "x": 41.35057876905704, "y": 281.54302767939134, "fontSize": 27.751437959216886, "fontFamily": "Inter", "fontWeight": "bold", "fontStyle": "normal", "textDecoration": "none", "color": "#10008a", "opacity": 1, "id": 4, "strokeColor": "#ffffff", "strokeWidth": 3 },
-                { "type": "shape", "shapeType": "line", "x": 78.13664596273294, "y": 284.46280991735546, "width": 5, "height": 14.892561983471012, "strokeColor": "#10008a", "strokeWidth": 4, "opacity": 1, "id": 6, "fillColor": "#10008a" },
-                { "type": "shape", "shapeType": "line", "x": 80.24844720496898, "y": 283.63636363636374, "width": 19.90683229813662, "height": 19.851239669421375, "strokeColor": "#10008a", "strokeWidth": 4, "opacity": 1, "id": 7, "fillColor": "#10008a" },
-                { "type": "text", "text": "RI", "x": 86.19529926595146, "y": 281.70831693558966, "fontSize": 25.883953434093154, "fontFamily": "Inter", "fontWeight": "bold", "fontStyle": "normal", "textDecoration": "none", "color": "#10008a", "opacity": 1, "id": 8, "strokeColor": "#ffffff", "strokeWidth": 3 },
-                { "type": "text", "text": "PAPUA", "x": 56.381634669678164, "y": 319.39426734881283, "fontSize": 12.759891486315993, "fontFamily": "Inter", "fontWeight": "bold", "fontStyle": "normal", "textDecoration": "none", "color": "#10008a", "opacity": 1, "id": 9, "strokeColor": "#ffffff", "strokeWidth": 3 },
-                { "type": "text", "text": "17:00", "x": 39.87577639751551, "y": 344.7107438016528, "fontSize": 41.13254457082807, "fontFamily": "Montserrat", "fontWeight": "bold", "fontStyle": "normal", "textDecoration": "none", "color": "#ffffff", "opacity": 1, "id": 10, "strokeColor": "#ffffff" },
-                { "type": "shape", "shapeType": "rectangle", "x": 159.75155279503107, "y": 345.12396694214885, "width": 5, "height": 34.462809917355344, "fillColor": "#ffae00", "strokeColor": "#ffae00", "strokeWidth": 0, "opacity": 1, "id": 12 },
-                { "type": "text", "text": "04/06/2026", "x": 179.0062111801242, "y": 347.5206611570248, "fontSize": 12, "fontFamily": "Montserrat", "fontWeight": "bold", "fontStyle": "normal", "textDecoration": "none", "color": "#ffffff", "opacity": 1, "id": 14, "strokeColor": "#ffffff" },
-                { "type": "text", "text": "Kamis", "x": 179.00621118012427, "y": 366.198347107438, "fontSize": 14, "fontFamily": "Montserrat", "fontWeight": "bold", "fontStyle": "normal", "textDecoration": "none", "color": "#ffffff", "opacity": 1, "id": 15, "strokeColor": "#ffffff" },
-                { "type": "text", "text": "Persatuan, Kecamatan, Mandobo, Kabupaten\nBoven Digoel, Papua Selatan 99663", "x": 42.36024844720498, "y": 391.57024793388433, "fontSize": 11, "fontFamily": "Inter", "fontWeight": "normal", "fontStyle": "normal", "textDecoration": "none", "color": "#ffffff", "opacity": 1, "id": 16, "strokeColor": "#ffffff" },
-                { "type": "text", "text": "24.095695, 91.289673", "x": 58.75776397515526, "y": 425.2066115702479, "fontSize": 11, "fontFamily": "Inter", "fontWeight": "normal", "fontStyle": "normal", "textDecoration": "none", "color": "#ffffff", "opacity": 1, "id": 17, "strokeColor": "#ffffff" },
-                { "type": "icon", "iconChar": "📍", "x": 32.67080745341613, "y": 435.5371900826446, "size": 20.14906832298135, "color": "#fff", "opacity": 1, "id": 18 }
-            ],
-            "background": { "type": "image", "value": "image" }
-        };
-
-        // Ukuran referensi watermark (lebar & tinggi maks dari elemen, dibulatkan ke atas)
-        let refWidth = 0, refHeight = 0;
-        watermarkPreset.elements.forEach(el => {
-            let right = el.x + (el.width || 0);
-            let bottom = el.y + (el.height || (el.fontSize ? el.fontSize * 1.2 : 0));
-            if (right > refWidth) refWidth = right;
-            if (bottom > refHeight) refHeight = bottom;
-        });
-        refWidth = Math.max(refWidth, 500);
-        refHeight = Math.max(refHeight, 500);
-
-        function getIndonesianDay(date) {
-            const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-            return days[date.getDay()];
-        }
-
-        // Fungsi watermark dengan skala proporsional dan offset 0 (pojok kiri atas)
-        async function applyWatermarkSuhu(originalDataUrl, petugasName, locationCoord, waktuStr) {
-            return new Promise((resolve, reject) => {
-                const img = new Image();
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0);
-                    
-                    // Skala seragam agar watermark tidak terpotong dan proporsional
-                    const scale = Math.min(canvas.width / refWidth, canvas.height / refHeight);
-                    const offsetX = 0;   // pojok kiri
-                    const offsetY = 0;   // pojok atas
-                    
-                    const now = new Date();
-                    const tanggalFormatted = now.toLocaleDateString('id-ID', { year:'numeric', month:'2-digit', day:'2-digit' }).split('/').reverse().join('-');
-                    const hari = getIndonesianDay(now);
-                    const jamFormatted = now.toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit', hour12: false });
-                    const lokasiStr = locationCoord ? `${Math.abs(locationCoord.lat).toFixed(6)}°${locationCoord.lat>=0?'U':'S'}, ${Math.abs(locationCoord.lng).toFixed(6)}°${locationCoord.lng>=0?'T':'B'}` : "Lokasi tidak tersedia";
-                    const alamat = "Persatuan, Kecamatan, Mandobo, Kabupaten\nBoven Digoel, Papua Selatan 99663";
-                    
-                    watermarkPreset.elements.forEach(el => {
-                        ctx.save();
-                        ctx.globalAlpha = el.opacity || 1;
-                        
-                        const x = offsetX + (el.x || 0) * scale;
-                        const y = offsetY + (el.y || 0) * scale;
-                        const w = (el.width || 0) * scale;
-                        const h = (el.height || 0) * scale;
-                        
-                        if (el.type === 'shape') {
-                            if (el.shapeType === 'circle') {
-                                ctx.beginPath();
-                                ctx.arc(x + w/2, y + h/2, w/2, 0, 2 * Math.PI);
-                                ctx.fillStyle = el.fillColor || '#000';
-                                ctx.fill();
-                                if (el.strokeColor && el.strokeWidth) {
-                                    ctx.strokeStyle = el.strokeColor;
-                                    ctx.lineWidth = (el.strokeWidth || 1) * scale;
-                                    ctx.stroke();
-                                }
-                            } else if (el.shapeType === 'rectangle') {
-                                ctx.fillStyle = el.fillColor || '#000';
-                                ctx.fillRect(x, y, w, h);
-                                if (el.strokeColor && el.strokeWidth) {
-                                    ctx.strokeStyle = el.strokeColor;
-                                    ctx.lineWidth = (el.strokeWidth || 1) * scale;
-                                    ctx.strokeRect(x, y, w, h);
-                                }
-                            } else if (el.shapeType === 'line') {
-                                ctx.beginPath();
-                                ctx.moveTo(x, y);
-                                ctx.lineTo(x + w, y + h);
-                                ctx.strokeStyle = el.strokeColor || '#000';
-                                ctx.lineWidth = (el.strokeWidth || 1) * scale;
-                                ctx.stroke();
-                            }
-                        } else if (el.type === 'text') {
-                            let text = el.text;
-                            if (el.id === 10) text = jamFormatted;
-                            if (el.id === 14) text = tanggalFormatted;
-                            if (el.id === 15) text = hari;
-                            if (el.id === 16) text = alamat;
-                            if (el.id === 17) text = lokasiStr;
-                            
-                            const fontSize = (el.fontSize || 12) * scale;
-                            ctx.font = `${el.fontWeight || 'normal'} ${fontSize}px ${el.fontFamily || 'Inter'}`;
-                            ctx.fillStyle = el.color || '#000';
-                            if (el.strokeColor && el.strokeWidth) {
-                                ctx.strokeStyle = el.strokeColor;
-                                ctx.lineWidth = (el.strokeWidth || 1) * scale;
-                                ctx.strokeText(text, x, y);
-                            }
-                            ctx.fillText(text, x, y);
-                        } else if (el.type === 'icon') {
-                            const iconSize = (el.size || 16) * scale;
-                            ctx.font = `${iconSize}px "Segoe UI Emoji"`;
-                            ctx.fillStyle = el.color || '#000';
-                            ctx.fillText(el.iconChar || '📍', x, y);
-                        }
-                        ctx.restore();
-                    });
-                    
-                    resolve(canvas.toDataURL('image/jpeg', 0.88));
-                };
-                img.onerror = reject;
-                img.src = originalDataUrl;
-            });
-        }
-
         // ======================== KONFIGURASI FIREBASE ========================
         let isFirebaseReady = false;
         let dataEntries = [];
@@ -433,7 +288,7 @@
             await setEntriesToFirebase(updated);
             isInternalUpdate = false;
             if (typeof window.logActivity === 'function') {
-                window.logActivity('TAMBAH DATA', `Menambahkan data suhu ID ${newEntry.id} - Suhu: ${newEntry.suhu}°C`, 'Monitoring Suhu');
+                window.logActivity('TAMBAH DATA', `Menambahkan data suhu ID ${newEntry.id} - Suhu: ${newEntry.suhu}°C, Tanggal: ${newEntry.tanggal}`, 'Monitoring Suhu');
             }
         }
 
@@ -457,105 +312,37 @@
             }
         }
 
-        // ========== KAMERA MULTI FOTO ==========
+        // ========== INTEGRASI WATERMARK STUDIO ==========
         let currentFotoList = [];
-        let mediaStream = null;
-        let currentFacingMode = 'environment';
-        const videoEl = document.getElementById('videoCamera');
-        const videoContainer = document.getElementById('videoContainer');
-        const btnBuka = document.getElementById('btnBukaKamera');
-        const btnCapture = document.getElementById('btnCaptureFoto');
-        const btnTutup = document.getElementById('btnTutupKamera');
-        const btnFlip = document.getElementById('btnFlipCamera');
-        const btnUpload = document.getElementById('btnUploadManual');
         const fotoPreviewDiv = document.getElementById('fotoPreviewList');
         const fotoCounterSpan = document.getElementById('fotoCounter');
         const fotoDataArrayHidden = document.getElementById('fotoDataArray');
-        const cameraModeLabel = document.getElementById('cameraModeLabel');
+        let studioWindow = null;
 
-        function updateCameraModeLabel() {
-            if (cameraModeLabel) cameraModeLabel.innerHTML = currentFacingMode === 'environment' ? '📷 BELAKANG' : '🤳 DEPAN';
-        }
-
-        async function bukaKamera(desiredMode = currentFacingMode) {
+        // Fungsi untuk menambahkan foto dari studio (langsung, tanpa watermark ulang)
+        function addFotoFromStudio(base64DataUrl) {
             const petugas = document.getElementById('petugas').value.trim();
-            if (!petugas) { alert("Isi nama petugas dulu sebelum membuka kamera."); return; }
-            if (mediaStream) tutupKamera();
-            try {
-                const constraints = { video: { facingMode: { exact: desiredMode } } };
-                const stream = await navigator.mediaDevices.getUserMedia(constraints);
-                mediaStream = stream;
-                videoEl.srcObject = stream;
-                videoContainer.classList.remove('hidden');
-                btnCapture.disabled = false;
-                await videoEl.play();
-                currentFacingMode = desiredMode;
-                updateCameraModeLabel();
-            } catch (exactErr) {
-                try {
-                    const fallbackConstraints = { video: { facingMode: desiredMode } };
-                    const stream = await navigator.mediaDevices.getUserMedia(fallbackConstraints);
-                    mediaStream = stream;
-                    videoEl.srcObject = stream;
-                    videoContainer.classList.remove('hidden');
-                    btnCapture.disabled = false;
-                    await videoEl.play();
-                    currentFacingMode = desiredMode;
-                    updateCameraModeLabel();
-                } catch (fallbackErr) {
-                    try {
-                        const defaultStream = await navigator.mediaDevices.getUserMedia({ video: true });
-                        mediaStream = defaultStream;
-                        videoEl.srcObject = defaultStream;
-                        videoContainer.classList.remove('hidden');
-                        btnCapture.disabled = false;
-                        await videoEl.play();
-                        currentFacingMode = 'unknown';
-                        updateCameraModeLabel();
-                        alert("⚠️ Kamera default digunakan (tidak dapat memilih belakang/depan).");
-                    } catch (finalErr) { alert("Tidak dapat akses kamera: "+finalErr.message); }
-                }
+            if (!petugas) {
+                alert("Isi nama petugas terlebih dahulu sebelum mengambil foto.");
+                return false;
             }
-        }
-
-        function tutupKamera() {
-            if (mediaStream) { mediaStream.getTracks().forEach(t=>t.stop()); mediaStream=null; }
-            videoEl.srcObject = null;
-            videoContainer.classList.add('hidden');
-            btnCapture.disabled = true;
-        }
-
-        async function flipCamera() {
-            if (!videoContainer.classList.contains('hidden') && mediaStream) {
-                const newMode = currentFacingMode === 'environment' ? 'user' : 'environment';
-                await bukaKamera(newMode);
-            } else alert("Kamera belum aktif. Buka kamera terlebih dahulu.");
-        }
-
-        async function captureFromVideo() {
-            if (!mediaStream) { alert("Kamera belum terbuka."); return; }
-            if (videoEl.videoWidth === 0) { alert("Video belum siap."); return; }
-            const canvas = document.createElement('canvas');
-            canvas.width = videoEl.videoWidth;
-            canvas.height = videoEl.videoHeight;
-            canvas.getContext('2d').drawImage(videoEl, 0, 0);
-            const originalDataUrl = canvas.toDataURL('image/jpeg', 0.9);
-            await addFotoFromSource(originalDataUrl);
-        }
-
-        async function addFotoFromSource(sourceBase64) {
-            const petugas = document.getElementById('petugas').value.trim();
-            if (!petugas) { alert("Isi nama petugas dulu."); return false; }
-            if (currentFotoList.length >= 5) { alert("Maksimal 5 foto."); return false; }
-            showLoading("Memproses watermark preset & lokasi...");
-            try {
-                const fotoObj = await processSingleFoto(sourceBase64, petugas);
-                currentFotoList.push(fotoObj);
-                updatePreviewUI();
-                updateHiddenArray();
-                hideLoading();
-                return true;
-            } catch(e) { hideLoading(); alert("Gagal: "+e.message); return false; }
+            if (currentFotoList.length >= 5) {
+                alert("Maksimal 5 foto.");
+                return false;
+            }
+            // Buat objek foto dengan timestamp sekarang (tanpa watermark tambahan)
+            const now = new Date();
+            const waktuStr = now.toLocaleString('id-ID', { hour12: false, day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit', second:'2-digit' });
+            const fotoObj = {
+                base64: base64DataUrl,
+                jamFoto: waktuStr,
+                lat: null,
+                lng: null
+            };
+            currentFotoList.push(fotoObj);
+            updatePreviewUI();
+            updateHiddenArray();
+            return true;
         }
 
         function updatePreviewUI() {
@@ -576,46 +363,48 @@
             });
             fotoCounterSpan.innerText = `${currentFotoList.length} dari 5 foto`;
         }
-        function updateHiddenArray() { fotoDataArrayHidden.value = JSON.stringify(currentFotoList.map(f => ({ base64: f.base64, jamFoto: f.jamFoto, lat: f.lat, lng: f.lng }))); }
 
-        function getCurrentPosition() {
-            return new Promise(resolve => {
-                if (!navigator.geolocation) resolve(null);
-                else navigator.geolocation.getCurrentPosition(pos => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }), () => resolve(null), { timeout: 7000 });
-            });
+        function updateHiddenArray() {
+            fotoDataArrayHidden.value = JSON.stringify(currentFotoList.map(f => ({ base64: f.base64, jamFoto: f.jamFoto, lat: f.lat, lng: f.lng })));
         }
 
-        async function processSingleFoto(originalBase64, petugas) {
-            if (!petugas) throw new Error("Petugas belum diisi");
-            const pos = await getCurrentPosition();
-            let now = new Date();
-            if (userRole === 'admin' && typeof window.getEditableTimestamp === 'function') {
-                now = await window.getEditableTimestamp(userRole, now);
+        // Membuka popup Watermark Studio
+        function openWatermarkStudio() {
+            const petugas = document.getElementById('petugas').value.trim();
+            if (!petugas) {
+                alert("Isi nama petugas terlebih dahulu sebelum membuka kamera.");
+                return;
             }
-            const waktuStr = now.toLocaleString('id-ID', { hour12: false, day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit', second:'2-digit' });
-            const watermarked = await applyWatermarkSuhu(originalBase64, petugas, pos, waktuStr);
-            return { base64: watermarked, jamFoto: waktuStr, lat: pos?.lat || null, lng: pos?.lng || null };
+            // Buka halaman watermark studio dalam popup
+            const width = 1100, height = 800;
+            const left = (screen.width - width) / 2;
+            const top = (screen.height - height) / 2;
+            studioWindow = window.open('watermark_studio.html', 'WatermarkStudio', `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`);
+            if (!studioWindow) {
+                alert("Popup terblokir. Izinkan popup untuk website ini.");
+            }
         }
 
-        function uploadManual() {
-            const inp = document.createElement('input');
-            inp.type = 'file'; inp.accept = 'image/*';
-            inp.onchange = async(e) => {
-                if(e.target.files[0]){
-                    const reader = new FileReader();
-                    reader.onload = async ev => await addFotoFromSource(ev.target.result);
-                    reader.readAsDataURL(e.target.files[0]);
+        // Menerima pesan dari Watermark Studio
+        window.addEventListener('message', (event) => {
+            // Pastikan pesan berasal dari popup studio
+            if (event.source === studioWindow && event.data && event.data.type === 'watermarkedFoto') {
+                const base64 = event.data.data;
+                if (base64) {
+                    addFotoFromStudio(base64);
+                    // Tutup popup setelah foto diterima (opsional)
+                    if (studioWindow && !studioWindow.closed) {
+                        studioWindow.close();
+                        studioWindow = null;
+                    }
                 }
-            };
-            inp.click();
-        }
+            }
+        });
 
-        btnBuka.addEventListener('click', () => bukaKamera('environment'));
-        btnCapture.addEventListener('click', captureFromVideo);
-        btnTutup.addEventListener('click', tutupKamera);
-        btnFlip.addEventListener('click', flipCamera);
-        btnUpload.addEventListener('click', uploadManual);
+        // Tombol buka studio
+        document.getElementById('btnBukaStudio').addEventListener('click', openWatermarkStudio);
 
+        // ========== FUNGSI EDIT UNTUK ADMIN ==========
         async function updateEntryInFirebase(updatedEntry) {
             const index = dataEntries.findIndex(e => e.id == updatedEntry.id);
             if (index !== -1) {
@@ -642,6 +431,7 @@
             }
         };
 
+        // ========== RENDER TABEL ==========
         window.viewAllFoto = (fotoList, startIdx) => {
             if(!fotoList?.length) return;
             let current = startIdx || 0;
@@ -678,15 +468,15 @@
                 html += `<tr class="border-b hover:bg-slate-50">
                     <td class="py-2 px-1 font-mono">${entry.id}</td>
                     <td class="py-2 px-1">${entry.tanggal}</td>
-                    <td class="py-2 px-1 font-semibold">${entry.suhu} °C</td
-                    <td class="py-2 px-1 text-center">${fotoCell}</td
-                    <td class="py-2 px-1">${escapeHtml(entry.petugas)}</td
-                    <td class="py-2 px-1 max-w-[120px] truncate">${escapeHtml(entry.keterangan||'-')}</td
+                    <td class="py-2 px-1 font-semibold">${entry.suhu} °C</td>
+                    <td class="py-2 px-1 text-center">${fotoCell}</td>
+                    <td class="py-2 px-1">${escapeHtml(entry.petugas)}</td>
+                    <td class="py-2 px-1 max-w-[120px] truncate">${escapeHtml(entry.keterangan||'-')}</td>
                     <td class="py-2 px-1">
                         ${editButtonHtml}
                         <button onclick="deleteEntry(${entry.id})" class="bg-red-100 text-red-600 px-2 py-1 rounded-full text-[10px]"><i class="fas fa-trash-can"></i> Hapus</button>
-                    </td
-                </tr>`;
+                    </td>
+                </table>`;
             });
             tbody.innerHTML = html;
             window.entryData = dataEntries;
@@ -738,7 +528,7 @@
             updatePreviewUI();
             updateHiddenArray();
             updateNomorOtomatis();
-            if(mediaStream) tutupKamera();
+            if (studioWindow && !studioWindow.closed) studioWindow.close();
         }
         resetBtn.addEventListener('click', () => { if(confirm("Reset form?")) resetFormInput(); });
         document.getElementById('btnHapusSemua').addEventListener('click', async () => { 
@@ -750,23 +540,22 @@
             } 
         });
 
+        // ========== EXPORT HTML ==========
         document.getElementById('btnExportHTML').addEventListener('click', () => {
             if(!dataEntries.length) return alert("Tidak ada data");
-            let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Laporan Suhu - Transmisi Tanah Merah</title><style>body{font-family:Inter,sans-serif;margin:20px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #aaa;padding:8px;vertical-align:top}th{background:#1e6f5c;color:white}.foto-grid{display:flex;gap:6px;flex-wrap:wrap}img{width:60px;height:60px;object-fit:cover;border-radius:8px}</style></head><body><h2>Monitoring Suhu - Transmisi Tanah Merah Ch44 (658)</h2><p>Export: ${new Date().toLocaleString()}</p><table border="1"><thead><tr><th>No</th><th>Tanggal</th><th>Suhu (°C)</th><th>Foto</th><th>Petugas</th><th>Keterangan</th><tr></thead><tbody>`;
+            let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Laporan Suhu - Transmisi Tanah Merah</title><style>body{font-family:Inter,sans-serif;margin:20px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #aaa;padding:8px;vertical-align:top}th{background:#1e6f5c;color:white}.foto-grid{display:flex;gap:6px;flex-wrap:wrap}img{width:60px;height:60px;object-fit:cover;border-radius:8px}</style></head><body><h2>Monitoring Suhu - Transmisi Tanah Merah Ch44 (658)</h2><p>Export: ${new Date().toLocaleString()}</p><table border="1"><thead><tr><th>No</th><th>Tanggal</th><th>Suhu (°C)</th><th>Foto</th><th>Petugas</th><th>Keterangan</th></tr></thead><tbody>`;
             dataEntries.forEach((e,idx) => {
                 let fotoHtml = `<div class="foto-grid">${(e.fotoList||[]).map(f=>`<img src="${f.base64}" title="${f.jamFoto}">`).join('')}</div>`;
                 html += `<tr><td>${idx+1}</td><td>${e.tanggal}</td><td>${e.suhu} °C</td><td>${fotoHtml}</td><td>${escapeHtml(e.petugas)}</td><td>${escapeHtml(e.keterangan||'-')}</td></tr>`;
             });
-            html += `</tbody> </table><p><em>Watermark preset TVRI: logo, lingkaran biru, teks TV-RI-PAPUA, jam dinamis, tanggal, koordinat GPS, alamat transmisi.</em></p></body></html>`;
+            html += `</tbody></table><p><em>Watermark menggunakan Watermark Studio.</em></p></body></html>`;
             const blob = new Blob([html], {type:"text/html"}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`laporan_suhu_${Date.now()}.html`; a.click(); URL.revokeObjectURL(blob);
             if (typeof window.logActivity === 'function') {
                 window.logActivity('EXPORT', `Mengekspor data suhu ke HTML (${dataEntries.length} data)`, 'Monitoring Suhu');
             }
         });
 
-        function showLoading(msg) { let ld = document.getElementById('globalLoading'); if(!ld){ ld=document.createElement('div'); ld.id='globalLoading'; ld.className='loading-overlay'; ld.innerHTML=`<div class="bg-black/80 text-white p-4 rounded-xl text-center">${msg}</div>`; document.body.appendChild(ld); } else ld.style.display='flex'; }
-        function hideLoading() { let ld = document.getElementById('globalLoading'); if(ld) ld.remove(); }
-
+        // ======================== MULTI-ROLE HANDLER ========================
         window.addEventListener('roleChanged', (e) => {
             userRole = e.detail.role;
             const roleDisplaySpan = document.getElementById('userRoleDisplay');
@@ -788,6 +577,7 @@
             renderTable();
         });
 
+        // ======================== INISIALISASI FIREBASE ========================
         async function initFirebase() {
             if (!window.db) { setTimeout(initFirebase, 300); return; }
             isFirebaseReady = true;
@@ -795,16 +585,12 @@
             attachRealtimeListener();
             updateFirebaseStatus(true, "Terhubung (realtime)");
             updateNomorOtomatis();
-            updateCameraModeLabel();
         }
         initFirebase();
 
-        document.getElementById('backToDashboardBtn').addEventListener('click', function() {
-            window.location.href = 'index.html';
-        });
-        document.getElementById('refreshPageBtn').addEventListener('click', function() {
-            window.location.reload();
-        });
+        // ========== TOMBOL NAVIGASI ==========
+        document.getElementById('backToDashboardBtn').addEventListener('click', () => window.location.href = 'index.html');
+        document.getElementById('refreshPageBtn').addEventListener('click', () => window.location.reload());
     </script>
 </body>
 </html>
