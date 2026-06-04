@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Watermark Studio - Responsif & Orientasi Otomatis</title>
+    <title>Watermark Studio - Responsif + Kamera Depan/Belakang</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
@@ -228,8 +228,8 @@
 <div class="container">
     <div class="top-bar">
         <div>
-            <h1>✍️ Watermark Studio Pro - Responsif</h1>
-            <div style="font-size:0.7rem;">Canvas mengikuti ukuran foto | Watermark posisi relatif</div>
+            <h1>✍️ Watermark Studio Pro</h1>
+            <div style="font-size:0.7rem;">Canvas mengikuti ukuran foto | Watermark posisi relatif | Kamera depan/belakang</div>
         </div>
         <div class="toolbar">
             <button id="refreshStampBtn" class="btn btn-warning">🔄 Refresh Stamp</button>
@@ -335,7 +335,7 @@
             <div id="propContent">Klik watermark untuk edit</div>
         </div>
     </div>
-    <footer>📱 Canvas mengikuti ukuran foto | Watermark posisi relatif (proporsional) | Orientasi otomatis</footer>
+    <footer>📱 Canvas mengikuti ukuran foto | Watermark posisi relatif | Kamera HP depan/belakang berfungsi</footer>
 </div>
 
 <div id="mapModal" class="modal">
@@ -557,8 +557,8 @@
         if(updated){ redrawAll(); saveHistory(); updateUI(); }
         isRefreshing=false;
     }
-    function addDateStamp(){ addElement({ type:'text', text:getDateStr(), xRel:0.03, yRel:0.85, fontSizeRel:0.03, fontFamily:'Inter', fontWeight:'normal', fontStyle:'normal', textDecoration:'none', color:'#ffffff', opacity:0.8, stampType:'date', isLive:true }); }
-    function addTimeStamp(){ addElement({ type:'text', text:getTimeStr(), xRel:0.03, yRel:0.92, fontSizeRel:0.05, fontFamily:'Montserrat', fontWeight:'bold', fontStyle:'normal', textDecoration:'none', color:'#ffffff', opacity:0.9, stampType:'time', isLive:true }); }
+    function addDateStamp(){ addElement({ type:'text', text:getDateStr(), xRel:0.03, yRel:0.85, fontSizeRel:0.03, fontFamily:'Inter', color:'#ffffff', stampType:'date', isLive:true }); }
+    function addTimeStamp(){ addElement({ type:'text', text:getTimeStr(), xRel:0.03, yRel:0.92, fontSizeRel:0.05, fontFamily:'Montserrat', fontWeight:'bold', color:'#ffffff', stampType:'time', isLive:true }); }
     function addDayStamp(){ addElement({ type:'text', text:getDayStr(), xRel:0.03, yRel:0.78, fontSizeRel:0.03, fontFamily:'Montserrat', fontWeight:'bold', color:'#ffffff', stampType:'day', isLive:true }); }
     async function addCoordinateStamp(){ const coord=await getCoordinates(); addElement({ type:'text', text:coord, xRel:0.03, yRel:0.96, fontSizeRel:0.025, fontFamily:'Inter', color:'#ffffff', stampType:'coordinate', isLive:true }); }
 
