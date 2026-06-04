@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Monitoring Suhu | Kamera + Watermark Default + Admin Edit (Ganti Total)</title>
+    <title>Monitoring Suhu | Edit Lengkap Admin + Watermark Ganti Total</title>
     <link rel="icon" type="image/ico" href="favicon.ico">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -42,11 +42,11 @@
         .sync-status { font-size: 0.7rem; padding: 2px 10px; border-radius: 20px; background: rgba(255,255,240,0.3); display: inline-block; margin-left: 12px; }
         
         /* Modal Editor Watermark */
-        .modal-editor { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 3000; overflow: auto; padding: 20px; }
-        .modal-editor-content { max-width: 1100px; margin: 0 auto; background: #1e293b; border-radius: 28px; padding: 24px; color: white; }
+        .modal-editor, .modal-data-editor { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 3000; overflow: auto; padding: 20px; }
+        .modal-editor-content, .modal-data-content { max-width: 1100px; margin: 0 auto; background: #1e293b; border-radius: 28px; padding: 24px; color: white; }
         .editor-canvas-container { background: #000; border-radius: 20px; overflow: auto; text-align: center; max-height: 55vh; }
         .editor-canvas { width: 100%; height: auto; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
-        .watermark-fields { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 20px; background: #0f172a; padding: 16px; border-radius: 24px; }
+        .watermark-fields, .data-fields { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 20px; background: #0f172a; padding: 16px; border-radius: 24px; }
         .field-group { flex: 1; min-width: 150px; }
         .field-group label { font-size: 0.7rem; text-transform: uppercase; color: #94a3b8; display: block; margin-bottom: 4px; letter-spacing: 0.5px; }
         .field-group input, .field-group textarea { width: 100%; background: #334155; border: none; border-radius: 14px; padding: 10px 14px; color: white; font-size: 0.85rem; font-family: monospace; }
@@ -75,7 +75,7 @@
         </h1>
         <div class="mt-2 flex justify-center px-2 flex-wrap gap-2">
             <span class="badge-transmisi"><i class="fas fa-tower-broadcast mr-1"></i> Transmisi - Tanah Merah, Ch 44 (Freq 658)</span>
-            <span class="badge-transmisi"><i class="fas fa-camera-retro mr-1"></i> Kamera Langsung + Watermark Default + Admin Edit (Ganti Total)</span>
+            <span class="badge-transmisi"><i class="fas fa-camera-retro mr-1"></i> Kamera Langsung + Watermark Default + Admin Edit Lengkap</span>
         </div>
     </div>
 
@@ -134,7 +134,7 @@
             </div>
         </div>
         <div class="table-wrapper p-2 md:p-4 overflow-x-auto">
-            <table class="min-w-[900px] md:min-w-full bg-white border border-gray-200 rounded-xl text-xs md:text-sm">
+            <table class="min-w-[950px] md:min-w-full bg-white border border-gray-200 rounded-xl text-xs md:text-sm">
                 <thead class="bg-gray-100">
                     <tr><th class="py-2 px-1">No</th><th>Tgl</th><th>Suhu</th><th>Foto</th><th>Petugas</th><th>Keterangan</th><th>Aksi</th></tr>
                 </thead>
@@ -144,7 +144,7 @@
     </div>
 </div>
 
-<!-- Modal Editor Watermark untuk Admin (mengganti watermark dari foto asli tanpa watermark) -->
+<!-- Modal Editor Watermark untuk Admin (Ganti Total Watermark) -->
 <div id="watermarkEditorModal" class="modal-editor">
     <div class="modal-editor-content">
         <div class="flex justify-between items-center mb-4">
@@ -169,6 +169,27 @@
     </div>
 </div>
 
+<!-- Modal Edit Data Lengkap (Admin) -->
+<div id="dataEditorModal" class="modal-data-editor">
+    <div class="modal-data-content">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-2xl font-bold"><i class="fas fa-edit mr-2"></i> Edit Data Pencatatan (Admin)</h3>
+            <button id="closeDataModal" class="text-white bg-red-500 rounded-full w-10 h-10 text-xl font-bold hover:bg-red-600">&times;</button>
+        </div>
+        <div class="data-fields">
+            <div class="field-group"><label><i class="fas fa-hashtag mr-1"></i> No (ID)</label><input type="number" id="editId" placeholder="Nomor unik"></div>
+            <div class="field-group"><label><i class="far fa-calendar-alt mr-1"></i> Tanggal (YYYY-MM-DD)</label><input type="date" id="editTanggal"></div>
+            <div class="field-group"><label><i class="fas fa-thermometer-half mr-1"></i> Suhu (°C)</label><input type="number" step="0.1" id="editSuhu" placeholder="Suhu"></div>
+            <div class="field-group"><label><i class="fas fa-user mr-1"></i> Petugas</label><input type="text" id="editPetugas" placeholder="Nama petugas"></div>
+            <div class="field-group"><label><i class="fas fa-info-circle mr-1"></i> Keterangan</label><textarea id="editKeterangan" rows="2" placeholder="Keterangan"></textarea></div>
+        </div>
+        <div class="flex gap-4 mt-5 justify-end">
+            <button id="cancelDataBtn" class="btn-cancel-edit text-white px-6 py-2 rounded-xl"><i class="fas fa-times mr-1"></i> Batal</button>
+            <button id="saveDataBtn" class="btn-save-edit text-white px-6 py-2 rounded-xl"><i class="fas fa-save mr-1"></i> Simpan Perubahan Data</button>
+        </div>
+    </div>
+</div>
+
 <script>
     // ======================== FIREBASE & GLOBAL ========================
     let isFirebaseReady = false;
@@ -178,7 +199,7 @@
     const DB_PATH = 'monitoring/suhu/entries';
     let userRole = 'guest';
     
-    // ======================== WATERMARK DEFAULT ELEMENTS (Preset Studio dengan font & ukuran persis) ========================
+    // ======================== WATERMARK DEFAULT ELEMENTS (Preset Studio) ========================
     const defaultWatermarkElements = [
         { "type": "shape", "shapeType": "circle", "x": 165.735, "y": 691.885, "width": 89.729, "height": 97.845, "fillColor": "#10008a", "strokeColor": "#ffffff", "strokeWidth": 2, "opacity": 1 },
         { "type": "text", "text": "TV", "x": 83.381, "y": 717.095, "fontSize": 61.424, "fontFamily": "Inter", "fontWeight": "bold", "color": "#10008a", "strokeColor": "#ffffff", "strokeWidth": 3 },
@@ -194,7 +215,6 @@
         { "type": "text", "text": "Transmisi Tanah Merah", "x": 71.049, "y": 835.559, "fontSize": 47.043, "fontFamily": "Inter", "fontWeight": "normal", "color": "#ffffff", "strokeColor": "#ffffff", "id": "title" }
     ];
     
-    // Fungsi menggambar watermark ke context (hanya watermark, tanpa background foto)
     async function drawWatermarkOnContext(ctx, width=1920, height=1080, overrideTexts={}) {
         const elementsCopy = JSON.parse(JSON.stringify(defaultWatermarkElements));
         for (let el of elementsCopy) {
@@ -245,7 +265,6 @@
         }
     }
     
-    // Membuat foto dengan watermark dari gambar asli (tanpa watermark sebelumnya)
     async function applyWatermarkToOriginal(originalBase64, overrideTexts) {
         return new Promise((resolve, reject) => {
             const img = new Image();
@@ -254,12 +273,8 @@
                 canvas.width = 1920;
                 canvas.height = 1080;
                 const ctx = canvas.getContext('2d');
-                // Gambar foto asli (dari kamera, tidak ada watermark)
                 ctx.drawImage(img, 0, 0, 1920, 1080);
-                // Gambar watermark di atasnya
-                drawWatermarkOnContext(ctx, 1920, 1080, overrideTexts).then(() => {
-                    resolve(canvas.toDataURL('image/png'));
-                }).catch(reject);
+                drawWatermarkOnContext(ctx, 1920, 1080, overrideTexts).then(() => resolve(canvas.toDataURL('image/png'))).catch(reject);
             };
             img.onerror = reject;
             img.src = originalBase64;
@@ -275,49 +290,17 @@
     const flipCamBtn = document.getElementById('flipCameraBtn');
     const captureBtn = document.getElementById('captureWithWatermarkBtn');
     
-    async function initCamera() {
+    async function initCamera() { /* sama seperti sebelumnya */ 
         if (mediaStream) stopCamera();
-        try {
-            const constraints = { video: { facingMode: { exact: currentFacingMode } } };
-            const stream = await navigator.mediaDevices.getUserMedia(constraints);
-            mediaStream = stream;
-            videoElem.srcObject = stream;
-            await videoElem.play();
-            startCamBtn.disabled = true;
-            stopCamBtn.disabled = false;
-            captureBtn.disabled = false;
-        } catch (err) {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                mediaStream = stream;
-                videoElem.srcObject = stream;
-                await videoElem.play();
-                startCamBtn.disabled = true;
-                stopCamBtn.disabled = false;
-                captureBtn.disabled = false;
-            } catch(e) { alert("Gagal akses kamera: " + e.message); }
-        }
+        try { const constraints = { video: { facingMode: { exact: currentFacingMode } } }; const stream = await navigator.mediaDevices.getUserMedia(constraints); mediaStream = stream; videoElem.srcObject = stream; await videoElem.play(); startCamBtn.disabled = true; stopCamBtn.disabled = false; captureBtn.disabled = false; } 
+        catch(e) { try { const stream = await navigator.mediaDevices.getUserMedia({ video: true }); mediaStream = stream; videoElem.srcObject = stream; await videoElem.play(); startCamBtn.disabled = true; stopCamBtn.disabled = false; captureBtn.disabled = false; } catch(err) { alert("Gagal akses kamera: "+err.message); } }
     }
-    function stopCamera() {
-        if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
-        videoElem.srcObject = null;
-        startCamBtn.disabled = false;
-        stopCamBtn.disabled = true;
-        captureBtn.disabled = true;
-    }
-    async function flipCamera() {
-        if (!mediaStream) { alert("Kamera belum aktif"); return; }
-        currentFacingMode = currentFacingMode === 'environment' ? 'user' : 'environment';
-        await initCamera();
-    }
-    startCamBtn.onclick = initCamera;
-    stopCamBtn.onclick = stopCamera;
-    flipCamBtn.onclick = flipCamera;
+    function stopCamera() { if (mediaStream) { mediaStream.getTracks().forEach(t=>t.stop()); mediaStream=null; } videoElem.srcObject=null; startCamBtn.disabled=false; stopCamBtn.disabled=true; captureBtn.disabled=true; }
+    async function flipCamera() { if (!mediaStream) { alert("Kamera belum aktif"); return; } currentFacingMode = currentFacingMode==='environment'?'user':'environment'; await initCamera(); }
+    startCamBtn.onclick = initCamera; stopCamBtn.onclick = stopCamera; flipCamBtn.onclick = flipCamera;
     
-    // Ambil foto asli (tanpa watermark) dan hasil dengan watermark
     async function captureOriginalAndWatermarked() {
         if (!mediaStream || !videoElem.videoWidth) throw new Error("Kamera tidak siap");
-        // Tangkap frame video
         const videoCanvas = document.createElement('canvas');
         videoCanvas.width = videoElem.videoWidth;
         videoCanvas.height = videoElem.videoHeight;
@@ -329,8 +312,6 @@
         const origCtx = originalCanvas.getContext('2d');
         origCtx.drawImage(videoCanvas, 0, 0, 1920, 1080);
         const originalBase64 = originalCanvas.toDataURL('image/png');
-        
-        // Dapatkan nilai live untuk watermark
         const now = new Date();
         const dateStr = `${now.getDate().toString().padStart(2,'0')}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getFullYear()}`;
         const timeStr = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
@@ -338,143 +319,110 @@
         const dayStr = days[now.getDay()];
         let coordStr = "Lokasi tidak tersedia";
         try { const pos = await new Promise((res,rej)=> navigator.geolocation.getCurrentPosition(res,rej, {timeout:3000})); coordStr = `${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)}`; } catch(e) {}
-        
-        const watermarkedBase64 = await applyWatermarkToOriginal(originalBase64, {
-            date: dateStr, time: timeStr, day: dayStr, coord: coordStr,
-            address: "Persatuan, Kecamatan, Mandobo, Kabupaten\nBoven Digoel, Papua Selatan 99663",
-            title: "Transmisi Tanah Merah"
-        });
+        const watermarkedBase64 = await applyWatermarkToOriginal(originalBase64, { date: dateStr, time: timeStr, day: dayStr, coord: coordStr, address: "Persatuan, Kecamatan, Mandobo, Kabupaten\nBoven Digoel, Papua Selatan 99663", title: "Transmisi Tanah Merah" });
         return { originalBase64, watermarkedBase64 };
     }
     
-    // ======================== MANAJEMEN FOTO DI FORM ========================
-    let currentFotoList = [];  // setiap item: { originalBase64, base64 (watermarked), jamFoto }
+    let currentFotoList = [];
     const fotoPreviewDiv = document.getElementById('fotoPreviewList');
     const fotoCounterSpan = document.getElementById('fotoCounter');
     const fotoDataArrayHidden = document.getElementById('fotoDataArray');
-    
-    function updatePreviewUI() {
+    function updatePreviewUI() { /* sama */ 
         fotoPreviewDiv.innerHTML = '';
-        currentFotoList.forEach((foto, idx) => {
-            const card = document.createElement('div');
-            card.className = 'preview-card';
-            card.innerHTML = `<img src="${foto.base64}"><div class="remove-btn" data-idx="${idx}"><i class="fas fa-times"></i></div>`;
-            fotoPreviewDiv.appendChild(card);
-        });
-        document.querySelectorAll('.remove-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const idx = parseInt(btn.dataset.idx);
-                currentFotoList.splice(idx, 1);
-                updatePreviewUI();
-                updateHiddenArray();
-            });
-        });
+        currentFotoList.forEach((foto, idx) => { const card = document.createElement('div'); card.className = 'preview-card'; card.innerHTML = `<img src="${foto.base64}"><div class="remove-btn" data-idx="${idx}"><i class="fas fa-times"></i></div>`; fotoPreviewDiv.appendChild(card); });
+        document.querySelectorAll('.remove-btn').forEach(btn => { btn.addEventListener('click', (e) => { const idx = parseInt(btn.dataset.idx); currentFotoList.splice(idx, 1); updatePreviewUI(); updateHiddenArray(); }); });
         fotoCounterSpan.innerText = `${currentFotoList.length} dari 5 foto`;
     }
-    function updateHiddenArray() { 
-        // Simpan hanya data yang diperlukan: base64 (watermarked) dan originalBase64
-        fotoDataArrayHidden.value = JSON.stringify(currentFotoList.map(f => ({ 
-            originalBase64: f.originalBase64, 
-            base64: f.base64, 
-            jamFoto: f.jamFoto 
-        }))); 
-    }
+    function updateHiddenArray() { fotoDataArrayHidden.value = JSON.stringify(currentFotoList.map(f => ({ originalBase64: f.originalBase64, base64: f.base64, jamFoto: f.jamFoto }))); }
     async function addFotoFromCamera() {
         const petugas = document.getElementById('petugas').value.trim();
-        if (!petugas) { alert("Isi nama petugas terlebih dahulu."); return false; }
-        if (currentFotoList.length >= 5) { alert("Maksimal 5 foto."); return false; }
-        if (!mediaStream) { alert("Kamera belum aktif."); return false; }
+        if (!petugas) { alert("Isi nama petugas terlebih dahulu."); return; }
+        if (currentFotoList.length >= 5) { alert("Maksimal 5 foto."); return; }
+        if (!mediaStream) { alert("Kamera belum aktif."); return; }
         captureBtn.disabled = true;
-        try {
-            const { originalBase64, watermarkedBase64 } = await captureOriginalAndWatermarked();
-            const now = new Date();
-            const waktuStr = now.toLocaleString('id-ID');
-            currentFotoList.push({ 
-                originalBase64: originalBase64, 
-                base64: watermarkedBase64, 
-                jamFoto: waktuStr 
-            });
-            updatePreviewUI();
-            updateHiddenArray();
-            alert("✅ Foto dengan watermark berhasil diambil!");
-        } catch(err) { alert("Gagal: "+err.message); }
-        finally { captureBtn.disabled = false; }
+        try { const { originalBase64, watermarkedBase64 } = await captureOriginalAndWatermarked(); currentFotoList.push({ originalBase64, base64: watermarkedBase64, jamFoto: new Date().toLocaleString('id-ID') }); updatePreviewUI(); updateHiddenArray(); alert("✅ Foto dengan watermark berhasil diambil!"); } 
+        catch(err) { alert("Gagal: "+err.message); } finally { captureBtn.disabled = false; }
     }
     captureBtn.onclick = addFotoFromCamera;
     
-    // ======================== ADMIN EDIT WATERMARK (GANTI TOTAL) ========================
-    let currentEditEntryId = null;
-    let currentEditFotoIndex = null;
+    // ======================== ADMIN EDIT WATERMARK ========================
+    let currentEditEntryId = null, currentEditFotoIndex = null;
     const editorModal = document.getElementById('watermarkEditorModal');
     const editCanvas = document.getElementById('editCanvas');
-    const editDateInput = document.getElementById('editDate');
-    const editTimeInput = document.getElementById('editTime');
-    const editDayInput = document.getElementById('editDay');
-    const editCoordInput = document.getElementById('editCoord');
-    const editAddressInput = document.getElementById('editAddress');
-    const editTitleInput = document.getElementById('editTitle');
-    
+    const editDateInput = document.getElementById('editDate'), editTimeInput = document.getElementById('editTime'), editDayInput = document.getElementById('editDay'), editCoordInput = document.getElementById('editCoord'), editAddressInput = document.getElementById('editAddress'), editTitleInput = document.getElementById('editTitle');
     window.openWatermarkEditor = async (entryId, fotoIndex) => {
-        if (userRole !== 'admin') { alert("Hanya admin yang dapat mengedit watermark."); return; }
+        if (userRole !== 'admin') { alert("Hanya admin"); return; }
         const entry = dataEntries.find(e => e.id == entryId);
         if (!entry || !entry.fotoList || !entry.fotoList[fotoIndex]) return;
         const foto = entry.fotoList[fotoIndex];
-        if (!foto.originalBase64) {
-            alert("Foto ini tidak memiliki data asli (migrasi lama). Tidak bisa diedit total.");
-            return;
-        }
-        currentEditEntryId = entryId;
-        currentEditFotoIndex = fotoIndex;
-        // Tampilkan foto yang sudah di-watermark (sebagai preview)
-        const img = new Image();
-        img.onload = () => {
-            editCanvas.width = 1920;
-            editCanvas.height = 1080;
-            const ctx = editCanvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, 1920, 1080);
-        };
-        img.src = foto.base64;
-        // Isi form dengan nilai default
-        editDateInput.value = "";
-        editTimeInput.value = "";
-        editDayInput.value = "";
-        editCoordInput.value = "";
-        editAddressInput.value = "Persatuan, Kecamatan, Mandobo, Kabupaten\nBoven Digoel, Papua Selatan 99663";
-        editTitleInput.value = "Transmisi Tanah Merah";
+        if (!foto.originalBase64) { alert("Foto ini tidak memiliki data asli."); return; }
+        currentEditEntryId = entryId; currentEditFotoIndex = fotoIndex;
+        const img = new Image(); img.onload = () => { editCanvas.width = 1920; editCanvas.height = 1080; const ctx = editCanvas.getContext('2d'); ctx.drawImage(img, 0, 0, 1920, 1080); }; img.src = foto.base64;
+        editDateInput.value = ""; editTimeInput.value = ""; editDayInput.value = ""; editCoordInput.value = ""; editAddressInput.value = "Persatuan, Kecamatan, Mandobo, Kabupaten\nBoven Digoel, Papua Selatan 99663"; editTitleInput.value = "Transmisi Tanah Merah";
         editorModal.style.display = 'block';
     };
-    
     document.getElementById('closeEditorModal').onclick = () => editorModal.style.display = 'none';
     document.getElementById('cancelEditBtn').onclick = () => editorModal.style.display = 'none';
     document.getElementById('saveEditedWatermarkBtn').onclick = async () => {
-        if (currentEditEntryId === null) return;
+        if (!currentEditEntryId) return;
         const entry = dataEntries.find(e => e.id == currentEditEntryId);
         if (!entry) return;
         const foto = entry.fotoList[currentEditFotoIndex];
         if (!foto || !foto.originalBase64) return;
-        
-        const overrides = {
-            date: editDateInput.value.trim() || "05/06/2026",
-            time: editTimeInput.value.trim() || "22:33",
-            day: editDayInput.value.trim() || "Jumat",
-            coord: editCoordInput.value.trim() || "-6.208800, 106.845600",
-            address: editAddressInput.value.trim() || "Persatuan, Kecamatan, Mandobo, Kabupaten\nBoven Digoel, Papua Selatan 99663",
-            title: editTitleInput.value.trim() || "Transmisi Tanah Merah"
-        };
+        const overrides = { date: editDateInput.value.trim() || "05/06/2026", time: editTimeInput.value.trim() || "22:33", day: editDayInput.value.trim() || "Jumat", coord: editCoordInput.value.trim() || "-6.208800, 106.845600", address: editAddressInput.value.trim() || "Persatuan, Kecamatan, Mandobo, Kabupaten\nBoven Digoel, Papua Selatan 99663", title: editTitleInput.value.trim() || "Transmisi Tanah Merah" };
         try {
-            // Buat ulang watermark dari originalBase64 (foto asli tanpa watermark)
-            const newWatermarkedBase64 = await applyWatermarkToOriginal(foto.originalBase64, overrides);
-            // GANTI foto lama dengan yang baru (watermark lama hilang total)
-            entry.fotoList[currentEditFotoIndex].base64 = newWatermarkedBase64;
+            const newWatermarked = await applyWatermarkToOriginal(foto.originalBase64, overrides);
+            entry.fotoList[currentEditFotoIndex].base64 = newWatermarked;
             entry.fotoList[currentEditFotoIndex].jamFoto = new Date().toLocaleString('id-ID');
-            isInternalUpdate = true;
-            await setEntriesToFirebase(dataEntries);
-            isInternalUpdate = false;
-            renderTable();
-            editorModal.style.display = 'none';
-            alert("✅ Watermark berhasil diganti! Foto lama telah diganti dengan watermark baru.");
-            if (window.logActivity) window.logActivity('EDIT WATERMARK', `Admin mengganti watermark foto ID ${currentEditEntryId}`, 'Monitoring Suhu');
-        } catch(err) { alert("Gagal update: "+err.message); }
+            isInternalUpdate = true; await setEntriesToFirebase(dataEntries); isInternalUpdate = false;
+            renderTable(); editorModal.style.display = 'none'; alert("✅ Watermark berhasil diganti!");
+        } catch(err) { alert("Gagal: "+err.message); }
+    };
+    
+    // ======================== ADMIN EDIT DATA LENGKAP ========================
+    let currentDataEditId = null;
+    const dataModal = document.getElementById('dataEditorModal');
+    const editIdInput = document.getElementById('editId'), editTanggalInput = document.getElementById('editTanggal'), editSuhuInput = document.getElementById('editSuhu'), editPetugasInput = document.getElementById('editPetugas'), editKeteranganInput = document.getElementById('editKeterangan');
+    window.openDataEditor = async (entryId) => {
+        if (userRole !== 'admin') { alert("Hanya admin"); return; }
+        const entry = dataEntries.find(e => e.id == entryId);
+        if (!entry) return;
+        currentDataEditId = entryId;
+        editIdInput.value = entry.id;
+        editTanggalInput.value = entry.tanggal;
+        editSuhuInput.value = entry.suhu;
+        editPetugasInput.value = entry.petugas;
+        editKeteranganInput.value = entry.keterangan || '';
+        dataModal.style.display = 'block';
+    };
+    document.getElementById('closeDataModal').onclick = () => dataModal.style.display = 'none';
+    document.getElementById('cancelDataBtn').onclick = () => dataModal.style.display = 'none';
+    document.getElementById('saveDataBtn').onclick = async () => {
+        if (!currentDataEditId) return;
+        const newId = parseInt(editIdInput.value);
+        if (isNaN(newId)) { alert("ID harus berupa angka"); return; }
+        const newTanggal = editTanggalInput.value;
+        const newSuhu = parseFloat(editSuhuInput.value);
+        if (!newTanggal || isNaN(newSuhu)) { alert("Tanggal dan suhu harus diisi"); return; }
+        const newPetugas = editPetugasInput.value.trim();
+        if (!newPetugas) { alert("Petugas harus diisi"); return; }
+        const newKeterangan = editKeteranganInput.value;
+        // Cek apakah ID baru sudah dipakai oleh entry lain (kecuali dirinya sendiri)
+        const existing = dataEntries.find(e => e.id === newId && e.id !== currentDataEditId);
+        if (existing) { alert(`ID ${newId} sudah digunakan oleh data lain. Silakan gunakan ID lain.`); return; }
+        const entryIndex = dataEntries.findIndex(e => e.id === currentDataEditId);
+        if (entryIndex === -1) return;
+        // Update semua field
+        dataEntries[entryIndex].id = newId;
+        dataEntries[entryIndex].tanggal = newTanggal;
+        dataEntries[entryIndex].suhu = newSuhu.toFixed(1);
+        dataEntries[entryIndex].petugas = newPetugas;
+        dataEntries[entryIndex].keterangan = newKeterangan;
+        // Urutkan ulang berdasarkan ID
+        dataEntries.sort((a,b) => a.id - b.id);
+        isInternalUpdate = true; await setEntriesToFirebase(dataEntries); isInternalUpdate = false;
+        renderTable(); updateNomorOtomatis(); dataModal.style.display = 'none'; alert("✅ Data berhasil diupdate!");
+        if(window.logActivity) window.logActivity('EDIT DATA LENGKAP', `ID ${currentDataEditId} -> ${newId}`, 'Suhu');
     };
     
     // ======================== FIREBASE HELPERS ========================
@@ -499,7 +447,6 @@
     async function deleteEntryById(id) { const updated = dataEntries.filter(e=>e.id!==id); isInternalUpdate=true; await setEntriesToFirebase(updated); isInternalUpdate=false; renderTable(); updateNomorOtomatis(); }
     async function clearAllEntries() { isInternalUpdate=true; await setEntriesToFirebase([]); isInternalUpdate=false; renderTable(); updateNomorOtomatis(); }
     
-    // Render tabel dengan tombol Edit Watermark untuk admin (per foto)
     function renderTable() {
         const tbody = document.getElementById("tabelBody");
         if(!dataEntries.length){ tbody.innerHTML=`<tr><td colspan="7" class="text-center py-6">📭 Kosong</td</tr`; return; }
@@ -513,43 +460,35 @@
             const fotoCell = `<div class="flex flex-col items-center gap-1">${thumbs}<button onclick="viewAllFoto(entry.fotoList, 0)" class="text-primary text-[10px] hover:underline"><i class="fas fa-images"></i> ${fotoCount} foto</button></div>`;
             let editWatermarkBtns = "";
             if (userRole === 'admin' && fotoCount > 0) {
-                for (let i=0; i<fotoCount; i++) {
-                    editWatermarkBtns += `<button onclick="openWatermarkEditor(${entry.id}, ${i})" class="bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-[10px] mr-1 mt-1"><i class="fas fa-watermark"></i> Edit WM ${i+1}</button>`;
-                }
+                for (let i=0; i<fotoCount; i++) { editWatermarkBtns += `<button onclick="openWatermarkEditor(${entry.id}, ${i})" class="bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-[10px] mr-1 mt-1"><i class="fas fa-watermark"></i> Edit WM ${i+1}</button>`; }
             }
-            let editEntryBtn = (userRole === 'admin') ? `<button onclick="editEntryData(${entry.id})" class="bg-blue-100 text-blue-600 px-2 py-1 rounded-full text-[10px] mr-1"><i class="fas fa-edit"></i> Edit Tgl</button>` : '';
-            html += `<tr class="border-b"><td class="py-2 px-1">${entry.id}</td><td class="py-2 px-1">${entry.tanggal}</td><td class="py-2 px-1 font-semibold">${entry.suhu} °C</td><td class="py-2 px-1 text-center">${fotoCell}</td><td class="py-2 px-1">${escapeHtml(entry.petugas)}</td><td class="py-2 px-1 max-w-[120px] truncate">${escapeHtml(entry.keterangan||'-')}</td><td class="py-2 px-1">${editEntryBtn}${editWatermarkBtns}<button onclick="deleteEntry(${entry.id})" class="bg-red-100 text-red-600 px-2 py-1 rounded-full text-[10px] ml-1"><i class="fas fa-trash-can"></i> Hapus</button></td></tr>`;
+            let editDataBtn = (userRole === 'admin') ? `<button onclick="openDataEditor(${entry.id})" class="bg-blue-100 text-blue-600 px-2 py-1 rounded-full text-[10px] mr-1"><i class="fas fa-edit"></i> Edit Data</button>` : '';
+            html += `<tr class="border-b"><td class="py-2 px-1">${entry.id}</td><td class="py-2 px-1">${entry.tanggal}</td><td class="py-2 px-1 font-semibold">${entry.suhu} °C</td><td class="py-2 px-1 text-center">${fotoCell}</td><td class="py-2 px-1">${escapeHtml(entry.petugas)}</td><td class="py-2 px-1 max-w-[120px] truncate">${escapeHtml(entry.keterangan||'-')}</td><td class="py-2 px-1">${editDataBtn}${editWatermarkBtns}<button onclick="deleteEntry(${entry.id})" class="bg-red-100 text-red-600 px-2 py-1 rounded-full text-[10px] ml-1"><i class="fas fa-trash-can"></i> Hapus</button></td></tr>`;
         });
         tbody.innerHTML = html;
     }
     window.viewAllFoto = (fotoList, idx) => { if(!fotoList?.length) return; let cur=idx; const modal=document.createElement('div'); modal.className="modal-img"; modal.innerHTML=`<img src="${fotoList[cur].base64}"><div class="modal-caption text-white bg-black/60 p-2 rounded">Foto ${cur+1} dari ${fotoList.length}<br>${fotoList[cur].jamFoto||''}</div><div style="position:absolute; bottom:20px; left:0; right:0; display:flex; justify-content:center; gap:20px;"><button id="prevFoto" class="bg-black/60 px-4 py-2 rounded-full text-white">◀ Prev</button><button id="nextFoto" class="bg-black/60 px-4 py-2 rounded-full text-white">Next ▶</button></div>`; document.body.appendChild(modal); const update=(n)=>{ if(n>=0&&n<fotoList.length){ cur=n; modal.querySelector('img').src=fotoList[cur].base64; modal.querySelector('.modal-caption').innerHTML=`Foto ${cur+1} dari ${fotoList.length}<br>${fotoList[cur].jamFoto||''}`; } }; modal.querySelector('#prevFoto').onclick=(e)=>{ e.stopPropagation(); update(cur-1); }; modal.querySelector('#nextFoto').onclick=(e)=>{ e.stopPropagation(); update(cur+1); }; modal.onclick=(e)=>{ if(e.target===modal) modal.remove(); }; };
     window.deleteEntry = async (id) => { if(confirm("Hapus data suhu ini?")) await deleteEntryById(id); };
-    window.editEntryData = async (id) => { const e=dataEntries.find(x=>x.id==id); if(!e) return; const nt=prompt("Edit tanggal (YYYY-MM-DD):", e.tanggal); if(nt&&nt!==e.tanggal){ e.tanggal=nt; isInternalUpdate=true; await setEntriesToFirebase(dataEntries); isInternalUpdate=false; renderTable(); updateNomorOtomatis(); if(window.logActivity) window.logActivity('EDIT DATA', `ID ${id}`, 'Suhu'); } };
     function escapeHtml(s){ if(!s) return ''; return s.replace(/[&<>]/g, m=>m==='&'?'&amp;':m==='<'?'&lt;':'&gt;'); }
     
     // Form submit
     const form = document.getElementById('formSuhu');
-    const tanggalInput = document.getElementById('tanggal');
-    const suhuInput = document.getElementById('suhu');
-    const petugasInput = document.getElementById('petugas');
-    const keteranganInput = document.getElementById('keterangan');
+    const tanggalInput = document.getElementById('tanggal'), suhuInput = document.getElementById('suhu'), petugasInput = document.getElementById('petugas'), keteranganInput = document.getElementById('keterangan');
     tanggalInput.value = new Date().toISOString().split('T')[0];
     form.onsubmit = async (e) => {
         e.preventDefault();
         if (userRole === 'guest') { alert("Tidak punya izin simpan."); return; }
-        if (!tanggalInput.value || !suhuInput.value || !petugasInput.value) return alert("Lengkapi tanggal, suhu, dan petugas!");
+        if (!tanggalInput.value || !suhuInput.value || !petugasInput.value) return alert("Lengkapi data!");
         if (currentFotoList.length === 0) return alert("Minimal 1 foto!");
         const newId = getNextId();
-        // Simpan fotoList dengan struktur { originalBase64, base64, jamFoto }
         const newEntry = { id: newId, tanggal: tanggalInput.value, suhu: parseFloat(suhuInput.value).toFixed(1), petugas: petugasInput.value, keterangan: keteranganInput.value, fotoList: currentFotoList.map(f => ({ originalBase64: f.originalBase64, base64: f.base64, jamFoto: f.jamFoto })) };
         await addEntry(newEntry);
-        resetFormInput();
-        alert("✅ Data tersimpan dengan watermark default dan foto asli (untuk edit nanti)!");
+        resetFormInput(); alert("✅ Data tersimpan!");
     };
     function resetFormInput() { tanggalInput.value = new Date().toISOString().split('T')[0]; suhuInput.value = ''; petugasInput.value = ''; keteranganInput.value = ''; currentFotoList = []; updatePreviewUI(); updateHiddenArray(); updateNomorOtomatis(); if(mediaStream) stopCamera(); }
     document.getElementById('btnResetForm').onclick = () => { if(confirm("Reset form?")) resetFormInput(); };
-    document.getElementById('btnHapusSemua').onclick = async () => { if(userRole !== 'admin') return alert("Hanya admin"); if(confirm("Hapus SEMUA data suhu?")){ await clearAllEntries(); resetFormInput(); alert("Semua data dihapus."); } };
-    document.getElementById('btnExportHTML').onclick = () => { if(!dataEntries.length) return alert("Tidak ada data"); let h = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Laporan Suhu</title><style>body{font-family:Inter}table{border-collapse:collapse}th,td{border:1px solid #aaa;padding:8px}th{background:#1e6f5c;color:white}</style></head><body><h2>Laporan Monitoring Suhu</h2><p>Export: ${new Date().toLocaleString()}</p><table><thead><tr><th>No</th><th>Tanggal</th><th>Suhu</th><th>Petugas</th><th>Keterangan</th></tr></thead><tbody>${dataEntries.map((e,i)=>`<tr><td>${i+1}</td><td>${e.tanggal}</td><td>${e.suhu}°C</td><td>${escapeHtml(e.petugas)}</td><td>${escapeHtml(e.keterangan||'-')}</td></tr>`).join('')}</tbody></table></body></html>`; const blob=new Blob([h],{type:"text/html"}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`laporan_suhu_${Date.now()}.html`; a.click(); URL.revokeObjectURL(blob); };
+    document.getElementById('btnHapusSemua').onclick = async () => { if(userRole !== 'admin') return alert("Hanya admin"); if(confirm("Hapus SEMUA data?")){ await clearAllEntries(); resetFormInput(); alert("Semua data dihapus."); } };
+    document.getElementById('btnExportHTML').onclick = () => { if(!dataEntries.length) return alert("Tidak ada data"); let h = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Laporan Suhu</title><style>body{font-family:Inter}table{border-collapse:collapse}th,td{border:1px solid #aaa;padding:8px}th{background:#1e6f5c;color:white}</style></head><body><h2>Laporan Monitoring Suhu</h2><p>Export: ${new Date().toLocaleString()}</p><table border="1"><thead><tr><th>No</th><th>Tanggal</th><th>Suhu</th><th>Petugas</th><th>Keterangan</th></tr></thead><tbody>${dataEntries.map((e,i)=>`<tr><td>${e.id}</td><td>${e.tanggal}</td><td>${e.suhu}°C</td><td>${escapeHtml(e.petugas)}</td><td>${escapeHtml(e.keterangan||'-')}</td></tr>`).join('')}</tbody></table></body></html>`; const blob=new Blob([h],{type:"text/html"}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`laporan_suhu_${Date.now()}.html`; a.click(); URL.revokeObjectURL(blob); };
     
     // Role & init
     window.addEventListener('roleChanged', (e) => { userRole = e.detail.role; const roleSpan=document.getElementById('userRoleDisplay'); if(roleSpan) roleSpan.innerHTML = userRole==='admin' ? '<i class="fas fa-user-shield"></i> Admin' : (userRole==='user' ? '<i class="fas fa-user"></i> User' : '<i class="fas fa-user-friends"></i> Tamu'); const hapusSemua=document.getElementById('btnHapusSemua'); if(hapusSemua) hapusSemua.style.display = userRole !== 'admin' ? 'none' : 'inline-flex'; renderTable(); });
