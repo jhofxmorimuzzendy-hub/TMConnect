@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Watermark Studio - 1920x1080 Pro</title>
+    <title>Watermark Studio - 1920x1080 Full HD</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
@@ -229,8 +229,8 @@
 <div class="container">
     <div class="top-bar">
         <div>
-            <h1>✍️ Watermark Studio Pro - 1920x1080</h1>
-            <div style="font-size:0.7rem;">Desain di canvas 1920x1080, hasil otomatis skala ke ukuran foto</div>
+            <h1>✍️ Watermark Studio Pro - 1920x1080 Full HD</h1>
+            <div style="font-size:0.7rem;">Desain di canvas 1920x1080, hasil foto (kamera) juga 1920x1080 + watermark</div>
         </div>
         <div class="toolbar">
             <button id="refreshStampBtn" class="btn btn-warning">🔄 Refresh Stamp</button>
@@ -256,7 +256,7 @@
             <div class="preview-area"><video id="videoFeed" autoplay playsinline muted></video></div>
             <div class="btn-group">
                 <button id="startCamBtn" class="btn btn-primary">🎥 Mulai Kamera</button>
-                <button id="capturePhotoBtn" class="btn btn-success" disabled>📸 Ambil Foto Baru & Kirim Otomatis</button>
+                <button id="capturePhotoBtn" class="btn btn-success" disabled>📸 Ambil Foto & Kirim (1920x1080)</button>
                 <button id="stopCamBtn" class="btn btn-danger" disabled>⏹️ Matikan</button>
                 <button id="flipCamBtn" class="btn btn-warning">🔄 Balik Kamera</button>
                 <button id="addQrBtn" class="btn btn-warning">📱 QR Code</button>
@@ -336,7 +336,7 @@
             <div id="propContent">Klik watermark untuk edit</div>
         </div>
     </div>
-    <footer>📱 Desain di canvas 1920x1080, saat ambil foto, watermark diskalakan proporsional ke ukuran foto.</footer>
+    <footer>📱 Desain di canvas 1920x1080, hasil foto dari kamera akan di-resize ke 1920x1080 + watermark presisi.</footer>
 </div>
 
 <div id="mapModal" class="modal">
@@ -447,7 +447,7 @@
             window.opener.postMessage({ type:'watermarkedFoto', data:imgData }, '*');
             sentPhotos.push({ thumb:imgData });
             updateSentPhotosUI();
-            showLoadingToast("✅ Foto terkirim", 2000);
+            showLoadingToast("✅ Foto 1920x1080 terkirim", 2000);
         } else alert("Tidak terhubung ke Monitoring");
     }
 
@@ -899,78 +899,115 @@
         }
     }
 
-    // ======================== Ambil foto & kirim ========================
+    // ======================== Ambil foto & kirim (FULL HD 1920x1080) ========================
     function captureAndSend(){
         if(!mediaStream || !video.videoWidth){ alert("Kamera belum aktif"); return; }
-        showLoadingToast("Mengambil foto...",1000);
+        showLoadingToast("Memproses foto 1920x1080...", 1500);
+        
+        // Buat canvas sementara untuk menangkap frame video
         const tempCanvas = document.createElement('canvas');
         tempCanvas.width = video.videoWidth;
         tempCanvas.height = video.videoHeight;
-        tempCanvas.getContext('2d').drawImage(video,0,0);
-        const img = new Image();
-        img.onload = () => {
-            const newCanvas = document.createElement('canvas');
-            newCanvas.width = img.width;
-            newCanvas.height = img.height;
-            const newCtx = newCanvas.getContext('2d');
-            newCtx.drawImage(img, 0, 0);
-            const scaleX = newCanvas.width / canvas.width;
-            const scaleY = newCanvas.height / canvas.height;
+        const tempCtx = tempCanvas.getContext('2d');
+        tempCtx.drawImage(video, 0, 0);
+        
+        const imgFrame = new Image();
+        imgFrame.onload = () => {
+            // Canvas output ukuran 1920x1080 (Full HD)
+            const outputCanvas = document.createElement('canvas');
+            outputCanvas.width = 1920;
+            outputCanvas.height = 1080;
+            const outCtx = outputCanvas.getContext('2d');
+            
+            // Gambar foto dari kamera, di-resize STRETCH ke 1920x1080 (aspect ratio mungkin berubah, tapi watermark sudah presisi)
+            outCtx.drawImage(imgFrame, 0, 0, 1920, 1080);
+            
+            // Gambar semua watermark (elemen) tanpa scaling ulang, karena koordinat sudah 1920x1080
             for(let el of elements){
-                newCtx.save();
-                newCtx.globalAlpha = el.opacity ?? 1;
-                if(el.type==='text'){
-                    let fontSize = (el.fontSize || 32) * Math.min(scaleX, scaleY);
-                    let x = (el.x || 0) * scaleX;
-                    let y = (el.y || 0) * scaleY;
-                    newCtx.font = `${el.fontStyle||'normal'} ${el.fontWeight||'normal'} ${fontSize}px "${el.fontFamily||'Inter'}", system-ui`;
-                    newCtx.fillStyle = fixColor(el.color);
-                    if(el.strokeColor && el.strokeWidth){ newCtx.strokeStyle = fixColor(el.strokeColor); newCtx.lineWidth = el.strokeWidth * Math.min(scaleX, scaleY); }
-                    newCtx.textAlign = 'left'; newCtx.textBaseline = 'top';
+                outCtx.save();
+                outCtx.globalAlpha = el.opacity ?? 1;
+                if(el.type === 'text'){
+                    let fontSize = el.fontSize || 32;
+                    let fontFamily = el.fontFamily || 'Inter';
+                    let fontWeight = el.fontWeight || 'normal';
+                    let fontStyle = el.fontStyle || 'normal';
+                    outCtx.font = `${fontStyle} ${fontWeight} ${fontSize}px "${fontFamily}", system-ui`;
+                    outCtx.fillStyle = fixColor(el.color);
+                    if(el.strokeColor && el.strokeWidth){
+                        outCtx.strokeStyle = fixColor(el.strokeColor);
+                        outCtx.lineWidth = el.strokeWidth;
+                    }
+                    outCtx.textAlign = 'left';
+                    outCtx.textBaseline = 'top';
                     const lines = el.text.split('\n');
                     const lineH = fontSize * 1.2;
-                    for(let i=0;i<lines.length;i++){
-                        if(el.strokeColor && el.strokeWidth) newCtx.strokeText(lines[i], x, y + i*lineH);
-                        newCtx.fillText(lines[i], x, y + i*lineH);
-                        if(el.textDecoration==='underline'){
-                            const metrics = newCtx.measureText(lines[i]);
-                            newCtx.beginPath(); newCtx.moveTo(x, y + i*lineH + fontSize*0.15); newCtx.lineTo(x+metrics.width, y + i*lineH + fontSize*0.15); newCtx.strokeStyle = fixColor(el.color); newCtx.lineWidth=Math.max(1, fontSize/12); newCtx.stroke();
+                    for(let i=0; i<lines.length; i++){
+                        if(el.strokeColor && el.strokeWidth) outCtx.strokeText(lines[i], el.x, el.y + i*lineH);
+                        outCtx.fillText(lines[i], el.x, el.y + i*lineH);
+                        if(el.textDecoration === 'underline'){
+                            const metrics = outCtx.measureText(lines[i]);
+                            outCtx.beginPath();
+                            outCtx.moveTo(el.x, el.y + i*lineH + fontSize*0.15);
+                            outCtx.lineTo(el.x + metrics.width, el.y + i*lineH + fontSize*0.15);
+                            outCtx.strokeStyle = fixColor(el.color);
+                            outCtx.lineWidth = Math.max(1, fontSize/12);
+                            outCtx.stroke();
                         }
                     }
-                } else if(el.type==='shape'){
-                    let w = (el.width || 120) * scaleX;
-                    let h = (el.height || 120) * scaleY;
-                    let x = (el.x || 0) * scaleX;
-                    let y = (el.y || 0) * scaleY;
-                    newCtx.fillStyle = fixColor(el.fillColor || '#ffaa44');
-                    newCtx.strokeStyle = fixColor(el.strokeColor || '#ffffff');
-                    newCtx.lineWidth = (el.strokeWidth || 2) * Math.min(scaleX, scaleY);
-                    if(el.shapeType==='rectangle') newCtx.fillRect(x, y, w, h);
-                    else if(el.shapeType==='circle') newCtx.arc(x+w/2, y+h/2, Math.min(w,h)/2, 0, 2*Math.PI);
-                    else newCtx.fillRect(x, y, w, h);
-                    newCtx.fill();
-                    if(el.shapeType!=='line') newCtx.stroke();
-                } else if(el.type==='icon'){
-                    let size = (el.size || 60) * Math.min(scaleX, scaleY);
-                    let x = (el.x || 0) * scaleX;
-                    let y = (el.y || 0) * scaleY;
-                    newCtx.font = `${size}px "Segoe UI Emoji"`;
-                    newCtx.fillStyle = fixColor(el.color || '#ffffff');
-                    newCtx.fillText(el.iconChar, x, y);
-                } else if(el.type==='image' && el.imageElement){
-                    let w = (el.width || 300) * scaleX;
-                    let h = (el.height || 200) * scaleY;
-                    let x = (el.x || 0) * scaleX;
-                    let y = (el.y || 0) * scaleY;
-                    newCtx.drawImage(el.imageElement, x, y, w, h);
+                } 
+                else if(el.type === 'shape'){
+                    const w = el.width || 120;
+                    const h = el.height || 120;
+                    const x = el.x;
+                    const y = el.y;
+                    outCtx.fillStyle = fixColor(el.fillColor || '#ffaa44');
+                    outCtx.strokeStyle = fixColor(el.strokeColor || '#ffffff');
+                    outCtx.lineWidth = el.strokeWidth || 2;
+                    if(el.shapeType === 'rectangle') outCtx.fillRect(x, y, w, h);
+                    else if(el.shapeType === 'circle') {
+                        outCtx.beginPath();
+                        outCtx.arc(x + w/2, y + h/2, Math.min(w,h)/2, 0, 2*Math.PI);
+                        outCtx.fill();
+                        outCtx.stroke();
+                    }
+                    else if(el.shapeType === 'line'){
+                        outCtx.beginPath();
+                        outCtx.moveTo(x, y);
+                        outCtx.lineTo(x + w, y + h);
+                        outCtx.strokeStyle = fixColor(el.strokeColor || '#000');
+                        outCtx.lineWidth = el.strokeWidth || 3;
+                        outCtx.stroke();
+                    }
+                    else {
+                        outCtx.fillRect(x, y, w, h);
+                        if(el.shapeType !== 'line') outCtx.stroke();
+                    }
                 }
-                newCtx.restore();
+                else if(el.type === 'icon'){
+                    let size = el.size || 60;
+                    outCtx.font = `${size}px "Segoe UI Emoji"`;
+                    outCtx.fillStyle = fixColor(el.color || '#ffffff');
+                    if(el.strokeColor && el.strokeWidth){
+                        outCtx.strokeStyle = fixColor(el.strokeColor);
+                        outCtx.lineWidth = el.strokeWidth;
+                        outCtx.strokeText(el.iconChar, el.x, el.y);
+                    }
+                    outCtx.fillText(el.iconChar, el.x, el.y);
+                }
+                else if(el.type === 'image' && el.imageElement && el.imageElement.complete && el.imageElement.naturalWidth > 0){
+                    const w = el.width || 300;
+                    const h = el.height || 200;
+                    outCtx.drawImage(el.imageElement, el.x, el.y, w, h);
+                }
+                outCtx.restore();
             }
-            const finalImage = newCanvas.toDataURL('image/png');
+            
+            // Kirim hasil foto 1920x1080 ke monitoring
+            const finalImage = outputCanvas.toDataURL('image/png');
             sendToOpener(finalImage);
-            showLoadingToast("✅ Foto dikirim!",2000);
+            showLoadingToast("✅ Foto 1920x1080 siap dikirim!", 2000);
         };
-        img.src = tempCanvas.toDataURL('image/jpeg',0.9);
+        imgFrame.src = tempCanvas.toDataURL('image/jpeg', 0.95);
     }
 
     function resetPhoto(){ backgroundImage=null; backgroundColor=null; hasPhoto=false; downloadBtn.disabled=true; resetPhotoBtn.disabled=true; redrawAll(); }
