@@ -3,13 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Watermark Studio Pro - Live Stamp & JSON</title>
-    <!-- Leaflet for maps -->
+    <title>Watermark Studio Pro - Live Stamp & JSON Fix</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
     <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Roboto:wght@400;700&family=Lobster&family=Montserrat:wght@400;700&family=Open+Sans:wght@400;700&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
@@ -43,6 +41,7 @@
             backdrop-filter: blur(8px);
             padding: 0.4rem 0.8rem;
             border-radius: 2rem;
+            flex-wrap: wrap;
         }
         .two-columns {
             display: grid;
@@ -239,7 +238,7 @@
     <div class="top-bar">
         <div>
             <h1>✍️ Watermark Studio Pro - Live Stamp</h1>
-            <div style="font-size:0.7rem;">Stamp tanggal, jam, hari, koordinat akan selalu update saat impor JSON</div>
+            <div style="font-size:0.7rem;">Stamp tanggal, jam, hari, koordinat otomatis update saat impor JSON</div>
         </div>
         <div class="toolbar">
             <button id="sendToMonitorBtn" class="btn btn-success" style="background:#1e6f5c;">📤 Kirim ke Monitoring</button>
@@ -358,7 +357,7 @@
 
 <script>
     (function() {
-        // ---------- DOM Elements ----------
+        // DOM Elements
         const video = document.getElementById('videoFeed');
         const startCamBtn = document.getElementById('startCamBtn');
         const captureBtn = document.getElementById('captureBtn');
@@ -421,6 +420,7 @@
         let mapInstance = null;
         let canvasZoom = 1;
         let canvasPan = { x: 0, y: 0 };
+        let isRefreshing = false;
 
         const fontFamilies = [
             'Inter', 'Roboto', 'Open Sans', 'Montserrat', 'Lobster',
@@ -435,21 +435,60 @@
         function zoomOut() { canvasZoom = Math.max(0.5, canvasZoom - 0.1); updateCanvasTransform(); }
         function resetZoom() { canvasZoom = 1; canvasPan = { x: 0, y: 0 }; updateCanvasTransform(); }
         
-        function saveHistory() { let clone = JSON.parse(JSON.stringify(elements)); historyStack = historyStack.slice(0, historyIndex+1); historyStack.push(clone); if(historyStack.length>40) historyStack.shift(); else historyIndex = historyStack.length-1; }
-        function undo() { if(historyIndex>0){ historyIndex--; elements = JSON.parse(JSON.stringify(historyStack[historyIndex])); selectedIds.clear(); redrawAll(); updateUI(); } }
-        function redo() { if(historyIndex<historyStack.length-1){ historyIndex++; elements = JSON.parse(JSON.stringify(historyStack[historyIndex])); selectedIds.clear(); redrawAll(); updateUI(); } }
+        function saveHistory() { 
+            let clone = JSON.parse(JSON.stringify(elements.map(el => {
+                if (el.imageElement) {
+                    // Simpan imageElement sebagai imageData agar serializable
+                    const copy = {...el};
+                    copy.imageData = el.imageData || (el.imageElement ? el.imageElement.src : null);
+                    delete copy.imageElement;
+                    return copy;
+                }
+                return el;
+            })));
+            historyStack = historyStack.slice(0, historyIndex+1);
+            historyStack.push(clone);
+            if(historyStack.length>40) historyStack.shift();
+            else historyIndex = historyStack.length-1;
+        }
+        
+        function restoreHistory(state) {
+            elements = state.map(el => {
+                if (el.imageData && el.type === 'image') {
+                    const img = new Image();
+                    img.src = el.imageData;
+                    return {...el, imageElement: img};
+                }
+                return el;
+            });
+            selectedIds.clear();
+            redrawAll();
+            updateUI();
+        }
+        
+        function undo() { if(historyIndex>0){ historyIndex--; restoreHistory(historyStack[historyIndex]); } }
+        function redo() { if(historyIndex<historyStack.length-1){ historyIndex++; restoreHistory(historyStack[historyIndex]); } }
 
-        // ========== LIVE STAMP FUNCTIONS ==========
+        // Live stamp functions
         function getDateStr() { const d=new Date(); return `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear()}`; }
         function getTimeStr() { const d=new Date(); return `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`; }
         function getDayStr() { const days=['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu']; return days[new Date().getDay()]; }
-        async function getCoordinates() { try{ const pos=await new Promise((res,rej)=>navigator.geolocation.getCurrentPosition(res,rej)); return `${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)}`; }catch(e){ return "Lokasi tidak tersedia"; } }
+        async function getCoordinates() { 
+            try{ 
+                const pos = await new Promise((res,rej)=>navigator.geolocation.getCurrentPosition(res,rej)); 
+                return `${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)}`; 
+            } catch(e){ 
+                console.warn("Gagal ambil koordinat:", e);
+                return "Lokasi tidak tersedia"; 
+            } 
+        }
 
-        // Fungsi untuk merefresh semua live stamp
         async function refreshLiveStamps() {
+            if (isRefreshing) return;
+            isRefreshing = true;
             let updated = false;
             for (let el of elements) {
-                if (el.stampType && el.isLive) {
+                if (el.stampType && el.isLive && el.type === 'text') {
                     let newText = "";
                     if (el.stampType === 'date') newText = getDateStr();
                     else if (el.stampType === 'time') newText = getTimeStr();
@@ -465,12 +504,13 @@
             }
             if (updated) {
                 redrawAll();
-                saveHistory(); // simpan perubahan ke history
+                saveHistory();
                 updateUI();
             }
+            isRefreshing = false;
         }
 
-        // Menambah stamp dengan stampType
+        // Stamp additions with stampType
         function addDateStamp() { 
             addElement({
                 type:'text', text:getDateStr(), x:20, y:canvas.height-70, fontSize:14, 
@@ -501,7 +541,7 @@
             }); 
         }
 
-        // Real map (tidak berubah)
+        // Real map
         const mapModal = document.getElementById('mapModal');
         const realMapDiv = document.getElementById('realMap');
         const searchLocation = document.getElementById('searchLocation');
@@ -549,78 +589,93 @@
         document.getElementById('captureMapBtn').onclick = captureMap;
         document.getElementById('closeMapBtn').onclick = () => { mapModal.style.display = 'none'; if(mapInstance) mapInstance.remove(); };
 
-        // Drawing functions (sama seperti sebelumnya, tidak diubah untuk menghemat tempat)
+        // Drawing functions with error handling for images
         function drawElement(el) {
-            ctx.save();
-            ctx.globalAlpha = el.opacity ?? 1;
-            if(el.shadowBlur) { ctx.shadowBlur = el.shadowBlur; ctx.shadowColor = el.shadowColor || '#000'; }
-            if(el.rotation) {
-                const bounds = getElementBounds(el);
-                const cx = bounds.x + bounds.w/2, cy = bounds.y + bounds.h/2;
-                ctx.translate(cx, cy); ctx.rotate(el.rotation * Math.PI/180); ctx.translate(-cx, -cy);
-            }
-            if(el.type === 'text') {
-                let fontStyle = el.fontStyle || 'normal';
-                let fontWeight = el.fontWeight || 'normal';
-                let fontSize = el.fontSize || 28;
-                let fontFamily = el.fontFamily || 'Inter';
-                ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px "${fontFamily}", system-ui, sans-serif`;
-                ctx.fillStyle = el.color || '#000';
-                if(el.strokeColor && el.strokeWidth) { ctx.strokeStyle = el.strokeColor; ctx.lineWidth = el.strokeWidth; }
-                ctx.textAlign = 'left'; ctx.textBaseline = 'top';
-                const lines = el.text.split('\n');
-                const lineH = fontSize * 1.2;
-                for(let i=0; i<lines.length; i++) {
-                    if(el.strokeColor && el.strokeWidth) ctx.strokeText(lines[i], el.x, el.y + i*lineH);
-                    ctx.fillText(lines[i], el.x, el.y + i*lineH);
-                    if(el.textDecoration === 'underline') {
-                        const metrics = ctx.measureText(lines[i]);
-                        const width = metrics.width;
+            try {
+                ctx.save();
+                ctx.globalAlpha = el.opacity ?? 1;
+                if(el.shadowBlur) { ctx.shadowBlur = el.shadowBlur; ctx.shadowColor = el.shadowColor || '#000'; }
+                if(el.rotation) {
+                    const bounds = getElementBounds(el);
+                    const cx = bounds.x + bounds.w/2, cy = bounds.y + bounds.h/2;
+                    ctx.translate(cx, cy); ctx.rotate(el.rotation * Math.PI/180); ctx.translate(-cx, -cy);
+                }
+                if(el.type === 'text') {
+                    let fontStyle = el.fontStyle || 'normal';
+                    let fontWeight = el.fontWeight || 'normal';
+                    let fontSize = el.fontSize || 28;
+                    let fontFamily = el.fontFamily || 'Inter';
+                    ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px "${fontFamily}", system-ui, sans-serif`;
+                    ctx.fillStyle = el.color || '#000';
+                    if(el.strokeColor && el.strokeWidth) { ctx.strokeStyle = el.strokeColor; ctx.lineWidth = el.strokeWidth; }
+                    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+                    const lines = el.text.split('\n');
+                    const lineH = fontSize * 1.2;
+                    for(let i=0; i<lines.length; i++) {
+                        if(el.strokeColor && el.strokeWidth) ctx.strokeText(lines[i], el.x, el.y + i*lineH);
+                        ctx.fillText(lines[i], el.x, el.y + i*lineH);
+                        if(el.textDecoration === 'underline') {
+                            const metrics = ctx.measureText(lines[i]);
+                            const width = metrics.width;
+                            ctx.beginPath();
+                            ctx.moveTo(el.x, el.y + i*lineH + fontSize*0.15);
+                            ctx.lineTo(el.x + width, el.y + i*lineH + fontSize*0.15);
+                            ctx.strokeStyle = el.color || '#000';
+                            ctx.lineWidth = Math.max(1, fontSize/12);
+                            ctx.stroke();
+                        }
+                    }
+                } else if(el.type === 'shape') {
+                    ctx.fillStyle = el.fillColor || '#ffaa44';
+                    ctx.strokeStyle = el.strokeColor || '#fff';
+                    ctx.lineWidth = el.strokeWidth || 2;
+                    const w = el.width || 80, h = el.height || 80;
+                    ctx.beginPath();
+                    if(el.shapeType === 'rectangle') ctx.rect(el.x, el.y, w, h);
+                    else if(el.shapeType === 'circle') ctx.arc(el.x + w/2, el.y + h/2, Math.min(w,h)/2, 0, 2*Math.PI);
+                    else if(el.shapeType === 'triangle') { ctx.moveTo(el.x + w/2, el.y); ctx.lineTo(el.x + w, el.y + h); ctx.lineTo(el.x, el.y + h); ctx.closePath(); }
+                    else if(el.shapeType === 'star') {
+                        let spikes=5, outerR=Math.min(w,h)/2, innerR=outerR/2, cx=el.x+w/2, cy=el.y+h/2;
+                        for(let i=0; i<spikes*2; i++) { let r=i%2===0?outerR:innerR; let angle=Math.PI*2*i/(spikes*2)-Math.PI/2; let px=cx+r*Math.cos(angle), py=cy+r*Math.sin(angle); if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py); }
+                        ctx.closePath();
+                    } else if(el.shapeType === 'heart') { let cx=el.x+w/2, cy=el.y+h/2, scale=Math.min(w,h)/100; ctx.moveTo(cx,cy+20*scale); ctx.bezierCurveTo(cx-50*scale,cy-30*scale,cx-90*scale,cy+30*scale,cx,cy+80*scale); ctx.bezierCurveTo(cx+90*scale,cy+30*scale,cx+50*scale,cy-30*scale,cx,cy+20*scale); }
+                    else if(el.shapeType === 'oval') ctx.ellipse(el.x+w/2, el.y+h/2, w/2, h/2, 0, 0, 2*Math.PI);
+                    else if(el.shapeType === 'diamond') { ctx.moveTo(el.x+w/2, el.y); ctx.lineTo(el.x+w, el.y+h/2); ctx.lineTo(el.x+w/2, el.y+h); ctx.lineTo(el.x, el.y+h/2); ctx.closePath(); }
+                    else if(el.shapeType === 'line') {
                         ctx.beginPath();
-                        ctx.moveTo(el.x, el.y + i*lineH + fontSize*0.15);
-                        ctx.lineTo(el.x + width, el.y + i*lineH + fontSize*0.15);
-                        ctx.strokeStyle = el.color || '#000';
-                        ctx.lineWidth = Math.max(1, fontSize/12);
+                        ctx.moveTo(el.x, el.y);
+                        ctx.lineTo(el.x + w, el.y + h);
+                        ctx.strokeStyle = el.strokeColor || '#000';
+                        ctx.lineWidth = el.strokeWidth || 3;
                         ctx.stroke();
+                        ctx.restore();
+                        return;
+                    }
+                    ctx.fill(); 
+                    if(el.shapeType !== 'line') ctx.stroke();
+                } else if(el.type === 'icon') {
+                    ctx.font = `${el.size || 40}px "Segoe UI Emoji"`;
+                    ctx.fillStyle = el.color || '#fff';
+                    if(el.strokeColor && el.strokeWidth) { ctx.strokeStyle = el.strokeColor; ctx.lineWidth = el.strokeWidth; ctx.strokeText(el.iconChar, el.x, el.y); }
+                    ctx.fillText(el.iconChar, el.x, el.y);
+                } else if(el.type === 'image') {
+                    if (el.imageElement && el.imageElement.complete && el.imageElement.naturalWidth > 0) {
+                        ctx.drawImage(el.imageElement, el.x, el.y, el.width || 200, el.height || 150);
+                    } else if (el.imageData) {
+                        // Coba load ulang
+                        const img = new Image();
+                        img.onload = () => {
+                            el.imageElement = img;
+                            redrawAll();
+                        };
+                        img.src = el.imageData;
                     }
                 }
-            } else if(el.type === 'shape') {
-                ctx.fillStyle = el.fillColor || '#ffaa44';
-                ctx.strokeStyle = el.strokeColor || '#fff';
-                ctx.lineWidth = el.strokeWidth || 2;
-                const w = el.width || 80, h = el.height || 80;
-                ctx.beginPath();
-                if(el.shapeType === 'rectangle') ctx.rect(el.x, el.y, w, h);
-                else if(el.shapeType === 'circle') ctx.arc(el.x + w/2, el.y + h/2, Math.min(w,h)/2, 0, 2*Math.PI);
-                else if(el.shapeType === 'triangle') { ctx.moveTo(el.x + w/2, el.y); ctx.lineTo(el.x + w, el.y + h); ctx.lineTo(el.x, el.y + h); ctx.closePath(); }
-                else if(el.shapeType === 'star') {
-                    let spikes=5, outerR=Math.min(w,h)/2, innerR=outerR/2, cx=el.x+w/2, cy=el.y+h/2;
-                    for(let i=0; i<spikes*2; i++) { let r=i%2===0?outerR:innerR; let angle=Math.PI*2*i/(spikes*2)-Math.PI/2; let px=cx+r*Math.cos(angle), py=cy+r*Math.sin(angle); if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py); }
-                    ctx.closePath();
-                } else if(el.shapeType === 'heart') { let cx=el.x+w/2, cy=el.y+h/2, scale=Math.min(w,h)/100; ctx.moveTo(cx,cy+20*scale); ctx.bezierCurveTo(cx-50*scale,cy-30*scale,cx-90*scale,cy+30*scale,cx,cy+80*scale); ctx.bezierCurveTo(cx+90*scale,cy+30*scale,cx+50*scale,cy-30*scale,cx,cy+20*scale); }
-                else if(el.shapeType === 'oval') ctx.ellipse(el.x+w/2, el.y+h/2, w/2, h/2, 0, 0, 2*Math.PI);
-                else if(el.shapeType === 'diamond') { ctx.moveTo(el.x+w/2, el.y); ctx.lineTo(el.x+w, el.y+h/2); ctx.lineTo(el.x+w/2, el.y+h); ctx.lineTo(el.x, el.y+h/2); ctx.closePath(); }
-                else if(el.shapeType === 'line') {
-                    ctx.beginPath();
-                    ctx.moveTo(el.x, el.y);
-                    ctx.lineTo(el.x + w, el.y + h);
-                    ctx.strokeStyle = el.strokeColor || '#000';
-                    ctx.lineWidth = el.strokeWidth || 3;
-                    ctx.stroke();
-                    ctx.restore();
-                    return;
-                }
-                ctx.fill(); 
-                if(el.shapeType !== 'line') ctx.stroke();
-            } else if(el.type === 'icon') {
-                ctx.font = `${el.size || 40}px "Segoe UI Emoji"`;
-                ctx.fillStyle = el.color || '#fff';
-                if(el.strokeColor && el.strokeWidth) { ctx.strokeStyle = el.strokeColor; ctx.lineWidth = el.strokeWidth; ctx.strokeText(el.iconChar, el.x, el.y); }
-                ctx.fillText(el.iconChar, el.x, el.y);
-            } else if(el.type === 'image' && el.imageElement) {
-                ctx.drawImage(el.imageElement, el.x, el.y, el.width || 200, el.height || 150);
+                ctx.restore();
+            } catch(e) {
+                console.warn("Error drawing element:", e, el);
+                ctx.restore();
             }
-            ctx.restore();
         }
 
         function getElementBounds(el) {
@@ -644,7 +699,7 @@
         }
 
         function drawBackground() {
-            if(backgroundImage) ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
+            if(backgroundImage && backgroundImage.complete) ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
             else if(backgroundColor) { ctx.fillStyle = backgroundColor; ctx.fillRect(0, 0, canvas.width, canvas.height); }
             else { ctx.fillStyle = '#f0f2f5'; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.fillStyle = '#aaa'; ctx.fillText('Gunakan kamera atau background solid', 50, 50); }
             if(showGrid) {
@@ -676,6 +731,7 @@
             }
         }
 
+        // Mouse handlers (sama seperti sebelumnya, disederhanakan)
         function getMouseCoord(e) {
             const rect = canvas.getBoundingClientRect();
             const scaleX = canvas.width / rect.width;
@@ -780,7 +836,7 @@
 
         function addElement(el) { el.id = nextId++; elements.push(el); selectedIds.clear(); selectedIds.add(el.id); saveHistory(); redrawAll(); updateUI(); }
         function deleteSelected() { elements = elements.filter(el=>!selectedIds.has(el.id)); selectedIds.clear(); saveHistory(); redrawAll(); updateUI(); }
-        function duplicateSelected() { let newElems=[]; for(let id of selectedIds){ let orig=elements.find(e=>e.id===id); if(orig){ let copy=JSON.parse(JSON.stringify(orig)); copy.id=nextId++; copy.x+=20; copy.y+=20; newElems.push(copy); } } elements.push(...newElems); selectedIds.clear(); newElems.forEach(e=>selectedIds.add(e.id)); saveHistory(); redrawAll(); updateUI(); }
+        function duplicateSelected() { let newElems=[]; for(let id of selectedIds){ let orig=elements.find(e=>e.id===id); if(orig){ let copy=JSON.parse(JSON.stringify(orig)); copy.id=nextId++; copy.x+=20; copy.y+=20; if(copy.imageElement) copy.imageElement = null; newElems.push(copy); } } elements.push(...newElems); selectedIds.clear(); newElems.forEach(e=>selectedIds.add(e.id)); saveHistory(); redrawAll(); updateUI(); }
         function groupSelected() { if(selectedIds.size<=1) return; let children=Array.from(selectedIds); let gid=nextId++; elements.push({id:gid,type:'group',children:children,opacity:1}); elements=elements.filter(el=>!children.includes(el.id)); selectedIds.clear(); selectedIds.add(gid); saveHistory(); redrawAll(); updateUI(); }
         function ungroup() { let newElems=[]; for(let id of selectedIds){ let el=elements.find(e=>e.id===id); if(el && el.type==='group'){ for(let cid of el.children){ let child=elements.find(e=>e.id===cid); if(child) newElems.push(child); } elements=elements.filter(e=>e.id!==id); } } elements.push(...newElems); selectedIds.clear(); newElems.forEach(e=>selectedIds.add(e.id)); saveHistory(); redrawAll(); updateUI(); }
         function layerUp() { let sel=Array.from(selectedIds); for(let id of sel){ let idx=elements.findIndex(e=>e.id===id); if(idx!==-1 && idx<elements.length-1) [elements[idx],elements[idx+1]]=[elements[idx+1],elements[idx]]; } saveHistory(); redrawAll(); updateUI(); }
@@ -842,17 +898,19 @@
             }
         }
 
-        // ========== EKSPOR & IMPOR JSON ==========
+        // JSON Export / Import
         function exportToJson() {
             const exportElements = elements.map(el => {
                 const copy = JSON.parse(JSON.stringify(el));
                 if (el.type === 'image' && el.imageData) {
                     copy.imageData = el.imageData;
-                    delete copy.imageElement;
+                } else if (el.type === 'image' && el.imageElement) {
+                    copy.imageData = el.imageElement.src;
                 }
+                delete copy.imageElement;
                 return copy;
             });
-            const presetData = { version: 2, nextId: nextId, elements: exportElements, background: { type: backgroundImage ? 'image' : (backgroundColor ? 'color' : null), value: backgroundImage ? 'image' : backgroundColor } };
+            const presetData = { version: 2, nextId: nextId, elements: exportElements, background: { type: backgroundImage ? 'image' : (backgroundColor ? 'color' : null), value: backgroundImage ? 'backgroundImage' : backgroundColor } };
             const jsonStr = JSON.stringify(presetData, null, 2);
             const blob = new Blob([jsonStr], {type: 'application/json'});
             const url = URL.createObjectURL(blob);
@@ -868,7 +926,7 @@
             const input = document.createElement('input');
             input.type = 'file';
             input.accept = 'application/json';
-            input.onchange = (e) => {
+            input.onchange = async (e) => {
                 const file = e.target.files[0];
                 if (!file) return;
                 const reader = new FileReader();
@@ -877,22 +935,23 @@
                         const data = JSON.parse(ev.target.result);
                         if (!data.elements) throw new Error('Format tidak valid');
                         const loadedElements = data.elements;
-                        const promises = [];
+                        // Load images sequentially
                         for (let el of loadedElements) {
                             if (el.type === 'image' && el.imageData) {
-                                const p = new Promise((resolve) => {
+                                await new Promise((resolve) => {
                                     const img = new Image();
                                     img.onload = () => {
                                         el.imageElement = img;
-                                        delete el.imageData;
+                                        resolve();
+                                    };
+                                    img.onerror = () => {
+                                        console.warn("Gagal load image:", el.imageData);
                                         resolve();
                                     };
                                     img.src = el.imageData;
                                 });
-                                promises.push(p);
                             }
                         }
-                        await Promise.all(promises);
                         elements = loadedElements;
                         nextId = data.nextId || (Math.max(...loadedElements.map(e=>e.id),0)+1);
                         selectedIds.clear();
@@ -903,12 +962,12 @@
                             downloadBtn.disabled = false;
                             resetPhotoBtn.disabled = false;
                         }
-                        // 🔁 REFRESH LIVE STAMP SETELAH IMPOR
+                        // Refresh live stamps
                         await refreshLiveStamps();
                         saveHistory();
                         redrawAll();
                         updateUI();
-                        alert('Preset berhasil diimpor. Stamp tanggal/jam/koordinat sudah diperbarui.');
+                        alert('Preset berhasil diimpor. Stamp diperbarui.');
                     } catch(err) {
                         alert('Gagal membaca file JSON: ' + err.message);
                     }
@@ -918,7 +977,7 @@
             input.click();
         }
 
-        // Kamera & lainnya
+        // Kamera & Background
         let mediaStream=null;
         async function startCamera(){ if(mediaStream) stopCamera(); try{ const s=await navigator.mediaDevices.getUserMedia({video:true}); mediaStream=s; video.srcObject=s; await video.play(); captureBtn.disabled=false; startCamBtn.disabled=true; stopCamBtn.disabled=false; }catch(e){ alert("Gagal kamera"); } }
         function stopCamera(){ if(mediaStream) mediaStream.getTracks().forEach(t=>t.stop()); mediaStream=null; video.srcObject=null; captureBtn.disabled=true; startCamBtn.disabled=false; stopCamBtn.disabled=true; }
@@ -950,8 +1009,8 @@
         layerUpBtn.onclick=layerUp; layerDownBtn.onclick=layerDown; toggleGridBtn.onclick=()=>{ showGrid=!showGrid; redrawAll(); };
         alignLeftBtn.onclick=alignLeft; alignCenterBtn.onclick=alignCenter; alignRightBtn.onclick=alignRight;
         zoomInBtn.onclick=zoomIn; zoomOutBtn.onclick=zoomOut; resetZoomBtn.onclick=resetZoom;
-        savePresetBtn.onclick=()=>{ localStorage.setItem('watermark_pro_preset',JSON.stringify({elements,nextId})); alert('Preset tersimpan di localStorage'); };
-        loadPresetBtn.onclick=()=>{ const raw=localStorage.getItem('watermark_pro_preset'); if(raw){ const p=JSON.parse(raw); elements=p.elements; nextId=p.nextId; selectedIds.clear(); refreshLiveStamps().then(()=>{ saveHistory(); redrawAll(); updateUI(); alert('Loaded dari localStorage dan stamp diperbarui'); }); } else alert('Tidak ada preset di localStorage'); };
+        savePresetBtn.onclick=()=>{ localStorage.setItem('watermark_pro_preset',JSON.stringify({elements: elements.map(el=>{if(el.imageElement) return {...el, imageData: el.imageElement.src, imageElement:null}; return el;}), nextId})); alert('Preset tersimpan di localStorage'); };
+        loadPresetBtn.onclick=()=>{ const raw=localStorage.getItem('watermark_pro_preset'); if(raw){ const p=JSON.parse(raw); elements = p.elements.map(el => { if(el.type==='image' && el.imageData){ const img=new Image(); img.src=el.imageData; return {...el, imageElement: img}; } return el; }); nextId=p.nextId; selectedIds.clear(); refreshLiveStamps().then(()=>{ saveHistory(); redrawAll(); updateUI(); alert('Loaded dari localStorage'); }); } else alert('Tidak ada preset di localStorage'); };
         exportJsonBtn.onclick=exportToJson;
         importJsonBtn.onclick=importFromJson;
         addQrBtn.onclick=addQR;
@@ -969,7 +1028,7 @@
         document.querySelectorAll('.shape-item').forEach(s=>s.addEventListener('click',()=>addElement({type:'shape', shapeType:s.dataset.shape, x:120,y:120, width:90,height:90, fillColor:'#10b981', strokeColor:'#fff', strokeWidth:2, opacity:1})));
         document.querySelectorAll('.icon-option').forEach(ic=>ic.addEventListener('click',()=>addElement({type:'icon', iconChar:ic.dataset.icon, x:140,y:140, size:44, color:'#fff', opacity:1})));
 
-        // Contoh watermark awal (opsional, dengan stamp live)
+        // Inisialisasi contoh
         addElement({type:'text', text:'Bold & Italic & Underline', x:30, y:50, fontSize:24, fontFamily:'Roboto', fontWeight:'bold', fontStyle:'italic', textDecoration:'underline', color:'#4f46e5', opacity:1});
         addDateStamp();
         addTimeStamp();
