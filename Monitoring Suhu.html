@@ -9,8 +9,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#1e6f5c">
-<link rel="apple-touch-icon" href="favicon.png">
+    <meta name="theme-color" content="#1e6f5c">
+    <link rel="apple-touch-icon" href="favicon.png">
     
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -19,7 +19,6 @@
     <script src="firebase-config.js"></script>
     <script src="log-helper.js"></script>
     <script src="auth-check.js"></script>
-    <!-- TAMBAHKAN timestamp-editor.js UNTUK ADMIN EDIT TIMESTAMP -->
     <script src="timestamp-editor.js"></script>
 
     <script>
@@ -33,10 +32,8 @@
         }
     </script>
     <style>
-        /* ... (existing style, no change) ... */
         * { -webkit-tap-highlight-color: transparent; }
         body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #eef2f8 0%, #e0f0ec 100%); position: relative; }
-        /* Style untuk tombol navigasi */
         .nav-actions {
             position: fixed;
             top: 16px;
@@ -114,7 +111,6 @@
     </style>
 </head>
 <body>
-    <!-- Tombol navigasi (Refresh + Back to Dashboard) -->
     <div class="nav-actions">
         <button id="backToDashboardBtn" class="nav-btn" title="Kembali ke Dashboard">
             <i class="fas fa-arrow-left"></i> Dashboard
@@ -125,7 +121,6 @@
     </div>
 
     <div class="container max-w-7xl mx-auto px-3 sm:px-4 md:px-5 py-4 md:py-6">
-        <!-- Header -->
         <div class="text-center mb-5 md:mb-7">
             <div class="inline-flex items-center justify-center bg-gradient-to-r from-primary to-accent p-3 rounded-full shadow-md">
                 <i class="fas fa-temperature-high text-white text-xl md:text-2xl"></i>
@@ -141,7 +136,6 @@
             </div>
         </div>
 
-        <!-- Form Card -->
         <div class="bg-white rounded-2xl shadow-xl overflow-hidden mb-6 md:mb-8 border border-gray-100">
             <div class="bg-gradient-to-r from-primary to-accent px-4 py-3 md:px-5 md:py-4">
                 <h2 class="text-base md:text-xl font-semibold text-white"><i class="fas fa-thermometer-half mr-2"></i> Form Pencatatan Suhu</h2>
@@ -158,9 +152,8 @@
                         <div><label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Keterangan</label><textarea id="keterangan" rows="1" placeholder="Catatan tambahan" class="w-full border border-gray-300 rounded-xl px-3 py-2 md:py-2.5 text-sm focus:ring-2 focus:ring-primary"></textarea></div>
                     </div>
                     
-                    <!-- Dokumentasi Foto Multi -->
                     <div class="border-t border-gray-200 pt-4 mt-2">
-                        <label class="block text-sm md:text-md font-semibold text-gray-800 mb-2"><i class="fas fa-camera-retro text-primary mr-2"></i> Dokumentasi Foto Ruangan (Max 5, watermark otomatis)</label>
+                        <label class="block text-sm md:text-md font-semibold text-gray-800 mb-2"><i class="fas fa-camera-retro text-primary mr-2"></i> Dokumentasi Foto Ruangan (Max 5, watermark preset TVRI)</label>
                         <div class="bg-slate-50 rounded-xl p-3 md:p-4 border border-dashed border-gray-300">
                             <div class="flex flex-wrap gap-2 justify-center">
                                 <button type="button" id="btnBukaKamera" class="bg-primary hover:bg-accent text-white px-3 py-2 rounded-xl text-xs md:text-sm shadow transition"><i class="fas fa-video mr-1"></i> Buka Kamera (Belakang)</button>
@@ -180,7 +173,7 @@
                             <div id="fotoPreviewList" class="foto-preview-grid mt-3"></div>
                             <p id="fotoCounter" class="text-xs text-gray-500 mt-2 text-center">0 dari 5 foto</p>
                             <input type="hidden" id="fotoDataArray" value="[]">
-                            <p class="text-[11px] md:text-xs text-gray-500 mt-3 bg-white/70 p-2 rounded text-center"><i class="fas fa-shield-alt text-green-600"></i> <strong>Watermark otomatis</strong> : Logo TVRI, informasi transmisi, petugas, waktu, koordinat GPS</p>
+                            <p class="text-[11px] md:text-xs text-gray-500 mt-3 bg-white/70 p-2 rounded text-center"><i class="fas fa-shield-alt text-green-600"></i> <strong>Watermark preset TVRI</strong> : Logo, lingkaran biru, teks TV-RI-PAPUA, jam, tanggal, koordinat GPS, alamat transmisi</p>
                         </div>
                     </div>
 
@@ -192,7 +185,6 @@
             </div>
         </div>
 
-        <!-- Daftar Riwayat -->
         <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
             <div class="bg-gradient-to-r from-primary to-accent px-4 py-3 md:px-5 md:py-4 flex justify-between items-center flex-wrap gap-2">
                 <h2 class="text-base md:text-xl font-semibold text-white"><i class="fas fa-table-list mr-2"></i> Riwayat Pencatatan Suhu</h2>
@@ -213,13 +205,141 @@
     </div>
 
     <script>
-        // ======================== KONFIGURASI FIREBASE (Offline Persistence + Realtime) ========================
+        // ======================== WATERMARK PRESET DARI JSON ========================
+        const watermarkPreset = {
+            "version": 2,
+            "nextId": 25,
+            "elements": [
+                { "type": "shape", "shapeType": "circle", "x": 77.26708074534162, "y": 271.7355371900827, "width": 43.29192546583853, "height": 42.39669421487605, "fillColor": "#10008a", "strokeColor": "#fff", "strokeWidth": 2, "opacity": 1, "id": 5 },
+                { "type": "text", "text": "TV", "x": 41.35057876905704, "y": 281.54302767939134, "fontSize": 27.751437959216886, "fontFamily": "Inter", "fontWeight": "bold", "fontStyle": "normal", "textDecoration": "none", "color": "#10008a", "opacity": 1, "id": 4, "strokeColor": "#ffffff", "strokeWidth": 3 },
+                { "type": "shape", "shapeType": "line", "x": 78.13664596273294, "y": 284.46280991735546, "width": 5, "height": 14.892561983471012, "strokeColor": "#10008a", "strokeWidth": 4, "opacity": 1, "id": 6, "fillColor": "#10008a" },
+                { "type": "shape", "shapeType": "line", "x": 80.24844720496898, "y": 283.63636363636374, "width": 19.90683229813662, "height": 19.851239669421375, "strokeColor": "#10008a", "strokeWidth": 4, "opacity": 1, "id": 7, "fillColor": "#10008a" },
+                { "type": "text", "text": "RI", "x": 86.19529926595146, "y": 281.70831693558966, "fontSize": 25.883953434093154, "fontFamily": "Inter", "fontWeight": "bold", "fontStyle": "normal", "textDecoration": "none", "color": "#10008a", "opacity": 1, "id": 8, "strokeColor": "#ffffff", "strokeWidth": 3 },
+                { "type": "text", "text": "PAPUA", "x": 56.381634669678164, "y": 319.39426734881283, "fontSize": 12.759891486315993, "fontFamily": "Inter", "fontWeight": "bold", "fontStyle": "normal", "textDecoration": "none", "color": "#10008a", "opacity": 1, "id": 9, "strokeColor": "#ffffff", "strokeWidth": 3 },
+                { "type": "text", "text": "17:00", "x": 39.87577639751551, "y": 344.7107438016528, "fontSize": 41.13254457082807, "fontFamily": "Montserrat", "fontWeight": "bold", "fontStyle": "normal", "textDecoration": "none", "color": "#ffffff", "opacity": 1, "id": 10, "strokeColor": "#ffffff" },
+                { "type": "shape", "shapeType": "rectangle", "x": 159.75155279503107, "y": 345.12396694214885, "width": 5, "height": 34.462809917355344, "fillColor": "#ffae00", "strokeColor": "#ffae00", "strokeWidth": 0, "opacity": 1, "id": 12 },
+                { "type": "text", "text": "04/06/2026", "x": 179.0062111801242, "y": 347.5206611570248, "fontSize": 12, "fontFamily": "Montserrat", "fontWeight": "bold", "fontStyle": "normal", "textDecoration": "none", "color": "#ffffff", "opacity": 1, "id": 14, "strokeColor": "#ffffff" },
+                { "type": "text", "text": "Kamis", "x": 179.00621118012427, "y": 366.198347107438, "fontSize": 14, "fontFamily": "Montserrat", "fontWeight": "bold", "fontStyle": "normal", "textDecoration": "none", "color": "#ffffff", "opacity": 1, "id": 15, "strokeColor": "#ffffff" },
+                { "type": "text", "text": "Persatuan, Kecamatan, Mandobo, Kabupaten\nBoven Digoel, Papua Selatan 99663", "x": 42.36024844720498, "y": 391.57024793388433, "fontSize": 11, "fontFamily": "Inter", "fontWeight": "normal", "fontStyle": "normal", "textDecoration": "none", "color": "#ffffff", "opacity": 1, "id": 16, "strokeColor": "#ffffff" },
+                { "type": "text", "text": "24.095695, 91.289673", "x": 58.75776397515526, "y": 425.2066115702479, "fontSize": 11, "fontFamily": "Inter", "fontWeight": "normal", "fontStyle": "normal", "textDecoration": "none", "color": "#ffffff", "opacity": 1, "id": 17, "strokeColor": "#ffffff" },
+                { "type": "icon", "iconChar": "📍", "x": 32.67080745341613, "y": 435.5371900826446, "size": 20.14906832298135, "color": "#fff", "opacity": 1, "id": 18 }
+            ],
+            "background": { "type": "image", "value": "image" }
+        };
+
+        // Hitung bounding box referensi untuk scaling
+        let refWidth = 0, refHeight = 0;
+        watermarkPreset.elements.forEach(el => {
+            let right = el.x + (el.width || 0);
+            let bottom = el.y + (el.height || (el.fontSize ? el.fontSize * 1.2 : 0));
+            if (right > refWidth) refWidth = right;
+            if (bottom > refHeight) refHeight = bottom;
+        });
+        refWidth = Math.max(refWidth, 500);
+        refHeight = Math.max(refHeight, 500);
+
+        function getIndonesianDay(date) {
+            const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+            return days[date.getDay()];
+        }
+
+        async function applyWatermarkSuhu(originalDataUrl, petugasName, locationCoord, waktuStr) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    
+                    const scaleX = img.width / refWidth;
+                    const scaleY = img.height / refHeight;
+                    const scale = Math.min(scaleX, scaleY);
+                    
+                    const now = new Date();
+                    const tanggalFormatted = now.toLocaleDateString('id-ID', { year:'numeric', month:'2-digit', day:'2-digit' }).split('/').reverse().join('-');
+                    const hari = getIndonesianDay(now);
+                    const jamFormatted = now.toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit', hour12: false });
+                    const lokasiStr = locationCoord ? `${Math.abs(locationCoord.lat).toFixed(6)}°${locationCoord.lat>=0?'U':'S'}, ${Math.abs(locationCoord.lng).toFixed(6)}°${locationCoord.lng>=0?'T':'B'}` : "Lokasi tidak tersedia";
+                    const alamat = "Persatuan, Kecamatan, Mandobo, Kabupaten\nBoven Digoel, Papua Selatan 99663";
+                    
+                    watermarkPreset.elements.forEach(el => {
+                        ctx.save();
+                        ctx.globalAlpha = el.opacity || 1;
+                        
+                        const x = el.x * scaleX;
+                        const y = el.y * scaleY;
+                        const w = (el.width || 0) * scaleX;
+                        const h = (el.height || 0) * scaleY;
+                        
+                        if (el.type === 'shape') {
+                            if (el.shapeType === 'circle') {
+                                ctx.beginPath();
+                                ctx.arc(x + w/2, y + h/2, w/2, 0, 2 * Math.PI);
+                                ctx.fillStyle = el.fillColor || '#000';
+                                ctx.fill();
+                                if (el.strokeColor && el.strokeWidth) {
+                                    ctx.strokeStyle = el.strokeColor;
+                                    ctx.lineWidth = el.strokeWidth * scale;
+                                    ctx.stroke();
+                                }
+                            } else if (el.shapeType === 'rectangle') {
+                                ctx.fillStyle = el.fillColor || '#000';
+                                ctx.fillRect(x, y, w, h);
+                                if (el.strokeColor && el.strokeWidth) {
+                                    ctx.strokeStyle = el.strokeColor;
+                                    ctx.lineWidth = el.strokeWidth * scale;
+                                    ctx.strokeRect(x, y, w, h);
+                                }
+                            } else if (el.shapeType === 'line') {
+                                ctx.beginPath();
+                                ctx.moveTo(x, y);
+                                ctx.lineTo(x + w, y + h);
+                                ctx.strokeStyle = el.strokeColor || '#000';
+                                ctx.lineWidth = el.strokeWidth * scale;
+                                ctx.stroke();
+                            }
+                        } else if (el.type === 'text') {
+                            let text = el.text;
+                            if (el.id === 10) text = jamFormatted;
+                            if (el.id === 14) text = tanggalFormatted;
+                            if (el.id === 15) text = hari;
+                            if (el.id === 16) text = alamat;
+                            if (el.id === 17) text = lokasiStr;
+                            
+                            const fontSize = (el.fontSize || 12) * scale;
+                            ctx.font = `${el.fontWeight || 'normal'} ${fontSize}px ${el.fontFamily || 'Inter'}`;
+                            ctx.fillStyle = el.color || '#000';
+                            if (el.strokeColor && el.strokeWidth) {
+                                ctx.strokeStyle = el.strokeColor;
+                                ctx.lineWidth = el.strokeWidth * scale;
+                                ctx.strokeText(text, x, y);
+                            }
+                            ctx.fillText(text, x, y);
+                        } else if (el.type === 'icon') {
+                            const iconSize = (el.size || 16) * scale;
+                            ctx.font = `${iconSize}px "Segoe UI Emoji"`;
+                            ctx.fillStyle = el.color || '#000';
+                            ctx.fillText(el.iconChar || '📍', x, y);
+                        }
+                        ctx.restore();
+                    });
+                    
+                    resolve(canvas.toDataURL('image/jpeg', 0.88));
+                };
+                img.onerror = reject;
+                img.src = originalDataUrl;
+            });
+        }
+
+        // ======================== KONFIGURASI FIREBASE ========================
         let isFirebaseReady = false;
         let dataEntries = [];
         let listenerRef = null;
         let isInternalUpdate = false;
         const DB_PATH = 'monitoring/suhu/entries';
-        let userRole = 'guest'; // role dari auth-check
+        let userRole = 'guest';
 
         function updateFirebaseStatus(connected, message) {
             const statusEl = document.getElementById('firebaseStatus');
@@ -310,9 +430,8 @@
             isInternalUpdate = true;
             await setEntriesToFirebase(updated);
             isInternalUpdate = false;
-            // LOG: Tambah data
             if (typeof window.logActivity === 'function') {
-                window.logActivity('TAMBAH DATA', `Menambahkan data suhu ID ${newEntry.id} - Suhu: ${newEntry.suhu}°C, Tanggal: ${newEntry.tanggal}`, 'Monitoring Suhu');
+                window.logActivity('TAMBAH DATA', `Menambahkan data suhu ID ${newEntry.id} - Suhu: ${newEntry.suhu}°C`, 'Monitoring Suhu');
             }
         }
 
@@ -321,7 +440,6 @@
             isInternalUpdate = true;
             await setEntriesToFirebase(updated);
             isInternalUpdate = false;
-            // LOG: Hapus data
             if (typeof window.logActivity === 'function') {
                 window.logActivity('HAPUS DATA', `Menghapus data suhu ID ${id}`, 'Monitoring Suhu');
             }
@@ -332,7 +450,6 @@
             isInternalUpdate = true;
             await setEntriesToFirebase([]);
             isInternalUpdate = false;
-            // LOG: Hapus semua
             if (typeof window.logActivity === 'function') {
                 window.logActivity('HAPUS SEMUA', `Menghapus semua data suhu (${count} entries)`, 'Monitoring Suhu');
             }
@@ -428,7 +545,7 @@
             const petugas = document.getElementById('petugas').value.trim();
             if (!petugas) { alert("Isi nama petugas dulu."); return false; }
             if (currentFotoList.length >= 5) { alert("Maksimal 5 foto."); return false; }
-            showLoading("Memproses watermark & lokasi...");
+            showLoading("Memproses watermark preset & lokasi...");
             try {
                 const fotoObj = await processSingleFoto(sourceBase64, petugas);
                 currentFotoList.push(fotoObj);
@@ -466,62 +583,13 @@
             });
         }
 
-        async function applyWatermarkSuhu(dataUrl, petugasName, locationCoord, waktuStr) {
-            return new Promise((resolve, reject) => {
-                const img = new Image();
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = img.width; canvas.height = img.height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0);
-                    const scale = Math.min(0.28, Math.max(0.18, img.width / 550));
-                    const tvFontSize = Math.floor(58 * scale);
-                    const riFontSize = Math.floor(52 * scale);
-                    const radius = Math.floor(48 * scale);
-                    ctx.font = `800 ${tvFontSize}px "Inter"`;
-                    ctx.fillStyle = "#1E3A8F";
-                    ctx.fillText("TV", 22, 22 + tvFontSize);
-                    const tvW = ctx.measureText("TV").width;
-                    const circleX = 22 + tvW + radius + 3;
-                    const circleY = 22 + tvFontSize - radius * 0.65;
-                    ctx.beginPath(); ctx.arc(circleX, circleY, radius, 0, 2*Math.PI);
-                    ctx.fillStyle = "#1E3A8F"; ctx.fill();
-                    ctx.font = `800 ${riFontSize}px "Inter"`;
-                    ctx.fillStyle = "#FFFFFF";
-                    ctx.fillText("RI", circleX - ctx.measureText("RI").width/2, circleY + (riFontSize*0.38));
-                    const small = Math.max(14, Math.floor(img.width / 32));
-                    const lines = [`📡 TRANSMISI TANAH MERAH - CH 44 | FREQ 658`, `👤 Petugas: ${petugasName}`, `🕒 ${waktuStr}`, `📍 ${locationCoord ? `${Math.abs(locationCoord.lat).toFixed(6)}°${locationCoord.lat>=0?'LU':'LS'}, ${Math.abs(locationCoord.lng).toFixed(6)}°${locationCoord.lng>=0?'BT':'BB'}` : "Lokasi tidak tersedia"}`];
-                    ctx.font = `${small}px "Inter"`;
-                    let maxW = 0; lines.forEach(l => maxW = Math.max(maxW, ctx.measureText(l).width));
-                    const pad = 16, bgW = maxW + pad*2, lineH = small+6, bgH = lines.length*lineH + pad;
-                    const posX = img.width - bgW - 16, posY = img.height - bgH - 16;
-                    ctx.save(); ctx.globalAlpha = 0.88; ctx.fillStyle = "#0A0F1C"; ctx.shadowBlur = 8;
-                    ctx.beginPath(); ctx.moveTo(posX+16, posY); ctx.lineTo(posX+bgW-16, posY); ctx.quadraticCurveTo(posX+bgW, posY, posX+bgW, posY+16);
-                    ctx.lineTo(posX+bgW, posY+bgH-16); ctx.quadraticCurveTo(posX+bgW, posY+bgH, posX+bgW-16, posY+bgH);
-                    ctx.lineTo(posX+16, posY+bgH); ctx.quadraticCurveTo(posX, posY+bgH, posX, posY+bgH-16);
-                    ctx.lineTo(posX, posY+16); ctx.quadraticCurveTo(posX, posY, posX+16, posY); ctx.fill();
-                    ctx.globalAlpha=1; ctx.strokeStyle="#f5b042"; ctx.lineWidth=2; ctx.stroke();
-                    ctx.fillStyle = "#FFFFFF"; ctx.shadowBlur=2;
-                    lines.forEach((l,i) => ctx.fillText(l, posX+pad, posY+pad + (i+1)*lineH - 4));
-                    ctx.restore();
-                    resolve(canvas.toDataURL('image/jpeg', 0.88));
-                };
-                img.onerror = reject;
-                img.src = dataUrl;
-            });
-        }
-
-        // ========== FUNGSI UTAMA PROSES FOTO DENGAN EDIT TIMESTAMP UNTUK ADMIN ==========
         async function processSingleFoto(originalBase64, petugas) {
             if (!petugas) throw new Error("Petugas belum diisi");
             const pos = await getCurrentPosition();
             let now = new Date();
-            
-            // Jika user adalah admin dan fungsi edit timestamp tersedia, tawarkan edit
             if (userRole === 'admin' && typeof window.getEditableTimestamp === 'function') {
                 now = await window.getEditableTimestamp(userRole, now);
             }
-            
             const waktuStr = now.toLocaleString('id-ID', { hour12: false, day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit', second:'2-digit' });
             const watermarked = await applyWatermarkSuhu(originalBase64, petugas, pos, waktuStr);
             return { base64: watermarked, jamFoto: waktuStr, lat: pos?.lat || null, lng: pos?.lng || null };
@@ -546,7 +614,6 @@
         btnFlip.addEventListener('click', flipCamera);
         btnUpload.addEventListener('click', uploadManual);
 
-        // ========== FUNGSI EDIT UNTUK ADMIN (Manipulasi Tanggal) ==========
         async function updateEntryInFirebase(updatedEntry) {
             const index = dataEntries.findIndex(e => e.id == updatedEntry.id);
             if (index !== -1) {
@@ -567,14 +634,12 @@
                 entry.tanggal = newTanggal;
                 await updateEntryInFirebase(entry);
                 alert("Tanggal berhasil diubah.");
-                // LOG: Edit data
                 if (typeof window.logActivity === 'function') {
                     window.logActivity('EDIT DATA', `Mengedit data suhu ID ${id} - Tanggal menjadi ${newTanggal}`, 'Monitoring Suhu');
                 }
             }
         };
 
-        // ========== RENDER TABEL dengan Tombol Edit untuk Admin ==========
         window.viewAllFoto = (fotoList, startIdx) => {
             if(!fotoList?.length) return;
             let current = startIdx || 0;
@@ -595,7 +660,7 @@
 
         function renderTable() {
             const tbody = document.getElementById("tabelBody");
-            if(!dataEntries.length){ tbody.innerHTML=`<tr><td colspan="7" class="text-center py-6 text-gray-400">📭 Kosong</td</tr`; return; }
+            if(!dataEntries.length){ tbody.innerHTML=`<tr><td colspan="7" class="text-center py-6 text-gray-400">📭 Kosong</td></tr>`; return; }
             let html = "";
             dataEntries.forEach(entry => {
                 const fotoCount = entry.fotoList?.length || 0;
@@ -611,15 +676,15 @@
                 html += `<tr class="border-b hover:bg-slate-50">
                     <td class="py-2 px-1 font-mono">${entry.id}</td>
                     <td class="py-2 px-1">${entry.tanggal}</td>
-                    <td class="py-2 px-1 font-semibold">${entry.suhu} °C</td
-                    <td class="py-2 px-1 text-center">${fotoCell}</td
-                    <td class="py-2 px-1">${escapeHtml(entry.petugas)}</td
-                    <td class="py-2 px-1 max-w-[120px] truncate">${escapeHtml(entry.keterangan||'-')}</td
+                    <td class="py-2 px-1 font-semibold">${entry.suhu} °C</td>
+                    <td class="py-2 px-1 text-center">${fotoCell}</td>
+                    <td class="py-2 px-1">${escapeHtml(entry.petugas)}</td>
+                    <td class="py-2 px-1 max-w-[120px] truncate">${escapeHtml(entry.keterangan||'-')}</td>
                     <td class="py-2 px-1">
                         ${editButtonHtml}
                         <button onclick="deleteEntry(${entry.id})" class="bg-red-100 text-red-600 px-2 py-1 rounded-full text-[10px]"><i class="fas fa-trash-can"></i> Hapus</button>
-                    </td
-                </table>`;
+                    </td>
+                 </tr>`;
             });
             tbody.innerHTML = html;
             window.entryData = dataEntries;
@@ -638,7 +703,6 @@
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            // Cegah submit jika role tamu (seharusnya sudah disabled, tapi safety)
             if (userRole === 'guest') {
                 alert("Anda tidak memiliki izin untuk menyimpan data. Silakan login.");
                 return;
@@ -684,7 +748,6 @@
             } 
         });
 
-        // ========== EXPORT HTML ==========
         document.getElementById('btnExportHTML').addEventListener('click', () => {
             if(!dataEntries.length) return alert("Tidak ada data");
             let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Laporan Suhu - Transmisi Tanah Merah</title><style>body{font-family:Inter,sans-serif;margin:20px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #aaa;padding:8px;vertical-align:top}th{background:#1e6f5c;color:white}.foto-grid{display:flex;gap:6px;flex-wrap:wrap}img{width:60px;height:60px;object-fit:cover;border-radius:8px}</style></head><body><h2>Monitoring Suhu - Transmisi Tanah Merah Ch44 (658)</h2><p>Export: ${new Date().toLocaleString()}</p><table border="1"><thead><tr><th>No</th><th>Tanggal</th><th>Suhu (°C)</th><th>Foto</th><th>Petugas</th><th>Keterangan</th></tr></thead><tbody>`;
@@ -692,9 +755,8 @@
                 let fotoHtml = `<div class="foto-grid">${(e.fotoList||[]).map(f=>`<img src="${f.base64}" title="${f.jamFoto}">`).join('')}</div>`;
                 html += `<tr><td>${idx+1}</td><td>${e.tanggal}</td><td>${e.suhu} °C</td><td>${fotoHtml}</td><td>${escapeHtml(e.petugas)}</td><td>${escapeHtml(e.keterangan||'-')}</td></tr>`;
             });
-            html += `</tbody><table><p><em>Watermark otomatis: TVRI, transmisi, petugas, waktu, koordinat.</em></p></body></html>`;
+            html += `</tbody></table><p><em>Watermark preset TVRI: logo, lingkaran biru, teks TV-RI-PAPUA, jam dinamis, tanggal, koordinat GPS, alamat transmisi.</em></p></body></html>`;
             const blob = new Blob([html], {type:"text/html"}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`laporan_suhu_${Date.now()}.html`; a.click(); URL.revokeObjectURL(blob);
-            // LOG: Export data
             if (typeof window.logActivity === 'function') {
                 window.logActivity('EXPORT', `Mengekspor data suhu ke HTML (${dataEntries.length} data)`, 'Monitoring Suhu');
             }
@@ -703,33 +765,27 @@
         function showLoading(msg) { let ld = document.getElementById('globalLoading'); if(!ld){ ld=document.createElement('div'); ld.id='globalLoading'; ld.className='loading-overlay'; ld.innerHTML=`<div class="bg-black/80 text-white p-4 rounded-xl text-center">${msg}</div>`; document.body.appendChild(ld); } else ld.style.display='flex'; }
         function hideLoading() { let ld = document.getElementById('globalLoading'); if(ld) ld.remove(); }
 
-        // ======================== MULTI-ROLE HANDLER ========================
         window.addEventListener('roleChanged', (e) => {
             userRole = e.detail.role;
-            // Update tampilan role di header
             const roleDisplaySpan = document.getElementById('userRoleDisplay');
             if (roleDisplaySpan) {
                 if (userRole === 'admin') roleDisplaySpan.innerHTML = '<i class="fas fa-user-shield"></i> Admin';
                 else if (userRole === 'user') roleDisplaySpan.innerHTML = '<i class="fas fa-user"></i> User';
                 else roleDisplaySpan.innerHTML = '<i class="fas fa-user-friends"></i> Tamu';
             }
-            // Nonaktifkan form jika tamu
             const formInputs = document.querySelectorAll('#formSuhu input, #formSuhu select, #formSuhu textarea, #formSuhu button[type="submit"]');
             formInputs.forEach(inp => {
                 if (userRole === 'guest') inp.disabled = true;
                 else inp.disabled = false;
             });
-            // Tombol hapus semua hanya untuk admin? (opsional)
             const hapusSemuaBtn = document.getElementById('btnHapusSemua');
             if (hapusSemuaBtn) {
                 if (userRole !== 'admin') hapusSemuaBtn.style.display = 'none';
                 else hapusSemuaBtn.style.display = 'inline-flex';
             }
-            // Render ulang tabel untuk menampilkan tombol edit jika admin
             renderTable();
         });
 
-        // ======================== INISIALISASI FIREBASE ========================
         async function initFirebase() {
             if (!window.db) { setTimeout(initFirebase, 300); return; }
             isFirebaseReady = true;
@@ -741,7 +797,6 @@
         }
         initFirebase();
 
-        // ========== EVENT LISTENER UNTUK TOMBOL NAVIGASI ==========
         document.getElementById('backToDashboardBtn').addEventListener('click', function() {
             window.location.href = 'index.html';
         });
