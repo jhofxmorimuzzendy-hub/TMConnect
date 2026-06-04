@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Watermark Studio - Responsif + Kamera Depan/Belakang (Fix)</title>
+    <title>Watermark Studio - Kamera Depan/Belakang + Canvas Responsif</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
@@ -404,7 +404,7 @@
     let isResizing = false;
     let resizeHandle = null;
     let dragStartMouse = { x: 0, y: 0 };
-    let dragStartPositions = new Map(); // store initial relative positions
+    let dragStartPositions = new Map();
     let showGrid = false;
     let backgroundImage = null;
     let backgroundColor = null;
@@ -422,6 +422,7 @@
 
     const fontFamilies = ['Inter','Roboto','Open Sans','Montserrat','Lobster','Arial','Times New Roman','Courier New','Georgia','Verdana'];
 
+    // Helper functions
     function relToAbs(relVal, total) { return relVal * total; }
     function absToRel(absVal, total) { return total === 0 ? 0 : absVal / total; }
     function fixColor(c) { if(!c) return '#000000'; if(c==='#000') return '#000000'; if(c==='#fff') return '#ffffff'; return c; }
@@ -751,7 +752,6 @@
         return null;
     }
     let dragTargetId=null, resizeStart={w:0,h:0,x:0,y:0,wRel:0,hRel:0,xRel:0,yRel:0};
-    let dragStartSelectedIds = new Set(); // store selected ids at drag start
     canvas.addEventListener('mousedown',(e)=>{
         e.preventDefault();
         const {x,y}=getMouseCoord(e);
@@ -776,11 +776,9 @@
             } else {
                 if(!selectedIds.has(hit.id)){ selectedIds.clear(); selectedIds.add(hit.id); }
             }
-            // store initial positions
-            dragStartSelectedIds.clear();
+            let dragStartSelected = new Set(selectedIds);
             dragStartPositions.clear();
-            for(let id of selectedIds){
-                dragStartSelectedIds.add(id);
+            for(let id of dragStartSelected){
                 let el=elements.find(e=>e.id===id);
                 if(el) dragStartPositions.set(id, { xRel: el.xRel, yRel: el.yRel });
             }
@@ -819,10 +817,9 @@
             const {x,y}=getMouseCoord(e);
             const dx=x-dragStartMouse.x;
             const dy=y-dragStartMouse.y;
-            for(let id of dragStartSelectedIds){
+            for(let [id, start] of dragStartPositions){
                 let el=elements.find(e=>e.id===id);
-                let start = dragStartPositions.get(id);
-                if(el && start){
+                if(el){
                     let newXRel = start.xRel + (dx / canvas.width);
                     let newYRel = start.yRel + (dy / canvas.height);
                     newXRel = Math.min(0.95, Math.max(0.01, newXRel));
@@ -837,7 +834,6 @@
     window.addEventListener('mouseup',()=>{
         if(isDragging || isResizing) saveHistory();
         isDragging=false; isResizing=false; dragTargetId=null;
-        dragStartSelectedIds.clear();
     });
 
     // ======================== CRUD ========================
