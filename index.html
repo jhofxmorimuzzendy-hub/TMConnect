@@ -14,197 +14,168 @@
     <script src="firebase-config.js"></script>
     <script src="auth-check.js"></script>
     <style>
-        /* ========== RESET & GLOBAL RESPONSIF ========== */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        /* ========== RESPONSIVE ENHANCEMENTS ========== */
+        /* Gunakan variabel CSS dan teknik modern agar lebih adaptif */
+        :root {
+            --border-radius-card: clamp(16px, 4vw, 32px);
+            --padding-container: clamp(12px, 3vw, 24px);
+            --gap-responsive: clamp(8px, 2vw, 16px);
         }
-
-        body {
-            background: #eef2f8;
-            padding: clamp(8px, 2vw, 20px);
-            min-height: 100vh;
-            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-            line-height: 1.5;
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            background: #eef2f8; 
+            padding: clamp(6px, 2vw, 12px); 
+            min-height: 100vh; 
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; 
+            line-height: 1.4; 
         }
-
-        .app-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            background: white;
-            border-radius: clamp(24px, 5vw, 40px);
-            box-shadow: 0 20px 40px -14px rgba(0, 0, 0, 0.15);
-            overflow: hidden;
-            transition: all 0.2s;
+        .app-container { 
+            max-width: 1400px; 
+            margin: 0 auto; 
+            background: white; 
+            border-radius: clamp(28px, 5vw, 36px); 
+            box-shadow: 0 20px 40px -14px rgba(0, 0, 0, 0.15); 
+            overflow: hidden; 
         }
-
-        /* ========== HEADER FLEKSIBEL ========== */
-        .header {
-            background: linear-gradient(135deg, #1e6f5c 0%, #0e5a48 100%);
-            color: white;
-            padding: clamp(16px, 3vw, 24px);
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            justify-content: space-between;
-            gap: clamp(12px, 2vw, 20px);
+        /* Header lebih fleksibel dan tidak meluber */
+        .header { 
+            background: linear-gradient(135deg, #1e6f5c 0%, #0e5a48 100%); 
+            color: white; 
+            padding: clamp(14px, 3vw, 24px); 
+            display: flex; 
+            flex-wrap: wrap; 
+            align-items: center; 
+            justify-content: space-between; 
+            gap: var(--gap-responsive); 
         }
-
-        .header-left {
-            display: flex;
-            align-items: center;
-            gap: clamp(10px, 2vw, 18px);
-            flex-wrap: wrap;
+        .header-left { 
+            display: flex; 
+            align-items: center; 
+            gap: clamp(8px, 2vw, 14px); 
+            flex-wrap: wrap; 
             flex: 1 1 auto;
         }
-
-        .header-logo {
-            height: clamp(50px, 8vw, 80px);
-            width: auto;
-            max-width: min(200px, 40vw);
-            object-fit: contain;
-            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+        .header-logo { 
+            height: clamp(50px, 8vw, 80px); 
+            width: auto; 
+            max-width: clamp(120px, 30vw, 260px); 
+            object-fit: contain; 
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3)); 
         }
-
-        .header h1 {
-            font-size: clamp(1.2rem, 5vw, 1.8rem);
-            font-weight: 700;
-            background: rgba(255,255,255,0.12);
-            padding: 6px 16px;
-            border-radius: 60px;
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-            white-space: normal;
+        .header h1 { 
+            font-size: clamp(1.2rem, 5vw, 1.5rem); 
+            font-weight: 700; 
+            background: rgba(255,255,255,0.1); 
+            padding: 4px 14px; 
+            border-radius: 60px; 
+            display: inline-flex; 
+            align-items: center; 
+            gap: 10px; 
+            white-space: normal; 
             word-break: keep-all;
+            flex-wrap: wrap;
         }
-
-        .sync-status {
-            font-size: 0.7rem;
-            padding: 4px 12px;
-            border-radius: 40px;
-            background: rgba(0,0,0,0.25);
-            margin-left: 4px;
+        .sync-status { 
+            font-size: clamp(0.6rem, 2vw, 0.7rem); 
+            padding: 4px 12px; 
+            border-radius: 40px; 
+            background: rgba(0,0,0,0.2); 
+            margin-left: 8px; 
             white-space: nowrap;
         }
-
-        /* Month picker responsif */
-        .month-picker {
-            background: rgba(255,255,255,0.18);
-            backdrop-filter: blur(4px);
-            padding: 8px 16px;
-            border-radius: 60px;
-            display: flex;
-            gap: 12px;
-            align-items: center;
-            flex-wrap: wrap;
+        .month-picker { 
+            background: rgba(255,255,255,0.2); 
+            backdrop-filter: blur(4px); 
+            padding: 6px 12px; 
+            border-radius: 60px; 
+            display: flex; 
+            gap: 10px; 
+            align-items: center; 
+            flex-wrap: wrap; 
             justify-content: center;
         }
-
-        .month-picker select {
-            background: white;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 40px;
-            font-weight: 600;
-            color: #0b2b40;
+        .month-picker select { 
+            background: white; 
+            border: none; 
+            padding: 6px 12px; 
+            border-radius: 40px; 
+            font-weight: 600; 
+            color: #0b2b40; 
             cursor: pointer;
             font-size: 0.85rem;
         }
-
-        .badge-status {
-            background: #f5b042;
-            color: #1e3a4d;
-            padding: 6px 14px;
-            border-radius: 40px;
-            font-size: 0.75rem;
+        .badge-status { 
+            background: #f5b042; 
+            color: #1e3a4d; 
+            padding: 6px 14px; 
+            border-radius: 40px; 
+            font-size: 0.75rem; 
             font-weight: bold;
             white-space: nowrap;
         }
-
+        #userRoleDisplay {
+            background: rgba(0,0,0,0.5);
+            color: #fef9c3;
+            font-weight: 600;
+        }
+        .btn-refresh, .btn-logout { 
+            background: rgba(255,255,255,0.2); 
+            border: none; 
+            color: white; 
+            padding: 6px 14px; 
+            border-radius: 40px; 
+            font-size: 0.75rem; 
+            font-weight: 600; 
+            cursor: pointer; 
+            display: inline-flex; 
+            align-items: center; 
+            gap: 6px; 
+            backdrop-filter: blur(4px); 
+            transition: 0.2s;
+        }
         .header-actions {
             display: flex;
             align-items: center;
-            gap: clamp(8px, 2vw, 16px);
+            gap: 10px;
             flex-wrap: wrap;
         }
-
-        .btn-refresh, .btn-logout, .btn-outline, .btn-save {
-            transition: all 0.2s ease;
-            cursor: pointer;
-            touch-action: manipulation;
-        }
-
-        .btn-refresh, .btn-logout {
-            background: rgba(255,255,255,0.2);
-            border: none;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 40px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            backdrop-filter: blur(4px);
-        }
-
-        /* ========== NAVIGASI SHIFT ========== */
+        /* Shift navigation lebih responsif */
         .shift-navigation {
             background: #fef9e6;
-            margin: 20px 24px 0 24px;
+            margin: clamp(12px, 3vw, 20px) clamp(12px, 4vw, 24px) 0 clamp(12px, 4vw, 24px);
             padding: clamp(16px, 3vw, 24px);
-            border-radius: 32px;
+            border-radius: var(--border-radius-card);
             border-left: 8px solid #f5b042;
         }
-
-        @media (max-width: 680px) {
-            .shift-navigation {
-                margin: 16px 16px 0 16px;
-                padding: 16px;
-            }
+        .shift-navigation h3 {
+            color: #b45f1b;
+            font-size: clamp(1.1rem, 4.5vw, 1.25rem);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
         }
-
         .shift-date-controls {
             display: flex;
             flex-wrap: wrap;
             align-items: center;
-            gap: 16px;
+            gap: 15px;
             margin-bottom: 20px;
             background: white;
-            padding: 12px 18px;
+            padding: clamp(10px, 2vw, 18px);
             border-radius: 60px;
             justify-content: space-between;
         }
-
-        @media (max-width: 640px) {
-            .shift-date-controls {
-                flex-direction: column;
-                align-items: stretch;
-                border-radius: 32px;
-                gap: 14px;
-            }
-            .date-nav-buttons {
-                justify-content: center;
-            }
-            .date-picker-wrapper {
-                justify-content: center;
-                flex-wrap: wrap;
-            }
-        }
-
         .date-nav-buttons {
             display: flex;
             gap: 12px;
             flex-wrap: wrap;
         }
-
         .date-nav-buttons button, .date-picker-wrapper button {
             background: #eef2f5;
             border: none;
-            padding: 10px 20px;
+            padding: 8px 16px;
             border-radius: 40px;
             font-weight: 600;
             cursor: pointer;
@@ -212,9 +183,9 @@
             display: inline-flex;
             align-items: center;
             gap: 8px;
+            font-family: inherit;
             font-size: 0.85rem;
         }
-
         .date-picker-wrapper {
             display: flex;
             align-items: center;
@@ -224,234 +195,236 @@
             border-radius: 50px;
             flex-wrap: wrap;
         }
-
         .date-picker-wrapper input {
             border: 1px solid #cbd5e6;
-            padding: 10px 12px;
+            padding: 8px 12px;
             border-radius: 40px;
             font-size: 0.9rem;
-            min-width: 150px;
+            min-width: 140px;
         }
-
         .shift-detail-card {
             background: white;
             border-radius: 28px;
             padding: 18px 22px;
             margin-top: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
         }
-
         .shift-detail {
             display: flex;
             flex-wrap: wrap;
             gap: 12px;
             align-items: center;
         }
-
         .shift-item {
             background: #f8fafc;
             padding: 10px 18px;
             border-radius: 48px;
             font-weight: 500;
-            min-width: 180px;
-            flex: 1 0 auto;
+            min-width: 160px;
+            flex: 1 1 auto;
             border: 1px solid #e2edf2;
             font-size: 0.9rem;
         }
-
-        /* Tugas harian */
-        .daily-tasks-card {
-            background: #ffffff;
-            margin: 20px 24px 0 24px;
-            padding: clamp(16px, 3vw, 24px);
-            border-radius: 28px;
-            border: 1px solid #edf2f7;
+        .daily-tasks-card { 
+            background: #ffffff; 
+            margin: clamp(12px, 3vw, 20px) clamp(12px, 4vw, 24px) 0 clamp(12px, 4vw, 24px); 
+            padding: clamp(16px, 3vw, 24px); 
+            border-radius: var(--border-radius-card); 
+            border: 1px solid #edf2f7; 
         }
-
-        .daily-tasks-list {
+        .daily-tasks-card h3 { 
+            font-size: clamp(1rem, 4.5vw, 1.2rem); 
+            font-weight: 600; 
+            color: #1a4a3f; 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+            margin-bottom: 20px; 
+            flex-wrap: wrap;
+        }
+        .daily-tasks-list { 
+            display: flex; 
+            flex-wrap: wrap; 
+            gap: 12px; 
+            align-items: center; 
+        }
+        .task-badge { 
+            background: #f8fafc; 
+            border: 1px solid #e2edf2; 
+            border-radius: 48px; 
+            padding: 8px 20px; 
+            font-size: 0.85rem; 
+            display: inline-flex; 
+            align-items: center; 
+            gap: 10px; 
+            text-decoration: none; 
+            color: #1e293b; 
+            cursor: pointer; 
+            transition: all 0.2s;
+            flex: 0 1 auto;
+        }
+        .action-bar { 
+            padding: 20px clamp(12px, 4vw, 24px) 8px clamp(12px, 4vw, 24px); 
             display: flex;
             flex-wrap: wrap;
             gap: 12px;
-            align-items: center;
         }
-
-        .task-badge {
-            background: #f8fafc;
-            border: 1px solid #e2edf2;
-            border-radius: 48px;
-            padding: 8px 22px;
-            font-size: 0.85rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            text-decoration: none;
-            color: #1e293b;
-            cursor: pointer;
-            transition: all 0.2s;
+        .btn-save, .btn-outline { 
+            border: none; 
+            padding: 10px 24px; 
+            border-radius: 60px; 
+            cursor: pointer; 
+            display: inline-flex; 
+            align-items: center; 
+            gap: 10px; 
+            font-family: inherit;
+            font-size: 0.9rem;
         }
-
-        /* Tabel shift (manage panel) responsif */
-        .shift-table-container {
-            overflow-x: auto;
-            border-radius: 24px;
-            border: 1px solid #e2e8f0;
+        .btn-save { background: #1e6f5c; color: white; }
+        .btn-save:hover { background: #0e5a48; transform: translateY(-2px); }
+        .btn-outline { background: transparent; border: 1.5px solid #cbd5e1; color: #2c3e4e; }
+        .content-area { 
+            padding: 8px clamp(12px, 4vw, 24px) 24px clamp(12px, 4vw, 24px); 
+            border-top: 1px solid #eef2f5; 
+            margin-top: 12px; 
+            display: none; 
+        }
+        .shift-table-container { 
+            overflow-x: auto; 
+            border-radius: 24px; 
+            border: 1px solid #e2e8f0; 
             margin: 16px 0;
             -webkit-overflow-scrolling: touch;
         }
-
-        .shift-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.85rem;
-            min-width: 550px;
+        .shift-table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            font-size: clamp(0.75rem, 2.5vw, 0.85rem); 
+            min-width: 550px; 
         }
-
-        .shift-table th {
-            background: #eef2f5;
-            padding: 14px 8px;
-            text-align: center;
+        .shift-table th { 
+            background: #eef2f5; 
+            padding: 12px 6px; 
+            text-align: center; 
+            border-bottom: 2px solid #cbd5e1; 
         }
-
-        .shift-table td {
-            padding: 12px 8px;
-            text-align: center;
-            border-bottom: 1px solid #e9edf2;
+        .shift-table td { 
+            padding: 10px 6px; 
+            text-align: center; 
+            border-bottom: 1px solid #e9edf2; 
         }
-
-        .shift-table input {
-            width: 100%;
-            min-width: 100px;
-            padding: 10px;
-            border-radius: 28px;
-            border: 1px solid #cbd5e6;
-            text-align: center;
+        .shift-table input { 
+            width: 100%; 
+            min-width: 100px; 
+            padding: 8px; 
+            border-radius: 20px; 
+            border: 1px solid #cbd5e6; 
+            text-align: center; 
             font-size: 0.85rem;
         }
-
-        /* Grid Modul monitoring — responsif */
-        .modules-section {
-            padding: 28px 24px 36px 24px;
-            border-top: 2px solid #e9edf2;
-            margin-top: 12px;
+        .modules-section { 
+            padding: 28px clamp(12px, 4vw, 24px) 36px clamp(12px, 4vw, 24px); 
+            border-top: 2px solid #e9edf2; 
+            margin-top: 12px; 
         }
-
-        .modules-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-            gap: 20px;
+        .modules-section h3 { 
+            font-size: clamp(1.2rem, 5vw, 1.35rem); 
+            font-weight: 700; 
+            color: #0b2b40; 
+            margin-bottom: 24px; 
+            display: flex; 
+            align-items: center; 
+            gap: 12px; 
+            flex-wrap: wrap;
         }
-
-        @media (max-width: 580px) {
-            .modules-grid {
-                grid-template-columns: 1fr;
-                gap: 14px;
-            }
-            .module-card {
-                padding: 14px 18px;
-            }
-            .header-left {
-                justify-content: center;
-            }
-            .header h1 {
-                justify-content: center;
-                text-align: center;
-            }
-            .month-picker {
-                justify-content: center;
-                width: 100%;
-            }
-            .shift-item {
-                text-align: center;
-            }
-            .daily-tasks-list {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            .task-badge {
-                justify-content: center;
-            }
+        .modules-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); 
+            gap: clamp(16px, 3vw, 24px); 
         }
-
-        .module-card {
-            background: white;
-            border-radius: 28px;
-            padding: 18px 20px;
-            border: 1px solid #e2edf2;
-            display: flex;
-            align-items: center;
-            gap: 18px;
-            text-decoration: none;
-            color: #1e293b;
-            transition: all 0.2s;
+        .module-card { 
+            background: white; 
+            border-radius: 28px; 
+            padding: clamp(12px, 2vw, 20px); 
+            border: 1px solid #e2edf2; 
+            display: flex; 
+            align-items: center; 
+            gap: 16px; 
+            text-decoration: none; 
+            color: #1e293b; 
+            transition: 0.2s;
         }
-
-        .module-icon {
-            font-size: 1.8rem;
-            width: 58px;
-            height: 58px;
-            background: #eef2fa;
-            border-radius: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        .module-icon { 
+            font-size: 1.8rem; 
+            width: 54px; 
+            height: 54px; 
+            background: #eef2fa; 
+            border-radius: 30px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            color: #1e6f5c;
             flex-shrink: 0;
         }
-
-        .module-info h4 {
-            font-size: 1rem;
-            font-weight: 800;
+        .module-info h4 { 
+            font-size: 1rem; 
+            font-weight: 800; 
         }
-
-        .module-info p {
-            font-size: 0.7rem;
-            color: #5b6e8c;
+        .module-info p { 
+            font-size: 0.7rem; 
+            color: #5b6e8c; 
         }
-
-        /* pesan info / warning */
-        .warning-message, .info-message {
-            padding: 14px 20px;
-            border-radius: 28px;
-            margin: 16px 0;
+        .warning-message, .info-message { 
+            padding: 12px 18px; 
+            border-radius: 28px; 
+            margin: 16px 0; 
             font-size: 0.9rem;
         }
-
-        .action-bar {
-            padding: 20px 24px 8px 24px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
+        .warning-message { background: #fff3e0; color: #b45f1b; border-left: 5px solid #f5b042; }
+        .info-message { background: #e6f7f0; color: #1e6f5c; border-left: 5px solid #1e6f5c; }
+        footer { 
+            text-align: center; 
+            padding: 20px; 
+            font-size: 0.7rem; 
+            color: #7f8c8d; 
+            border-top: 1px solid #e2edf2; 
+            background: #fafcff; 
         }
 
-        .btn-save, .btn-outline {
-            padding: 12px 28px;
-            border-radius: 60px;
-            font-family: inherit;
-            font-weight: 600;
-            font-size: 0.9rem;
+        /* ===== MEDIA QUERIES LEBIH HALUS ===== */
+        @media (max-width: 780px) {
+            body { padding: 6px; }
+            .header { padding: 14px 16px; flex-direction: column; align-items: stretch; gap: 12px; }
+            .header-left { justify-content: space-between; flex-wrap: wrap; }
+            .header h1 { font-size: 1.2rem; white-space: normal; text-align: center; justify-content: center; }
+            .month-picker { justify-content: space-between; width: 100%; flex-wrap: wrap; }
+            .shift-navigation { margin: 12px 12px 0 12px; padding: 16px; }
+            .shift-date-controls { flex-direction: column; align-items: stretch; border-radius: 32px; }
+            .date-nav-buttons { justify-content: center; }
+            .date-picker-wrapper { justify-content: center; flex-wrap: wrap; }
+            .shift-detail { flex-direction: column; align-items: stretch; }
+            .shift-item { text-align: center; }
+            .action-bar { justify-content: center; }
         }
-
-        footer {
-            text-align: center;
-            padding: 20px;
-            font-size: 0.7rem;
-            color: #5b6e8c;
-            border-top: 1px solid #e2edf2;
-            background: #fafcff;
+        @media (max-width: 580px) {
+            .header-logo { height: 45px; max-width: 140px; }
+            .daily-tasks-list { flex-direction: column; align-items: stretch; }
+            .task-badge { justify-content: center; width: 100%; }
+            .module-card { padding: 12px 16px; }
+            .module-icon { width: 48px; height: 48px; font-size: 1.5rem; }
+            .btn-save, .btn-outline { width: 100%; justify-content: center; }
+            .shift-table th, .shift-table td { padding: 8px 4px; }
         }
-
-        /* Touch friendly improvements */
-        button, .module-card, select, .task-badge, .btn-refresh, .btn-logout {
-            touch-action: manipulation;
+        @media (max-width: 380px) {
+            .month-picker select { padding: 4px 8px; font-size: 0.75rem; }
+            .badge-status { font-size: 0.65rem; padding: 4px 8px; }
+            .btn-refresh, .btn-logout { padding: 5px 12px; font-size: 0.7rem; }
+            .shift-item { font-size: 0.8rem; }
         }
-
-        /* Menjaga konten tidak overflow */
-        img, iframe, video {
-            max-width: 100%;
-            height: auto;
-        }
-
-        .dynamic-content-panel {
-            padding: 8px 0;
-        }
+        button, .module-card, select, .task-badge { touch-action: manipulation; }
+        /* Pastikan tidak ada overflow */
+        img, iframe, video { max-width: 100%; height: auto; }
+        .content-area .shift-table-container { overflow-x: auto; }
     </style>
 </head>
 <body>
@@ -481,9 +454,9 @@
 
     <div id="mainMenuPanel">
         <div class="main-menu-container">
-            <!-- KARTU NAVIGASI SHIFT HARIAN -->
+            <!-- KARTU NAVIGASI SHIFT HARIAN (DENGAN TOMBOL NEXT/PREV & DATE PICKER) -->
             <div class="shift-navigation">
-                <h3 style="color:#b45f1b; font-size: clamp(1.1rem, 4vw, 1.3rem);"><i class="fas fa-calendar-alt"></i> Jadwal Shift</h3>
+                <h3><i class="fas fa-calendar-alt"></i> Jadwal Shift</h3>
                 <div class="shift-date-controls">
                     <div class="date-nav-buttons">
                         <button id="prevDayBtn" title="Hari Sebelumnya"><i class="fas fa-chevron-left"></i> Sebelumnya</button>
@@ -496,12 +469,13 @@
                     </div>
                 </div>
                 <div id="shiftDetailContainer" class="shift-detail-card">
+                    <!-- Isi shift akan dirender di sini -->
                     <div class="info-message"><i class="fas fa-spinner fa-pulse"></i> Memuat jadwal...</div>
                 </div>
             </div>
 
             <div class="daily-tasks-card" id="dailyTasksCard">
-                <h3 style="font-size: clamp(1rem, 4vw, 1.2rem);"><i class="fas fa-tasks"></i> Tugas Monitoring Hari Ini</h3>
+                <h3><i class="fas fa-tasks"></i> Tugas Monitoring Hari Ini</h3>
                 <div id="dailyTasksList" class="daily-tasks-list">
                     <span class="task-badge empty-msg"><i class="fas fa-spinner fa-pulse"></i> Memuat tugas...</span>
                 </div>
@@ -509,9 +483,9 @@
             <div class="action-bar">
                 <button id="btnManageShift" class="btn-save"><i class="fas fa-users"></i> Kelola Jadwal Shift (Edit / Perbarui)</button>
             </div>
-            <div id="dynamicContent" class="content-area dynamic-content-panel" style="display: none;"></div>
+            <div id="dynamicContent" class="content-area" style="display: none;"></div>
             <div class="modules-section">
-                <h3 style="font-size: clamp(1.2rem, 4.5vw, 1.4rem);"><i class="fas fa-microchip"></i> Modul Monitoring Lainnya</h3>
+                <h3><i class="fas fa-microchip"></i> Modul Monitoring Lainnya</h3>
                 <div class="modules-grid" id="modulesGrid"></div>
             </div>
         </div>
@@ -564,7 +538,7 @@
     let isManagePanelOpen = false;            
     let currentYear = new Date().getFullYear();
     let currentMonth = new Date().getMonth() + 1;
-    let selectedDateObj = new Date();
+    let selectedDateObj = new Date(); // default hari ini (sesuai zona lokal)
     
     const DB_PATH_SHIFT = 'monitoring/shift';   
 
@@ -604,7 +578,7 @@
     function onShiftDataChanged(snapshot) {
         const data = snapshot.val();
         currentShiftData = (data && typeof data === 'object') ? data : {};
-        refreshShiftForSelectedDate();
+        refreshShiftForSelectedDate();  // update tampilan dengan tanggal yg dipilih
         if (isManagePanelOpen) {
             const dynamicDiv = document.getElementById('dynamicContent');
             if (dynamicDiv && dynamicDiv.style.display === 'block') renderManageShiftPanel(dynamicDiv);
@@ -643,6 +617,7 @@
         });
     }
 
+    // ---------- FITUR NAVIGASI SHIFT HARIAN BARU ----------
     function updateSelectedDateFromPickers() {
         const datePicker = document.getElementById('datePickerInput');
         if (datePicker && datePicker.value) {
@@ -653,8 +628,10 @@
                 const newDay = parseInt(parts[2]);
                 if (!isNaN(newYear) && !isNaN(newMonth) && !isNaN(newDay)) {
                     if (newYear !== currentYear || newMonth !== currentMonth) {
+                        // Ganti bulan/tahun terlebih dahulu
                         currentYear = newYear;
                         currentMonth = newMonth;
+                        // Sinkronkan dropdown bulan/tahun
                         document.getElementById('yearSelect').value = currentYear;
                         document.getElementById('monthSelect').value = currentMonth;
                         attachShiftListener(currentYear, currentMonth);
@@ -691,6 +668,7 @@
             attachShiftListener(currentYear, currentMonth);
         }
         selectedDateObj = new Date(targetYear, targetMonth - 1, targetDay);
+        // update input date picker
         const datePicker = document.getElementById('datePickerInput');
         if (datePicker) {
             let yyyy = selectedDateObj.getFullYear();
@@ -710,16 +688,21 @@
         const dateKey = formatDateStr(year, month, day);
         const dayName = getDayName(year, month, day);
         
+        // Cek apakah data untuk bulan yang aktif tersedia (currentShiftData milik currentYear/currentMonth)
+        // Jika bulan yang dipilih berbeda dengan currentMonth (karena navigasi cepat), pastikan data yang benar.
         if (year !== currentYear || month !== currentMonth) {
             container.innerHTML = `<div class="warning-message"><i class="fas fa-sync-alt"></i> Mengganti periode ke ${year}-${String(month).padStart(2,'0')} ...</div>`;
+            // sinkronkan global dan reload listener
             currentYear = year;
             currentMonth = month;
             document.getElementById('yearSelect').value = currentYear;
             document.getElementById('monthSelect').value = currentMonth;
             attachShiftListener(currentYear, currentMonth);
+            // setelah listener terpasang, akan memanggil refreshShiftForSelectedDate lagi via onShiftDataChanged, jadi return dulu
             return;
         }
         
+        // Sekarang currentShiftData sudah sesuai dengan tahun/bulan yang dipilih
         if (!currentShiftData || Object.keys(currentShiftData).length === 0) {
             container.innerHTML = `<div class="warning-message"><i class="fas fa-exclamation-triangle"></i> ⚠️ Belum ada jadwal shift untuk periode ${currentYear}-${String(currentMonth).padStart(2,'0')}. Silakan isi melalui tombol "Kelola Jadwal Shift".</div>`;
             return;
@@ -752,7 +735,7 @@
         if (!containerElement) return;
         const daysCount = getDaysInMonth(currentYear, currentMonth);
         const existing = currentShiftData || {};
-        let html = `<div style="margin-bottom:20px;"><div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap:12px;"><h3><i class="fas fa-calendar-edit"></i> Edit Jadwal Shift - ${currentYear}/${String(currentMonth).padStart(2,'0')}</h3><button id="closeManagePanel" class="btn-outline"><i class="fas fa-times"></i> Tutup</button></div><div class="info-message"><i class="fas fa-info-circle"></i> Isi nama petugas untuk setiap shift. Perubahan langsung tersimpan.</div></div>
+        let html = `<div style="margin-bottom:20px;"><div style="display: flex; justify-content: space-between; flex-wrap: wrap;"><h3><i class="fas fa-calendar-edit"></i> Edit Jadwal Shift - ${currentYear}/${String(currentMonth).padStart(2,'0')}</h3><button id="closeManagePanel" class="btn-outline"><i class="fas fa-times"></i> Tutup</button></div><div class="info-message"><i class="fas fa-info-circle"></i> Isi nama petugas untuk setiap shift. Perubahan langsung tersimpan.</div></div>
         <div class="shift-table-container"><table class="shift-table"><thead><tr><th>Tanggal</th><th>Hari</th><th>Shift 1 (00-08)</th><th>Shift 2 (08-16)</th><th>Shift 3 (16-00)</th></tr></thead><tbody>`;
         for (let d = 1; d <= daysCount; d++) {
             const dateKey = formatDateStr(currentYear, currentMonth, d);
@@ -876,6 +859,7 @@
         closeManagePanel();
         attachShiftListener(currentYear, currentMonth);
         document.getElementById('statusBadge').innerText = `📅 ${currentYear}-${String(currentMonth).padStart(2, '0')}`;
+        // Set selectedDate ke tanggal 1 bulan yg baru
         selectedDateObj = new Date(currentYear, currentMonth - 1, 1);
         const picker = document.getElementById('datePickerInput');
         if (picker) picker.value = `${currentYear}-${String(currentMonth).padStart(2,'0')}-01`;
