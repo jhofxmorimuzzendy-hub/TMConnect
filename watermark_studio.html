@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Watermark Studio Pro - Live Stamp, GPS Map & JSON Fix</title>
+    <title>Watermark Studio Pro - Multi Foto (Ambil banyak foto dengan watermark sama)</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
@@ -122,6 +122,7 @@
         .btn-primary:hover { background: #6366f1; transform: translateY(-1px); }
         .btn-success { background: #0f4c3a; }
         .btn-warning { background: #b45309; }
+        .btn-danger { background: #b91c1c; }
         .design-panel {
             background: rgba(10, 13, 24, 0.96);
             border-radius: 1.5rem;
@@ -251,8 +252,8 @@
 <div class="container">
     <div class="top-bar">
         <div>
-            <h1>✍️ Watermark Studio Pro - Live Stamp</h1>
-            <div style="font-size:0.7rem;">Stamp tanggal, jam, hari, koordinat & peta sesuai lokasi device</div>
+            <h1>✍️ Watermark Studio Pro - Multi Foto</h1>
+            <div style="font-size:0.7rem;">Ambil banyak foto dengan watermark yang sama (teks, shape, stiker tetap)</div>
         </div>
         <div class="toolbar">
             <button id="sendToMonitorBtn" class="btn btn-success" style="background:#1e6f5c;">📤 Kirim ke Monitoring</button>
@@ -279,7 +280,7 @@
             <div class="preview-area"><video id="videoFeed" autoplay playsinline muted></video></div>
             <div class="btn-group">
                 <button id="startCamBtn" class="btn btn-primary">🎥 Mulai Kamera</button>
-                <button id="captureBtn" class="btn btn-success" disabled>📷 Ambil Foto</button>
+                <button id="capturePhotoBtn" class="btn btn-success" disabled>📸 Ambil Foto Baru (Ganti BG, Watermark Tetap)</button>
                 <button id="stopCamBtn" class="btn btn-danger" disabled>⏹️ Matikan</button>
                 <button id="addQrBtn" class="btn btn-warning">📱 QR Code</button>
             </div>
@@ -293,6 +294,7 @@
             <div class="btn-group">
                 <button id="addBgColorBtn" class="btn btn-secondary">🎨 Background Solid</button>
                 <button id="clearBackgroundBtn" class="btn btn-secondary">⬜ Hapus BG</button>
+                <button id="resetAllWatermarkBtn" class="btn btn-danger">🆕 Reset Semua Watermark</button>
             </div>
         </div>
         <div class="glass-card">
@@ -353,7 +355,7 @@
             <div id="propContent">Klik watermark untuk edit properti lengkap (font, bold, italic, underline)</div>
         </div>
     </div>
-    <footer>✨ Stamp tanggal, jam, hari, koordinat akan otomatis update saat impor JSON. Peta menggunakan lokasi device (GPS).</footer>
+    <footer>✨ Ambil banyak foto: desain watermark sekali, lalu klik <strong>📸 Ambil Foto Baru</strong> setiap kali ganti background. Kirim tiap foto ke Monitoring.</footer>
 </div>
 
 <!-- Modal Peta -->
@@ -374,7 +376,7 @@
         // ======================== DOM Elements ========================
         const video = document.getElementById('videoFeed');
         const startCamBtn = document.getElementById('startCamBtn');
-        const captureBtn = document.getElementById('captureBtn');
+        const capturePhotoBtn = document.getElementById('capturePhotoBtn');
         const stopCamBtn = document.getElementById('stopCamBtn');
         const canvas = document.getElementById('mainCanvas');
         const ctx = canvas.getContext('2d');
@@ -414,6 +416,7 @@
         const addLineBtn = document.getElementById('addLineBtn');
         const sendToMonitorBtn = document.getElementById('sendToMonitorBtn');
         const refreshStampBtn = document.getElementById('refreshStampBtn');
+        const resetAllWatermarkBtn = document.getElementById('resetAllWatermarkBtn');
         
         // ======================== State ========================
         let elements = [];
@@ -430,7 +433,7 @@
         let hasPhoto = false;
         let historyStack = [];
         let historyIndex = -1;
-        let currentLocation = { lat: -6.2088, lng: 106.8456 }; // default sementara
+        let currentLocation = { lat: -6.2088, lng: 106.8456 };
         let mapInstance = null;
         let canvasZoom = 1;
         let canvasPan = { x: 0, y: 0 };
@@ -441,7 +444,6 @@
             'Arial', 'Times New Roman', 'Courier New', 'Georgia', 'Verdana'
         ];
 
-        // Helper loading toast
         function showLoadingToast(msg, duration = 2000) {
             let toast = document.querySelector('.loading-toast');
             if (!toast) {
@@ -539,7 +541,6 @@
             isRefreshing = false;
         }
 
-        // Stamp additions with stampType
         function addDateStamp() { 
             addElement({
                 type:'text', text:getDateStr(), x:20, y:canvas.height-70, fontSize:14, 
@@ -576,7 +577,6 @@
         const searchLocation = document.getElementById('searchLocation');
         let geocoder;
         
-        // Fungsi untuk mendapatkan lokasi device terbaru
         async function getDeviceLocation() {
             return new Promise((resolve) => {
                 if (!navigator.geolocation) {
@@ -592,17 +592,14 @@
         }
 
         async function showMapModal() {
-            // Ambil lokasi device terbaru sebelum membuka peta
             const deviceLoc = await getDeviceLocation();
             currentLocation = deviceLoc;
-            
             mapModal.style.display = 'flex';
             setTimeout(() => {
                 if(mapInstance) mapInstance.remove();
                 mapInstance = L.map(realMapDiv).setView([currentLocation.lat, currentLocation.lng], 13);
                 L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>' }).addTo(mapInstance);
                 L.marker([currentLocation.lat, currentLocation.lng]).addTo(mapInstance).bindPopup('Lokasi Anda (GPS)').openPopup();
-                
                 if(!geocoder) {
                     geocoder = L.Control.geocoder({ defaultMarkGeocode: false }).on('markgeocode', function(e) {
                         const center = e.geocode.center;
@@ -614,7 +611,6 @@
                 } else {
                     geocoder.addTo(mapInstance);
                 }
-                
                 searchLocation.onkeypress = async (e) => {
                     if(e.key === 'Enter') {
                         const query = searchLocation.value;
@@ -645,7 +641,7 @@
         document.getElementById('captureMapBtn').onclick = captureMap;
         document.getElementById('closeMapBtn').onclick = () => { mapModal.style.display = 'none'; if(mapInstance) mapInstance.remove(); };
 
-        // ======================== Drawing Functions with Error Handling ========================
+        // ======================== Drawing Functions ========================
         function drawElement(el) {
             try {
                 ctx.save();
@@ -962,6 +958,46 @@
             }
         }
 
+        // ======================== Multi-Foto: Ambil Foto Baru (Ganti BG, Watermark Tetap) ========================
+        function captureNewPhoto() {
+            if (!mediaStream || !video.videoWidth) {
+                alert("Kamera belum aktif. Mulai kamera dulu.");
+                return;
+            }
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = video.videoWidth;
+            tempCanvas.height = video.videoHeight;
+            tempCanvas.getContext('2d').drawImage(video, 0, 0);
+            const img = new Image();
+            img.onload = () => {
+                // Ganti background dengan foto baru, ukuran canvas disesuaikan
+                backgroundImage = img;
+                backgroundColor = null;
+                canvas.width = img.width;
+                canvas.height = img.height;
+                hasPhoto = true;
+                downloadBtn.disabled = false;
+                resetPhotoBtn.disabled = false;
+                redrawAll();
+                saveHistory();
+                showLoadingToast("Foto baru diambil! Watermark tetap.", 2000);
+            };
+            img.src = tempCanvas.toDataURL('image/jpeg', 0.9);
+        }
+
+        // Reset semua watermark (elemen) tapi background tetap
+        function resetAllWatermark() {
+            if (confirm("Hapus SEMUA watermark (teks, shape, stiker, dll)? Background tidak terhapus.")) {
+                elements = [];
+                selectedIds.clear();
+                nextId = 1;
+                saveHistory();
+                redrawAll();
+                updateUI();
+                showLoadingToast("Semua watermark dihapus.", 1500);
+            }
+        }
+
         // ======================== JSON Export / Import ========================
         function exportToJson() {
             const exportElements = elements.map(el => {
@@ -1000,7 +1036,6 @@
                         const data = JSON.parse(ev.target.result);
                         if (!data.elements) throw new Error('Format tidak valid');
                         const loadedElements = data.elements;
-                        // Load semua gambar secara async
                         const imagePromises = [];
                         for (let el of loadedElements) {
                             if (el.type === 'image' && el.imageData) {
@@ -1030,12 +1065,11 @@
                             downloadBtn.disabled = false;
                             resetPhotoBtn.disabled = false;
                         }
-                        // Refresh stamp setelah impor
                         await refreshLiveStamps();
                         saveHistory();
                         redrawAll();
                         updateUI();
-                        alert('Preset berhasil diimpor. Stamp tanggal/jam/koordinat sudah diperbarui.');
+                        alert('Preset berhasil diimpor. Stamp diperbarui.');
                     } catch(err) {
                         alert('Gagal membaca file JSON: ' + err.message);
                     }
@@ -1047,9 +1081,8 @@
 
         // ======================== Kamera & Background ========================
         let mediaStream=null;
-        async function startCamera(){ if(mediaStream) stopCamera(); try{ const s=await navigator.mediaDevices.getUserMedia({video:true}); mediaStream=s; video.srcObject=s; await video.play(); captureBtn.disabled=false; startCamBtn.disabled=true; stopCamBtn.disabled=false; }catch(e){ alert("Gagal kamera"); } }
-        function stopCamera(){ if(mediaStream) mediaStream.getTracks().forEach(t=>t.stop()); mediaStream=null; video.srcObject=null; captureBtn.disabled=true; startCamBtn.disabled=false; stopCamBtn.disabled=true; }
-        function capturePhoto(){ if(!mediaStream||!video.videoWidth) return; const tc=document.createElement('canvas'); tc.width=video.videoWidth; tc.height=video.videoHeight; tc.getContext('2d').drawImage(video,0,0); const img=new Image(); img.onload=()=>{ backgroundImage=img; backgroundColor=null; canvas.width=img.width; canvas.height=img.height; hasPhoto=true; downloadBtn.disabled=false; resetPhotoBtn.disabled=false; redrawAll(); saveHistory(); }; img.src=tc.toDataURL('image/png'); }
+        async function startCamera(){ if(mediaStream) stopCamera(); try{ const s=await navigator.mediaDevices.getUserMedia({video:true}); mediaStream=s; video.srcObject=s; await video.play(); capturePhotoBtn.disabled=false; startCamBtn.disabled=true; stopCamBtn.disabled=false; }catch(e){ alert("Gagal kamera"); } }
+        function stopCamera(){ if(mediaStream) mediaStream.getTracks().forEach(t=>t.stop()); mediaStream=null; video.srcObject=null; capturePhotoBtn.disabled=true; startCamBtn.disabled=false; stopCamBtn.disabled=true; }
         function resetPhoto(){ backgroundImage=null; backgroundColor=null; hasPhoto=false; downloadBtn.disabled=true; resetPhotoBtn.disabled=true; redrawAll(); }
         function setBackgroundColor(){ let col=prompt('Background color (hex, name):','#2d3748'); if(col){ backgroundColor=col; backgroundImage=null; hasPhoto=true; downloadBtn.disabled=false; resetPhotoBtn.disabled=false; redrawAll(); } }
         function downloadImage(){ if(!hasPhoto) alert("Tidak ada background"); else{ const link=document.createElement('a'); link.download=`watermark_${Date.now()}.png`; link.href=canvas.toDataURL('image/png'); link.click(); } }
@@ -1058,21 +1091,21 @@
         // ======================== Kirim ke Monitoring ========================
         function sendToMonitoring() {
             if (!hasPhoto) {
-                alert("Ambil foto terlebih dahulu (klik 'Ambil Foto' dari kamera) sebelum mengirim ke Monitoring.");
+                alert("Ambil foto terlebih dahulu (klik 'Ambil Foto Baru') sebelum mengirim ke Monitoring.");
                 return;
             }
             const imageData = canvas.toDataURL('image/png');
             if (window.opener) {
                 window.opener.postMessage({ type: 'watermarkedFoto', data: imageData }, '*');
-                alert("Foto berhasil dikirim ke Monitoring Suhu. Jendela ini akan ditutup.");
-                window.close();
+                alert("Foto berhasil dikirim ke Monitoring Suhu. Anda bisa ambil foto lagi dan kirim lagi.");
+                // Tidak menutup jendela, biarkan user ambil foto berikutnya
             } else {
                 alert("Tidak dapat mengirim: halaman ini bukan dibuka dari Monitoring Suhu. Simpan foto secara manual.");
             }
         }
 
         // ======================== Event Binding ========================
-        startCamBtn.onclick=startCamera; stopCamBtn.onclick=stopCamera; captureBtn.onclick=capturePhoto; resetPhotoBtn.onclick=resetPhoto; downloadBtn.onclick=downloadImage;
+        startCamBtn.onclick=startCamera; stopCamBtn.onclick=stopCamera; capturePhotoBtn.onclick=captureNewPhoto; resetPhotoBtn.onclick=resetPhoto; downloadBtn.onclick=downloadImage;
         addBgColorBtn.onclick=setBackgroundColor; clearBackgroundBtn.onclick=resetPhoto; undoBtn.onclick=undo; redoBtn.onclick=redo;
         deleteSelectedBtn.onclick=deleteSelected; duplicateSelectedBtn.onclick=duplicateSelected; groupSelectedBtn.onclick=groupSelected; ungroupBtn.onclick=ungroup;
         layerUpBtn.onclick=layerUp; layerDownBtn.onclick=layerDown; toggleGridBtn.onclick=()=>{ showGrid=!showGrid; redrawAll(); };
@@ -1115,6 +1148,7 @@
         addRealMapBtn.onclick=showMapModal;
         refreshStampBtn.onclick=()=>{ refreshLiveStamps().then(()=>alert('Stamp diperbarui')); };
         sendToMonitorBtn.onclick = sendToMonitoring;
+        resetAllWatermarkBtn.onclick = resetAllWatermark;
         document.getElementById('addTextBtn').onclick=()=>addElement({type:'text', text:'Teks Baru', x:100,y:100, fontSize:32, fontFamily:'Inter', fontWeight:'normal', fontStyle:'normal', textDecoration:'none', color:'#000000', opacity:1});
         document.getElementById('addShapeBtn').onclick=()=>addElement({type:'shape', shapeType:'rectangle', x:150,y:150, width:80,height:80, fillColor:'#4f46e5', strokeColor:'#fff', strokeWidth:2, opacity:1});
         addLineBtn.onclick=()=>addElement({type:'shape', shapeType:'line', x:100,y:100, width:150, height:0, strokeColor:'#ff0000', strokeWidth:4, opacity:1});
