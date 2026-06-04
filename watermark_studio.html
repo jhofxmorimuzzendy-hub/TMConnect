@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Watermark Studio Pro - Auto Load JSON (dengan fallback embedded)</title>
+    <title>Watermark Studio Pro - Kamera Depan/Belakang HP</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
@@ -78,6 +78,7 @@
             max-width: 450px;
             border-radius: 1rem;
             border: 1px solid #4f46e5;
+            object-fit: cover;
         }
         .canvas-container {
             position: relative;
@@ -270,8 +271,8 @@
 <div class="container">
     <div class="top-bar">
         <div>
-            <h1>✍️ Watermark Studio Pro - Auto Load Preset (Eksternal + Fallback)</h1>
-            <div style="font-size:0.7rem;">Mencoba memuat watermark_preset_tanah_merah.json, jika gagal pakai preset bawaan</div>
+            <h1>✍️ Watermark Studio Pro - Kamera HP (Depan/Belakang)</h1>
+            <div style="font-size:0.7rem;">Mendukung flip kamera depan/belakang | Auto load preset eksternal + fallback</div>
         </div>
         <div class="toolbar">
             <button id="refreshStampBtn" class="btn btn-warning">🔄 Refresh Stamp</button>
@@ -299,6 +300,7 @@
                 <button id="startCamBtn" class="btn btn-primary">🎥 Mulai Kamera</button>
                 <button id="capturePhotoBtn" class="btn btn-success" disabled>📸 Ambil Foto Baru & Kirim Otomatis</button>
                 <button id="stopCamBtn" class="btn btn-danger" disabled>⏹️ Matikan</button>
+                <button id="flipCamBtn" class="btn btn-warning">🔄 Balik Kamera</button>
                 <button id="addQrBtn" class="btn btn-warning">📱 QR Code</button>
             </div>
             <div class="btn-group">
@@ -312,6 +314,9 @@
                 <button id="addBgColorBtn" class="btn btn-secondary">🎨 Background Solid</button>
                 <button id="clearBackgroundBtn" class="btn btn-secondary">⬜ Hapus BG</button>
                 <button id="resetAllWatermarkBtn" class="btn btn-danger">🆕 Reset Semua Watermark</button>
+            </div>
+            <div class="btn-group" style="padding-top:0">
+                <span id="cameraModeLabel" style="font-size:0.7rem; background:#00000060; padding:4px 8px; border-radius:20px;">📷 Kamera Belakang</span>
             </div>
         </div>
         <div class="glass-card">
@@ -377,7 +382,7 @@
             <div id="propContent">Klik watermark untuk edit properti lengkap (font, bold, italic, underline)</div>
         </div>
     </div>
-    <footer>✨ Preset: pertama coba file watermark_preset_tanah_merah.json, jika gagal pakai desain bawaan (logo TVRI, dll).</footer>
+    <footer>✨ Kamera HP dengan flip depan/belakang | Preset: coba file eksternal, fallback ke bawaan</footer>
 </div>
 
 <!-- Modal Peta -->
@@ -400,6 +405,7 @@
         const startCamBtn = document.getElementById('startCamBtn');
         const capturePhotoBtn = document.getElementById('capturePhotoBtn');
         const stopCamBtn = document.getElementById('stopCamBtn');
+        const flipCamBtn = document.getElementById('flipCamBtn');
         const canvas = document.getElementById('mainCanvas');
         const ctx = canvas.getContext('2d');
         const downloadBtn = document.getElementById('downloadBtn');
@@ -438,6 +444,7 @@
         const addLineBtn = document.getElementById('addLineBtn');
         const refreshStampBtn = document.getElementById('refreshStampBtn');
         const resetAllWatermarkBtn = document.getElementById('resetAllWatermarkBtn');
+        const cameraModeLabel = document.getElementById('cameraModeLabel');
         
         // ======================== State ========================
         let elements = [];
@@ -460,6 +467,8 @@
         let canvasPan = { x: 0, y: 0 };
         let isRefreshing = false;
         let sentPhotos = [];
+        let mediaStream = null;
+        let currentFacingMode = 'environment'; // 'environment' = belakang, 'user' = depan
 
         const fontFamilies = [
             'Inter', 'Roboto', 'Open Sans', 'Montserrat', 'Lobster',
@@ -499,6 +508,87 @@
                 showLoadingToast("✅ Foto terkirim ke Monitoring", 2000);
             } else {
                 alert("Halaman ini tidak dibuka dari Monitoring Suhu. Kirim manual tidak bisa.");
+            }
+        }
+
+        // ======================== Kamera dengan flip depan/belakang ========================
+        async function startCamera() {
+            if (mediaStream) stopCamera();
+            try {
+                // Coba dengan exact facingMode (paling akurat untuk HP)
+                const constraints = {
+                    video: { facingMode: { exact: currentFacingMode } }
+                };
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                mediaStream = stream;
+                video.srcObject = stream;
+                video.setAttribute('playsinline', true);
+                await video.play();
+                capturePhotoBtn.disabled = false;
+                startCamBtn.disabled = true;
+                stopCamBtn.disabled = false;
+                updateCameraLabel();
+            } catch (err) {
+                console.warn('Exact facingMode gagal, mencoba tanpa exact', err);
+                try {
+                    const constraints = {
+                        video: { facingMode: currentFacingMode }
+                    };
+                    const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                    mediaStream = stream;
+                    video.srcObject = stream;
+                    video.setAttribute('playsinline', true);
+                    await video.play();
+                    capturePhotoBtn.disabled = false;
+                    startCamBtn.disabled = true;
+                    stopCamBtn.disabled = false;
+                    updateCameraLabel();
+                } catch (fallbackErr) {
+                    console.warn('Fallback facingMode gagal, coba default kamera', fallbackErr);
+                    try {
+                        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                        mediaStream = stream;
+                        video.srcObject = stream;
+                        video.setAttribute('playsinline', true);
+                        await video.play();
+                        capturePhotoBtn.disabled = false;
+                        startCamBtn.disabled = true;
+                        stopCamBtn.disabled = false;
+                        if (cameraModeLabel) cameraModeLabel.innerHTML = '📷 Kamera Default';
+                    } catch (finalErr) {
+                        alert('Tidak dapat mengakses kamera: ' + finalErr.message);
+                    }
+                }
+            }
+        }
+
+        function stopCamera() {
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(track => track.stop());
+                mediaStream = null;
+            }
+            video.srcObject = null;
+            capturePhotoBtn.disabled = true;
+            startCamBtn.disabled = false;
+            stopCamBtn.disabled = true;
+        }
+
+        async function flipCamera() {
+            if (!mediaStream) {
+                alert('Kamera belum aktif. Mulai kamera dulu.');
+                return;
+            }
+            // Toggle mode
+            currentFacingMode = currentFacingMode === 'environment' ? 'user' : 'environment';
+            // Restart kamera dengan mode baru
+            await startCamera();
+        }
+
+        function updateCameraLabel() {
+            if (cameraModeLabel) {
+                if (currentFacingMode === 'environment') cameraModeLabel.innerHTML = '📷 Kamera Belakang';
+                else if (currentFacingMode === 'user') cameraModeLabel.innerHTML = '🤳 Kamera Depan';
+                else cameraModeLabel.innerHTML = '📷 Kamera';
             }
         }
 
@@ -1022,9 +1112,6 @@
         }
 
         // ======================== Ambil Foto Baru & Kirim Otomatis ========================
-        let mediaStream=null;
-        async function startCamera(){ if(mediaStream) stopCamera(); try{ const s=await navigator.mediaDevices.getUserMedia({video:true}); mediaStream=s; video.srcObject=s; await video.play(); capturePhotoBtn.disabled=false; startCamBtn.disabled=true; stopCamBtn.disabled=false; }catch(e){ alert("Gagal kamera"); } }
-        function stopCamera(){ if(mediaStream) mediaStream.getTracks().forEach(t=>t.stop()); mediaStream=null; video.srcObject=null; capturePhotoBtn.disabled=true; startCamBtn.disabled=false; stopCamBtn.disabled=true; }
         function resetPhoto(){ backgroundImage=null; backgroundColor=null; hasPhoto=false; downloadBtn.disabled=true; resetPhotoBtn.disabled=true; redrawAll(); }
         function setBackgroundColor(){ let col=prompt('Background color (hex, name):','#2d3748'); if(col){ backgroundColor=col; backgroundImage=null; hasPhoto=true; downloadBtn.disabled=false; resetPhotoBtn.disabled=false; redrawAll(); } }
         function downloadImage(){ if(!hasPhoto) alert("Tidak ada background"); else{ const link=document.createElement('a'); link.download=`watermark_${Date.now()}.png`; link.href=canvas.toDataURL('image/png'); link.click(); } }
@@ -1152,244 +1239,28 @@
         }
 
         // ======================== LOAD PRESET (EKSTERNAL + FALLBACK EMBEDDED) ========================
-        // Data preset yang di-embed dari file JSON yang diberikan user (desain lengkap)
         const embeddedPreset = {
             "version": 2,
             "nextId": 32,
             "elements": [
-                {
-                    "type": "shape",
-                    "shapeType": "circle",
-                    "x": 77.26708074534162,
-                    "y": 271.7355371900827,
-                    "width": 43.29192546583853,
-                    "height": 42.39669421487605,
-                    "fillColor": "#10008a",
-                    "strokeColor": "#ffffff",
-                    "strokeWidth": 2,
-                    "opacity": 1,
-                    "id": 5
-                },
-                {
-                    "type": "text",
-                    "text": "TV",
-                    "x": 41.35057876905704,
-                    "y": 281.54302767939134,
-                    "fontSize": 27.751437959216886,
-                    "fontFamily": "Inter",
-                    "fontWeight": "bold",
-                    "fontStyle": "normal",
-                    "textDecoration": "none",
-                    "color": "#10008a",
-                    "opacity": 1,
-                    "id": 4,
-                    "strokeColor": "#ffffff",
-                    "strokeWidth": 3
-                },
-                {
-                    "type": "shape",
-                    "shapeType": "line",
-                    "x": 78.13664596273294,
-                    "y": 284.46280991735546,
-                    "width": 5,
-                    "height": 14.892561983471012,
-                    "strokeColor": "#10008a",
-                    "strokeWidth": 4,
-                    "opacity": 1,
-                    "id": 6,
-                    "fillColor": "#10008a"
-                },
-                {
-                    "type": "shape",
-                    "shapeType": "line",
-                    "x": 80.24844720496898,
-                    "y": 283.63636363636374,
-                    "width": 19.90683229813662,
-                    "height": 19.851239669421375,
-                    "strokeColor": "#10008a",
-                    "strokeWidth": 4,
-                    "opacity": 1,
-                    "id": 7,
-                    "fillColor": "#10008a"
-                },
-                {
-                    "type": "text",
-                    "text": "RI",
-                    "x": 86.19529926595146,
-                    "y": 281.70831693558966,
-                    "fontSize": 25.883953434093154,
-                    "fontFamily": "Inter",
-                    "fontWeight": "bold",
-                    "fontStyle": "normal",
-                    "textDecoration": "none",
-                    "color": "#10008a",
-                    "opacity": 1,
-                    "id": 8,
-                    "strokeColor": "#ffffff",
-                    "strokeWidth": 3
-                },
-                {
-                    "type": "text",
-                    "text": "PAPUA",
-                    "x": 56.381634669678164,
-                    "y": 319.39426734881283,
-                    "fontSize": 12.759891486315993,
-                    "fontFamily": "Inter",
-                    "fontWeight": "bold",
-                    "fontStyle": "normal",
-                    "textDecoration": "none",
-                    "color": "#10008a",
-                    "opacity": 1,
-                    "id": 9,
-                    "strokeColor": "#ffffff",
-                    "strokeWidth": 3
-                },
-                {
-                    "type": "shape",
-                    "shapeType": "rectangle",
-                    "x": 159.75155279503107,
-                    "y": 345.12396694214885,
-                    "width": 5,
-                    "height": 34.462809917355344,
-                    "fillColor": "#ffae00",
-                    "strokeColor": "#ffae00",
-                    "strokeWidth": 0,
-                    "opacity": 1,
-                    "id": 12
-                },
-                {
-                    "type": "text",
-                    "text": "04/06/2026",
-                    "x": 179.0062111801242,
-                    "y": 347.5206611570248,
-                    "fontSize": 12,
-                    "fontFamily": "Montserrat",
-                    "fontWeight": "bold",
-                    "fontStyle": "normal",
-                    "textDecoration": "none",
-                    "color": "#ffffff",
-                    "opacity": 1,
-                    "id": 14,
-                    "strokeColor": "#ffffff"
-                },
-                {
-                    "type": "text",
-                    "text": "Kamis",
-                    "x": 179.00621118012427,
-                    "y": 366.198347107438,
-                    "fontSize": 14,
-                    "fontFamily": "Montserrat",
-                    "fontWeight": "bold",
-                    "fontStyle": "normal",
-                    "textDecoration": "none",
-                    "color": "#ffffff",
-                    "opacity": 1,
-                    "id": 15,
-                    "strokeColor": "#ffffff"
-                },
-                {
-                    "type": "text",
-                    "text": "Persatuan, Kecamatan, Mandobo, Kabupaten\nBoven Digoel, Papua Selatan 99663",
-                    "x": 42.36024844720498,
-                    "y": 391.57024793388433,
-                    "fontSize": 11,
-                    "fontFamily": "Inter",
-                    "fontWeight": "normal",
-                    "fontStyle": "normal",
-                    "textDecoration": "none",
-                    "color": "#ffffff",
-                    "opacity": 1,
-                    "id": 16,
-                    "strokeColor": "#ffffff"
-                },
-                {
-                    "type": "icon",
-                    "iconChar": "📍",
-                    "x": 32.67080745341613,
-                    "y": 435.5371900826446,
-                    "size": 20.14906832298135,
-                    "color": "#ffffff",
-                    "opacity": 1,
-                    "id": 18
-                },
-                {
-                    "type": "text",
-                    "text": "22:33",
-                    "x": 38.88198757763975,
-                    "y": 344.7107438016528,
-                    "fontSize": 38.58453084815361,
-                    "fontFamily": "Montserrat",
-                    "fontWeight": "bold",
-                    "fontStyle": "normal",
-                    "textDecoration": "none",
-                    "color": "#ffffff",
-                    "opacity": 1,
-                    "stampType": "time",
-                    "isLive": true,
-                    "id": 25,
-                    "strokeWidth": 1,
-                    "strokeColor": "#ffffff"
-                },
-                {
-                    "type": "text",
-                    "text": "6.087949'S, 140.300440'E",
-                    "x": 63.229813664596264,
-                    "y": 454.0495867768595,
-                    "fontSize": 11,
-                    "fontFamily": "Inter",
-                    "fontWeight": "normal",
-                    "fontStyle": "normal",
-                    "textDecoration": "none",
-                    "color": "#ffffff",
-                    "opacity": 1,
-                    "id": 27,
-                    "strokeColor": "#ffffff"
-                },
-                {
-                    "type": "shape",
-                    "shapeType": "rectangle",
-                    "x": 42.484472049689444,
-                    "y": 30.743801652892557,
-                    "width": 90,
-                    "height": 90,
-                    "fillColor": "#10b981",
-                    "strokeColor": "#ffffff",
-                    "strokeWidth": 2,
-                    "opacity": 1,
-                    "id": 29
-                },
-                {
-                    "type": "image",
-                    "imageData": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABgAAAAMgCAYAAADleqn6AAAQAElEQVR4Aezde5zed30X8KOVJcu2mjgOxpXsxHRwbOq46XTsDsyEFBuSlKQlw3RCCkwDzGSGyR9N27S0UDpDE8qkhYQW2gEKmYGkMExL66ExrUObaeOQpjfbdVy7uTqO5YtkWbEtObJkXaxFZ2VJu6u9vJfncs7vfDKs9e77Ps85v+/nbPnj+eqysDjA/06ePLl49OjRxUOHDi0eOHBgce/evYuPPvro4sMPP7z4la98xRcDPwN+BvwM+BnwM+BnwM+AnwE/A34G/Az4GfAz0O/PAF++fgb8DPgZ8DPgZ2CEn4H8DDw/C8/PxPOz8fyMPD8rz8/MB3g0v7iQevjfqVOn0vPPP5+efPLJdDpg2rNnTzodMH3ta19Lzz33XDodMJ04cSKdDtjD7pYkQIAAAQIENhbwKQECBAgQIECAAAECBAgQIDCEQH4Gnp+F52fi+dl4fkaen5XnZ+b52Xl+hp6fpedn6t3Pk1JnBUAOkkM88cQT6ZFHHkn79+9PR44c6WNmaxIgQIAAAQIECBAgQIAAAQLTCLiWAAECBAgQKFIgP0PPz9LzM/X8bD0/Y8/P2rsadu4CIA9z+PDhpYf++/btS8eOHetqNusQIECAAAECPQhYkgABAgQIECBAgAABAgQIEChPID9bz8/YcxmQn7nnZ+/zTJnvnasAyAPlYZ566il/nU/W9EWAAAECBAgQIECAAAECBMoTMBEBAgQIECBQkUB+8J+fuedn7/kZ/Dyjz1QA5AHy31WU/0hCfj3PAO4lQIAAAQIEhhSwFwECBAgQIECAAAECBAgQIFCDQH72np/B52fx+fV0M5+5euoCIP+DBfkfKMj/YMGZJfyXAAECBAgQIECAAAECBAgQKFbAYAQIECBAgEDVAvlZfH4mn5/NTxtkqgLg61//enrsscfSqVOnpt3H9QQIECBAgEABAkYgQIAAAQIECBAgQIAAAQIE6hPIz+Tzs/n8bwNMMv3ZayYuAA4ePJgOHDhw9j6/EiBAgAABAgQIECBAgAABAuULmJAAAQIECBAIJJD/bYD8rH7SSBMVAE8//XR65plnJl3TdQQIECBAgECRAoYiQIAAAQIECBAgQIAAAQIEahfIz+rz1/o5zn+yaQFw6NChlL/O3+IVAQIECBAgQIAAAQIECBAgUIWAIQkQIECAAIGQAvlPAUzy3H7DAuDIkSMp/+7/kEJCECBAgACBxgTEJUCAAAECBAgQIECAAAECBOII5Gf3R48evSDQ8jfWLQBOnjyZnnzyyeXXek2AAAECBAgQIECAAAECBAjUI2BSAgQIECBAILjAvn37Un6Wv17MNQuAxcXF9Pjjj693j/cJECBAgACB6gQMTIAAAQIECBAgQIAAAQIECEQUyM/y8zP9M9lW/nfNAuDAgQPp1KlTK6/0HQECBAgQIECAAAECBAgQIFCPgEkJECBAgACBJgTys/z8TH+tsBcUAMePH0+HDx9e61rvESBAgACBSpUMTYAAAQIECBAgQIAAAQIECEQWyM/28zP+1QkvKAD8vf+rifxMgAABAgQIECBAgAABAgSqEzAwAQIECBAg0JjAWs/2VxQAR48e3fAfDGjMS1wCBAgQIBBEQAwCBAgQIECAAAECBAgQIEAgusDJkydTfsa/POeKAuCpp55a/pnXBAgQIECAAAECBAgQIECAQI0CZiZAgAABAgSaFFj9jH9FAXDw4MGU/4qeyy+/PH3gAx9Ib3vb29Lb3/72UF85U862bdu2pcKjS5cu+SJAgAABAgQIECBAgECcAjIRIECAAAEC7QnknxjLz3r/7M/+bOWPQL3nPe9pL0CDifMz5h/5kR9JOWvOdO7rF37hF9Jtt93W4OqWJkCAAAECBAgQIECAAIHgAuIRIECAAAEC7QrkZ415Ge8dd9xxRYA/+7M/u+J99byR8zz88MOXJ1/9+g//8A8/97u/+7v1hPk+BAgQIECAAAECBAgQiCogFwECBAgQIFC9QH5W9cQTT1zKkf9O9l/5lV9Jhw8fTmH/VMJ//+//PT377LPrZvjzP//zdPjw4XWv8QEBAgQIECBAgAABAgQI1C9gQgIECBAgQKAdgbf+gZ///M//nN76H/+c6y78bd/2bSl//d3f/V06depUuvzyy9MXv/jFdN9996W/+7u/S19++d9+WtrO/3//4T/8h3TnnXem//W//lf6+te/nt761remn/u5n0s/+7M/mz71qU+lF154IeV//4cAAQIECBAgQIAAAQIEWhaQnQABAgQIEAgh8P73vz/ddNNN6U//9E/Sn/zJn6Q77rgj/f7v/376/d///fTFL34xHT58OP3wD/9w+sf/+B+H+NdcmkP99E//dHrHO95x6dUf/dEfpdfey5/+6Z+mxx9/PD311FMp/64AAAAgAElEQVTpS1/6UvrSl76Urr322vSOd7wj/dIv/VL66Z/+6XTTTTele+65Jx0+fDg99dRTKf87/hAgQIAAAQIECBAgQIBAywKyEyBAgAABAmEE3vnOd6Z/+A//YXrnn/2NfW9960/L+38BAAD//wQblTwAAAAGSURBVAMAQ4TVsB8CAOcAAAAASUVORK5CYII=",
-                    "width": 90.31055900621116,
-                    "height": 87.93388429752065,
-                    "x": 43.04347826086958,
-                    "y": 32.14876033057852,
-                    "opacity": 0.9,
-                    "id": 30
-                },
-                {
-                    "type": "text",
-                    "text": "24.095695, 91.289673",
-                    "x": 62.73291925465843,
-                    "y": 427.1900826446281,
-                    "fontSize": 14,
-                    "fontFamily": "Inter",
-                    "fontWeight": "normal",
-                    "fontStyle": "normal",
-                    "textDecoration": "none",
-                    "color": "#ffffff",
-                    "opacity": 1,
-                    "stampType": "coordinate",
-                    "isLive": true,
-                    "id": 31,
-                    "strokeColor": "#ffffff"
-                }
+                {"type":"shape","shapeType":"circle","x":77.26708074534162,"y":271.7355371900827,"width":43.29192546583853,"height":42.39669421487605,"fillColor":"#10008a","strokeColor":"#ffffff","strokeWidth":2,"opacity":1,"id":5},
+                {"type":"text","text":"TV","x":41.35057876905704,"y":281.54302767939134,"fontSize":27.751437959216886,"fontFamily":"Inter","fontWeight":"bold","fontStyle":"normal","textDecoration":"none","color":"#10008a","opacity":1,"id":4,"strokeColor":"#ffffff","strokeWidth":3},
+                {"type":"shape","shapeType":"line","x":78.13664596273294,"y":284.46280991735546,"width":5,"height":14.892561983471012,"strokeColor":"#10008a","strokeWidth":4,"opacity":1,"id":6,"fillColor":"#10008a"},
+                {"type":"shape","shapeType":"line","x":80.24844720496898,"y":283.63636363636374,"width":19.90683229813662,"height":19.851239669421375,"strokeColor":"#10008a","strokeWidth":4,"opacity":1,"id":7,"fillColor":"#10008a"},
+                {"type":"text","text":"RI","x":86.19529926595146,"y":281.70831693558966,"fontSize":25.883953434093154,"fontFamily":"Inter","fontWeight":"bold","fontStyle":"normal","textDecoration":"none","color":"#10008a","opacity":1,"id":8,"strokeColor":"#ffffff","strokeWidth":3},
+                {"type":"text","text":"PAPUA","x":56.381634669678164,"y":319.39426734881283,"fontSize":12.759891486315993,"fontFamily":"Inter","fontWeight":"bold","fontStyle":"normal","textDecoration":"none","color":"#10008a","opacity":1,"id":9,"strokeColor":"#ffffff","strokeWidth":3},
+                {"type":"shape","shapeType":"rectangle","x":159.75155279503107,"y":345.12396694214885,"width":5,"height":34.462809917355344,"fillColor":"#ffae00","strokeColor":"#ffae00","strokeWidth":0,"opacity":1,"id":12},
+                {"type":"text","text":"04/06/2026","x":179.0062111801242,"y":347.5206611570248,"fontSize":12,"fontFamily":"Montserrat","fontWeight":"bold","fontStyle":"normal","textDecoration":"none","color":"#ffffff","opacity":1,"id":14,"strokeColor":"#ffffff"},
+                {"type":"text","text":"Kamis","x":179.00621118012427,"y":366.198347107438,"fontSize":14,"fontFamily":"Montserrat","fontWeight":"bold","fontStyle":"normal","textDecoration":"none","color":"#ffffff","opacity":1,"id":15,"strokeColor":"#ffffff"},
+                {"type":"text","text":"Persatuan, Kecamatan, Mandobo, Kabupaten\nBoven Digoel, Papua Selatan 99663","x":42.36024844720498,"y":391.57024793388433,"fontSize":11,"fontFamily":"Inter","fontWeight":"normal","fontStyle":"normal","textDecoration":"none","color":"#ffffff","opacity":1,"id":16,"strokeColor":"#ffffff"},
+                {"type":"icon","iconChar":"📍","x":32.67080745341613,"y":435.5371900826446,"size":20.14906832298135,"color":"#ffffff","opacity":1,"id":18},
+                {"type":"text","text":"22:33","x":38.88198757763975,"y":344.7107438016528,"fontSize":38.58453084815361,"fontFamily":"Montserrat","fontWeight":"bold","fontStyle":"normal","textDecoration":"none","color":"#ffffff","opacity":1,"stampType":"time","isLive":true,"id":25,"strokeWidth":1,"strokeColor":"#ffffff"},
+                {"type":"text","text":"6.087949'S, 140.300440'E","x":63.229813664596264,"y":454.0495867768595,"fontSize":11,"fontFamily":"Inter","fontWeight":"normal","fontStyle":"normal","textDecoration":"none","color":"#ffffff","opacity":1,"id":27,"strokeColor":"#ffffff"},
+                {"type":"shape","shapeType":"rectangle","x":42.484472049689444,"y":30.743801652892557,"width":90,"height":90,"fillColor":"#10b981","strokeColor":"#ffffff","strokeWidth":2,"opacity":1,"id":29},
+                {"type":"image","imageData":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABgAAAAMgCAYAAADleqn6AAAQAElEQVR4Aezde5zed30X8KOVJcu2mjgOxpXsxHRwbOq46XTsDsyEFBuSlKQlw3RCCkwDzGSGyR9N27S0UDpDE8qkhYQW2gEKmYGkMExL66ExrUObaeOQpjfbdVy7uTqO5YtkWbEtObJkXaxFZ2VJu6u9vJfncs7vfDKs9e77Ps85v+/nbPnj+eqysDjA/06ePLl49OjRxUOHDi0eOHBgce/evYuPPvro4sMPP7z4la98xRcDPwN+BvwM+BnwM+BnwM+AnwE/A34G/Az4GfAz0O/PAF++fgb8DPgZ8DPgZ2CEn4H8DDw/C8/PxPOz8fyMPD8rz8/MB3g0v7iQevjfqVOn0vPPP5+efPLJdDpg2rNnTzodMH3ta19Lzz33XDodMJ04cSKdDtjD7pYkQIAAAQIENhbwKQECBAgQIECAAAECBAgQIDCEQH4Gnp+F52fi+dl4fkaen5XnZ+b52Xl+hp6fpedn6t3Pk1JnBUAOkkM88cQT6ZFHHkn79+9PR44c6WNmaxIgQIAAAQIECBAgQIAAAQLTCLiWAAECBAgQKFIgP0PPz9LzM/X8bD0/Y8/P2rsadu4CIA9z+PDhpYf++/btS8eOHetqNusQIECAAAECPQhYkgABAgQIECBAgAABAgQIEChPID9bz8/YcxmQn7nnZ+/zTJnvnasAyAPlYZ566il/nU/W9EWAAAECBAgQIECAAAECBMoTMBEBAgQIECBQkUB+8J+fuedn7/kZ/Dyjz1QA5AHy31WU/0hCfj3PAO4lQIAAAQIEhhSwFwECBAgQIECAAAECBAgQIFCDQH72np/B52fx+fV0M5+5euoCIP+DBfkfKMj/YMGZJfyXAAECBAgQIECAAAECBAgQKFbAYAQIECBAgEDVAvlZfH4mn5/NTxtkqgLg61//enrsscfSqVOnpt3H9QQIECBAgEABAkYgQIAAAQIECBAgQIAAAQIE6hPIz+Tzs/n8bwNMMv3ZayYuAA4ePJgOHDhw9j6/EiBAgAABAgQIECBAgAABAuULmJAAAQIECBAIJJD/bYD8rH7SSBMVAE8//XR65plnJl3TdQQIECBAgECRAoYiQIAAAQIECBAgQIAAAQIEahfIz+rz1/o5zn+yaQFw6NChlL/O3+IVAQIECBAgQIAAAQIECBAgUIWAIQkQIECAAIGQAvlPAUzy3H7DAuDIkSMp/+7/kEJCECBAgACBxgTEJUCAAAECBAgQIECAAAECBOII5Gf3R48evSDQ8jfWLQBOnjyZnnzyyeXXek2AAAECBAgQIECAAAECBAjUI2BSAgQIECBAILjAvn37Un6Wv17MNQuAxcXF9Pjjj693j/cJECBAgACB6gQMTIAAAQIECBAgQIAAAQIECEQUyM/y8zP9M9lW/nfNAuDAgQPp1KlTK6/0HQECBAgQIECAAAECBAgQIFCPgEkJECBAgACBJgTys/z8TH+tsBcUAMePH0+HDx9e61rvESBAgACBSpUMTYAAAQIECBAgQIAAAQIECEQWyM/28zP+1QkvKAD8vf+rifxMgAABAgQIECBAgAABAgSqEzAwAQIECBAg0JjAWs/2VxQAR48e3fAfDGjMS1wCBAgQIBBEQAwCBAgQIECAAAECBAgQIEAgusDJkydTfsa/POeKAuCpp55a/pnXBAgQIECAAAECBAgQIECAQI0CZiZAgAABAgSaFFj9jH9FAXDw4MGU/4qeyy+/PH3gAx9Ib3vb29Lb3/72UF85U862bdu2pcKjS5cu+SJAgAABAgQIECBAgECcAjIRIECAAAEC7QnknxjLz3r/7M/+bOWPQL3nPe9pL0CDifMz5h/5kR9JOWvOdO7rF37hF9Jtt93W4OqWJkCAAAECBAgQIECAAIHgAuIRIECAAAEC7QrkZ415Ge8dd9xxRYA/+7M/u+J99byR8zz88MOXJ1/9+g//8A8/97u/+7v1hPk+BAgQIECAAAECBAgQiCogFwECBAgQIFC9QH5W9cQTT1zKkf9O9l/5lV9Jhw8fTmH/VMJ//+//PT377LPrZvjzP//zdPjw4XWv8QEBAgQIECBAgAABAgQI1C9gQgIECBAgQKAdgbf+gZ///M//nN76H/+c6y78bd/2bSl//d3f/V06depUuvzyy9MXv/jFdN9996W/+7u/S19++d9+WtrO/3//4T/8h3TnnXem//W//lf6+te/nt761remn/u5n0s/+7M/mz71qU+lF154IeV//4cAAQIECBAgQIAAAQIEWhaQnQABAgQIEAgh8P73vz/ddNNN6U//9E/Sn/zJn6Q77rgj/f7v/376/d///fTFL34xHT58OP3wD/9w+sf/+B+H+NdcmkP99E//dHrHO95x6dUf/dEfpdfey5/+6Z+mxx9/PD311FMp/64AAAAgAElEQVTpS1/6UvrSl76Urr322vSOd7wj/dIv/VL66Z/+6XTTTTele+65Jx0+fDg99dRTKf87/hAgQIAAAQIECBAgQIBAywKyEyBAgAABAmEE3vnOd6Z/+A//YXrnn/2NfW9960/L+38BAAD//wQblTwAAAAGSURBVAMAQ4TVsB8CAOcAAAAASUVORK5CYII=","width":90.31055900621116,"height":87.93388429752065,"x":43.04347826086958,"y":32.14876033057852,"opacity":0.9,"id":30},
+                {"type":"text","text":"24.095695, 91.289673","x":62.73291925465843,"y":427.1900826446281,"fontSize":14,"fontFamily":"Inter","fontWeight":"normal","fontStyle":"normal","textDecoration":"none","color":"#ffffff","opacity":1,"stampType":"coordinate","isLive":true,"id":31,"strokeColor":"#ffffff"}
             ],
-            "background": {
-                "type": "image",
-                "value": "backgroundImage"
-            }
+            "background": {"type":"image","value":"backgroundImage"}
         };
 
         async function loadEmbeddedPreset() {
@@ -1401,27 +1272,15 @@
                     if (el.type === 'image' && el.imageData) {
                         const promise = new Promise((resolve) => {
                             const img = new Image();
-                            img.onload = () => {
-                                el.imageElement = img;
-                                resolve();
-                            };
-                            img.onerror = () => {
-                                console.warn("Gagal load image embedded");
-                                resolve();
-                            };
+                            img.onload = () => { el.imageElement = img; resolve(); };
+                            img.onerror = () => resolve();
                             img.src = el.imageData;
                         });
                         imagePromises.push(promise);
                     }
-                    if(el.color && (el.color === '#000' || el.color === '#fff')) {
-                        el.color = (el.color === '#000') ? '#000000' : '#ffffff';
-                    }
-                    if(el.fillColor && (el.fillColor === '#000' || el.fillColor === '#fff')) {
-                        el.fillColor = (el.fillColor === '#000') ? '#000000' : '#ffffff';
-                    }
-                    if(el.strokeColor && (el.strokeColor === '#000' || el.strokeColor === '#fff')) {
-                        el.strokeColor = (el.strokeColor === '#000') ? '#000000' : '#ffffff';
-                    }
+                    if(el.color && (el.color === '#000' || el.color === '#fff')) el.color = (el.color === '#000') ? '#000000' : '#ffffff';
+                    if(el.fillColor && (el.fillColor === '#000' || el.fillColor === '#fff')) el.fillColor = (el.fillColor === '#000') ? '#000000' : '#ffffff';
+                    if(el.strokeColor && (el.strokeColor === '#000' || el.strokeColor === '#fff')) el.strokeColor = (el.strokeColor === '#000') ? '#000000' : '#ffffff';
                 }
                 await Promise.all(imagePromises);
                 elements = loadedElements;
@@ -1438,10 +1297,10 @@
                 saveHistory();
                 redrawAll();
                 updateUI();
-                console.log('Embedded preset loaded successfully');
+                console.log('Embedded preset loaded');
                 return true;
             } catch(err) {
-                console.warn('Gagal load embedded preset, fallback ke contoh', err);
+                console.warn('Embedded preset gagal', err);
                 return false;
             }
         }
@@ -1449,38 +1308,25 @@
         async function loadExternalPreset() {
             const presetUrl = 'watermark_preset_tanah_merah.json';
             try {
-                const response = await fetch(presetUrl + '?t=' + Date.now()); // cache buster
+                const response = await fetch(presetUrl + '?t=' + Date.now());
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const data = await response.json();
                 if (!data.elements) throw new Error('Invalid format');
-                console.log('Loading external preset...');
                 const loadedElements = data.elements;
                 const imagePromises = [];
                 for (let el of loadedElements) {
                     if (el.type === 'image' && el.imageData) {
                         const promise = new Promise((resolve) => {
                             const img = new Image();
-                            img.onload = () => {
-                                el.imageElement = img;
-                                resolve();
-                            };
-                            img.onerror = () => {
-                                console.warn("Gagal load image external");
-                                resolve();
-                            };
+                            img.onload = () => { el.imageElement = img; resolve(); };
+                            img.onerror = () => resolve();
                             img.src = el.imageData;
                         });
                         imagePromises.push(promise);
                     }
-                    if(el.color && (el.color === '#000' || el.color === '#fff')) {
-                        el.color = (el.color === '#000') ? '#000000' : '#ffffff';
-                    }
-                    if(el.fillColor && (el.fillColor === '#000' || el.fillColor === '#fff')) {
-                        el.fillColor = (el.fillColor === '#000') ? '#000000' : '#ffffff';
-                    }
-                    if(el.strokeColor && (el.strokeColor === '#000' || el.strokeColor === '#fff')) {
-                        el.strokeColor = (el.strokeColor === '#000') ? '#000000' : '#ffffff';
-                    }
+                    if(el.color && (el.color === '#000' || el.color === '#fff')) el.color = (el.color === '#000') ? '#000000' : '#ffffff';
+                    if(el.fillColor && (el.fillColor === '#000' || el.fillColor === '#fff')) el.fillColor = (el.fillColor === '#000') ? '#000000' : '#ffffff';
+                    if(el.strokeColor && (el.strokeColor === '#000' || el.strokeColor === '#fff')) el.strokeColor = (el.strokeColor === '#000') ? '#000000' : '#ffffff';
                 }
                 await Promise.all(imagePromises);
                 elements = loadedElements;
@@ -1497,31 +1343,46 @@
                 saveHistory();
                 redrawAll();
                 updateUI();
-                showLoadingToast("✅ Preset dari file eksternal berhasil dimuat", 2000);
+                showLoadingToast("✅ Preset eksternal dimuat", 2000);
                 return true;
             } catch(err) {
-                console.warn('Gagal load external preset', err);
+                console.warn('External preset gagal', err);
                 return false;
             }
         }
 
         async function loadDefaultPreset() {
-            // Coba load dari file eksternal terlebih dahulu
             const externalLoaded = await loadExternalPreset();
             if (!externalLoaded) {
-                // Jika gagal, gunakan embedded
                 await loadEmbeddedPreset();
                 showLoadingToast("⚠️ Gagal memuat file eksternal, menggunakan preset bawaan", 3000);
             }
         }
 
         // ======================== Event Binding ========================
-        startCamBtn.onclick=startCamera; stopCamBtn.onclick=stopCamera; capturePhotoBtn.onclick=captureAndSend; resetPhotoBtn.onclick=resetPhoto; downloadBtn.onclick=downloadImage;
-        addBgColorBtn.onclick=setBackgroundColor; clearBackgroundBtn.onclick=resetPhoto; undoBtn.onclick=undo; redoBtn.onclick=redo;
-        deleteSelectedBtn.onclick=deleteSelected; duplicateSelectedBtn.onclick=duplicateSelected; groupSelectedBtn.onclick=groupSelected; ungroupBtn.onclick=ungroup;
-        layerUpBtn.onclick=layerUp; layerDownBtn.onclick=layerDown; toggleGridBtn.onclick=()=>{ showGrid=!showGrid; redrawAll(); };
-        alignLeftBtn.onclick=alignLeft; alignCenterBtn.onclick=alignCenter; alignRightBtn.onclick=alignRight;
-        zoomInBtn.onclick=zoomIn; zoomOutBtn.onclick=zoomOut; resetZoomBtn.onclick=resetZoom;
+        startCamBtn.onclick=startCamera;
+        stopCamBtn.onclick=stopCamera;
+        flipCamBtn.onclick=flipCamera;
+        capturePhotoBtn.onclick=captureAndSend;
+        resetPhotoBtn.onclick=resetPhoto;
+        downloadBtn.onclick=downloadImage;
+        addBgColorBtn.onclick=setBackgroundColor;
+        clearBackgroundBtn.onclick=resetPhoto;
+        undoBtn.onclick=undo;
+        redoBtn.onclick=redo;
+        deleteSelectedBtn.onclick=deleteSelected;
+        duplicateSelectedBtn.onclick=duplicateSelected;
+        groupSelectedBtn.onclick=groupSelected;
+        ungroupBtn.onclick=ungroup;
+        layerUpBtn.onclick=layerUp;
+        layerDownBtn.onclick=layerDown;
+        toggleGridBtn.onclick=()=>{ showGrid=!showGrid; redrawAll(); };
+        alignLeftBtn.onclick=alignLeft;
+        alignCenterBtn.onclick=alignCenter;
+        alignRightBtn.onclick=alignRight;
+        zoomInBtn.onclick=zoomIn;
+        zoomOutBtn.onclick=zoomOut;
+        resetZoomBtn.onclick=resetZoom;
         savePresetBtn.onclick=()=>{ 
             const exportElements = elements.map(el => { if(el.imageElement) return {...el, imageData: el.imageElement.src, imageElement:null}; return el; });
             localStorage.setItem('watermark_pro_preset', JSON.stringify({ elements: exportElements, nextId }));
