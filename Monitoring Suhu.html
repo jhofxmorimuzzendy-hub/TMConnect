@@ -205,7 +205,7 @@
     </div>
 
     <script>
-        // ======================== WATERMARK PRESET DARI JSON ========================
+        // ======================== WATERMARK PRESET DARI JSON (TATA LETAK RAPI) ========================
         const watermarkPreset = {
             "version": 2,
             "nextId": 25,
@@ -227,7 +227,7 @@
             "background": { "type": "image", "value": "image" }
         };
 
-        // Hitung bounding box referensi untuk scaling
+        // Ukuran referensi watermark (lebar & tinggi maks dari elemen, dibulatkan ke atas)
         let refWidth = 0, refHeight = 0;
         watermarkPreset.elements.forEach(el => {
             let right = el.x + (el.width || 0);
@@ -243,6 +243,7 @@
             return days[date.getDay()];
         }
 
+        // Fungsi watermark dengan skala proporsional dan offset 0 (pojok kiri atas)
         async function applyWatermarkSuhu(originalDataUrl, petugasName, locationCoord, waktuStr) {
             return new Promise((resolve, reject) => {
                 const img = new Image();
@@ -253,9 +254,10 @@
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0);
                     
-                    const scaleX = img.width / refWidth;
-                    const scaleY = img.height / refHeight;
-                    const scale = Math.min(scaleX, scaleY);
+                    // Skala seragam agar watermark tidak terpotong dan proporsional
+                    const scale = Math.min(canvas.width / refWidth, canvas.height / refHeight);
+                    const offsetX = 0;   // pojok kiri
+                    const offsetY = 0;   // pojok atas
                     
                     const now = new Date();
                     const tanggalFormatted = now.toLocaleDateString('id-ID', { year:'numeric', month:'2-digit', day:'2-digit' }).split('/').reverse().join('-');
@@ -268,10 +270,10 @@
                         ctx.save();
                         ctx.globalAlpha = el.opacity || 1;
                         
-                        const x = el.x * scaleX;
-                        const y = el.y * scaleY;
-                        const w = (el.width || 0) * scaleX;
-                        const h = (el.height || 0) * scaleY;
+                        const x = offsetX + (el.x || 0) * scale;
+                        const y = offsetY + (el.y || 0) * scale;
+                        const w = (el.width || 0) * scale;
+                        const h = (el.height || 0) * scale;
                         
                         if (el.type === 'shape') {
                             if (el.shapeType === 'circle') {
@@ -281,7 +283,7 @@
                                 ctx.fill();
                                 if (el.strokeColor && el.strokeWidth) {
                                     ctx.strokeStyle = el.strokeColor;
-                                    ctx.lineWidth = el.strokeWidth * scale;
+                                    ctx.lineWidth = (el.strokeWidth || 1) * scale;
                                     ctx.stroke();
                                 }
                             } else if (el.shapeType === 'rectangle') {
@@ -289,7 +291,7 @@
                                 ctx.fillRect(x, y, w, h);
                                 if (el.strokeColor && el.strokeWidth) {
                                     ctx.strokeStyle = el.strokeColor;
-                                    ctx.lineWidth = el.strokeWidth * scale;
+                                    ctx.lineWidth = (el.strokeWidth || 1) * scale;
                                     ctx.strokeRect(x, y, w, h);
                                 }
                             } else if (el.shapeType === 'line') {
@@ -297,7 +299,7 @@
                                 ctx.moveTo(x, y);
                                 ctx.lineTo(x + w, y + h);
                                 ctx.strokeStyle = el.strokeColor || '#000';
-                                ctx.lineWidth = el.strokeWidth * scale;
+                                ctx.lineWidth = (el.strokeWidth || 1) * scale;
                                 ctx.stroke();
                             }
                         } else if (el.type === 'text') {
@@ -313,7 +315,7 @@
                             ctx.fillStyle = el.color || '#000';
                             if (el.strokeColor && el.strokeWidth) {
                                 ctx.strokeStyle = el.strokeColor;
-                                ctx.lineWidth = el.strokeWidth * scale;
+                                ctx.lineWidth = (el.strokeWidth || 1) * scale;
                                 ctx.strokeText(text, x, y);
                             }
                             ctx.fillText(text, x, y);
@@ -660,7 +662,7 @@
 
         function renderTable() {
             const tbody = document.getElementById("tabelBody");
-            if(!dataEntries.length){ tbody.innerHTML=`<tr><td colspan="7" class="text-center py-6 text-gray-400">📭 Kosong</td></tr>`; return; }
+            if(!dataEntries.length){ tbody.innerHTML=`<tr><td colspan="7" class="text-center py-6 text-gray-400">📭 Kosong</td</tr`; return; }
             let html = "";
             dataEntries.forEach(entry => {
                 const fotoCount = entry.fotoList?.length || 0;
@@ -676,15 +678,15 @@
                 html += `<tr class="border-b hover:bg-slate-50">
                     <td class="py-2 px-1 font-mono">${entry.id}</td>
                     <td class="py-2 px-1">${entry.tanggal}</td>
-                    <td class="py-2 px-1 font-semibold">${entry.suhu} °C</td>
-                    <td class="py-2 px-1 text-center">${fotoCell}</td>
-                    <td class="py-2 px-1">${escapeHtml(entry.petugas)}</td>
-                    <td class="py-2 px-1 max-w-[120px] truncate">${escapeHtml(entry.keterangan||'-')}</td>
+                    <td class="py-2 px-1 font-semibold">${entry.suhu} °C</td
+                    <td class="py-2 px-1 text-center">${fotoCell}</td
+                    <td class="py-2 px-1">${escapeHtml(entry.petugas)}</td
+                    <td class="py-2 px-1 max-w-[120px] truncate">${escapeHtml(entry.keterangan||'-')}</td
                     <td class="py-2 px-1">
                         ${editButtonHtml}
                         <button onclick="deleteEntry(${entry.id})" class="bg-red-100 text-red-600 px-2 py-1 rounded-full text-[10px]"><i class="fas fa-trash-can"></i> Hapus</button>
-                    </td>
-                 </tr>`;
+                    </td
+                </tr>`;
             });
             tbody.innerHTML = html;
             window.entryData = dataEntries;
@@ -750,12 +752,12 @@
 
         document.getElementById('btnExportHTML').addEventListener('click', () => {
             if(!dataEntries.length) return alert("Tidak ada data");
-            let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Laporan Suhu - Transmisi Tanah Merah</title><style>body{font-family:Inter,sans-serif;margin:20px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #aaa;padding:8px;vertical-align:top}th{background:#1e6f5c;color:white}.foto-grid{display:flex;gap:6px;flex-wrap:wrap}img{width:60px;height:60px;object-fit:cover;border-radius:8px}</style></head><body><h2>Monitoring Suhu - Transmisi Tanah Merah Ch44 (658)</h2><p>Export: ${new Date().toLocaleString()}</p><table border="1"><thead><tr><th>No</th><th>Tanggal</th><th>Suhu (°C)</th><th>Foto</th><th>Petugas</th><th>Keterangan</th></tr></thead><tbody>`;
+            let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Laporan Suhu - Transmisi Tanah Merah</title><style>body{font-family:Inter,sans-serif;margin:20px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #aaa;padding:8px;vertical-align:top}th{background:#1e6f5c;color:white}.foto-grid{display:flex;gap:6px;flex-wrap:wrap}img{width:60px;height:60px;object-fit:cover;border-radius:8px}</style></head><body><h2>Monitoring Suhu - Transmisi Tanah Merah Ch44 (658)</h2><p>Export: ${new Date().toLocaleString()}</p><table border="1"><thead><tr><th>No</th><th>Tanggal</th><th>Suhu (°C)</th><th>Foto</th><th>Petugas</th><th>Keterangan</th><tr></thead><tbody>`;
             dataEntries.forEach((e,idx) => {
                 let fotoHtml = `<div class="foto-grid">${(e.fotoList||[]).map(f=>`<img src="${f.base64}" title="${f.jamFoto}">`).join('')}</div>`;
                 html += `<tr><td>${idx+1}</td><td>${e.tanggal}</td><td>${e.suhu} °C</td><td>${fotoHtml}</td><td>${escapeHtml(e.petugas)}</td><td>${escapeHtml(e.keterangan||'-')}</td></tr>`;
             });
-            html += `</tbody></table><p><em>Watermark preset TVRI: logo, lingkaran biru, teks TV-RI-PAPUA, jam dinamis, tanggal, koordinat GPS, alamat transmisi.</em></p></body></html>`;
+            html += `</tbody> </table><p><em>Watermark preset TVRI: logo, lingkaran biru, teks TV-RI-PAPUA, jam dinamis, tanggal, koordinat GPS, alamat transmisi.</em></p></body></html>`;
             const blob = new Blob([html], {type:"text/html"}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`laporan_suhu_${Date.now()}.html`; a.click(); URL.revokeObjectURL(blob);
             if (typeof window.logActivity === 'function') {
                 window.logActivity('EXPORT', `Mengekspor data suhu ke HTML (${dataEntries.length} data)`, 'Monitoring Suhu');
