@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Monitoring Suhu | Dengan Watermark Preset (Vertikal/Horizontal)</title>
+    <title>Monitoring Suhu | Watermark Preset (Vertikal/Horizontal)</title>
     <link rel="icon" type="image/ico" href="favicon.ico">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -26,7 +26,6 @@
         .nav-btn:hover { background: #0e5a48; transform: translateY(-2px); }
         @media (max-width: 640px) { .nav-btn { padding: 6px 12px; font-size: 0.7rem; } .nav-actions { top: 10px; right: 10px; } }
         
-        /* Modal & Camera styles */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 3000; justify-content: center; align-items: center; backdrop-filter: blur(4px); }
         .modal-content { background: #1e293b; border-radius: 28px; width: 90%; max-width: 500px; padding: 20px; color: white; }
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
@@ -85,7 +84,7 @@
                     <div><label class="block text-xs font-medium text-gray-700 mb-1">Keterangan</label><textarea id="keterangan" rows="1" placeholder="Catatan tambahan" class="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm"></textarea></div>
                 </div>
                 
-                <!-- Dokumentasi Foto dengan Tombar Capture/Upload & Watermark Preset -->
+                <!-- Dokumentasi Foto -->
                 <div class="border-t border-gray-200 pt-4 mt-2">
                     <label class="block text-sm font-semibold text-gray-800 mb-3"><i class="fas fa-camera text-primary mr-2"></i> Dokumentasi Foto (Max 5) - Watermark otomatis sesuai orientasi</label>
                     <div class="bg-slate-50 rounded-xl p-3 border border-gray-200">
@@ -121,7 +120,7 @@
                 <thead class="bg-gray-100">
                     <tr><th class="py-2 px-1">No</th><th>Tgl</th><th>Suhu</th><th>Foto</th><th>Petugas</th><th>Keterangan</th><th>Aksi</th></tr>
                 </thead>
-                <tbody id="tabelBody"><tr><td colspan="7" class="text-center py-6 text-gray-400">🌡️ Memuat data...</td></tr></tbody>
+                <tbody id="tabelBody"><tr><td colspan="7" class="text-center py-6 text-gray-400">🌡️ Memuat data...</td</tr</tbody>
             </table>
         </div>
     </div>
@@ -160,181 +159,147 @@
     const DB_PATH = 'monitoring/suhu/entries';
     let userRole = 'guest';
 
-    // Data foto sementara
     let currentFotoList = [];  // { originalBase64, base64, jamFoto }
 
-    // ======================== WATERMARK ENGINE dengan PRESET JSON (VERTIKAL / HORIZONTAL) ========================
-    let presetPortraitLayers = [];   // untuk orientasi vertikal (tinggi > lebar)
-    let presetLandscapeLayers = [];  // untuk orientasi horizontal (lebar > tinggi)
-    let defaultPresetLoaded = false;
+    // ======================== WATERMARK ENGINE (FULL DARI NICE.html) ========================
+    let presetPortraitLayers = [];
+    let presetLandscapeLayers = [];
 
-    // Fungsi untuk mengambil file JSON preset dari folder yang sama
-    async function loadPresetFromFile(filename) {
-        try {
-            const response = await fetch(filename);
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            const data = await response.json();
-            if (data.layers && Array.isArray(data.layers)) {
-                // Konversi imageDataUrl menjadi image object untuk layer tipe image
-                for (let layer of data.layers) {
-                    if (layer.type === 'image' && layer.imageDataUrl) {
-                        const img = new Image();
-                        img.src = layer.imageDataUrl;
-                        layer.imageObj = img;
-                    }
-                }
-                return data.layers;
-            }
-            return [];
-        } catch (err) {
-            console.warn(`Gagal memuat ${filename}:`, err);
-            return null;
+    // Helper: konversi hex ke rgba
+    function hexToRgba(hex, alpha) { let r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16); return `rgba(${r}, ${g}, ${b}, ${alpha})`; }
+    
+    function createGradient(ctx, x, y, w, h, type, angle, c1, c2, o1, o2) {
+        let grad, rgba1 = hexToRgba(c1, o1), rgba2 = hexToRgba(c2, o2);
+        if (type === 'linear') {
+            let rad = angle * Math.PI/180, dx = Math.cos(rad), dy = Math.sin(rad);
+            let startX = x - (w/2)*dx, startY = y - (h/2)*dy, endX = x + (w/2)*dx, endY = y + (h/2)*dy;
+            grad = ctx.createLinearGradient(startX, startY, endX, endY);
+        } else {
+            let radius = Math.max(w, h)/2;
+            grad = ctx.createRadialGradient(x, y, 0, x, y, radius);
         }
+        grad.addColorStop(0, rgba1); grad.addColorStop(1, rgba2);
+        return grad;
     }
 
-    // Membuat preset default jika JSON tidak tersedia
-    function getDefaultPortraitLayers() {
-        return [
-            { type: 'text', text: 'Monitoring Suhu', fontSizePercent: 8, color: '#ffffff', opacity: 0.9, xPercent: 50, yPercent: 8, fontFamily: 'Inter, sans-serif', bold: true, shadow: true, rotation: 0, stroke: false, italic: false, underline: false, locked: false, gradient: false, stretchX: 100, stretchY: 100, flipX: false, flipY: false },
-            { type: 'dynamic', dynamicType: 'date', fontSizePercent: 5, color: '#ffdd88', opacity: 0.95, xPercent: 50, yPercent: 85, fontFamily: 'Inter, sans-serif', bold: true, shadow: true, stroke: false, rotation: 0, underline: false, stretchX:100, stretchY:100, flipX:false, flipY:false },
-            { type: 'dynamic', dynamicType: 'time', fontSizePercent: 7, color: '#ffffff', opacity: 1, xPercent: 50, yPercent: 90, fontFamily: 'Inter, sans-serif', bold: true, shadow: true, stroke: false, stretchX:100, stretchY:100 },
-            { type: 'dynamic', dynamicType: 'coord', fontSizePercent: 4, color: '#cccccc', opacity: 0.8, xPercent: 50, yPercent: 95, fontFamily: 'monospace', shadow: false, stretchX:100, stretchY:100 },
-            { type: 'shape', shapeType: 'rounded-square', shapeSize: 12, shapeColor: '#1e6f5c', opacity: 0.7, xPercent: 10, yPercent: 93, shadow: false, stroke: true, stretchX:100, stretchY:100 }
-        ];
-    }
-
-    function getDefaultLandscapeLayers() {
-        return [
-            { type: 'text', text: 'Monitoring Suhu', fontSizePercent: 6, color: '#ffffff', opacity: 0.9, xPercent: 50, yPercent: 10, fontFamily: 'Inter, sans-serif', bold: true, shadow: true },
-            { type: 'dynamic', dynamicType: 'date', fontSizePercent: 4, color: '#ffdd88', opacity: 0.95, xPercent: 85, yPercent: 88, fontFamily: 'Inter, sans-serif', bold: true },
-            { type: 'dynamic', dynamicType: 'time', fontSizePercent: 5, color: '#ffffff', opacity: 1, xPercent: 85, yPercent: 93, fontFamily: 'Inter, sans-serif', bold: true },
-            { type: 'dynamic', dynamicType: 'coord', fontSizePercent: 3, color: '#cccccc', opacity: 0.8, xPercent: 85, yPercent: 97, fontFamily: 'monospace' }
-        ];
-    }
-
-    // Inisialisasi preset dari file JSON
-    async function initPresets() {
-        const portraitLayers = await loadPresetFromFile('Preset watermark Vertical Hp.json');
-        const landscapeLayers = await loadPresetFromFile('Preset watermark Horizontal Hp.json');
-        presetPortraitLayers = (portraitLayers && portraitLayers.length) ? portraitLayers : getDefaultPortraitLayers();
-        presetLandscapeLayers = (landscapeLayers && landscapeLayers.length) ? landscapeLayers : getDefaultLandscapeLayers();
-        console.log("Preset loaded:", { portrait: presetPortraitLayers.length, landscape: presetLandscapeLayers.length });
-        defaultPresetLoaded = true;
-    }
-
-    // Helper: mendapatkan data dinamis (tanggal, waktu, hari, koordinat)
-    async function getDynamicData() {
-        const now = new Date();
-        const dateStr = `${now.getDate().toString().padStart(2,'0')}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getFullYear()}`;
-        const timeStr = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
-        const days = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
-        const dayStr = days[now.getDay()];
-        let coordStr = "Lokasi tidak tersedia";
-        try {
-            const pos = await new Promise((res,rej)=> navigator.geolocation.getCurrentPosition(res,rej, {timeout:3000}));
-            coordStr = `${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)}`;
-        } catch(e) {}
-        return { date: dateStr, time: timeStr, day: dayStr, coord: coordStr };
-    }
-
-    // Fungsi menggambar layer (copy dari NICE.html yang disederhanakan)
-    function drawTextLayer(ctx, layer, w, h) {
-        let fontSizeBase = (layer.fontSizePercent/100) * Math.min(w,h);
-        let fontSize = fontSizeBase * ((layer.stretchY||100)/100);
-        if(fontSize < 6) return;
-        let x = (layer.xPercent/100) * w;
-        let y = (layer.yPercent/100) * h;
-        ctx.save();
-        ctx.globalAlpha = layer.opacity;
-        ctx.translate(x,y);
-        ctx.rotate((layer.rotation||0) * Math.PI/180);
-        let sx = (layer.stretchX||100)/100, sy = (layer.stretchY||100)/100;
+    function applyFlipAndStretch(ctx, l) {
+        let sx = (l.stretchX||100)/100, sy = (l.stretchY||100)/100;
         ctx.scale(sx, sy);
-        if(layer.flipX) ctx.scale(-1,1);
-        if(layer.flipY) ctx.scale(1,-1);
+        if(l.flipX) ctx.scale(-1,1);
+        if(l.flipY) ctx.scale(1,-1);
+    }
+
+    function drawTextLayer(ctx, l, w, h) {
+        let fontSizeBase = (l.fontSizePercent/100) * Math.min(w, h);
+        let fontSize = fontSizeBase * ((l.stretchY||100)/100);
+        if(fontSize < 6) return;
+        let x = (l.xPercent/100)*w, y = (l.yPercent/100)*h;
+        ctx.save();
+        ctx.globalAlpha = l.opacity || 1;
+        ctx.translate(x, y);
+        ctx.rotate((l.rotation||0) * Math.PI/180);
+        applyFlipAndStretch(ctx, l);
         let style = '';
-        if(layer.bold) style+='bold ';
-        if(layer.italic) style+='italic ';
-        ctx.font = `${style}${fontSize}px ${layer.fontFamily || 'Inter, sans-serif'}`;
+        if(l.bold) style+='bold ';
+        if(l.italic) style+='italic ';
+        ctx.font = `${style}${fontSize}px ${l.fontFamily || 'Inter, sans-serif'}`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        if(layer.shadow) { ctx.shadowColor = "rgba(0,0,0,0.5)"; ctx.shadowBlur = 5; ctx.shadowOffsetX = 2; ctx.shadowOffsetY = 2; }
-        if(layer.stroke) { ctx.strokeStyle = "#000"; ctx.lineWidth = Math.max(2, fontSize/14); ctx.strokeText(layer.text,0,0); }
-        ctx.fillStyle = layer.color || "#ffffff";
-        ctx.fillText(layer.text,0,0);
+        if(l.shadow) { ctx.shadowColor = "rgba(0,0,0,0.5)"; ctx.shadowBlur = 5; ctx.shadowOffsetX = 2; ctx.shadowOffsetY = 2; } else ctx.shadowColor = "transparent";
+        if(l.stroke) { ctx.strokeStyle = "#000"; ctx.lineWidth = Math.max(2, fontSize/14); ctx.strokeText(l.text, 0, 0); }
+        if(l.gradient && l.gradientColor1 && l.gradientColor2) {
+            let tw = ctx.measureText(l.text).width;
+            let grad = createGradient(ctx, 0, 0, tw, fontSize, l.gradientType||'linear', l.gradientAngle||0, l.gradientColor1, l.gradientColor2, l.gradientOpacity1||1, l.gradientOpacity2||1);
+            ctx.fillStyle = grad;
+        } else {
+            ctx.fillStyle = l.color || '#ffffff';
+        }
+        ctx.fillText(l.text, 0, 0);
+        if(l.underline) {
+            let wm = ctx.measureText(l.text).width;
+            ctx.beginPath();
+            ctx.moveTo(-wm/2, fontSize*0.15);
+            ctx.lineTo(wm/2, fontSize*0.15);
+            ctx.lineWidth = fontSize/12;
+            ctx.strokeStyle = l.color || '#ffffff';
+            ctx.stroke();
+        }
         ctx.restore();
     }
 
-    function drawDynamicTextLayer(ctx, layer, dynamicVal, w, h) {
-        let fontSizeBase = (layer.fontSizePercent/100) * Math.min(w,h);
-        let fontSize = fontSizeBase * ((layer.stretchY||100)/100);
+    function drawDynamicTextLayer(ctx, l, dynamicVal, w, h) {
+        let fontSizeBase = (l.fontSizePercent/100) * Math.min(w, h);
+        let fontSize = fontSizeBase * ((l.stretchY||100)/100);
         if(fontSize < 6) return;
-        let x = (layer.xPercent/100) * w;
-        let y = (layer.yPercent/100) * h;
+        let x = (l.xPercent/100)*w, y = (l.yPercent/100)*h;
         ctx.save();
-        ctx.globalAlpha = layer.opacity;
-        ctx.translate(x,y);
-        ctx.rotate((layer.rotation||0) * Math.PI/180);
-        let sx = (layer.stretchX||100)/100, sy = (layer.stretchY||100)/100;
-        ctx.scale(sx, sy);
-        if(layer.flipX) ctx.scale(-1,1);
-        if(layer.flipY) ctx.scale(1,-1);
+        ctx.globalAlpha = l.opacity || 1;
+        ctx.translate(x, y);
+        ctx.rotate((l.rotation||0) * Math.PI/180);
+        applyFlipAndStretch(ctx, l);
         let style = '';
-        if(layer.bold) style+='bold ';
-        if(layer.italic) style+='italic ';
-        ctx.font = `${style}${fontSize}px ${layer.fontFamily || 'Inter, sans-serif'}`;
+        if(l.bold) style+='bold ';
+        if(l.italic) style+='italic ';
+        ctx.font = `${style}${fontSize}px ${l.fontFamily || 'Inter, sans-serif'}`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        if(layer.shadow) { ctx.shadowColor = "rgba(0,0,0,0.5)"; ctx.shadowBlur = 5; ctx.shadowOffsetX = 2; ctx.shadowOffsetY = 2; }
-        if(layer.stroke) { ctx.strokeStyle = "#000"; ctx.lineWidth = Math.max(2, fontSize/14); ctx.strokeText(dynamicVal,0,0); }
-        ctx.fillStyle = layer.color || "#ffffff";
-        ctx.fillText(dynamicVal,0,0);
+        if(l.shadow) { ctx.shadowColor = "rgba(0,0,0,0.5)"; ctx.shadowBlur = 5; ctx.shadowOffsetX = 2; ctx.shadowOffsetY = 2; } else ctx.shadowColor = "transparent";
+        if(l.stroke) { ctx.strokeStyle = "#000"; ctx.lineWidth = Math.max(2, fontSize/14); ctx.strokeText(dynamicVal, 0, 0); }
+        ctx.fillStyle = l.color || '#ffffff';
+        ctx.fillText(dynamicVal, 0, 0);
         ctx.restore();
     }
 
-    function drawShapeLayer(ctx, layer, w, h) {
-        let sizeBase = (layer.shapeSize/100) * Math.min(w,h);
-        let sw = sizeBase * ((layer.stretchX||100)/100);
-        let sh = sizeBase * ((layer.stretchY||100)/100);
-        if(sw<2) return;
-        let x = (layer.xPercent/100) * w;
-        let y = (layer.yPercent/100) * h;
+    function drawShapeLayer(ctx, l, w, h) {
+        let sizeBase = (l.shapeSize/100) * Math.min(w, h);
+        let sw = sizeBase * ((l.stretchX||100)/100);
+        let sh = sizeBase * ((l.stretchY||100)/100);
+        if(sw < 2 || sh < 2) return;
+        let x = (l.xPercent/100)*w, y = (l.yPercent/100)*h;
         ctx.save();
-        ctx.globalAlpha = layer.opacity;
-        ctx.translate(x,y);
-        ctx.rotate((layer.rotation||0) * Math.PI/180);
-        let sx = (layer.stretchX||100)/100, sy = (layer.stretchY||100)/100;
-        ctx.scale(sx, sy);
-        if(layer.flipX) ctx.scale(-1,1);
-        if(layer.flipY) ctx.scale(1,-1);
-        ctx.fillStyle = layer.shapeColor || "#ffaa44";
-        if(layer.shapeType === 'circle') { ctx.beginPath(); ctx.ellipse(0,0,sw/2,sh/2,0,0,2*Math.PI); ctx.fill(); if(layer.stroke) { ctx.strokeStyle="#fff"; ctx.lineWidth=2; ctx.stroke(); } }
-        else if(layer.shapeType === 'square') { ctx.fillRect(-sw/2, -sh/2, sw, sh); if(layer.stroke) ctx.strokeRect(-sw/2, -sh/2, sw, sh); }
-        else if(layer.shapeType === 'rounded-square') { let r=Math.min(sw,sh)*0.2; ctx.beginPath(); ctx.moveTo(-sw/2+r, -sh/2); ctx.lineTo(sw/2-r, -sh/2); ctx.quadraticCurveTo(sw/2, -sh/2, sw/2, -sh/2+r); ctx.lineTo(sw/2, sh/2-r); ctx.quadraticCurveTo(sw/2, sh/2, sw/2-r, sh/2); ctx.lineTo(-sw/2+r, sh/2); ctx.quadraticCurveTo(-sw/2, sh/2, -sw/2, sh/2-r); ctx.lineTo(-sw/2, -sh/2+r); ctx.quadraticCurveTo(-sw/2, -sh/2, -sw/2+r, -sh/2); ctx.closePath(); ctx.fill(); if(layer.stroke) ctx.stroke(); }
+        ctx.globalAlpha = l.opacity || 1;
+        ctx.translate(x, y);
+        ctx.rotate((l.rotation||0) * Math.PI/180);
+        applyFlipAndStretch(ctx, l);
+        if(l.shadow) { ctx.shadowColor = "rgba(0,0,0,0.4)"; ctx.shadowBlur = 4; } else ctx.shadowColor = "transparent";
+        let fillStyle;
+        if(l.gradient && l.gradientColor1 && l.gradientColor2) {
+            fillStyle = createGradient(ctx, 0, 0, sw, sh, l.gradientType||'linear', l.gradientAngle||0, l.gradientColor1, l.gradientColor2, l.gradientOpacity1||1, l.gradientOpacity2||1);
+        } else {
+            fillStyle = l.shapeColor || '#ffaa44';
+        }
+        ctx.fillStyle = fillStyle;
+        if(l.shapeType === 'circle') { ctx.beginPath(); ctx.ellipse(0,0,sw/2,sh/2,0,0,2*Math.PI); ctx.fill(); if(l.stroke) { ctx.strokeStyle="#fff"; ctx.lineWidth=2; ctx.stroke(); } }
+        else if(l.shapeType === 'square') { ctx.fillRect(-sw/2, -sh/2, sw, sh); if(l.stroke) { ctx.strokeStyle="#fff"; ctx.lineWidth=2; ctx.strokeRect(-sw/2, -sh/2, sw, sh); } }
+        else if(l.shapeType === 'rounded-square') { let r = Math.min(sw,sh)*0.2; ctx.beginPath(); ctx.moveTo(-sw/2+r, -sh/2); ctx.lineTo(sw/2-r, -sh/2); ctx.quadraticCurveTo(sw/2, -sh/2, sw/2, -sh/2+r); ctx.lineTo(sw/2, sh/2-r); ctx.quadraticCurveTo(sw/2, sh/2, sw/2-r, sh/2); ctx.lineTo(-sw/2+r, sh/2); ctx.quadraticCurveTo(-sw/2, sh/2, -sw/2, sh/2-r); ctx.lineTo(-sw/2, -sh/2+r); ctx.quadraticCurveTo(-sw/2, -sh/2, -sw/2+r, -sh/2); ctx.closePath(); ctx.fill(); if(l.stroke) ctx.stroke(); }
+        else if(l.shapeType === 'triangle') { ctx.beginPath(); ctx.moveTo(0, -sh/2); ctx.lineTo(sw/2, sh/2); ctx.lineTo(-sw/2, sh/2); ctx.closePath(); ctx.fill(); if(l.stroke) ctx.stroke(); }
+        else if(l.shapeType === 'star') { let spikes=5, outerR=Math.min(sw,sh)/2, innerR=outerR*0.5, rot=Math.PI/2*3, step=Math.PI/spikes; ctx.beginPath(); for(let i=0;i<spikes;i++){ let x1=Math.cos(rot)*outerR, y1=Math.sin(rot)*outerR; ctx.lineTo(x1,y1); rot+=step; let x2=Math.cos(rot)*innerR, y2=Math.sin(rot)*innerR; ctx.lineTo(x2,y2); rot+=step; } ctx.closePath(); ctx.fill(); if(l.stroke) ctx.stroke(); }
+        else if(l.shapeType === 'line') { ctx.beginPath(); ctx.moveTo(-sw/2,0); ctx.lineTo(sw/2,0); ctx.lineWidth = Math.min(sw,sh)*0.15; ctx.strokeStyle = fillStyle; ctx.stroke(); }
         ctx.restore();
     }
 
-    function drawImageLayerOnCanvas(ctx, layer, w, h) {
-        if(!layer.imageObj) return;
-        let baseW = (layer.scalePercent/100) * Math.min(w,h);
-        let baseH = baseW * (layer.imageObj.height/layer.imageObj.width);
-        let tw = baseW * ((layer.stretchX||100)/100);
-        let th = baseH * ((layer.stretchY||100)/100);
-        let x = (layer.xPercent/100) * w;
-        let y = (layer.yPercent/100) * h;
+    function drawImageLayerOnCanvas(ctx, l, w, h) {
+        if(!l.imageObj) return;
+        let baseW = (l.scalePercent/100) * Math.min(w, h);
+        let baseH = baseW * (l.imageObj.height / l.imageObj.width);
+        let tw = baseW * ((l.stretchX||100)/100);
+        let th = baseH * ((l.stretchY||100)/100);
+        let x = (l.xPercent/100)*w, y = (l.yPercent/100)*h;
         ctx.save();
-        ctx.globalAlpha = layer.opacity;
-        ctx.translate(x,y);
-        ctx.rotate((layer.rotation||0) * Math.PI/180);
-        let sx = (layer.stretchX||100)/100, sy = (layer.stretchY||100)/100;
+        ctx.globalAlpha = l.opacity || 1;
+        if(l.imgShadow) { ctx.shadowColor = l.imgShadowColor || "rgba(0,0,0,0.5)"; ctx.shadowBlur = l.imgShadowBlur || 8; ctx.shadowOffsetX = l.imgShadowOffsetX || 4; ctx.shadowOffsetY = l.imgShadowOffsetY || 4; } else ctx.shadowColor = "transparent";
+        ctx.translate(x, y);
+        ctx.rotate((l.rotation||0) * Math.PI/180);
+        let sx = (l.stretchX||100)/100, sy = (l.stretchY||100)/100;
         ctx.scale(sx, sy);
-        if(layer.flipX) ctx.scale(-1,1);
-        if(layer.flipY) ctx.scale(1,-1);
-        ctx.drawImage(layer.imageObj, -tw/2, -th/2, tw, th);
+        if(l.flipX) ctx.scale(-1,1);
+        if(l.flipY) ctx.scale(1,-1);
+        ctx.drawImage(l.imageObj, -tw/2, -th/2, tw, th);
+        if(l.imgStroke) { ctx.save(); ctx.globalCompositeOperation = "source-over"; ctx.shadowColor = "transparent"; ctx.strokeStyle = l.imgStrokeColor || "#FFFFFF"; ctx.lineWidth = l.imgStrokeWidth || 4; ctx.strokeRect(-tw/2, -th/2, tw, th); ctx.restore(); }
         ctx.restore();
     }
 
-    async function renderWatermarkOnImage(originalImageDataUrl, orientation, dynamicVals) {
+    async function renderWatermarkOnImage(originalDataUrl, orientation, dynamicVals) {
         return new Promise((resolve, reject) => {
             const img = new Image();
             img.onload = () => {
@@ -344,8 +309,7 @@
                 canvas.height = h;
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, w, h);
-                // Pilih preset berdasarkan orientasi
-                const layers = (orientation === 'portrait' || (h > w)) ? presetPortraitLayers : presetLandscapeLayers;
+                const layers = (orientation === 'portrait' || h > w) ? presetPortraitLayers : presetLandscapeLayers;
                 for (let layer of layers) {
                     if (layer.type === 'text') drawTextLayer(ctx, layer, w, h);
                     else if (layer.type === 'shape') drawShapeLayer(ctx, layer, w, h);
@@ -362,11 +326,74 @@
                 resolve(canvas.toDataURL('image/png'));
             };
             img.onerror = reject;
-            img.src = originalImageDataUrl;
+            img.src = originalDataUrl;
         });
     }
 
-    // ======================== KAMERA & UPLOAD DENGAN PRESET ========================
+    // Fungsi untuk memuat preset JSON (sama seperti NICE.html)
+    async function loadPresetFromFile(filename) {
+        try {
+            const response = await fetch(filename);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const data = await response.json();
+            if (data.layers && Array.isArray(data.layers)) {
+                for (let layer of data.layers) {
+                    if (layer.type === 'image' && layer.imageDataUrl) {
+                        const img = new Image();
+                        img.src = layer.imageDataUrl;
+                        layer.imageObj = img;
+                    }
+                }
+                return data.layers;
+            }
+            return [];
+        } catch (err) {
+            console.warn(`Gagal memuat ${filename}:`, err);
+            return null;
+        }
+    }
+
+    function getDefaultPortraitLayers() {
+        return [
+            { type: 'text', text: 'Monitoring Suhu', fontSizePercent: 8, color: '#ffffff', opacity: 0.9, xPercent: 50, yPercent: 8, fontFamily: 'Inter', bold: true, shadow: true, rotation: 0 },
+            { type: 'dynamic', dynamicType: 'date', fontSizePercent: 5, color: '#ffdd88', opacity: 0.95, xPercent: 50, yPercent: 85, fontFamily: 'Inter', bold: true, shadow: true },
+            { type: 'dynamic', dynamicType: 'time', fontSizePercent: 7, color: '#ffffff', opacity: 1, xPercent: 50, yPercent: 90, fontFamily: 'Inter', bold: true, shadow: true },
+            { type: 'dynamic', dynamicType: 'coord', fontSizePercent: 4, color: '#cccccc', opacity: 0.8, xPercent: 50, yPercent: 95, fontFamily: 'monospace' }
+        ];
+    }
+
+    function getDefaultLandscapeLayers() {
+        return [
+            { type: 'text', text: 'Monitoring Suhu', fontSizePercent: 6, color: '#ffffff', opacity: 0.9, xPercent: 50, yPercent: 10, fontFamily: 'Inter', bold: true, shadow: true },
+            { type: 'dynamic', dynamicType: 'date', fontSizePercent: 4, color: '#ffdd88', opacity: 0.95, xPercent: 85, yPercent: 88, fontFamily: 'Inter', bold: true },
+            { type: 'dynamic', dynamicType: 'time', fontSizePercent: 5, color: '#ffffff', opacity: 1, xPercent: 85, yPercent: 93, fontFamily: 'Inter', bold: true },
+            { type: 'dynamic', dynamicType: 'coord', fontSizePercent: 3, color: '#cccccc', opacity: 0.8, xPercent: 85, yPercent: 97, fontFamily: 'monospace' }
+        ];
+    }
+
+    async function initPresets() {
+        const portrait = await loadPresetFromFile('Preset watermark Vertical Hp.json');
+        const landscape = await loadPresetFromFile('Preset watermark Horizontal Hp.json');
+        presetPortraitLayers = (portrait && portrait.length) ? portrait : getDefaultPortraitLayers();
+        presetLandscapeLayers = (landscape && landscape.length) ? landscape : getDefaultLandscapeLayers();
+        console.log("Preset loaded:", { portrait: presetPortraitLayers.length, landscape: presetLandscapeLayers.length });
+    }
+
+    async function getDynamicData() {
+        const now = new Date();
+        const dateStr = `${now.getDate().toString().padStart(2,'0')}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getFullYear()}`;
+        const timeStr = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+        const days = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+        const dayStr = days[now.getDay()];
+        let coordStr = "Lokasi tidak tersedia";
+        try {
+            const pos = await new Promise((res,rej)=> navigator.geolocation.getCurrentPosition(res,rej, {timeout:3000}));
+            coordStr = `${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)}`;
+        } catch(e) {}
+        return { date: dateStr, time: timeStr, day: dayStr, coord: coordStr };
+    }
+
+    // ======================== KAMERA & UPLOAD ========================
     let cameraStream = null;
     let currentFacingMode = 'environment';
     const videoElem = document.getElementById('cameraVideo');
@@ -375,7 +402,6 @@
     const cameraCanvas = document.getElementById('cameraCaptureCanvas');
     const cameraModal = document.getElementById('cameraModal');
     const choiceModal = document.getElementById('choiceModal');
-    let activeOrientation = 'portrait';
 
     async function startCamera() {
         if (cameraStream) stopCamera();
@@ -416,7 +442,6 @@
         stopCamera();
     }
 
-    // Upload dari galeri
     function uploadFromGallery() {
         const input = document.createElement('input');
         input.type = 'file';
@@ -474,7 +499,7 @@
         document.getElementById('fotoDataArray').value = JSON.stringify(currentFotoList.map(f => ({ originalBase64: f.originalBase64, base64: f.base64, jamFoto: f.jamFoto })));
     }
 
-    // Event handlers modal pilihan
+    // Event handlers modal
     document.getElementById('openMediaChoiceBtn').onclick = () => {
         if (!document.getElementById('petugas').value.trim()) { alert("Isi nama petugas terlebih dahulu."); return; }
         choiceModal.style.display = 'flex';
@@ -493,7 +518,7 @@
     captureBtn.onclick = capturePhoto;
     switchCamBtn.onclick = () => { currentFacingMode = currentFacingMode === 'environment' ? 'user' : 'environment'; startCamera(); };
 
-    // ======================== FIREBASE & CRUD (SAMA SEPERTI SEBELUMNYA) ========================
+    // ======================== FIREBASE CRUD ========================
     function updateFirebaseStatus(connected, msg) { const el = document.getElementById('firebaseStatus'); if(el) el.innerHTML = connected ? `<i class="fas fa-check-circle text-green-600"></i> ${msg}` : `<i class="fas fa-exclamation-triangle text-amber-600"></i> ${msg}`; }
     async function setEntriesToFirebase(arr) { if (!isFirebaseReady || !window.db) return; const obj = {}; arr.forEach(e=>{ obj[e.id]=e; }); await window.db.ref(DB_PATH).set(obj); updateFirebaseStatus(true, "Tersinkron"); }
     function attachRealtimeListener() { if (!isFirebaseReady || !window.db) return; if (listenerRef) listenerRef.off(); listenerRef = window.db.ref(DB_PATH).on('value', (snap) => { if (isInternalUpdate) return; const data = snap.val(); if (data && typeof data === 'object') { let arr = Object.values(data).map(e=>{ if(!e.fotoList) e.fotoList=[]; return e; }); arr.sort((a,b)=> (a.id||0)-(b.id||0)); dataEntries = arr; } else dataEntries = []; renderTable(); updateNomorOtomatis(); updateFirebaseStatus(true, `Realtime (${dataEntries.length} data)`); }); }
@@ -505,7 +530,7 @@
 
     function renderTable() {
         const tbody = document.getElementById("tabelBody");
-        if(!dataEntries.length){ tbody.innerHTML=`<tr><td colspan="7" class="text-center py-6">📭 Kosong</td></tr>`; return; }
+        if(!dataEntries.length){ tbody.innerHTML=`<tr><td colspan="7" class="text-center py-6">📭 Kosong</td</tr`; return; }
         let html = "";
         dataEntries.forEach(entry => {
             const fotoCount = entry.fotoList?.length || 0;
@@ -541,7 +566,7 @@
     document.getElementById('btnHapusSemua').onclick = async () => { if(userRole !== 'admin') return alert("Hanya admin"); if(confirm("Hapus SEMUA data?")){ await clearAllEntries(); resetFormInput(); alert("Semua data dihapus."); } };
     document.getElementById('btnExportHTML').onclick = () => { if(!dataEntries.length) return alert("Tidak ada data"); let h = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Laporan Suhu</title><style>body{font-family:Inter}table{border-collapse:collapse}th,td{border:1px solid #aaa;padding:8px}th{background:#1e6f5c;color:white}</style></head><body><h2>Laporan Monitoring Suhu</h2><p>Export: ${new Date().toLocaleString()}</p><table border="1"><thead><tr><th>No</th><th>Tanggal</th><th>Suhu</th><th>Petugas</th><th>Keterangan</th></tr></thead><tbody>${dataEntries.map((e,i)=>`<tr><td>${e.id}</td><td>${e.tanggal}</td><td>${e.suhu}°C</td><td>${escapeHtml(e.petugas)}</td><td>${escapeHtml(e.keterangan||'-')}</td></tr>`).join('')}</tbody></table></body></html>`; const blob=new Blob([h],{type:"text/html"}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`laporan_suhu_${Date.now()}.html`; a.click(); URL.revokeObjectURL(blob); };
 
-    // Role & init
+    // Role & Init
     window.addEventListener('roleChanged', (e) => { userRole = e.detail.role; document.getElementById('userRoleDisplay').innerHTML = userRole==='admin' ? '<i class="fas fa-user-shield"></i> Admin' : (userRole==='user' ? '<i class="fas fa-user"></i> User' : '<i class="fas fa-user-friends"></i> Tamu'); document.getElementById('btnHapusSemua').style.display = userRole !== 'admin' ? 'none' : 'inline-flex'; renderTable(); });
     async function init() {
         await initPresets();
