@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Monitoring Suhu | Watermark Rapi (TVRI - Transmisi Tanah Merah)</title>
+    <title>Monitoring Suhu | Watermark TVRI Transmisi Tanah Merah</title>
     <link rel="icon" type="image/ico" href="favicon.ico">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -85,7 +85,7 @@
                         <div class="flex flex-wrap gap-3 justify-center">
                             <button type="button" id="openMediaChoiceBtn" class="bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white font-bold py-2 px-6 rounded-xl shadow"><i class="fas fa-camera-retro mr-2"></i> Ambil / Upload Foto</button>
                         </div>
-                        <p class="text-xs text-center text-gray-500 mt-3"><i class="fas fa-mobile-alt mr-1"></i> Watermark otomatis: TVRI, Transmisi Tanah Merah, Jam, Hari, Tanggal, Koordinat</p>
+                        <p class="text-xs text-center text-gray-500 mt-3"><i class="fas fa-mobile-alt mr-1"></i> Watermark otomatis: TVRI, Transmisi Tanah Merah, Jam, Hari, Tanggal, Koordinat (format seperti contoh)</p>
                     </div>
                     <div id="fotoPreviewList" class="photo-preview-grid mt-4"></div>
                     <p id="fotoCounter" class="text-xs text-gray-500 mt-2 text-center">0 dari 5 foto</p>
@@ -154,137 +154,60 @@
     let userRole = 'guest';
     let currentFotoList = [];
 
-    // ======================== WATERMARK ENGINE RAPI (TVRI - TRANSMISI TANAH MERAH) ========================
-    // Struktur layer: mendukung text, dynamic, shape, image
-    let presetPortraitLayers = [];   // untuk foto vertikal (tinggi > lebar)
-    let presetLandscapeLayers = [];  // untuk foto horizontal (lebar > tinggi)
+    // ======================== WATERMARK ENGINE ========================
+    let presetPortraitLayers = [];
+    let presetLandscapeLayers = [];
 
-    // ----- Fungsi render watermark (diadaptasi dari NICE.html yang stabil) -----
-    function hexToRgba(hex, alpha) { 
-        let r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16); 
-        return `rgba(${r}, ${g}, ${b}, ${alpha})`; 
-    }
-    function createGradient(ctx, x, y, w, h, type, angle, c1, c2, o1, o2) {
-        let grad, rgba1 = hexToRgba(c1, o1), rgba2 = hexToRgba(c2, o2);
-        if (type === 'linear') {
-            let rad = angle * Math.PI/180, dx = Math.cos(rad), dy = Math.sin(rad);
-            let startX = x - (w/2)*dx, startY = y - (h/2)*dy, endX = x + (w/2)*dx, endY = y + (h/2)*dy;
-            grad = ctx.createLinearGradient(startX, startY, endX, endY);
-        } else {
-            let radius = Math.max(w, h)/2;
-            grad = ctx.createRadialGradient(x, y, 0, x, y, radius);
-        }
-        grad.addColorStop(0, rgba1); grad.addColorStop(1, rgba2);
-        return grad;
-    }
-    function applyFlipAndStretch(ctx, l) {
-        let sx = (l.stretchX||100)/100, sy = (l.stretchY||100)/100;
-        ctx.scale(sx, sy);
-        if(l.flipX) ctx.scale(-1,1);
-        if(l.flipY) ctx.scale(1,-1);
-    }
-    function drawTextLayer(ctx, l, w, h) {
-        let fontSizeBase = (l.fontSizePercent/100) * Math.min(w, h);
-        let fontSize = fontSizeBase * ((l.stretchY||100)/100);
+    // Fungsi helper untuk menggambar
+    function drawTextLayer(ctx, layer, w, h) {
+        let fontSizeBase = (layer.fontSizePercent/100) * Math.min(w, h);
+        let fontSize = fontSizeBase * ((layer.stretchY||100)/100);
         if(fontSize < 6) return;
-        let x = (l.xPercent/100)*w, y = (l.yPercent/100)*h;
+        let x = (layer.xPercent/100)*w, y = (layer.yPercent/100)*h;
         ctx.save();
-        ctx.globalAlpha = l.opacity || 1;
+        ctx.globalAlpha = layer.opacity || 1;
         ctx.translate(x, y);
-        ctx.rotate((l.rotation||0) * Math.PI/180);
-        applyFlipAndStretch(ctx, l);
+        ctx.rotate((layer.rotation||0) * Math.PI/180);
+        let sx = (layer.stretchX||100)/100, sy = (layer.stretchY||100)/100;
+        ctx.scale(sx, sy);
+        if(layer.flipX) ctx.scale(-1,1);
+        if(layer.flipY) ctx.scale(1,-1);
         let style = '';
-        if(l.bold) style+='bold ';
-        if(l.italic) style+='italic ';
-        ctx.font = `${style}${fontSize}px ${l.fontFamily || 'Inter, sans-serif'}`;
+        if(layer.bold) style+='bold ';
+        if(layer.italic) style+='italic ';
+        ctx.font = `${style}${fontSize}px ${layer.fontFamily || 'Inter, sans-serif'}`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        if(l.shadow) { ctx.shadowColor = "rgba(0,0,0,0.5)"; ctx.shadowBlur = 5; ctx.shadowOffsetX = 2; ctx.shadowOffsetY = 2; } else ctx.shadowColor = "transparent";
-        if(l.stroke) { ctx.strokeStyle = "#000"; ctx.lineWidth = Math.max(2, fontSize/14); ctx.strokeText(l.text, 0, 0); }
-        if(l.gradient && l.gradientColor1 && l.gradientColor2) {
-            let tw = ctx.measureText(l.text).width;
-            let grad = createGradient(ctx, 0, 0, tw, fontSize, l.gradientType||'linear', l.gradientAngle||0, l.gradientColor1, l.gradientColor2, l.gradientOpacity1||1, l.gradientOpacity2||1);
-            ctx.fillStyle = grad;
-        } else {
-            ctx.fillStyle = l.color || '#ffffff';
-        }
-        ctx.fillText(l.text, 0, 0);
-        if(l.underline) {
-            let wm = ctx.measureText(l.text).width;
-            ctx.beginPath();
-            ctx.moveTo(-wm/2, fontSize*0.15);
-            ctx.lineTo(wm/2, fontSize*0.15);
-            ctx.lineWidth = fontSize/12;
-            ctx.strokeStyle = l.color || '#ffffff';
-            ctx.stroke();
-        }
+        if(layer.shadow) { ctx.shadowColor = "rgba(0,0,0,0.5)"; ctx.shadowBlur = 5; ctx.shadowOffsetX = 2; ctx.shadowOffsetY = 2; } else ctx.shadowColor = "transparent";
+        if(layer.stroke) { ctx.strokeStyle = "#000"; ctx.lineWidth = Math.max(2, fontSize/14); ctx.strokeText(layer.text, 0, 0); }
+        ctx.fillStyle = layer.color || '#ffffff';
+        ctx.fillText(layer.text, 0, 0);
         ctx.restore();
     }
-    function drawDynamicTextLayer(ctx, l, dynamicVal, w, h) {
-        let fontSizeBase = (l.fontSizePercent/100) * Math.min(w, h);
-        let fontSize = fontSizeBase * ((l.stretchY||100)/100);
+
+    function drawDynamicTextLayer(ctx, layer, dynamicVal, w, h) {
+        let fontSizeBase = (layer.fontSizePercent/100) * Math.min(w, h);
+        let fontSize = fontSizeBase * ((layer.stretchY||100)/100);
         if(fontSize < 6) return;
-        let x = (l.xPercent/100)*w, y = (l.yPercent/100)*h;
+        let x = (layer.xPercent/100)*w, y = (layer.yPercent/100)*h;
         ctx.save();
-        ctx.globalAlpha = l.opacity || 1;
+        ctx.globalAlpha = layer.opacity || 1;
         ctx.translate(x, y);
-        ctx.rotate((l.rotation||0) * Math.PI/180);
-        applyFlipAndStretch(ctx, l);
+        ctx.rotate((layer.rotation||0) * Math.PI/180);
+        let sx = (layer.stretchX||100)/100, sy = (layer.stretchY||100)/100;
+        ctx.scale(sx, sy);
+        if(layer.flipX) ctx.scale(-1,1);
+        if(layer.flipY) ctx.scale(1,-1);
         let style = '';
-        if(l.bold) style+='bold ';
-        if(l.italic) style+='italic ';
-        ctx.font = `${style}${fontSize}px ${l.fontFamily || 'Inter, sans-serif'}`;
+        if(layer.bold) style+='bold ';
+        if(layer.italic) style+='italic ';
+        ctx.font = `${style}${fontSize}px ${layer.fontFamily || 'Inter, sans-serif'}`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        if(l.shadow) { ctx.shadowColor = "rgba(0,0,0,0.5)"; ctx.shadowBlur = 5; ctx.shadowOffsetX = 2; ctx.shadowOffsetY = 2; } else ctx.shadowColor = "transparent";
-        if(l.stroke) { ctx.strokeStyle = "#000"; ctx.lineWidth = Math.max(2, fontSize/14); ctx.strokeText(dynamicVal, 0, 0); }
-        ctx.fillStyle = l.color || '#ffffff';
+        if(layer.shadow) { ctx.shadowColor = "rgba(0,0,0,0.5)"; ctx.shadowBlur = 5; ctx.shadowOffsetX = 2; ctx.shadowOffsetY = 2; } else ctx.shadowColor = "transparent";
+        if(layer.stroke) { ctx.strokeStyle = "#000"; ctx.lineWidth = Math.max(2, fontSize/14); ctx.strokeText(dynamicVal, 0, 0); }
+        ctx.fillStyle = layer.color || '#ffffff';
         ctx.fillText(dynamicVal, 0, 0);
-        ctx.restore();
-    }
-    function drawShapeLayer(ctx, l, w, h) {
-        let sizeBase = (l.shapeSize/100) * Math.min(w, h);
-        let sw = sizeBase * ((l.stretchX||100)/100);
-        let sh = sizeBase * ((l.stretchY||100)/100);
-        if(sw < 2 || sh < 2) return;
-        let x = (l.xPercent/100)*w, y = (l.yPercent/100)*h;
-        ctx.save();
-        ctx.globalAlpha = l.opacity || 1;
-        ctx.translate(x, y);
-        ctx.rotate((l.rotation||0) * Math.PI/180);
-        applyFlipAndStretch(ctx, l);
-        if(l.shadow) { ctx.shadowColor = "rgba(0,0,0,0.4)"; ctx.shadowBlur = 4; } else ctx.shadowColor = "transparent";
-        let fillStyle;
-        if(l.gradient && l.gradientColor1 && l.gradientColor2) {
-            fillStyle = createGradient(ctx, 0, 0, sw, sh, l.gradientType||'linear', l.gradientAngle||0, l.gradientColor1, l.gradientColor2, l.gradientOpacity1||1, l.gradientOpacity2||1);
-        } else {
-            fillStyle = l.shapeColor || '#ffaa44';
-        }
-        ctx.fillStyle = fillStyle;
-        if(l.shapeType === 'circle') { ctx.beginPath(); ctx.ellipse(0,0,sw/2,sh/2,0,0,2*Math.PI); ctx.fill(); if(l.stroke) { ctx.strokeStyle="#fff"; ctx.lineWidth=2; ctx.stroke(); } }
-        else if(l.shapeType === 'square') { ctx.fillRect(-sw/2, -sh/2, sw, sh); if(l.stroke) { ctx.strokeStyle="#fff"; ctx.lineWidth=2; ctx.strokeRect(-sw/2, -sh/2, sw, sh); } }
-        else if(l.shapeType === 'rounded-square') { let r = Math.min(sw,sh)*0.2; ctx.beginPath(); ctx.moveTo(-sw/2+r, -sh/2); ctx.lineTo(sw/2-r, -sh/2); ctx.quadraticCurveTo(sw/2, -sh/2, sw/2, -sh/2+r); ctx.lineTo(sw/2, sh/2-r); ctx.quadraticCurveTo(sw/2, sh/2, sw/2-r, sh/2); ctx.lineTo(-sw/2+r, sh/2); ctx.quadraticCurveTo(-sw/2, sh/2, -sw/2, sh/2-r); ctx.lineTo(-sw/2, -sh/2+r); ctx.quadraticCurveTo(-sw/2, -sh/2, -sw/2+r, -sh/2); ctx.closePath(); ctx.fill(); if(l.stroke) ctx.stroke(); }
-        else if(l.shapeType === 'triangle') { ctx.beginPath(); ctx.moveTo(0, -sh/2); ctx.lineTo(sw/2, sh/2); ctx.lineTo(-sw/2, sh/2); ctx.closePath(); ctx.fill(); if(l.stroke) ctx.stroke(); }
-        ctx.restore();
-    }
-    function drawImageLayer(ctx, l, w, h) {
-        if(!l.imageObj) return;
-        let baseW = (l.scalePercent/100) * Math.min(w, h);
-        let baseH = baseW * (l.imageObj.height / l.imageObj.width);
-        let tw = baseW * ((l.stretchX||100)/100);
-        let th = baseH * ((l.stretchY||100)/100);
-        let x = (l.xPercent/100)*w, y = (l.yPercent/100)*h;
-        ctx.save();
-        ctx.globalAlpha = l.opacity || 1;
-        if(l.imgShadow) { ctx.shadowColor = l.imgShadowColor || "rgba(0,0,0,0.5)"; ctx.shadowBlur = l.imgShadowBlur || 8; ctx.shadowOffsetX = l.imgShadowOffsetX || 4; ctx.shadowOffsetY = l.imgShadowOffsetY || 4; } else ctx.shadowColor = "transparent";
-        ctx.translate(x, y);
-        ctx.rotate((l.rotation||0) * Math.PI/180);
-        let sx = (l.stretchX||100)/100, sy = (l.stretchY||100)/100;
-        ctx.scale(sx, sy);
-        if(l.flipX) ctx.scale(-1,1);
-        if(l.flipY) ctx.scale(1,-1);
-        ctx.drawImage(l.imageObj, -tw/2, -th/2, tw, th);
-        if(l.imgStroke) { ctx.save(); ctx.globalCompositeOperation = "source-over"; ctx.shadowColor = "transparent"; ctx.strokeStyle = l.imgStrokeColor || "#FFFFFF"; ctx.lineWidth = l.imgStrokeWidth || 4; ctx.strokeRect(-tw/2, -th/2, tw, th); ctx.restore(); }
         ctx.restore();
     }
 
@@ -301,16 +224,14 @@
                 const layers = (orientation === 'portrait' || h > w) ? presetPortraitLayers : presetLandscapeLayers;
                 for (let layer of layers) {
                     if (layer.type === 'text') drawTextLayer(ctx, layer, w, h);
-                    else if (layer.type === 'shape') drawShapeLayer(ctx, layer, w, h);
                     else if (layer.type === 'dynamic') {
-                        let dynValue = '';
-                        if (layer.dynamicType === 'date') dynValue = dynamicVals.date;
-                        else if (layer.dynamicType === 'time') dynValue = dynamicVals.time;
-                        else if (layer.dynamicType === 'day') dynValue = dynamicVals.day;
-                        else if (layer.dynamicType === 'coord') dynValue = dynamicVals.coord;
-                        drawDynamicTextLayer(ctx, layer, dynValue, w, h);
+                        let val = '';
+                        if (layer.dynamicType === 'time') val = dynamicVals.time;
+                        else if (layer.dynamicType === 'date') val = dynamicVals.date;
+                        else if (layer.dynamicType === 'day') val = dynamicVals.day;
+                        else if (layer.dynamicType === 'coord') val = dynamicVals.coord;
+                        drawDynamicTextLayer(ctx, layer, val, w, h);
                     }
-                    else if (layer.type === 'image' && layer.imageObj) drawImageLayer(ctx, layer, w, h);
                 }
                 resolve(canvas.toDataURL('image/png'));
             };
@@ -319,51 +240,33 @@
         });
     }
 
-    // ----- Load preset dari file JSON (jika ada), jika tidak gunakan default rapi -----
+    // Load preset dari file JSON
     async function loadPresetFromFile(filename) {
         try {
             const response = await fetch(filename);
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            if (!response.ok) throw new Error();
             const data = await response.json();
-            if (data.layers && Array.isArray(data.layers)) {
-                for (let layer of data.layers) {
-                    if (layer.type === 'image' && layer.imageDataUrl) {
-                        const img = new Image();
-                        img.src = layer.imageDataUrl;
-                        layer.imageObj = img;
-                    }
-                }
-                return data.layers;
-            }
-            return [];
-        } catch (err) {
-            console.warn(`Gagal memuat ${filename}:`, err);
+            if (data.layers && Array.isArray(data.layers)) return data.layers;
             return null;
-        }
+        } catch { return null; }
     }
 
-    // Default preset VERTIKAL (Portrait) - Rapi seperti contoh WhatsApp
+    // Default preset VERTIKAL (Portrait) - rapi seperti contoh WhatsApp
     function getDefaultPortraitLayers() {
         return [
-            // Teks TVRI besar di atas tengah
-            { type: 'text', text: 'TVRI', fontSizePercent: 10, color: '#ffffff', opacity: 0.95, xPercent: 50, yPercent: 12, fontFamily: 'Montserrat', bold: true, shadow: true, rotation: 0, stroke: true },
-            // Transmisi Tanah Merah
+            { type: 'text', text: 'TVRI', fontSizePercent: 10, color: '#ffffff', opacity: 0.95, xPercent: 50, yPercent: 12, fontFamily: 'Montserrat', bold: true, shadow: true },
             { type: 'text', text: 'Transmisi Tanah Merah', fontSizePercent: 5.5, color: '#ffdd88', opacity: 0.95, xPercent: 50, yPercent: 22, fontFamily: 'Inter', bold: true, shadow: true },
-            // Jam (dynamic)
             { type: 'dynamic', dynamicType: 'time', fontSizePercent: 9, color: '#ffffff', opacity: 1, xPercent: 50, yPercent: 40, fontFamily: 'Montserrat', bold: true, shadow: true },
-            // Hari
             { type: 'dynamic', dynamicType: 'day', fontSizePercent: 5, color: '#dddddd', opacity: 0.9, xPercent: 50, yPercent: 52, fontFamily: 'Inter', bold: false, shadow: true },
-            // Tanggal (format DD/MM/YYYY)
             { type: 'dynamic', dynamicType: 'date', fontSizePercent: 6, color: '#ffffff', opacity: 0.95, xPercent: 50, yPercent: 62, fontFamily: 'Inter', bold: true, shadow: true },
-            // Koordinat (desimal)
             { type: 'dynamic', dynamicType: 'coord', fontSizePercent: 4.5, color: '#cccccc', opacity: 0.85, xPercent: 50, yPercent: 78, fontFamily: 'monospace', bold: false, shadow: false }
         ];
     }
 
-    // Default preset HORIZONTAL (Landscape) - disesuaikan untuk lebar
+    // Default preset HORIZONTAL (Landscape)
     function getDefaultLandscapeLayers() {
         return [
-            { type: 'text', text: 'TVRI', fontSizePercent: 8, color: '#ffffff', opacity: 0.95, xPercent: 15, yPercent: 12, fontFamily: 'Montserrat', bold: true, shadow: true, stroke: true },
+            { type: 'text', text: 'TVRI', fontSizePercent: 8, color: '#ffffff', opacity: 0.95, xPercent: 15, yPercent: 12, fontFamily: 'Montserrat', bold: true, shadow: true },
             { type: 'text', text: 'Transmisi Tanah Merah', fontSizePercent: 4.5, color: '#ffdd88', opacity: 0.95, xPercent: 15, yPercent: 22, fontFamily: 'Inter', bold: true, shadow: true },
             { type: 'dynamic', dynamicType: 'time', fontSizePercent: 7, color: '#ffffff', opacity: 1, xPercent: 85, yPercent: 70, fontFamily: 'Montserrat', bold: true, shadow: true },
             { type: 'dynamic', dynamicType: 'day', fontSizePercent: 4, color: '#dddddd', opacity: 0.9, xPercent: 85, yPercent: 80, fontFamily: 'Inter', bold: false, shadow: true },
@@ -377,7 +280,6 @@
         const landscape = await loadPresetFromFile('Preset watermark Horizontal Hp.json');
         presetPortraitLayers = (portrait && portrait.length) ? portrait : getDefaultPortraitLayers();
         presetLandscapeLayers = (landscape && landscape.length) ? landscape : getDefaultLandscapeLayers();
-        console.log("Preset loaded:", { portrait: presetPortraitLayers.length, landscape: presetLandscapeLayers.length });
     }
 
     async function getDynamicData() {
@@ -386,14 +288,11 @@
         const timeStr = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
         const days = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
         const dayStr = days[now.getDay()];
-        let coordStr = "Lokasi tidak tersedia";
+        let coordStr = "Tidak tersedia";
         try {
             const pos = await new Promise((res,rej)=> navigator.geolocation.getCurrentPosition(res,rej, {timeout:5000}));
             coordStr = `${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)}`;
-        } catch(e) {
-            // gunakan koordinat default jika gagal
-            coordStr = "-6.087965,140.300402";
-        }
+        } catch(e) { coordStr = "-6.087965,140.300402"; }
         return { date: dateStr, time: timeStr, day: dayStr, coord: coordStr };
     }
 
@@ -503,7 +402,7 @@
         document.getElementById('fotoDataArray').value = JSON.stringify(currentFotoList.map(f => ({ originalBase64: f.originalBase64, base64: f.base64, jamFoto: f.jamFoto })));
     }
 
-    // Event handlers modal
+    // Event handlers
     document.getElementById('openMediaChoiceBtn').onclick = () => {
         if (!document.getElementById('petugas').value.trim()) { alert("Isi nama petugas terlebih dahulu."); return; }
         choiceModal.style.display = 'flex';
@@ -534,7 +433,7 @@
 
     function renderTable() {
         const tbody = document.getElementById("tabelBody");
-        if(!dataEntries.length){ tbody.innerHTML=`<tr><td colspan="7" class="text-center py-6">📭 Kosong</td></tr>`; return; }
+        if(!dataEntries.length){ tbody.innerHTML=`<tr><td colspan="7" class="text-center py-6">📭 Kosong</td</tr`; return; }
         let html = "";
         dataEntries.forEach(entry => {
             const fotoCount = entry.fotoList?.length || 0;
@@ -551,7 +450,7 @@
     window.deleteEntry = async (id) => { if(confirm("Hapus data suhu ini?")) await deleteEntryById(id); };
     function escapeHtml(s){ if(!s) return ''; return s.replace(/[&<>]/g, m=>m==='&'?'&amp;':m==='<'?'&lt;':'&gt;'); }
 
-    // Form submit & reset
+    // Form submit
     const form = document.getElementById('formSuhu');
     const tanggalInput = document.getElementById('tanggal'), suhuInput = document.getElementById('suhu'), petugasInput = document.getElementById('petugas'), keteranganInput = document.getElementById('keterangan');
     tanggalInput.value = new Date().toISOString().split('T')[0];
