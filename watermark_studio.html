@@ -2,633 +2,339 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Monitoring Suhu | Transmisi Tanah Merah Ch44 (658) + Watermark Studio</title>
-    <link rel="icon" type="image/ico" href="favicon.ico">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Watermark Studio - Kirim ke Monitoring</title>
+    <link href="https://cdn.tailwindcss.com" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#1e6f5c">
-    <link rel="apple-touch-icon" href="favicon.png">
-    
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-    <script src="firebase-config.js"></script>
-    <script src="log-helper.js"></script>
-    <script src="auth-check.js"></script>
-    <script src="timestamp-editor.js"></script>
-
-    <!-- html2canvas untuk screenshot -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: { primary: '#1e6f5c', secondary: '#f5b042', accent: '#0e5a48' },
-                    screens: { 'xs': '480px', 'sm': '640px', 'md': '768px', 'lg': '1024px', 'xl': '1280px' }
-                }
-            }
-        }
-    </script>
     <style>
-        * { -webkit-tap-highlight-color: transparent; }
-        body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #eef2f8 0%, #e0f0ec 100%); position: relative; }
-        .nav-actions {
-            position: fixed;
-            top: 16px;
-            right: 16px;
-            display: flex;
-            gap: 12px;
-            z-index: 1000;
-        }
-        .nav-btn {
-            background: rgba(30, 111, 92, 0.9);
-            backdrop-filter: blur(4px);
-            border: none;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 40px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-        }
-        .nav-btn:hover {
-            background: #0e5a48;
-            transform: translateY(-2px);
-        }
-        @media (max-width: 640px) {
-            .nav-btn {
-                padding: 6px 12px;
-                font-size: 0.7rem;
-                gap: 6px;
-            }
-            .nav-actions {
-                top: 10px;
-                right: 10px;
-                gap: 8px;
-            }
-        }
-        .loading-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 999; backdrop-filter: blur(2px); }
-        .table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
-        .foto-thumb-list { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
-        .thumb-item { width: 42px; height: 42px; border-radius: 10px; overflow: hidden; border: 1px solid #ccc; cursor: pointer; background: #f1f5f9; flex-shrink: 0; }
-        .thumb-item img { width: 100%; height: 100%; object-fit: cover; }
-        .foto-preview-grid { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 12px; justify-content: center; }
-        .preview-card { position: relative; width: 85px; height: 85px; border-radius: 14px; overflow: hidden; border: 2px solid #1e6f5c; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
-        .preview-card img { width: 100%; height: 100%; object-fit: cover; }
-        .preview-card .remove-btn { position: absolute; top: -8px; right: -8px; background: #ef4444; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; border: 2px solid white; }
-        .modal-img { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: flex; align-items: center; justify-content: center; z-index: 2000; cursor: pointer; flex-direction: column; }
-        .modal-img img { max-width: 92%; max-height: 85%; border-radius: 20px; object-fit: contain; }
-        .modal-caption { background: rgba(0,0,0,0.7); color: white; padding: 8px 16px; border-radius: 40px; margin-top: 16px; font-size: 14px; text-align: center; max-width: 90%; }
-        @media (max-width: 640px) {
-            td, th { font-size: 0.7rem; padding: 0.5rem 0.25rem; }
-            .preview-card { width: 70px; height: 70px; }
-            .thumb-item { width: 36px; height: 36px; }
-            button { font-size: 0.75rem; padding: 0.5rem 0.75rem; }
-            h1 { font-size: 1.6rem; }
-        }
-        input, select, textarea { font-size: 16px !important; }
-        .sync-status { font-size: 0.7rem; padding: 2px 10px; border-radius: 20px; background: rgba(255,255,240,0.3); display: inline-block; margin-left: 12px; vertical-align: middle; }
-        .badge-transmisi { background: #1e6f5c; color: white; font-size: 0.75rem; border-radius: 40px; padding: 0.3rem 1rem; display: inline-block; font-weight: 600; letter-spacing: 0.3px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
-        .role-badge-header {
-            background: rgba(0,0,0,0.3);
-            padding: 4px 12px;
-            border-radius: 40px;
-            font-size: 0.7rem;
-            font-weight: 600;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
+        body { background: #f0f4f8; font-family: 'Inter', sans-serif; }
+        .preview-container { position: relative; display: inline-block; }
+        #resultCanvas { border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); max-width: 100%; }
+        .control-group { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .btn-primary { background: #1e6f5c; color: white; transition: 0.2s; }
+        .btn-primary:hover { background: #0e5a48; transform: translateY(-2px); }
+        .btn-secondary { background: #e2e8f0; color: #1e293b; }
+        .btn-secondary:hover { background: #cbd5e1; }
+        video { border-radius: 16px; background: #000; max-width: 100%; }
     </style>
 </head>
 <body>
-    <div class="nav-actions">
-        <button id="backToDashboardBtn" class="nav-btn"><i class="fas fa-arrow-left"></i> Dashboard</button>
-        <button id="refreshPageBtn" class="nav-btn"><i class="fas fa-sync-alt"></i> Refresh</button>
-    </div>
-
-    <div class="container max-w-7xl mx-auto px-3 sm:px-4 md:px-5 py-4 md:py-6">
-        <div class="text-center mb-5 md:mb-7">
-            <div class="inline-flex items-center justify-center bg-gradient-to-r from-primary to-accent p-3 rounded-full shadow-md">
-                <i class="fas fa-temperature-high text-white text-xl md:text-2xl"></i>
-            </div>
-            <h1 class="text-xl sm:text-2xl md:text-4xl font-extrabold text-slate-800 mt-2 md:mt-3 leading-tight">
-                Monitoring Suhu Ruangan
-                <span id="firebaseStatus" class="sync-status"><i class="fas fa-cloud-upload-alt"></i> Menghubungkan...</span>
-                <span id="userRoleDisplay" class="role-badge-header"><i class="fas fa-user"></i> Memuat...</span>
-            </h1>
-            <div class="mt-2 flex justify-center px-2 flex-wrap gap-2">
-                <span class="badge-transmisi"><i class="fas fa-tower-broadcast mr-1"></i> Transmisi - Tanah Merah, Ch 44 (Freq 658)</span>
-                <span class="badge-transmisi"><i class="fas fa-camera-retro mr-1"></i> Watermark Studio | Multi Foto (Max 5)</span>
-            </div>
+    <div class="max-w-6xl mx-auto px-4 py-6">
+        <div class="flex items-center justify-between mb-6">
+            <h1 class="text-2xl font-bold text-slate-800"><i class="fas fa-palette text-primary mr-2"></i> Watermark Studio</h1>
+            <button onclick="window.close()" class="text-gray-500 hover:text-red-500"><i class="fas fa-times-circle text-2xl"></i></button>
         </div>
 
-        <!-- Form Card -->
-        <div class="bg-white rounded-2xl shadow-xl overflow-hidden mb-6 md:mb-8 border border-gray-100">
-            <div class="bg-gradient-to-r from-primary to-accent px-4 py-3 md:px-5 md:py-4">
-                <h2 class="text-base md:text-xl font-semibold text-white"><i class="fas fa-thermometer-half mr-2"></i> Form Pencatatan Suhu</h2>
-            </div>
-            <div class="p-4 sm:p-5 md:p-6">
-                <form id="formSuhu" class="space-y-4 md:space-y-5">
-                    <div class="grid grid-cols-1 xs:grid-cols-3 gap-3 md:gap-5">
-                        <div><label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Nomor</label><input type="text" id="nomorOtomatis" readonly class="w-full bg-gray-100 border border-gray-300 rounded-xl px-3 py-2 md:py-2.5 text-gray-600 font-mono text-sm"></div>
-                        <div><label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Tanggal <span class="text-red-500">*</span></label><input type="date" id="tanggal" required class="w-full border border-gray-300 rounded-xl px-3 py-2 md:py-2.5 text-sm focus:ring-2 focus:ring-primary focus:border-primary"></div>
-                        <div><label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Petugas <span class="text-red-500">*</span></label><input type="text" id="petugas" required placeholder="Nama petugas" class="w-full border border-gray-300 rounded-xl px-3 py-2 md:py-2.5 text-sm focus:ring-2 focus:ring-primary"></div>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Kolom Kiri: Kamera / Upload -->
+            <div class="lg:col-span-2 space-y-4">
+                <div class="bg-white rounded-2xl p-4 shadow">
+                    <h2 class="font-semibold mb-2"><i class="fas fa-camera mr-2 text-primary"></i> Ambil Foto</h2>
+                    <div class="flex flex-wrap gap-3">
+                        <button id="startCameraBtn" class="btn-primary px-4 py-2 rounded-xl"><i class="fas fa-play mr-2"></i> Buka Kamera</button>
+                        <button id="captureBtn" class="btn-primary px-4 py-2 rounded-xl" disabled><i class="fas fa-camera mr-2"></i> Jepret</button>
+                        <label class="btn-secondary px-4 py-2 rounded-xl cursor-pointer">
+                            <i class="fas fa-upload mr-2"></i> Unggah Gambar
+                            <input type="file" id="uploadInput" accept="image/*" class="hidden">
+                        </label>
                     </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-5">
-                        <div><label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Suhu (°C) <span class="text-red-500">*</span></label><input type="number" step="0.1" id="suhu" required placeholder="Contoh: 24.5" class="w-full border border-gray-300 rounded-xl px-3 py-2 md:py-2.5 text-sm focus:ring-2 focus:ring-primary"></div>
-                        <div><label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Keterangan</label><textarea id="keterangan" rows="1" placeholder="Catatan tambahan" class="w-full border border-gray-300 rounded-xl px-3 py-2 md:py-2.5 text-sm focus:ring-2 focus:ring-primary"></textarea></div>
+                    <div class="mt-3 relative">
+                        <video id="video" autoplay playsinline class="w-full max-h-[360px] object-cover"></video>
+                        <canvas id="captureCanvas" class="hidden"></canvas>
                     </div>
-                    
-                    <!-- Dokumentasi Foto Multi dengan integrasi Watermark Studio -->
-                    <div class="border-t border-gray-200 pt-4 mt-2">
-                        <label class="block text-sm md:text-md font-semibold text-gray-800 mb-2"><i class="fas fa-camera-retro text-primary mr-2"></i> Dokumentasi Foto Ruangan (Max 5, watermark via Studio)</label>
-                        <div class="bg-slate-50 rounded-xl p-3 md:p-4 border border-dashed border-gray-300">
-                            <div class="flex flex-wrap gap-2 justify-center">
-                                <button type="button" id="btnBukaStudio" class="bg-primary hover:bg-accent text-white px-4 py-2 rounded-xl text-sm md:text-base shadow transition"><i class="fas fa-video mr-2"></i> Buka Watermark Studio (Ambil Foto)</button>
-                            </div>
-                            <div id="fotoPreviewList" class="foto-preview-grid mt-3"></div>
-                            <p id="fotoCounter" class="text-xs text-gray-500 mt-2 text-center">0 dari 5 foto</p>
-                            <input type="hidden" id="fotoDataArray" value="[]">
-                            <p class="text-[11px] md:text-xs text-gray-500 mt-3 bg-white/70 p-2 rounded text-center"><i class="fas fa-palette text-green-600"></i> <strong>Watermark Studio</strong> : Desain watermark bebas (teks, shape, stiker, peta, dll)</p>
+                </div>
+
+                <!-- Kontrol Watermark -->
+                <div class="control-group">
+                    <h2 class="font-semibold mb-3"><i class="fas fa-pen-fancy mr-2 text-primary"></i> Pengaturan Watermark</h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="text-sm font-medium">Teks Watermark</label>
+                            <input type="text" id="watermarkText" value="© Tanah Merah 2026" class="w-full border rounded-lg px-3 py-2 text-sm">
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium">Posisi</label>
+                            <select id="watermarkPosition" class="w-full border rounded-lg px-3 py-2 text-sm">
+                                <option value="top-left">Kiri Atas</option>
+                                <option value="top-right" selected>Kanan Atas</option>
+                                <option value="bottom-left">Kiri Bawah</option>
+                                <option value="bottom-right">Kanan Bawah</option>
+                                <option value="center">Tengah</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium">Ukuran (px)</label>
+                            <input type="number" id="watermarkSize" value="32" min="12" max="80" class="w-full border rounded-lg px-3 py-2 text-sm">
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium">Warna</label>
+                            <input type="color" id="watermarkColor" value="#ffffff" class="w-full h-10 border rounded-lg p-1">
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium">Opacity</label>
+                            <input type="range" id="watermarkOpacity" min="0.1" max="1" step="0.05" value="0.7" class="w-full">
+                            <span id="opacityValue" class="text-xs">0.70</span>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium">Background Shape</label>
+                            <select id="watermarkShape" class="w-full border rounded-lg px-3 py-2 text-sm">
+                                <option value="none">Tanpa</option>
+                                <option value="rect">Persegi</option>
+                                <option value="circle">Lingkaran</option>
+                            </select>
                         </div>
                     </div>
-
-                    <div class="flex flex-col sm:flex-row gap-3 pt-2">
-                        <button type="submit" class="bg-primary hover:bg-accent text-white font-semibold py-2.5 md:py-3 rounded-xl flex-1 transition shadow text-sm md:text-base"><i class="fas fa-save mr-2"></i> Simpan Pencatatan</button>
-                        <button type="button" id="btnResetForm" class="bg-gray-200 hover:bg-gray-300 text-gray-800 py-2.5 md:py-3 rounded-xl flex-1 transition text-sm md:text-base"><i class="fas fa-undo-alt mr-2"></i> Reset Form</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <!-- Daftar Riwayat -->
-        <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
-            <div class="bg-gradient-to-r from-primary to-accent px-4 py-3 md:px-5 md:py-4 flex justify-between items-center flex-wrap gap-2">
-                <h2 class="text-base md:text-xl font-semibold text-white"><i class="fas fa-table-list mr-2"></i> Riwayat Pencatatan Suhu</h2>
-                <div class="flex gap-2">
-                    <!-- Tombol Export PNG (sekarang screenshot + tambah ke foto) -->
-                    <button id="btnExportPNG" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs md:text-sm px-3 py-1.5 rounded-full shadow transition"><i class="fas fa-file-image mr-1"></i> Export PNG</button>
-                    <button id="btnHapusSemua" class="bg-red-600 hover:bg-red-700 text-white text-xs md:text-sm px-3 py-1.5 rounded-full shadow transition"><i class="fas fa-dumpster-fire mr-1"></i> Hapus Semua</button>
+                    <button id="applyWatermarkBtn" class="mt-3 bg-primary text-white px-5 py-2 rounded-xl hover:bg-accent transition"><i class="fas fa-check mr-2"></i> Terapkan Watermark</button>
                 </div>
             </div>
-            <div class="table-wrapper p-2 md:p-4">
-                <table class="min-w-[800px] md:min-w-full bg-white border border-gray-200 rounded-xl text-xs md:text-sm">
-                    <thead class="bg-gray-100">
-                        <tr><th class="py-2 px-1">No</th><th>Tgl</th><th>Suhu</th><th>Foto</th><th>Petugas</th><th>Keterangan</th><th>Aksi</th></tr>
-                    </thead>
-                    <tbody id="tabelBody"><tr><td colspan="7" class="text-center py-6 text-gray-400">🌡️ Memuat data...</td></tr></tbody>
-                </table>
+
+            <!-- Kolom Kanan: Hasil & Aksi -->
+            <div class="space-y-4">
+                <div class="bg-white rounded-2xl p-4 shadow text-center">
+                    <h2 class="font-semibold mb-2"><i class="fas fa-image mr-2 text-primary"></i> Hasil Akhir</h2>
+                    <div class="preview-container">
+                        <canvas id="resultCanvas" width="400" height="300" class="border border-gray-200 rounded-xl bg-gray-100"></canvas>
+                    </div>
+                    <div class="mt-4 flex flex-col gap-3">
+                        <button id="sendToMonitoringBtn" class="btn-primary px-5 py-3 rounded-xl text-lg font-semibold"><i class="fas fa-paper-plane mr-2"></i> Kirim ke Monitoring</button>
+                        <button id="downloadBtn" class="btn-secondary px-5 py-3 rounded-xl text-lg font-semibold"><i class="fas fa-download mr-2"></i> Download PNG</button>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-2"><i class="fas fa-info-circle"></i> Klik "Kirim ke Monitoring" untuk langsung menambahkan foto ke form monitoring</p>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        // ======================== KONFIGURASI FIREBASE ========================
-        let isFirebaseReady = false;
-        let dataEntries = [];
-        let listenerRef = null;
-        let isInternalUpdate = false;
-        const DB_PATH = 'monitoring/suhu/entries';
-        let userRole = 'guest';
+        // ========== ELEMEN ==========
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('captureCanvas');
+        const resultCanvas = document.getElementById('resultCanvas');
+        const ctx = resultCanvas.getContext('2d');
 
-        function updateFirebaseStatus(connected, message) {
-            const statusEl = document.getElementById('firebaseStatus');
-            if (statusEl) {
-                if (connected) {
-                    statusEl.innerHTML = `<i class="fas fa-check-circle text-green-600"></i> ${message}`;
-                    statusEl.classList.remove('bg-red-100', 'text-red-700');
-                    statusEl.classList.add('bg-green-100', 'text-green-700');
-                } else {
-                    statusEl.innerHTML = `<i class="fas fa-exclamation-triangle text-amber-600"></i> ${message}`;
-                    statusEl.classList.remove('bg-green-100', 'text-green-700');
-                    statusEl.classList.add('bg-red-100', 'text-red-700');
+        const startCameraBtn = document.getElementById('startCameraBtn');
+        const captureBtn = document.getElementById('captureBtn');
+        const uploadInput = document.getElementById('uploadInput');
+        const applyBtn = document.getElementById('applyWatermarkBtn');
+        const sendBtn = document.getElementById('sendToMonitoringBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+
+        const watermarkText = document.getElementById('watermarkText');
+        const watermarkPosition = document.getElementById('watermarkPosition');
+        const watermarkSize = document.getElementById('watermarkSize');
+        const watermarkColor = document.getElementById('watermarkColor');
+        const watermarkOpacity = document.getElementById('watermarkOpacity');
+        const opacityValue = document.getElementById('opacityValue');
+        const watermarkShape = document.getElementById('watermarkShape');
+
+        let currentImageData = null; // ImageData atau canvas sumber
+
+        // ========== KAMERA ==========
+        let stream = null;
+        startCameraBtn.addEventListener('click', async () => {
+            try {
+                if (stream) {
+                    stream.getTracks().forEach(t => t.stop());
+                    stream = null;
                 }
-            }
-        }
-
-        async function enablePersistence() {
-            if (!window.db) return false;
-            try {
-                if (window.db.enablePersistence) await window.db.enablePersistence();
-                else if (window.firebase?.database) await window.firebase.database().enablePersistence();
-                console.log("Firebase persistence aktif");
-                return true;
-            } catch (err) { console.warn(err); return false; }
-        }
-
-        async function setEntriesToFirebase(entriesArray) {
-            if (!isFirebaseReady || !window.db) return false;
-            try {
-                const entriesObj = {};
-                entriesArray.forEach(entry => { entriesObj[entry.id] = entry; });
-                await window.db.ref(DB_PATH).set(entriesObj);
-                updateFirebaseStatus(true, "Tersinkron");
-                return true;
-            } catch (err) {
-                console.error(err);
-                updateFirebaseStatus(false, "Gagal simpan");
-                return false;
-            }
-        }
-
-        function normalizeEntry(entry) {
-            if (!entry.fotoList && entry.fotoBase64) {
-                entry.fotoList = [{
-                    base64: entry.fotoBase64,
-                    jamFoto: entry.jamFoto || "-",
-                    lat: entry.lat || null,
-                    lng: entry.lng || null
-                }];
-                delete entry.fotoBase64;
-                delete entry.jamFoto;
-                delete entry.lat;
-                delete entry.lng;
-            } else if (!entry.fotoList) {
-                entry.fotoList = [];
-            }
-            return entry;
-        }
-
-        function attachRealtimeListener() {
-            if (!isFirebaseReady || !window.db) return;
-            if (listenerRef) listenerRef.off();
-            const ref = window.db.ref(DB_PATH);
-            listenerRef = ref.on('value', (snapshot) => {
-                if (isInternalUpdate) return;
-                const data = snapshot.val();
-                if (data && typeof data === 'object') {
-                    let entriesArray = Object.values(data);
-                    entriesArray = entriesArray.map(e => normalizeEntry(e));
-                    entriesArray.sort((a,b) => (a.id || 0) - (b.id || 0));
-                    dataEntries = entriesArray;
-                } else dataEntries = [];
-                renderTable();
-                updateNomorOtomatis();
-                updateFirebaseStatus(true, `Realtime (${dataEntries.length} data)`);
-            }, (error) => {
-                console.error("Listener error:", error);
-                updateFirebaseStatus(false, "Error listener");
-            });
-        }
-
-        function getNextId() { return dataEntries.length ? Math.max(...dataEntries.map(e=>e.id)) + 1 : 1; }
-        function updateNomorOtomatis() { document.getElementById("nomorOtomatis").value = getNextId(); }
-
-        async function addEntry(newEntry) {
-            const updated = [...dataEntries, newEntry];
-            updated.sort((a,b) => a.id - b.id);
-            isInternalUpdate = true;
-            await setEntriesToFirebase(updated);
-            isInternalUpdate = false;
-            if (typeof window.logActivity === 'function') {
-                window.logActivity('TAMBAH DATA', `Menambahkan data suhu ID ${newEntry.id} - Suhu: ${newEntry.suhu}°C, Tanggal: ${newEntry.tanggal}`, 'Monitoring Suhu');
-            }
-        }
-
-        async function deleteEntryById(id) {
-            const updated = dataEntries.filter(e => e.id !== id);
-            isInternalUpdate = true;
-            await setEntriesToFirebase(updated);
-            isInternalUpdate = false;
-            if (typeof window.logActivity === 'function') {
-                window.logActivity('HAPUS DATA', `Menghapus data suhu ID ${id}`, 'Monitoring Suhu');
-            }
-        }
-
-        async function clearAllEntries() {
-            const count = dataEntries.length;
-            isInternalUpdate = true;
-            await setEntriesToFirebase([]);
-            isInternalUpdate = false;
-            if (typeof window.logActivity === 'function') {
-                window.logActivity('HAPUS SEMUA', `Menghapus semua data suhu (${count} entries)`, 'Monitoring Suhu');
-            }
-        }
-
-        // ========== INTEGRASI WATERMARK STUDIO ==========
-        let currentFotoList = [];
-        const fotoPreviewDiv = document.getElementById('fotoPreviewList');
-        const fotoCounterSpan = document.getElementById('fotoCounter');
-        const fotoDataArrayHidden = document.getElementById('fotoDataArray');
-        let studioWindow = null;
-
-        // Fungsi untuk menambahkan foto dari studio (langsung, tanpa watermark ulang)
-        function addFotoFromStudio(base64DataUrl) {
-            const petugas = document.getElementById('petugas').value.trim();
-            if (!petugas) {
-                alert("Isi nama petugas terlebih dahulu sebelum mengambil foto.");
-                return false;
-            }
-            if (currentFotoList.length >= 5) {
-                alert("Maksimal 5 foto.");
-                return false;
-            }
-            const now = new Date();
-            const waktuStr = now.toLocaleString('id-ID', { hour12: false, day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit', second:'2-digit' });
-            const fotoObj = {
-                base64: base64DataUrl,
-                jamFoto: waktuStr,
-                lat: null,
-                lng: null
-            };
-            currentFotoList.push(fotoObj);
-            updatePreviewUI();
-            updateHiddenArray();
-            return true;
-        }
-
-        // Fungsi untuk menambahkan screenshot (export PNG) ke daftar foto
-        function addScreenshotToFoto(dataUrl) {
-            if (currentFotoList.length >= 5) {
-                alert("Maksimal 5 foto. Hapus salah satu terlebih dahulu.");
-                return false;
-            }
-            const now = new Date();
-            const waktuStr = now.toLocaleString('id-ID', { hour12: false, day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit', second:'2-digit' });
-            const fotoObj = {
-                base64: dataUrl,
-                jamFoto: waktuStr + " (Screenshot)",
-                lat: null,
-                lng: null,
-                isScreenshot: true
-            };
-            currentFotoList.push(fotoObj);
-            updatePreviewUI();
-            updateHiddenArray();
-            return true;
-        }
-
-        function updatePreviewUI() {
-            fotoPreviewDiv.innerHTML = '';
-            currentFotoList.forEach((foto, idx) => {
-                const card = document.createElement('div');
-                card.className = 'preview-card';
-                card.innerHTML = `<img src="${foto.base64}"><div class="remove-btn" data-idx="${idx}"><i class="fas fa-times"></i></div>`;
-                fotoPreviewDiv.appendChild(card);
-            });
-            document.querySelectorAll('.remove-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const idx = parseInt(btn.dataset.idx);
-                    currentFotoList.splice(idx, 1);
-                    updatePreviewUI();
-                    updateHiddenArray();
-                });
-            });
-            fotoCounterSpan.innerText = `${currentFotoList.length} dari 5 foto`;
-        }
-
-        function updateHiddenArray() {
-            fotoDataArrayHidden.value = JSON.stringify(currentFotoList.map(f => ({ base64: f.base64, jamFoto: f.jamFoto, lat: f.lat, lng: f.lng })));
-        }
-
-        // Membuka popup Watermark Studio
-        function openWatermarkStudio() {
-            const petugas = document.getElementById('petugas').value.trim();
-            if (!petugas) {
-                alert("Isi nama petugas terlebih dahulu sebelum membuka kamera.");
-                return;
-            }
-            const width = 1100, height = 800;
-            const left = (screen.width - width) / 2;
-            const top = (screen.height - height) / 2;
-            studioWindow = window.open('watermark_studio.html', 'WatermarkStudio', `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`);
-            if (!studioWindow) {
-                alert("Popup terblokir. Izinkan popup untuk website ini.");
-            }
-        }
-
-        // Menerima pesan dari Watermark Studio
-        window.addEventListener('message', (event) => {
-            if (event.source === studioWindow && event.data && event.data.type === 'watermarkedFoto') {
-                const base64 = event.data.data;
-                if (base64) {
-                    addFotoFromStudio(base64);
-                    if (studioWindow && !studioWindow.closed) {
-                        studioWindow.close();
-                        studioWindow = null;
+                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                video.srcObject = stream;
+                await video.play();
+                captureBtn.disabled = false;
+                startCameraBtn.innerHTML = '<i class="fas fa-stop mr-2"></i> Matikan Kamera';
+                startCameraBtn.onclick = () => {
+                    if (stream) {
+                        stream.getTracks().forEach(t => t.stop());
+                        stream = null;
+                        video.srcObject = null;
+                        captureBtn.disabled = true;
+                        startCameraBtn.innerHTML = '<i class="fas fa-play mr-2"></i> Buka Kamera';
+                        startCameraBtn.onclick = arguments.callee; // reset handler
                     }
-                }
+                };
+            } catch (err) {
+                alert('Gagal mengakses kamera: ' + err.message);
             }
         });
 
-        document.getElementById('btnBukaStudio').addEventListener('click', openWatermarkStudio);
+        // ========== CAPTURE ==========
+        captureBtn.addEventListener('click', () => {
+            if (!video.srcObject) return alert('Kamera belum aktif.');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx2 = canvas.getContext('2d');
+            ctx2.drawImage(video, 0, 0);
+            // Simpan sebagai sumber
+            currentImageData = canvas;
+            // Tampilkan di result sementara
+            ctx.clearRect(0, 0, resultCanvas.width, resultCanvas.height);
+            ctx.drawImage(canvas, 0, 0, resultCanvas.width, resultCanvas.height);
+            // Terapkan watermark otomatis
+            applyWatermark();
+        });
 
-        // ========== FUNGSI EDIT UNTUK ADMIN ==========
-        async function updateEntryInFirebase(updatedEntry) {
-            const index = dataEntries.findIndex(e => e.id == updatedEntry.id);
-            if (index !== -1) {
-                dataEntries[index] = updatedEntry;
-                isInternalUpdate = true;
-                await setEntriesToFirebase(dataEntries);
-                isInternalUpdate = false;
-                renderTable();
-                updateNomorOtomatis();
-            }
-        }
-
-        window.editEntry = async (id) => {
-            const entry = dataEntries.find(e => e.id == id);
-            if (!entry) return;
-            const newTanggal = prompt("Edit tanggal (YYYY-MM-DD):", entry.tanggal);
-            if (newTanggal && newTanggal !== entry.tanggal) {
-                entry.tanggal = newTanggal;
-                await updateEntryInFirebase(entry);
-                alert("Tanggal berhasil diubah.");
-                if (typeof window.logActivity === 'function') {
-                    window.logActivity('EDIT DATA', `Mengedit data suhu ID ${id} - Tanggal menjadi ${newTanggal}`, 'Monitoring Suhu');
-                }
-            }
-        };
-
-        // ========== RENDER TABEL ==========
-        window.viewAllFoto = (fotoList, startIdx) => {
-            if(!fotoList?.length) return;
-            let current = startIdx || 0;
-            const modal = document.createElement('div'); modal.className = "modal-img";
-            modal.innerHTML = `<img src="${fotoList[current].base64}"><div class="modal-caption">Foto ${current+1} dari ${fotoList.length}<br>${fotoList[current].jamFoto||''}</div><div style="position:absolute; bottom:10px; left:0; right:0; display:flex; justify-content:center; gap:20px;"><button id="prevFoto" class="bg-black/60 px-3 py-1 rounded-full text-white">◀ Prev</button><button id="nextFoto" class="bg-black/60 px-3 py-1 rounded-full text-white">Next ▶</button></div>`;
-            document.body.appendChild(modal);
-            const update = (newIdx) => {
-                if(newIdx>=0 && newIdx<fotoList.length){
-                    current = newIdx;
-                    modal.querySelector('img').src = fotoList[current].base64;
-                    modal.querySelector('.modal-caption').innerHTML = `Foto ${current+1} dari ${fotoList.length}<br>${fotoList[current].jamFoto||''}`;
-                }
+        // ========== UPLOAD GAMBAR ==========
+        uploadInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const img = new Image();
+                img.onload = () => {
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx2 = canvas.getContext('2d');
+                    ctx2.drawImage(img, 0, 0);
+                    currentImageData = canvas;
+                    ctx.clearRect(0, 0, resultCanvas.width, resultCanvas.height);
+                    ctx.drawImage(canvas, 0, 0, resultCanvas.width, resultCanvas.height);
+                    applyWatermark();
+                };
+                img.src = ev.target.result;
             };
-            modal.querySelector('#prevFoto').onclick = (e) => { e.stopPropagation(); update(current-1); };
-            modal.querySelector('#nextFoto').onclick = (e) => { e.stopPropagation(); update(current+1); };
-            modal.onclick = (e) => { if(e.target===modal) modal.remove(); };
-        };
+            reader.readAsDataURL(file);
+        });
 
-        function renderTable() {
-            const tbody = document.getElementById("tabelBody");
-            if(!dataEntries.length){ tbody.innerHTML=`<tr><td colspan="7" class="text-center py-6 text-gray-400">📭 Kosong</td></tr>`; return; }
-            let html = "";
-            dataEntries.forEach(entry => {
-                const fotoCount = entry.fotoList?.length || 0;
-                let thumbs = "";
-                if(fotoCount>0){
-                    thumbs = `<div class="foto-thumb-list">${entry.fotoList.slice(0,2).map((f,i)=>`<div class="thumb-item" onclick="viewAllFoto(entry.fotoList, ${i})"><img src="${f.base64}"></div>`).join('')}${fotoCount>2?`<span class="text-[10px] bg-gray-200 px-1 rounded-full">+${fotoCount-2}</span>`:''}</div>`;
-                }
-                const fotoCell = `<div class="flex flex-col items-center gap-1"><div class="flex justify-center">${thumbs}</div><button type="button" onclick="viewAllFoto(entry.fotoList, 0)" class="text-primary text-[10px] md:text-xs hover:underline"><i class="fas fa-images"></i> ${fotoCount} foto</button></div>`;
-                let editButtonHtml = '';
-                if (userRole === 'admin') {
-                    editButtonHtml = `<button onclick="editEntry(${entry.id})" class="bg-blue-100 text-blue-600 px-2 py-1 rounded-full text-[10px] mr-1"><i class="fas fa-edit"></i> Edit</button>`;
-                }
-                html += `<tr class="border-b hover:bg-slate-50">
-                    <td class="py-2 px-1 font-mono">${entry.id}</td>
-                    <td class="py-2 px-1">${entry.tanggal}</td>
-                    <td class="py-2 px-1 font-semibold">${entry.suhu} °C</td>
-                    <td class="py-2 px-1 text-center">${fotoCell}</td>
-                    <td class="py-2 px-1">${escapeHtml(entry.petugas)}</td>
-                    <td class="py-2 px-1 max-w-[120px] truncate">${escapeHtml(entry.keterangan||'-')}</td>
-                    <td class="py-2 px-1">
-                        ${editButtonHtml}
-                        <button onclick="deleteEntry(${entry.id})" class="bg-red-100 text-red-600 px-2 py-1 rounded-full text-[10px]"><i class="fas fa-trash-can"></i> Hapus</button>
-                    </td>
-                </tr>`;
-            });
-            tbody.innerHTML = html;
-            window.entryData = dataEntries;
-        }
-        window.deleteEntry = async (id) => { if(confirm("Hapus data suhu ini?")) await deleteEntryById(id); };
-        function escapeHtml(s) { if(!s) return ''; return s.replace(/[&<>]/g, m=>m==='&'?'&amp;':m==='<'?'&lt;':'&gt;'); }
+        // ========== WATERMARK ==========
+        function applyWatermark() {
+            if (!currentImageData) return alert('Ambil foto atau unggah gambar dulu.');
+            const srcCanvas = currentImageData;
+            // Atur ukuran resultCanvas mengikuti rasio
+            const maxW = 600, maxH = 450;
+            let w = srcCanvas.width, h = srcCanvas.height;
+            if (w > maxW) { h = h * maxW / w; w = maxW; }
+            if (h > maxH) { w = w * maxH / h; h = maxH; }
+            resultCanvas.width = w;
+            resultCanvas.height = h;
 
-        // ========== FORM SUBMIT ==========
-        const form = document.getElementById('formSuhu');
-        const tanggalInput = document.getElementById('tanggal');
-        const suhuInput = document.getElementById('suhu');
-        const petugasInput = document.getElementById('petugas');
-        const keteranganInput = document.getElementById('keterangan');
-        const resetBtn = document.getElementById('btnResetForm');
-        tanggalInput.value = new Date().toISOString().split('T')[0];
+            ctx.clearRect(0, 0, w, h);
+            ctx.drawImage(srcCanvas, 0, 0, w, h);
 
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            if (userRole === 'guest') {
-                alert("Anda tidak memiliki izin untuk menyimpan data. Silakan login.");
-                return;
+            // Parameter
+            const text = watermarkText.value || '© Watermark';
+            const pos = watermarkPosition.value;
+            const size = parseInt(watermarkSize.value) || 32;
+            const color = watermarkColor.value;
+            const opacity = parseFloat(watermarkOpacity.value) || 0.7;
+            const shape = watermarkShape.value;
+
+            ctx.save();
+            ctx.globalAlpha = opacity;
+            ctx.font = `${size}px "Inter", sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const metrics = ctx.measureText(text);
+            const tw = metrics.width;
+            const th = size * 1.2;
+
+            // Tentukan posisi
+            let x, y;
+            const pad = 20;
+            switch(pos) {
+                case 'top-left': x = pad + tw/2; y = pad + th/2; break;
+                case 'top-right': x = w - pad - tw/2; y = pad + th/2; break;
+                case 'bottom-left': x = pad + tw/2; y = h - pad - th/2; break;
+                case 'bottom-right': x = w - pad - tw/2; y = h - pad - th/2; break;
+                case 'center': x = w/2; y = h/2; break;
+                default: x = w - pad - tw/2; y = pad + th/2;
             }
-            const tanggal = tanggalInput.value.trim();
-            const suhu = parseFloat(suhuInput.value);
-            const petugas = petugasInput.value.trim();
-            if(!tanggal || isNaN(suhu)) return alert("Lengkapi tanggal dan suhu!");
-            if(!petugas) return alert("Isi nama petugas!");
-            if(currentFotoList.length === 0) return alert("Minimal 1 foto dokumentasi!");
-            const newId = getNextId();
-            const newEntry = {
-                id: newId,
-                tanggal: tanggal,
-                suhu: suhu.toFixed(1),
-                petugas: petugas,
-                keterangan: keteranganInput.value.trim(),
-                fotoList: [...currentFotoList]
+
+            // Gambar shape di belakang teks
+            if (shape !== 'none') {
+                const rectW = tw + 20;
+                const rectH = th + 12;
+                const rx = x - rectW/2;
+                const ry = y - rectH/2;
+                ctx.fillStyle = 'rgba(0,0,0,0.4)';
+                if (shape === 'rect') {
+                    ctx.beginPath();
+                    ctx.roundRect(rx, ry, rectW, rectH, 8);
+                    ctx.fill();
+                } else if (shape === 'circle') {
+                    ctx.beginPath();
+                    ctx.arc(x, y, Math.max(rectW, rectH)/2 * 0.7, 0, Math.PI*2);
+                    ctx.fill();
+                }
+            }
+
+            // Gambar teks
+            ctx.fillStyle = color;
+            ctx.shadowColor = 'rgba(0,0,0,0.5)';
+            ctx.shadowBlur = 6;
+            ctx.fillText(text, x, y);
+            ctx.restore();
+
+            // Update opacity display
+            opacityValue.textContent = opacity.toFixed(2);
+        }
+
+        // roundRect polyfill jika tidak didukung
+        if (!CanvasRenderingContext2D.prototype.roundRect) {
+            CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+                if (r > w/2) r = w/2;
+                if (r > h/2) r = h/2;
+                this.moveTo(x + r, y);
+                this.arcTo(x + w, y, x + w, y + h, r);
+                this.arcTo(x + w, y + h, x, y + h, r);
+                this.arcTo(x, y + h, x, y, r);
+                this.arcTo(x, y, x + w, y, r);
+                return this;
             };
-            await addEntry(newEntry);
-            resetFormInput();
-            alert(`✅ Tersimpan dengan ${currentFotoList.length} foto. Firebase tersinkron.`);
-        });
-
-        function resetFormInput() {
-            tanggalInput.value = new Date().toISOString().split('T')[0];
-            suhuInput.value = '';
-            petugasInput.value = '';
-            keteranganInput.value = '';
-            currentFotoList = [];
-            updatePreviewUI();
-            updateHiddenArray();
-            updateNomorOtomatis();
-            if (studioWindow && !studioWindow.closed) studioWindow.close();
         }
-        resetBtn.addEventListener('click', () => { if(confirm("Reset form?")) resetFormInput(); });
-        document.getElementById('btnHapusSemua').addEventListener('click', async () => { 
-            if (userRole !== 'admin') { alert("Hanya admin yang dapat menghapus semua data."); return; }
-            if(confirm("Hapus SEMUA data suhu?")){ 
-                await clearAllEntries(); 
-                resetFormInput(); 
-                alert("Semua data dihapus dari Firebase.");
-            } 
+
+        applyBtn.addEventListener('click', applyWatermark);
+
+        // Event listener untuk perubahan realtime (opsional)
+        [watermarkText, watermarkPosition, watermarkSize, watermarkColor, watermarkOpacity, watermarkShape].forEach(el => {
+            el.addEventListener('input', applyWatermark);
         });
 
-        // ========== EXPORT PNG (SCREENSHOT + OTOMATIS TAMBAH KE FOTO) ==========
-        document.getElementById('btnExportPNG').addEventListener('click', async function() {
-            // Ambil elemen yang akan di-screenshot (container utama, bisa juga seluruh body)
-            const element = document.querySelector('.container') || document.body;
-            try {
-                // Tampilkan indikator loading sebentar (opsional)
-                this.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Memproses...';
-                this.disabled = true;
-
-                const canvas = await html2canvas(element, {
-                    scale: 1.5,
-                    useCORS: true,
-                    backgroundColor: '#ffffff',
-                    allowTaint: false,
-                    logging: false
-                });
-                const dataUrl = canvas.toDataURL('image/png');
-
-                // Tambahkan screenshot ke daftar foto
-                const success = addScreenshotToFoto(dataUrl);
-                if (success) {
-                    alert('✅ Screenshot berhasil ditambahkan ke daftar foto dokumentasi.');
-                } else {
-                    alert('⚠️ Gagal menambahkan screenshot (mungkin sudah mencapai batas 5 foto).');
-                }
-            } catch(err) {
-                alert('❌ Gagal mengambil screenshot: ' + err.message);
-            } finally {
-                this.innerHTML = '<i class="fas fa-file-image mr-1"></i> Export PNG';
-                this.disabled = false;
+        // ========== KIRIM KE MONITORING ==========
+        sendBtn.addEventListener('click', () => {
+            if (!currentImageData) return alert('Tidak ada gambar untuk dikirim.');
+            // Ambil data URL dari resultCanvas (sudah ada watermark)
+            const dataUrl = resultCanvas.toDataURL('image/png');
+            // Kirim ke parent window
+            if (window.opener) {
+                window.opener.postMessage({
+                    type: 'watermarkedFoto',
+                    data: dataUrl
+                }, '*');
+                // Tutup popup setelah sukses
+                alert('✅ Foto berhasil dikirim ke Monitoring!');
+                window.close();
+            } else {
+                alert('Gagal: tidak ada parent window. Pastikan halaman ini dibuka sebagai popup.');
             }
         });
 
-        // ======================== MULTI-ROLE HANDLER ========================
-        window.addEventListener('roleChanged', (e) => {
-            userRole = e.detail.role;
-            const roleDisplaySpan = document.getElementById('userRoleDisplay');
-            if (roleDisplaySpan) {
-                if (userRole === 'admin') roleDisplaySpan.innerHTML = '<i class="fas fa-user-shield"></i> Admin';
-                else if (userRole === 'user') roleDisplaySpan.innerHTML = '<i class="fas fa-user"></i> User';
-                else roleDisplaySpan.innerHTML = '<i class="fas fa-user-friends"></i> Tamu';
-            }
-            const formInputs = document.querySelectorAll('#formSuhu input, #formSuhu select, #formSuhu textarea, #formSuhu button[type="submit"]');
-            formInputs.forEach(inp => {
-                if (userRole === 'guest') inp.disabled = true;
-                else inp.disabled = false;
-            });
-            const hapusSemuaBtn = document.getElementById('btnHapusSemua');
-            if (hapusSemuaBtn) {
-                if (userRole !== 'admin') hapusSemuaBtn.style.display = 'none';
-                else hapusSemuaBtn.style.display = 'inline-flex';
-            }
-            renderTable();
+        // ========== DOWNLOAD PNG ==========
+        downloadBtn.addEventListener('click', () => {
+            if (!currentImageData) return alert('Tidak ada gambar.');
+            const link = document.createElement('a');
+            link.download = `watermark_${Date.now()}.png`;
+            link.href = resultCanvas.toDataURL('image/png');
+            link.click();
         });
 
-        // ======================== INISIALISASI FIREBASE ========================
-        async function initFirebase() {
-            if (!window.db) { setTimeout(initFirebase, 300); return; }
-            isFirebaseReady = true;
-            await enablePersistence();
-            attachRealtimeListener();
-            updateFirebaseStatus(true, "Terhubung (realtime)");
-            updateNomorOtomatis();
-        }
-        initFirebase();
-
-        // ========== TOMBOL NAVIGASI ==========
-        document.getElementById('backToDashboardBtn').addEventListener('click', () => window.location.href = 'index.html');
-        document.getElementById('refreshPageBtn').addEventListener('click', () => window.location.reload());
+        // Inisialisasi dengan contoh watermark
+        setTimeout(() => {
+            // buat kanvas default jika belum ada
+            if (!currentImageData) {
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = 400;
+                tempCanvas.height = 300;
+                const tctx = tempCanvas.getContext('2d');
+                tctx.fillStyle = '#e2e8f0';
+                tctx.fillRect(0,0,400,300);
+                tctx.fillStyle = '#1e6f5c';
+                tctx.font = '20px Inter';
+                tctx.textAlign = 'center';
+                tctx.fillText('Ambil foto atau unggah', 200, 150);
+                currentImageData = tempCanvas;
+                applyWatermark();
+            }
+        }, 200);
     </script>
 </body>
 </html>
