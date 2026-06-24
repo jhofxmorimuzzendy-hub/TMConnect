@@ -19,6 +19,8 @@
         .btn-success { background: #0b7e4d; color: white; }
         .btn-success:hover { background: #08633d; transform: translateY(-2px); }
         video { border-radius: 16px; background: #000; max-width: 100%; }
+        .orient-btn { padding: 6px 14px; border-radius: 20px; border: 2px solid #ccc; cursor: pointer; transition: 0.2s; }
+        .orient-btn.active { border-color: #1e6f5c; background: #1e6f5c; color: white; }
     </style>
 </head>
 <body>
@@ -87,6 +89,14 @@
                                 <option value="circle">Lingkaran</option>
                             </select>
                         </div>
+                        <!-- ORIENTASI : VERTICAL / HORIZONTAL -->
+                        <div class="sm:col-span-2">
+                            <label class="text-sm font-medium mr-4">Orientasi Teks</label>
+                            <div class="inline-flex gap-2">
+                                <button id="orientHorizontal" class="orient-btn active">Horizontal</button>
+                                <button id="orientVertical" class="orient-btn">Vertikal</button>
+                            </div>
+                        </div>
                     </div>
                     <button id="applyWatermarkBtn" class="mt-3 bg-primary text-white px-5 py-2 rounded-xl hover:bg-accent transition"><i class="fas fa-check mr-2"></i> Terapkan Watermark</button>
                 </div>
@@ -100,9 +110,7 @@
                         <canvas id="resultCanvas" width="400" height="300"></canvas>
                     </div>
                     <div class="mt-4 flex flex-col gap-3">
-                        <!-- Tombol Export PNG (yang sudah ada) -->
                         <button id="exportPngBtn" class="btn-secondary px-5 py-3 rounded-xl text-lg font-semibold"><i class="fas fa-download mr-2"></i> Download PNG</button>
-                        <!-- Tombol Kirim ke Monitoring (baru) -->
                         <button id="sendToMonitoringBtn" class="btn-success px-5 py-3 rounded-xl text-lg font-semibold"><i class="fas fa-paper-plane mr-2"></i> Kirim ke Monitoring</button>
                     </div>
                     <p class="text-xs text-gray-400 mt-2"><i class="fas fa-info-circle"></i> Klik "Kirim ke Monitoring" untuk langsung menambahkan foto ke form monitoring</p>
@@ -132,8 +140,25 @@
         const watermarkOpacity = document.getElementById('watermarkOpacity');
         const opacityValue = document.getElementById('opacityValue');
         const watermarkShape = document.getElementById('watermarkShape');
+        const orientHorizontal = document.getElementById('orientHorizontal');
+        const orientVertical = document.getElementById('orientVertical');
 
-        let currentImageData = null; // canvas sumber
+        let currentImageData = null;
+        let orientation = 'horizontal'; // 'horizontal' atau 'vertical'
+
+        // ========== ORIENTASI TOGGLE ==========
+        orientHorizontal.addEventListener('click', () => {
+            orientation = 'horizontal';
+            orientHorizontal.classList.add('active');
+            orientVertical.classList.remove('active');
+            applyWatermark();
+        });
+        orientVertical.addEventListener('click', () => {
+            orientation = 'vertical';
+            orientVertical.classList.add('active');
+            orientHorizontal.classList.remove('active');
+            applyWatermark();
+        });
 
         // ========== KAMERA ==========
         let stream = null;
@@ -155,7 +180,7 @@
                         video.srcObject = null;
                         captureBtn.disabled = true;
                         startCameraBtn.innerHTML = '<i class="fas fa-play mr-2"></i> Buka Kamera';
-                        startCameraBtn.onclick = arguments.callee; // reset
+                        startCameraBtn.onclick = arguments.callee;
                     }
                 };
             } catch (err) {
@@ -171,7 +196,6 @@
             const ctx2 = canvas.getContext('2d');
             ctx2.drawImage(video, 0, 0);
             currentImageData = canvas;
-            // Tampilkan di result sementara
             ctx.clearRect(0, 0, resultCanvas.width, resultCanvas.height);
             ctx.drawImage(canvas, 0, 0, resultCanvas.width, resultCanvas.height);
             applyWatermark();
@@ -202,7 +226,6 @@
         // ========== WATERMARK ==========
         function applyWatermark() {
             if (!currentImageData) {
-                // Default placeholder
                 const temp = document.createElement('canvas');
                 temp.width = 400;
                 temp.height = 300;
@@ -216,7 +239,6 @@
                 currentImageData = temp;
             }
             const srcCanvas = currentImageData;
-            // Atur ukuran resultCanvas
             const maxW = 600, maxH = 450;
             let w = srcCanvas.width, h = srcCanvas.height;
             if (w > maxW) { h = h * maxW / w; w = maxW; }
@@ -227,36 +249,54 @@
             ctx.clearRect(0, 0, w, h);
             ctx.drawImage(srcCanvas, 0, 0, w, h);
 
-            // Parameter watermark
             const text = watermarkText.value || '© Watermark';
             const pos = watermarkPosition.value;
             const size = parseInt(watermarkSize.value) || 32;
             const color = watermarkColor.value;
             const opacity = parseFloat(watermarkOpacity.value) || 0.7;
             const shape = watermarkShape.value;
+            const isVertical = (orientation === 'vertical');
 
             ctx.save();
             ctx.globalAlpha = opacity;
             ctx.font = `${size}px "Inter", sans-serif`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            const metrics = ctx.measureText(text);
-            const tw = metrics.width;
-            const th = size * 1.2;
+
+            let tw, th;
+            if (isVertical) {
+                // Teks vertikal: ukuran lebar = ukuran font, tinggi = jumlah karakter * ukuran font * 1.2
+                const chars = text.split('');
+                const lineHeight = size * 1.2;
+                tw = size;
+                th = chars.length * lineHeight;
+            } else {
+                const metrics = ctx.measureText(text);
+                tw = metrics.width;
+                th = size * 1.2;
+            }
+
             let x, y;
             const pad = 20;
             switch(pos) {
-                case 'top-left': x = pad + tw/2; y = pad + th/2; break;
-                case 'top-right': x = w - pad - tw/2; y = pad + th/2; break;
-                case 'bottom-left': x = pad + tw/2; y = h - pad - th/2; break;
-                case 'bottom-right': x = w - pad - tw/2; y = h - pad - th/2; break;
+                case 'top-left': x = pad + (isVertical ? tw/2 : tw/2); y = pad + th/2; break;
+                case 'top-right': x = w - pad - (isVertical ? tw/2 : tw/2); y = pad + th/2; break;
+                case 'bottom-left': x = pad + (isVertical ? tw/2 : tw/2); y = h - pad - th/2; break;
+                case 'bottom-right': x = w - pad - (isVertical ? tw/2 : tw/2); y = h - pad - th/2; break;
                 case 'center': x = w/2; y = h/2; break;
-                default: x = w - pad - tw/2; y = pad + th/2;
+                default: x = w - pad - (isVertical ? tw/2 : tw/2); y = pad + th/2;
             }
-            // Shape
+
+            // Shape (background)
             if (shape !== 'none') {
-                const rectW = tw + 20;
-                const rectH = th + 12;
+                let rectW, rectH;
+                if (isVertical) {
+                    rectW = tw + 12;
+                    rectH = th + 12;
+                } else {
+                    rectW = tw + 20;
+                    rectH = th + 12;
+                }
                 const rx = x - rectW/2;
                 const ry = y - rectH/2;
                 ctx.fillStyle = 'rgba(0,0,0,0.4)';
@@ -270,11 +310,21 @@
                     ctx.fill();
                 }
             }
+
             // Teks
             ctx.fillStyle = color;
             ctx.shadowColor = 'rgba(0,0,0,0.5)';
             ctx.shadowBlur = 6;
-            ctx.fillText(text, x, y);
+            if (isVertical) {
+                const chars = text.split('');
+                const lineHeight = size * 1.2;
+                const startY = y - (chars.length - 1) * lineHeight / 2;
+                chars.forEach((ch, i) => {
+                    ctx.fillText(ch, x, startY + i * lineHeight);
+                });
+            } else {
+                ctx.fillText(text, x, y);
+            }
             ctx.restore();
 
             opacityValue.textContent = opacity.toFixed(2);
@@ -301,7 +351,7 @@
             el.addEventListener('input', applyWatermark);
         });
 
-        // ========== EKSPORT PNG (tombol yang sudah ada) ==========
+        // ========== EKSPORT PNG ==========
         exportBtn.addEventListener('click', () => {
             if (!currentImageData) return alert('Tidak ada gambar.');
             const link = document.createElement('a');
@@ -310,7 +360,7 @@
             link.click();
         });
 
-        // ========== KIRIM KE MONITORING (tombol baru) ==========
+        // ========== KIRIM KE MONITORING ==========
         sendBtn.addEventListener('click', () => {
             if (!currentImageData) return alert('Tidak ada gambar untuk dikirim.');
             const dataUrl = resultCanvas.toDataURL('image/png');
@@ -320,15 +370,13 @@
                     data: dataUrl
                 }, '*');
                 alert('✅ Foto berhasil dikirim ke Monitoring!');
-                // Opsional: tutup popup
-                // window.close();
+                // window.close(); // opsional
             } else {
                 alert('Gagal: tidak ada parent window. Pastikan halaman ini dibuka sebagai popup.');
             }
         });
 
         // ========== INISIALISASI ==========
-        // Tampilkan placeholder awal
         setTimeout(() => {
             if (!currentImageData) {
                 const temp = document.createElement('canvas');
