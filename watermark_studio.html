@@ -1,835 +1,634 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-  <title>AquaMark Pro · Kamera Fix</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
-    body { background: #eef2f8; font-family: 'Inter', sans-serif; padding: 12px; color: #1e2f3a; }
-    .app { max-width: 700px; margin: 0 auto; }
-    .card { background: rgba(255,255,255,0.96); border-radius: 24px; padding: 14px; margin-bottom: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #e2edf2; }
-    .card-title { font-size: 0.9rem; font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; color: #2a5a78; border-left: 3px solid #2e7ea3; padding-left: 10px; }
-    .upload-zone { background: #f4f9fe; border: 1.5px dashed #9bc0d8; border-radius: 20px; text-align: center; padding: 12px; cursor: pointer; font-size: 0.8rem; }
-    .preview-container { background: #111a22; border-radius: 20px; margin-top: 10px; display: flex; justify-content: center; background-color: #1e2c38; }
-    canvas { max-width: 100%; height: auto; border-radius: 16px; cursor: grab; touch-action: none; display: block; margin: 0 auto; }
-    canvas:active { cursor: grabbing; }
-    .hint { background: #2e7ea3; color: white; border-radius: 40px; padding: 6px 12px; font-size: 0.7rem; display: inline-block; margin-top: 8px; width: auto; text-align: center; }
-    .layer-list { max-height: 260px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
-    .layer-item { background: white; border-radius: 20px; padding: 6px 8px; display: flex; align-items: center; justify-content: space-between; border: 1px solid #e0ecf3; cursor: pointer; }
-    .layer-item.active { border: 2px solid #2e7ea3; background: #f0f7fc; }
-    .layer-item.locked { opacity: 0.6; background: #f5f5f5; }
-    .layer-check { margin-right: 8px; pointer-events: auto; width: 18px; height: 18px; cursor: pointer; }
-    .layer-info { display: flex; align-items: center; gap: 8px; font-size: 0.75rem; font-weight: 500; flex: 1; pointer-events: none; }
-    .layer-actions { display: flex; gap: 4px; pointer-events: auto; }
-    .btn-icon { background: #eef2f7; border: none; padding: 4px 8px; border-radius: 30px; font-size: 0.7rem; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
-    .flex-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; justify-content: center; }
-    .prop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; }
-    .prop-field { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-    .prop-field label { font-size: 0.65rem; font-weight: 500; width: 55px; color: #2a5a78; }
-    input, select { background: white; border: 1px solid #cbdde9; border-radius: 30px; padding: 6px 8px; font-size: 0.7rem; flex: 1; }
-    input[type="range"] { padding: 0; }
-    input[type="color"] { width: 32px; height: 32px; padding: 2px; }
-    .download-btn { background: #1e6b46; color: white; border: none; border-radius: 60px; padding: 12px; font-weight: bold; width: 100%; margin-top: 6px; cursor: pointer; }
-    footer { text-align: center; font-size: 0.6rem; margin-top: 16px; opacity: 0.6; }
-    .selected-badge { background: #2e7ea3; color: white; border-radius: 20px; padding: 2px 6px; font-size: 0.6rem; margin-left: 6px; }
-    .gps-btn { background: #1e6b46; color: white; }
-    button:active { transform: scale(0.96); }
-    .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center; }
-    .modal-content { background: white; border-radius: 28px; width: 90%; max-width: 500px; max-height: 80%; overflow: auto; padding: 16px; }
-    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-    .emoji-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
-    .emoji-item { font-size: 2rem; text-align: center; cursor: pointer; padding: 8px; background: #f0f5fc; border-radius: 20px; }
-    .emoji-item:active { transform: scale(0.9); }
-    #map { height: 300px; width: 100%; border-radius: 20px; margin-bottom: 12px; }
-    .status-text { font-size: 0.7rem; color: #2e7ea3; text-align: center; margin-top: 8px; }
-    video { width: 100%; border-radius: 20px; background: #000; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>Monitoring Suhu | Transmisi Tanah Merah Ch44 (658) + Watermark Studio</title>
+    <link rel="icon" type="image/ico" href="favicon.ico">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1e6f5c">
+    <link rel="apple-touch-icon" href="favicon.png">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="log-helper.js"></script>
+    <script src="auth-check.js"></script>
+    <script src="timestamp-editor.js"></script>
+
+    <!-- html2canvas untuk screenshot -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { primary: '#1e6f5c', secondary: '#f5b042', accent: '#0e5a48' },
+                    screens: { 'xs': '480px', 'sm': '640px', 'md': '768px', 'lg': '1024px', 'xl': '1280px' }
+                }
+            }
+        }
+    </script>
+    <style>
+        * { -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #eef2f8 0%, #e0f0ec 100%); position: relative; }
+        .nav-actions {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            display: flex;
+            gap: 12px;
+            z-index: 1000;
+        }
+        .nav-btn {
+            background: rgba(30, 111, 92, 0.9);
+            backdrop-filter: blur(4px);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 40px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+        .nav-btn:hover {
+            background: #0e5a48;
+            transform: translateY(-2px);
+        }
+        @media (max-width: 640px) {
+            .nav-btn {
+                padding: 6px 12px;
+                font-size: 0.7rem;
+                gap: 6px;
+            }
+            .nav-actions {
+                top: 10px;
+                right: 10px;
+                gap: 8px;
+            }
+        }
+        .loading-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 999; backdrop-filter: blur(2px); }
+        .table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
+        .foto-thumb-list { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+        .thumb-item { width: 42px; height: 42px; border-radius: 10px; overflow: hidden; border: 1px solid #ccc; cursor: pointer; background: #f1f5f9; flex-shrink: 0; }
+        .thumb-item img { width: 100%; height: 100%; object-fit: cover; }
+        .foto-preview-grid { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 12px; justify-content: center; }
+        .preview-card { position: relative; width: 85px; height: 85px; border-radius: 14px; overflow: hidden; border: 2px solid #1e6f5c; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+        .preview-card img { width: 100%; height: 100%; object-fit: cover; }
+        .preview-card .remove-btn { position: absolute; top: -8px; right: -8px; background: #ef4444; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; border: 2px solid white; }
+        .modal-img { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: flex; align-items: center; justify-content: center; z-index: 2000; cursor: pointer; flex-direction: column; }
+        .modal-img img { max-width: 92%; max-height: 85%; border-radius: 20px; object-fit: contain; }
+        .modal-caption { background: rgba(0,0,0,0.7); color: white; padding: 8px 16px; border-radius: 40px; margin-top: 16px; font-size: 14px; text-align: center; max-width: 90%; }
+        @media (max-width: 640px) {
+            td, th { font-size: 0.7rem; padding: 0.5rem 0.25rem; }
+            .preview-card { width: 70px; height: 70px; }
+            .thumb-item { width: 36px; height: 36px; }
+            button { font-size: 0.75rem; padding: 0.5rem 0.75rem; }
+            h1 { font-size: 1.6rem; }
+        }
+        input, select, textarea { font-size: 16px !important; }
+        .sync-status { font-size: 0.7rem; padding: 2px 10px; border-radius: 20px; background: rgba(255,255,240,0.3); display: inline-block; margin-left: 12px; vertical-align: middle; }
+        .badge-transmisi { background: #1e6f5c; color: white; font-size: 0.75rem; border-radius: 40px; padding: 0.3rem 1rem; display: inline-block; font-weight: 600; letter-spacing: 0.3px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+        .role-badge-header {
+            background: rgba(0,0,0,0.3);
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+    </style>
 </head>
 <body>
-<div class="app">
-  <div class="card" style="text-align:center; padding:10px;">
-    <h1 style="font-size:1.4rem;"><i class="fas fa-arrows-alt"></i> AquaMark Pro</h1>
-    <div class="hint" style="background:#eef2f7; color:#2a5a78;"><i class="fas fa-hand-pointer"></i> Centang beberapa layer → drag di foto | Kamera Live</div>
-  </div>
-
-  <!-- Background / Foto latar -->
-  <div class="card">
-    <div class="card-title"><i class="fas fa-camera"></i> Latar Canvas</div>
-    <div class="flex-row">
-      <button id="openCameraBtn" class="btn-icon" style="background:#2c7cb6; color:white;"><i class="fas fa-camera"></i> Buka Kamera</button>
-      <button id="uploadBtn" class="btn-icon"><i class="fas fa-cloud-upload-alt"></i> Pilih dari Galeri</button>
-      <input type="file" id="imageUpload" accept="image/*" style="display:none">
+    <div class="nav-actions">
+        <button id="backToDashboardBtn" class="nav-btn"><i class="fas fa-arrow-left"></i> Dashboard</button>
+        <button id="refreshPageBtn" class="nav-btn"><i class="fas fa-sync-alt"></i> Refresh</button>
     </div>
-    <div class="flex-row" style="margin-top: 8px;">
-      <div class="prop-field" style="width:100%; justify-content:center;"><label>Background Solid</label><input type="color" id="bgColorPicker" value="#1e2c38"><button id="setBgColorBtn" class="btn-icon">Terapkan</button><button id="resetBgBtn" class="btn-icon">Hapus Foto & Reset</button></div>
+
+    <div class="container max-w-7xl mx-auto px-3 sm:px-4 md:px-5 py-4 md:py-6">
+        <div class="text-center mb-5 md:mb-7">
+            <div class="inline-flex items-center justify-center bg-gradient-to-r from-primary to-accent p-3 rounded-full shadow-md">
+                <i class="fas fa-temperature-high text-white text-xl md:text-2xl"></i>
+            </div>
+            <h1 class="text-xl sm:text-2xl md:text-4xl font-extrabold text-slate-800 mt-2 md:mt-3 leading-tight">
+                Monitoring Suhu Ruangan
+                <span id="firebaseStatus" class="sync-status"><i class="fas fa-cloud-upload-alt"></i> Menghubungkan...</span>
+                <span id="userRoleDisplay" class="role-badge-header"><i class="fas fa-user"></i> Memuat...</span>
+            </h1>
+            <div class="mt-2 flex justify-center px-2 flex-wrap gap-2">
+                <span class="badge-transmisi"><i class="fas fa-tower-broadcast mr-1"></i> Transmisi - Tanah Merah, Ch 44 (Freq 658)</span>
+                <span class="badge-transmisi"><i class="fas fa-camera-retro mr-1"></i> Watermark Studio | Multi Foto (Max 5)</span>
+            </div>
+        </div>
+
+        <!-- Form Card -->
+        <div class="bg-white rounded-2xl shadow-xl overflow-hidden mb-6 md:mb-8 border border-gray-100">
+            <div class="bg-gradient-to-r from-primary to-accent px-4 py-3 md:px-5 md:py-4">
+                <h2 class="text-base md:text-xl font-semibold text-white"><i class="fas fa-thermometer-half mr-2"></i> Form Pencatatan Suhu</h2>
+            </div>
+            <div class="p-4 sm:p-5 md:p-6">
+                <form id="formSuhu" class="space-y-4 md:space-y-5">
+                    <div class="grid grid-cols-1 xs:grid-cols-3 gap-3 md:gap-5">
+                        <div><label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Nomor</label><input type="text" id="nomorOtomatis" readonly class="w-full bg-gray-100 border border-gray-300 rounded-xl px-3 py-2 md:py-2.5 text-gray-600 font-mono text-sm"></div>
+                        <div><label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Tanggal <span class="text-red-500">*</span></label><input type="date" id="tanggal" required class="w-full border border-gray-300 rounded-xl px-3 py-2 md:py-2.5 text-sm focus:ring-2 focus:ring-primary focus:border-primary"></div>
+                        <div><label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Petugas <span class="text-red-500">*</span></label><input type="text" id="petugas" required placeholder="Nama petugas" class="w-full border border-gray-300 rounded-xl px-3 py-2 md:py-2.5 text-sm focus:ring-2 focus:ring-primary"></div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-5">
+                        <div><label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Suhu (°C) <span class="text-red-500">*</span></label><input type="number" step="0.1" id="suhu" required placeholder="Contoh: 24.5" class="w-full border border-gray-300 rounded-xl px-3 py-2 md:py-2.5 text-sm focus:ring-2 focus:ring-primary"></div>
+                        <div><label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Keterangan</label><textarea id="keterangan" rows="1" placeholder="Catatan tambahan" class="w-full border border-gray-300 rounded-xl px-3 py-2 md:py-2.5 text-sm focus:ring-2 focus:ring-primary"></textarea></div>
+                    </div>
+                    
+                    <!-- Dokumentasi Foto Multi dengan integrasi Watermark Studio -->
+                    <div class="border-t border-gray-200 pt-4 mt-2">
+                        <label class="block text-sm md:text-md font-semibold text-gray-800 mb-2"><i class="fas fa-camera-retro text-primary mr-2"></i> Dokumentasi Foto Ruangan (Max 5, watermark via Studio)</label>
+                        <div class="bg-slate-50 rounded-xl p-3 md:p-4 border border-dashed border-gray-300">
+                            <div class="flex flex-wrap gap-2 justify-center">
+                                <button type="button" id="btnBukaStudio" class="bg-primary hover:bg-accent text-white px-4 py-2 rounded-xl text-sm md:text-base shadow transition"><i class="fas fa-video mr-2"></i> Buka Watermark Studio (Ambil Foto)</button>
+                            </div>
+                            <div id="fotoPreviewList" class="foto-preview-grid mt-3"></div>
+                            <p id="fotoCounter" class="text-xs text-gray-500 mt-2 text-center">0 dari 5 foto</p>
+                            <input type="hidden" id="fotoDataArray" value="[]">
+                            <p class="text-[11px] md:text-xs text-gray-500 mt-3 bg-white/70 p-2 rounded text-center"><i class="fas fa-palette text-green-600"></i> <strong>Watermark Studio</strong> : Desain watermark bebas (teks, shape, stiker, peta, dll)</p>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row gap-3 pt-2">
+                        <button type="submit" class="bg-primary hover:bg-accent text-white font-semibold py-2.5 md:py-3 rounded-xl flex-1 transition shadow text-sm md:text-base"><i class="fas fa-save mr-2"></i> Simpan Pencatatan</button>
+                        <button type="button" id="btnResetForm" class="bg-gray-200 hover:bg-gray-300 text-gray-800 py-2.5 md:py-3 rounded-xl flex-1 transition text-sm md:text-base"><i class="fas fa-undo-alt mr-2"></i> Reset Form</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Daftar Riwayat -->
+        <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
+            <div class="bg-gradient-to-r from-primary to-accent px-4 py-3 md:px-5 md:py-4 flex justify-between items-center flex-wrap gap-2">
+                <h2 class="text-base md:text-xl font-semibold text-white"><i class="fas fa-table-list mr-2"></i> Riwayat Pencatatan Suhu</h2>
+                <div class="flex gap-2">
+                    <!-- Tombol Export PNG (sekarang screenshot + tambah ke foto) -->
+                    <button id="btnExportPNG" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs md:text-sm px-3 py-1.5 rounded-full shadow transition"><i class="fas fa-file-image mr-1"></i> Export PNG</button>
+                    <button id="btnHapusSemua" class="bg-red-600 hover:bg-red-700 text-white text-xs md:text-sm px-3 py-1.5 rounded-full shadow transition"><i class="fas fa-dumpster-fire mr-1"></i> Hapus Semua</button>
+                </div>
+            </div>
+            <div class="table-wrapper p-2 md:p-4">
+                <table class="min-w-[800px] md:min-w-full bg-white border border-gray-200 rounded-xl text-xs md:text-sm">
+                    <thead class="bg-gray-100">
+                        <tr><th class="py-2 px-1">No</th><th>Tgl</th><th>Suhu</th><th>Foto</th><th>Petugas</th><th>Keterangan</th><th>Aksi</th></tr>
+                    </thead>
+                    <tbody id="tabelBody"><tr><td colspan="7" class="text-center py-6 text-gray-400">🌡️ Memuat data...</td></tr></tbody>
+                </table>
+            </div>
+        </div>
     </div>
-    <div class="preview-container">
-      <canvas id="previewCanvas" width="600" height="400"></canvas>
-    </div>
-    <div class="drag-hint" style="text-align:center; margin-top:6px;"><i class="fas fa-hand-peace"></i> Pilih layer → lalu seret langsung pada gambar</div>
-  </div>
 
-  <div class="card">
-    <div class="card-title"><i class="fas fa-layer-group"></i> Layer (centang untuk multi-select)</div>
-    <div class="flex-row">
-      <button id="addTextBtn" class="btn-icon"><i class="fas fa-font"></i> Teks</button>
-      <button id="addShapeBtn" class="btn-icon"><i class="fas fa-shapes"></i> Shape</button>
-      <button id="addDateTimeBtn" class="btn-icon"><i class="fas fa-clock"></i> Jam/Tgl</button>
-      <button id="addCoordBtn" class="btn-icon"><i class="fas fa-map-marker-alt"></i> Koordinat</button>
-      <button id="addImageBtn" class="btn-icon"><i class="fas fa-image"></i> Logo</button>
-      <button id="addIconBtn" class="btn-icon"><i class="fas fa-smile"></i> Icon</button>
-      <button id="addMapBtn" class="btn-icon"><i class="fas fa-map"></i> Peta Satelit</button>
-      <button id="clearLayersBtn" class="btn-icon"><i class="fas fa-trash"></i> Hapus</button>
-    </div>
-    <div id="layerListContainer" class="layer-list"><div style="text-align:center; padding:12px;">➕ Tambah layer</div></div>
-  </div>
+    <script>
+        // ======================== KONFIGURASI FIREBASE ========================
+        let isFirebaseReady = false;
+        let dataEntries = [];
+        let listenerRef = null;
+        let isInternalUpdate = false;
+        const DB_PATH = 'monitoring/suhu/entries';
+        let userRole = 'guest';
 
-  <div class="card" id="propertiesPanel">
-    <div class="card-title"><i class="fas fa-sliders-h"></i> Edit properti (layer terpilih tunggal)</div>
-    <div id="propContent"><p style="text-align:center; font-size:0.75rem;">Klik layer untuk edit tunggal</p></div>
-  </div>
-
-  <div class="flex-row" style="justify-content: center; gap: 12px; margin-bottom: 12px;">
-    <button id="savePresetBtn" class="btn-icon" style="background:#2c7cb6; color:white;"><i class="fas fa-save"></i> Simpan Preset</button>
-    <button id="loadPresetBtn" class="btn-icon" style="background:#2c7cb6; color:white;"><i class="fas fa-folder-open"></i> Muat Preset</button>
-    <input type="file" id="loadPresetFile" accept=".json" style="display:none">
-    <!-- Tombol Preset Vertical & Horizontal (otomatis muat file lokal) -->
-    <button id="presetVerticalBtn" class="btn-icon" style="background:#2e7ea3; color:white;"><i class="fas fa-arrow-up"></i> Preset Vertical</button>
-    <button id="presetHorizontalBtn" class="btn-icon" style="background:#2e7ea3; color:white;"><i class="fas fa-arrow-right"></i> Preset Horizontal</button>
-    <button id="resetAllLayersBtn" class="btn-icon" style="background:#c0392b; color:white;"><i class="fas fa-trash-alt"></i> Reset Layer</button>
-  </div>
-  <button id="exportBtn" class="download-btn"><i class="fas fa-download"></i> Export PNG</button>
-  <footer>Multi-drag • Stretch X/Y • Gradient • Flip • Icon • Peta Satelit • Image Shadow & Outline • Kamera Live & Background</footer>
-</div>
-
-<!-- Modal Emoji -->
-<div id="emojiModal" class="modal">
-  <div class="modal-content"><div class="modal-header"><h3>Pilih Icon</h3><button id="closeEmojiModal" class="btn-icon">✖</button></div><div class="emoji-grid" id="emojiGrid"></div></div>
-</div>
-
-<!-- Modal Peta -->
-<div id="mapModal" class="modal">
-  <div class="modal-content">
-    <div class="modal-header"><h3>Peta Satelit - Otomatis Capture</h3><button id="closeMapModal" class="btn-icon">✖</button></div>
-    <div id="map"></div>
-    <div id="mapStatus" class="status-text">Mendapatkan lokasi...</div>
-  </div>
-</div>
-
-<!-- Modal Kamera -->
-<div id="cameraModal" class="modal">
-  <div class="modal-content">
-    <div class="modal-header"><h3>Ambil Foto</h3><button id="closeCameraModal" class="btn-icon">✖</button></div>
-    <video id="cameraVideo" autoplay playsinline style="width:100%; border-radius:20px;"></video>
-    <div style="display: flex; gap: 12px; margin-top: 12px; justify-content: center;">
-      <button id="capturePhotoBtn" class="btn-icon" style="background:#2c7cb6; color:white;"><i class="fas fa-camera"></i> Jepret</button>
-      <button id="switchCameraBtn" class="btn-icon"><i class="fas fa-sync-alt"></i> Ganti Kamera</button>
-    </div>
-    <canvas id="cameraCanvas" style="display:none;"></canvas>
-  </div>
-</div>
-
-<script>
-  // ========== STATE ==========
-  let originalImage = null, originalW = 0, originalH = 0, hasImage = false;
-  let bgColor = "#1e2c38";
-  let layers = [], selectedLayerId = null, nextId = 100;
-  let currentPreviewW = 0, currentPreviewH = 0;
-  let dragActive = false, dragStartCanvasX = 0, dragStartCanvasY = 0;
-  let draggingLayerIds = [];
-  let selectedLayerIds = new Set();
-  let userLat = -6.2088, userLon = 106.8456;
-  let mapInstance = null;
-  let currentMapMarker = null;
-
-  // Kamera
-  let cameraStream = null;
-  let currentFacingMode = 'environment';
-  let cameraModalElem = document.getElementById('cameraModal');
-  let videoElem = document.getElementById('cameraVideo');
-  let captureBtn = document.getElementById('capturePhotoBtn');
-  let switchCameraBtn = document.getElementById('switchCameraBtn');
-  let cameraCanvas = document.getElementById('cameraCanvas');
-  let cameraActive = false;
-
-  function genId() { return Date.now() + '-' + (Math.random()*10000|0) + nextId++; }
-  function getCurrentTimeString() { return new Date().toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' }); }
-  function getCurrentDateString() { return new Date().toLocaleDateString('id-ID'); }
-  function getCurrentDayString() { const days = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu']; return days[new Date().getDay()]; }
-  function getCoordText() { let latDir = userLat >= 0 ? 'LS' : 'LU', lonDir = userLon >= 0 ? 'BT' : 'BB'; return `${Math.abs(userLat).toFixed(4)}° ${latDir} | ${Math.abs(userLon).toFixed(4)}° ${lonDir}`; }
-
-  function hexToRgba(hex, alpha) { let r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16); return `rgba(${r}, ${g}, ${b}, ${alpha})`; }
-  function createGradient(ctx, x, y, w, h, type, angle, c1, c2, o1, o2, radialShape) {
-    let grad, rgba1 = hexToRgba(c1, o1), rgba2 = hexToRgba(c2, o2);
-    if (type === 'linear') {
-      let rad = angle * Math.PI/180, dx = Math.cos(rad), dy = Math.sin(rad);
-      let startX = x - (w/2)*dx, startY = y - (h/2)*dy, endX = x + (w/2)*dx, endY = y + (h/2)*dy;
-      grad = ctx.createLinearGradient(startX, startY, endX, endY);
-    } else { let radius = Math.max(w, h)/2; grad = ctx.createRadialGradient(x, y, 0, x, y, radius); }
-    grad.addColorStop(0, rgba1); grad.addColorStop(1, rgba2); return grad;
-  }
-  function applyFlipAndStretch(ctx, l) { let sx = (l.stretchX||100)/100, sy = (l.stretchY||100)/100; ctx.scale(sx, sy); if(l.flipX) ctx.scale(-1,1); if(l.flipY) ctx.scale(1,-1); }
-
-  // ========== RENDER FUNCTIONS ==========
-  function drawText(ctx, l, w, h) {
-    let fontSizeBase = (l.fontSizePercent/100)*w, fontSize = fontSizeBase * ((l.stretchY||100)/100);
-    if(fontSize<6) return;
-    let x = (l.xPercent/100)*w, y = (l.yPercent/100)*h;
-    ctx.save(); ctx.globalAlpha = l.opacity; ctx.translate(x,y); ctx.rotate(l.rotation*Math.PI/180);
-    applyFlipAndStretch(ctx, l);
-    let style = ''; if(l.bold) style+='bold '; if(l.italic) style+='italic ';
-    ctx.font = `${style}${fontSize}px ${l.fontFamily}, system-ui`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    if(l.shadow) { ctx.shadowColor = "rgba(0,0,0,0.5)"; ctx.shadowBlur = 5; ctx.shadowOffsetX = 1.5; ctx.shadowOffsetY = 1.5; } else ctx.shadowColor = "transparent";
-    if(l.stroke) { ctx.strokeStyle = "#000"; ctx.lineWidth = Math.max(2, fontSize/14); ctx.strokeText(l.text,0,0); }
-    if(l.gradient && l.gradientColor1 && l.gradientColor2) {
-      let tw = ctx.measureText(l.text).width;
-      let grad = createGradient(ctx,0,0,tw,fontSize, l.gradientType, l.gradientAngle||0, l.gradientColor1, l.gradientColor2, l.gradientOpacity1!==undefined?l.gradientOpacity1:1, l.gradientOpacity2!==undefined?l.gradientOpacity2:1, l.radialShape||'circle');
-      ctx.fillStyle = grad;
-    } else { ctx.fillStyle = l.color; }
-    ctx.fillText(l.text,0,0);
-    if(l.underline) { let wm = ctx.measureText(l.text).width; ctx.beginPath(); ctx.moveTo(-wm/2, fontSize*0.15); ctx.lineTo(wm/2, fontSize*0.15); ctx.lineWidth = fontSize/12; ctx.strokeStyle = l.color; ctx.stroke(); }
-    ctx.restore();
-  }
-  function drawDynamicText(ctx, l, content, w, h) {
-    let fontSizeBase = (l.fontSizePercent/100)*w, fontSize = fontSizeBase * ((l.stretchY||100)/100);
-    if(fontSize<6) return;
-    let x = (l.xPercent/100)*w, y = (l.yPercent/100)*h;
-    ctx.save(); ctx.globalAlpha = l.opacity; ctx.translate(x,y); ctx.rotate(l.rotation*Math.PI/180);
-    applyFlipAndStretch(ctx, l);
-    let style = ''; if(l.bold) style+='bold '; if(l.italic) style+='italic ';
-    let fontFamily = l.fontFamily || 'Inter, sans-serif';
-    ctx.font = `${style}${fontSize}px ${fontFamily}, system-ui`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    if(l.shadow) { ctx.shadowColor = "rgba(0,0,0,0.5)"; ctx.shadowBlur = 5; ctx.shadowOffsetX = 1.5; ctx.shadowOffsetY = 1.5; } else ctx.shadowColor = "transparent";
-    if(l.stroke) { ctx.strokeStyle = "#000"; ctx.lineWidth = Math.max(2, fontSize/14); ctx.strokeText(content,0,0); }
-    ctx.fillStyle = l.color; ctx.fillText(content,0,0);
-    if(l.underline) { let wm = ctx.measureText(content).width; ctx.beginPath(); ctx.moveTo(-wm/2, fontSize*0.15); ctx.lineTo(wm/2, fontSize*0.15); ctx.lineWidth = fontSize/12; ctx.strokeStyle = l.color; ctx.stroke(); }
-    ctx.restore();
-  }
-  function drawShape(ctx, l, w, h) {
-    let sizeBase = (l.shapeSize/100)*Math.min(w,h);
-    let sw = sizeBase * ((l.stretchX||100)/100), sh = sizeBase * ((l.stretchY||100)/100);
-    if(sw<2 || sh<2) return;
-    let x = (l.xPercent/100)*w, y = (l.yPercent/100)*h;
-    ctx.save(); ctx.globalAlpha = l.opacity; ctx.translate(x,y); ctx.rotate(l.rotation*Math.PI/180);
-    applyFlipAndStretch(ctx, l);
-    if(l.shadow) { ctx.shadowColor = "rgba(0,0,0,0.4)"; ctx.shadowBlur = 4; } else ctx.shadowColor = "transparent";
-    let fillStyle;
-    if(l.gradient && l.gradientColor1 && l.gradientColor2) {
-      fillStyle = createGradient(ctx,0,0,sw,sh, l.gradientType, l.gradientAngle||0, l.gradientColor1, l.gradientColor2, l.gradientOpacity1!==undefined?l.gradientOpacity1:1, l.gradientOpacity2!==undefined?l.gradientOpacity2:1, l.radialShape||'circle');
-    } else { fillStyle = l.shapeColor; }
-    ctx.fillStyle = fillStyle;
-    if(l.shapeType === 'circle') { ctx.beginPath(); ctx.ellipse(0,0,sw/2,sh/2,0,0,2*Math.PI); ctx.fill(); if(l.stroke) { ctx.strokeStyle="#fff"; ctx.lineWidth=2; ctx.stroke(); } }
-    else if(l.shapeType === 'square') { ctx.fillRect(-sw/2, -sh/2, sw, sh); if(l.stroke) { ctx.strokeStyle="#fff"; ctx.lineWidth=2; ctx.strokeRect(-sw/2, -sh/2, sw, sh); } }
-    else if(l.shapeType === 'rounded-square') { let r = Math.min(sw,sh)*0.2; ctx.beginPath(); ctx.moveTo(-sw/2+r, -sh/2); ctx.lineTo(sw/2-r, -sh/2); ctx.quadraticCurveTo(sw/2, -sh/2, sw/2, -sh/2+r); ctx.lineTo(sw/2, sh/2-r); ctx.quadraticCurveTo(sw/2, sh/2, sw/2-r, sh/2); ctx.lineTo(-sw/2+r, sh/2); ctx.quadraticCurveTo(-sw/2, sh/2, -sw/2, sh/2-r); ctx.lineTo(-sw/2, -sh/2+r); ctx.quadraticCurveTo(-sw/2, -sh/2, -sw/2+r, -sh/2); ctx.closePath(); ctx.fill(); if(l.stroke) ctx.stroke(); }
-    else if(l.shapeType === 'triangle') { ctx.beginPath(); ctx.moveTo(0, -sh/2); ctx.lineTo(sw/2, sh/2); ctx.lineTo(-sw/2, sh/2); ctx.closePath(); ctx.fill(); if(l.stroke) ctx.stroke(); }
-    else if(l.shapeType === 'star') { let spikes=5, outerR=Math.min(sw,sh)/2, innerR=outerR*0.5, rot=Math.PI/2*3, step=Math.PI/spikes; ctx.beginPath(); for(let i=0;i<spikes;i++){ let x1=Math.cos(rot)*outerR, y1=Math.sin(rot)*outerR; ctx.lineTo(x1,y1); rot+=step; let x2=Math.cos(rot)*innerR, y2=Math.sin(rot)*innerR; ctx.lineTo(x2,y2); rot+=step; } ctx.closePath(); ctx.fill(); if(l.stroke) ctx.stroke(); }
-    else if(l.shapeType === 'line') { ctx.beginPath(); ctx.moveTo(-sw/2,0); ctx.lineTo(sw/2,0); ctx.lineWidth = Math.min(sw,sh)*0.15; ctx.strokeStyle = fillStyle; ctx.stroke(); }
-    ctx.restore();
-  }
-  function drawImageLayer(ctx, l, w, h) {
-    if(!l.imageObj) return;
-    let baseW = (l.scalePercent/100)*w, baseH = baseW * (l.imageObj.height/l.imageObj.width);
-    let tw = baseW * ((l.stretchX||100)/100), th = baseH * ((l.stretchY||100)/100);
-    let x = (l.xPercent/100)*w, y = (l.yPercent/100)*h;
-    ctx.save(); ctx.globalAlpha = l.opacity;
-    if (l.imgShadow) {
-      ctx.shadowColor = l.imgShadowColor || "rgba(0,0,0,0.5)";
-      ctx.shadowBlur = l.imgShadowBlur !== undefined ? l.imgShadowBlur : 8;
-      ctx.shadowOffsetX = l.imgShadowOffsetX !== undefined ? l.imgShadowOffsetX : 4;
-      ctx.shadowOffsetY = l.imgShadowOffsetY !== undefined ? l.imgShadowOffsetY : 4;
-    } else { ctx.shadowColor = "transparent"; }
-    ctx.translate(x,y); ctx.rotate(l.rotation*Math.PI/180);
-    let scaleX = 1, scaleY = 1;
-    if (l.flipX) scaleX = -1;
-    if (l.flipY) scaleY = -1;
-    let stretchX = (l.stretchX||100)/100;
-    let stretchY = (l.stretchY||100)/100;
-    ctx.scale(scaleX * stretchX, scaleY * stretchY);
-    ctx.drawImage(l.imageObj, -tw/2, -th/2, tw, th);
-    if (l.imgStroke) {
-      ctx.save();
-      ctx.globalCompositeOperation = "source-over";
-      ctx.shadowColor = "transparent";
-      ctx.strokeStyle = l.imgStrokeColor || "#FFFFFF";
-      ctx.lineWidth = l.imgStrokeWidth !== undefined ? l.imgStrokeWidth : 4;
-      ctx.strokeRect(-tw/2, -th/2, tw, th);
-      ctx.restore();
-    }
-    ctx.restore();
-  }
-  function renderFullPreview() {
-    const container = previewCanvas.parentElement;
-    const maxW = Math.min(container.clientWidth - 20, 600);
-    let pw = maxW, ph = pw * 0.75;
-    if (hasImage && originalImage) {
-      const ratio = originalW/originalH;
-      ph = pw / ratio;
-      if (ph > 500) { ph = 500; pw = ph * ratio; }
-    }
-    previewCanvas.width = pw; previewCanvas.height = ph;
-    currentPreviewW = pw; currentPreviewH = ph;
-    const ctx = previewCanvas.getContext('2d');
-    if (hasImage && originalImage) {
-      ctx.drawImage(originalImage, 0, 0, pw, ph);
-    } else {
-      ctx.fillStyle = bgColor;
-      ctx.fillRect(0, 0, pw, ph);
-    }
-    for(let l of layers) {
-      if(l.type === 'text') drawText(ctx,l,pw,ph);
-      else if(l.type === 'shape') drawShape(ctx,l,pw,ph);
-      else if(l.type === 'dynamic') {
-        let c = l.dynamicType==='time' ? getCurrentTimeString() : l.dynamicType==='date' ? getCurrentDateString() : l.dynamicType==='day' ? getCurrentDayString() : getCoordText();
-        drawDynamicText(ctx,l,c,pw,ph);
-      } else if(l.type === 'image' && l.imageObj) drawImageLayer(ctx,l,pw,ph);
-    }
-  }
-  function setBackgroundImage(img) {
-    originalImage = img;
-    originalW = img.width;
-    originalH = img.height;
-    hasImage = true;
-    renderFullPreview();
-  }
-  function resetBackground() {
-    originalImage = null;
-    hasImage = false;
-    renderFullPreview();
-  }
-
-  // ========== LAYER MANAGEMENT ==========
-  function createTextLayer() { return { id:genId(), type:'text', text:'Teks', fontFamily:'Inter, sans-serif', fontSizePercent:6, color:'#FFFFFF', opacity:0.9, rotation:0, xPercent:50, yPercent:50, shadow:true, stroke:false, bold:false, italic:false, underline:false, locked:false, gradient:false, gradientType:'linear', gradientAngle:45, gradientColor1:'#FF0000', gradientColor2:'#FFFF00', gradientOpacity1:1, gradientOpacity2:1, radialShape:'circle', flipX:false, flipY:false, stretchX:100, stretchY:100 }; }
-  function createShapeLayer() { return { id:genId(), type:'shape', shapeType:'circle', shapeSize:8, shapeColor:'#FFD966', opacity:0.8, rotation:0, xPercent:50, yPercent:50, shadow:false, stroke:false, locked:false, gradient:false, gradientType:'linear', gradientAngle:45, gradientColor1:'#FF0000', gradientColor2:'#FFFF00', gradientOpacity1:1, gradientOpacity2:1, radialShape:'circle', flipX:false, flipY:false, stretchX:100, stretchY:100 }; }
-  function createDynamicLayer(dt) { return { id:genId(), type:'dynamic', dynamicType:dt, fontSizePercent:5, color:'#FFFFFF', opacity:0.9, rotation:0, xPercent:50, yPercent:50, shadow:true, stroke:false, fontFamily:'Inter, sans-serif', bold:false, italic:false, underline:false, locked:false, flipX:false, flipY:false, stretchX:100, stretchY:100 }; }
-  function createImageLayer() { return { id:genId(), type:'image', imageObj:null, imageDataUrl:null, scalePercent:12, opacity:0.85, rotation:0, xPercent:50, yPercent:50, blendMode:'normal', locked:false, flipX:false, flipY:false, stretchX:100, stretchY:100, imgShadow:false, imgShadowColor:"rgba(0,0,0,0.5)", imgShadowBlur:8, imgShadowOffsetX:4, imgShadowOffsetY:4, imgStroke:false, imgStrokeColor:"#FFFFFF", imgStrokeWidth:4 }; }
-  function createIconLayer(emoji) { return { id:genId(), type:'text', text:emoji, fontFamily:'"Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", system-ui', fontSizePercent:8, color:'#FFFFFF', opacity:0.9, rotation:0, xPercent:50, yPercent:50, shadow:true, stroke:false, bold:false, italic:false, underline:false, locked:false, gradient:false, gradientType:'linear', gradientAngle:45, gradientColor1:'#FF0000', gradientColor2:'#FFFF00', gradientOpacity1:1, gradientOpacity2:1, radialShape:'circle', flipX:false, flipY:false, stretchX:100, stretchY:100 }; }
-
-  function addLayer(layer) { layers.push(layer); selectedLayerId = layer.id; selectedLayerIds.clear(); selectedLayerIds.add(layer.id); updateUI(); renderFullPreview(); loadProps(layer); if(layer.type==='image') setTimeout(()=>{ let inp=document.createElement('input'); inp.type='file'; inp.accept='image/*'; inp.onchange=e=>{if(e.target.files.length) loadLogo(layer.id,e.target.files[0]);}; inp.click(); },50); }
-  function loadLogo(id,file){ let r=new FileReader(); r.onload=e=>{ let img=new Image(); img.onload=()=>{ let l=layers.find(l=>l.id===id); if(l && l.type==='image'){ l.imageObj=img; l.imageDataUrl=e.target.result; renderFullPreview(); updateUI(); if(selectedLayerId===id) loadProps(l); } }; img.src=e.target.result; }; r.readAsDataURL(file); }
-  function deleteLayer(id){ layers=layers.filter(l=>l.id!==id); selectedLayerIds.delete(id); if(selectedLayerId===id){ selectedLayerId=layers.length?layers[0].id:null; if(selectedLayerId) loadProps(layers.find(l=>l.id===selectedLayerId)); else document.getElementById('propContent').innerHTML='<p style="text-align:center;">Klik layer</p>'; } updateUI(); renderFullPreview(); }
-  function duplicateLayer(id){ let orig=layers.find(l=>l.id===id); if(!orig) return; let clone=JSON.parse(JSON.stringify(orig)); clone.id=genId(); if(clone.type==='image' && orig.imageDataUrl){ let img=new Image(); img.src=orig.imageDataUrl; clone.imageObj=img; } layers.push(clone); selectedLayerId=clone.id; selectedLayerIds.clear(); selectedLayerIds.add(clone.id); updateUI(); renderFullPreview(); loadProps(clone); }
-  function moveLayer(id,dir){ let idx=layers.findIndex(l=>l.id===id); if(idx===-1) return; if(dir==='up' && idx>0){ [layers[idx-1],layers[idx]]=[layers[idx],layers[idx-1]]; } else if(dir==='down' && idx<layers.length-1){ [layers[idx],layers[idx+1]]=[layers[idx+1],layers[idx]]; } updateUI(); renderFullPreview(); }
-  function toggleLock(id){ let l=layers.find(l=>l.id===id); if(l) l.locked=!l.locked; updateUI(); renderFullPreview(); }
-  function selectLayer(id){ selectedLayerId=id; selectedLayerIds.clear(); selectedLayerIds.add(id); let l=layers.find(l=>l.id===id); if(l) loadProps(l); updateUI(); renderFullPreview(); }
-  function toggleSelectLayer(id, checked){ if(checked) selectedLayerIds.add(id); else selectedLayerIds.delete(id); if(selectedLayerIds.size===0){ selectedLayerId=null; document.getElementById('propContent').innerHTML='<p style="text-align:center;">Tidak ada layer terpilih</p>'; } else if(selectedLayerIds.size===1){ selectedLayerId=Array.from(selectedLayerIds)[0]; let l=layers.find(l=>l.id===selectedLayerId); if(l) loadProps(l); } else { selectedLayerId=null; document.getElementById('propContent').innerHTML='<p style="text-align:center;">Multi-layer terpilih, drag untuk geser bersama</p>'; } updateUI(); renderFullPreview(); }
-  function updateUI(){
-    let container=document.getElementById('layerListContainer');
-    if(!layers.length){ container.innerHTML='<div style="text-align:center; padding:12px;">➕ Tambah layer</div>'; return; }
-    container.innerHTML=layers.map((l,idx)=>`<div class="layer-item ${selectedLayerId===l.id?'active':''} ${l.locked?'locked':''}" data-id="${l.id}"><input type="checkbox" class="layer-check" ${selectedLayerIds.has(l.id)?'checked':''} ${l.locked?'disabled':''}><div class="layer-info"><i class="fas ${l.type==='text'?'fa-font':l.type==='shape'?'fa-shapes':l.type==='dynamic'?'fa-clock':'fa-image'}"></i><span>${l.type==='text'?l.text.slice(0,8):l.type==='shape'?l.shapeType:l.type==='dynamic'?l.dynamicType:'Logo'}</span><span style="font-size:0.6rem;">${Math.round(l.xPercent)}%</span>${selectedLayerId===l.id?'<span class="selected-badge">✓</span>':''}</div><div class="layer-actions"><button class="btn-icon" data-action="lock"><i class="fas ${l.locked?'fa-lock':'fa-lock-open'}"></i></button><button class="btn-icon" data-action="up" ${idx===0?'disabled style="opacity:0.4"':''}><i class="fas fa-arrow-up"></i></button><button class="btn-icon" data-action="down" ${idx===layers.length-1?'disabled style="opacity:0.4"':''}><i class="fas fa-arrow-down"></i></button><button class="btn-icon" data-action="copy"><i class="fas fa-copy"></i></button><button class="btn-icon" data-action="del"><i class="fas fa-trash"></i></button></div></div>`).join('');
-    document.querySelectorAll('.layer-item').forEach(el=>{ let id=el.getAttribute('data-id'); let chk=el.querySelector('.layer-check'); if(chk) chk.addEventListener('change',(e)=>{ e.stopPropagation(); toggleSelectLayer(id, chk.checked); }); el.addEventListener('click',(e)=>{ if(!e.target.closest('.layer-actions') && e.target!==chk){ selectedLayerIds.clear(); selectedLayerIds.add(id); selectLayer(id); } }); el.querySelectorAll('[data-action]').forEach(btn=>{ btn.addEventListener('click',(e)=>{ e.stopPropagation(); let act=btn.getAttribute('data-action'); if(act==='lock') toggleLock(id); else if(act==='up') moveLayer(id,'up'); else if(act==='down') moveLayer(id,'down'); else if(act==='copy') duplicateLayer(id); else if(act==='del') deleteLayer(id); }); }); });
-  }
-
-  // ========== PROPERTIES HTML (diringkas) ==========
-  function textPropHTML(l) { return `<div class="prop-field"><label>Teks</label><input type="text" id="txtText" value="${escapeHtml(l.text)}"></div><div class="prop-field"><label>Skala</label><input type="range" id="txtSize" min="2" max="20" step="0.5" value="${l.fontSizePercent}"><span>${l.fontSizePercent}%</span></div><div class="prop-field"><label>Stretch X</label><input type="range" id="txtStretchX" min="20" max="300" step="5" value="${l.stretchX||100}"><span>${l.stretchX||100}%</span></div><div class="prop-field"><label>Stretch Y</label><input type="range" id="txtStretchY" min="20" max="300" step="5" value="${l.stretchY||100}"><span>${l.stretchY||100}%</span></div><div class="prop-field"><label>Opacity</label><input type="range" id="txtOp" min="0" max="100" step="1" value="${l.opacity*100}"><span>${Math.round(l.opacity*100)}%</span></div><div class="prop-field"><label>Rotasi</label><input type="range" id="txtRot" min="-180" max="180" value="${l.rotation}"></div><div class="prop-field"><label>Font</label><select id="txtFont"><option ${l.fontFamily==='Inter, sans-serif'?'selected':''}>Inter, sans-serif</option><option ${l.fontFamily==='Arial'?'selected':''}>Arial</option><option ${l.fontFamily==="'Segoe UI'"?'selected':''}>'Segoe UI'</option></select></div><div class="prop-field"><label>Style</label><div><button id="btnB" class="btn-icon" style="${l.bold?'background:#2e7ea3;color:white':''}"><b>B</b></button><button id="btnI" class="btn-icon" style="${l.italic?'background:#2e7ea3;color:white':''}"><i>I</i></button><button id="btnU" class="btn-icon" style="${l.underline?'background:#2e7ea3;color:white':''}"><u>U</u></button></div></div><div class="prop-field"><label>Flip</label><div><button id="flipXBtn" class="btn-icon" style="${l.flipX?'background:#2e7ea3;color:white':''}"><i class="fas fa-arrows-alt-h"></i> X</button><button id="flipYBtn" class="btn-icon" style="${l.flipY?'background:#2e7ea3;color:white':''}"><i class="fas fa-arrows-alt-v"></i> Y</button></div></div><div class="prop-field"><label>Efek</label><label><input type="checkbox" id="txtShadow" ${l.shadow?'checked':''}> Bayangan</label><label><input type="checkbox" id="txtStroke" ${l.stroke?'checked':''}> Outline</label></div><div class="prop-field" style="grid-column: span 2;"><label>Gradient</label><label><input type="checkbox" id="txtGrad" ${l.gradient?'checked':''}> Aktifkan</label></div><div class="prop-field" id="gradTypeField" style="${l.gradient?'':'display:none'}"><label>Tipe</label><select id="txtGradType"><option ${l.gradientType==='linear'?'selected':''}>linear</option><option ${l.gradientType==='radial'?'selected':''}>radial</option></select></div><div class="prop-field" id="gradAngleField" style="${l.gradient && l.gradientType==='linear'?'':'display:none'}"><label>Sudut</label><input type="range" id="txtGradAngle" min="0" max="360" step="1" value="${l.gradientAngle||0}"><span>${l.gradientAngle||0}°</span></div><div class="prop-field" id="radialShapeField" style="${l.gradient && l.gradientType==='radial'?'':'display:none'}"><label>Bentuk</label><select id="txtRadialShape"><option ${(l.radialShape||'circle')==='circle'?'selected':''}>circle</option><option ${(l.radialShape||'circle')==='ellipse'?'selected':''}>ellipse</option></select></div><div class="prop-field" id="gradColor1Field" style="${l.gradient?'':'display:none'}"><label>Warna1</label><input type="color" id="txtGradColor1" value="${l.gradientColor1}"><input type="range" id="txtGradOpacity1" min="0" max="100" step="1" value="${(l.gradientOpacity1 !== undefined ? l.gradientOpacity1 : 1)*100}"><span>${Math.round((l.gradientOpacity1 !== undefined ? l.gradientOpacity1 : 1)*100)}%</span></div><div class="prop-field" id="gradColor2Field" style="${l.gradient?'':'display:none'}"><label>Warna2</label><input type="color" id="txtGradColor2" value="${l.gradientColor2}"><input type="range" id="txtGradOpacity2" min="0" max="100" step="1" value="${(l.gradientOpacity2 !== undefined ? l.gradientOpacity2 : 1)*100}"><span>${Math.round((l.gradientOpacity2 !== undefined ? l.gradientOpacity2 : 1)*100)}%</span></div><div class="prop-field" id="solidColorField" style="${l.gradient?'display:none':''}"><label>Warna</label><input type="color" id="txtColor" value="${l.color}"></div>`; }
-  function shapePropHTML(l) { return `<div class="prop-field"><label>Bentuk</label><select id="shapeType"><option ${l.shapeType==='circle'?'selected':''}>circle</option><option ${l.shapeType==='square'?'selected':''}>square</option><option ${l.shapeType==='rounded-square'?'selected':''}>rounded-square</option><option ${l.shapeType==='triangle'?'selected':''}>triangle</option><option ${l.shapeType==='star'?'selected':''}>star</option><option ${l.shapeType==='line'?'selected':''}>line</option></select></div><div class="prop-field"><label>Ukuran</label><input type="range" id="shapeSize" min="3" max="25" step="0.5" value="${l.shapeSize}"><span>${l.shapeSize}%</span></div><div class="prop-field"><label>Stretch X</label><input type="range" id="shapeStretchX" min="20" max="300" step="5" value="${l.stretchX||100}"><span>${l.stretchX||100}%</span></div><div class="prop-field"><label>Stretch Y</label><input type="range" id="shapeStretchY" min="20" max="300" step="5" value="${l.stretchY||100}"><span>${l.stretchY||100}%</span></div><div class="prop-field"><label>Opacity</label><input type="range" id="shapeOp" min="0" max="100" step="1" value="${l.opacity*100}"><span>${Math.round(l.opacity*100)}%</span></div><div class="prop-field"><label>Rotasi</label><input type="range" id="shapeRot" min="-180" max="180" value="${l.rotation}"></div><div class="prop-field"><label>Flip</label><div><button id="shapeFlipXBtn" class="btn-icon" style="${l.flipX?'background:#2e7ea3;color:white':''}"><i class="fas fa-arrows-alt-h"></i> X</button><button id="shapeFlipYBtn" class="btn-icon" style="${l.flipY?'background:#2e7ea3;color:white':''}"><i class="fas fa-arrows-alt-v"></i> Y</button></div></div><div class="prop-field"><label>Efek</label><label><input type="checkbox" id="shapeShadow" ${l.shadow?'checked':''}> Bayangan</label><label><input type="checkbox" id="shapeStroke" ${l.stroke?'checked':''}> Outline</label></div><div class="prop-field" style="grid-column: span 2;"><label>Gradient</label><label><input type="checkbox" id="shapeGrad" ${l.gradient?'checked':''}> Aktifkan</label></div><div class="prop-field" id="shapeGradTypeField" style="${l.gradient?'':'display:none'}"><label>Tipe</label><select id="shapeGradType"><option ${l.gradientType==='linear'?'selected':''}>linear</option><option ${l.gradientType==='radial'?'selected':''}>radial</option></select></div><div class="prop-field" id="shapeGradAngleField" style="${l.gradient && l.gradientType==='linear'?'':'display:none'}"><label>Sudut</label><input type="range" id="shapeGradAngle" min="0" max="360" step="1" value="${l.gradientAngle||0}"><span>${l.gradientAngle||0}°</span></div><div class="prop-field" id="shapeRadialShapeField" style="${l.gradient && l.gradientType==='radial'?'':'display:none'}"><label>Bentuk</label><select id="shapeRadialShape"><option ${(l.radialShape||'circle')==='circle'?'selected':''}>circle</option><option ${(l.radialShape||'circle')==='ellipse'?'selected':''}>ellipse</option></select></div><div class="prop-field" id="shapeGradColor1Field" style="${l.gradient?'':'display:none'}"><label>Warna1</label><input type="color" id="shapeGradColor1" value="${l.gradientColor1}"><input type="range" id="shapeGradOpacity1" min="0" max="100" step="1" value="${(l.gradientOpacity1 !== undefined ? l.gradientOpacity1 : 1)*100}"><span>${Math.round((l.gradientOpacity1 !== undefined ? l.gradientOpacity1 : 1)*100)}%</span></div><div class="prop-field" id="shapeGradColor2Field" style="${l.gradient?'':'display:none'}"><label>Warna2</label><input type="color" id="shapeGradColor2" value="${l.gradientColor2}"><input type="range" id="shapeGradOpacity2" min="0" max="100" step="1" value="${(l.gradientOpacity2 !== undefined ? l.gradientOpacity2 : 1)*100}"><span>${Math.round((l.gradientOpacity2 !== undefined ? l.gradientOpacity2 : 1)*100)}%</span></div><div class="prop-field" id="shapeSolidColorField" style="${l.gradient?'display:none':''}"><label>Warna</label><input type="color" id="shapeColor" value="${l.shapeColor}"></div>`; }
-  function dynamicPropHTML(l) { return `<div class="prop-field"><label>Tipe</label><select id="dynType"><option ${l.dynamicType==='time'?'selected':''}>time</option><option ${l.dynamicType==='date'?'selected':''}>date</option><option ${l.dynamicType==='day'?'selected':''}>day</option><option ${l.dynamicType==='coord'?'selected':''}>coord</option></select></div><div class="prop-field"><label>Skala</label><input type="range" id="dynSize" min="2" max="18" step="0.5" value="${l.fontSizePercent}"><span>${l.fontSizePercent}%</span></div><div class="prop-field"><label>Stretch X</label><input type="range" id="dynStretchX" min="20" max="300" step="5" value="${l.stretchX||100}"><span>${l.stretchX||100}%</span></div><div class="prop-field"><label>Stretch Y</label><input type="range" id="dynStretchY" min="20" max="300" step="5" value="${l.stretchY||100}"><span>${l.stretchY||100}%</span></div><div class="prop-field"><label>Opacity</label><input type="range" id="dynOp" min="0" max="100" step="1" value="${l.opacity*100}"><span>${Math.round(l.opacity*100)}%</span></div><div class="prop-field"><label>Warna</label><input type="color" id="dynColor" value="${l.color}"></div><div class="prop-field"><label>Rotasi</label><input type="range" id="dynRot" min="-180" max="180" value="${l.rotation}"></div><div class="prop-field"><label>Font</label><select id="dynFont"><option ${l.fontFamily==='Inter, sans-serif'?'selected':''}>Inter, sans-serif</option><option ${l.fontFamily==='Arial'?'selected':''}>Arial</option><option ${l.fontFamily==="'Segoe UI'"?'selected':''}>'Segoe UI'</option></select></div><div class="prop-field"><label>Flip</label><div><button id="dynFlipXBtn" class="btn-icon" style="${l.flipX?'background:#2e7ea3;color:white':''}"><i class="fas fa-arrows-alt-h"></i> X</button><button id="dynFlipYBtn" class="btn-icon" style="${l.flipY?'background:#2e7ea3;color:white':''}"><i class="fas fa-arrows-alt-v"></i> Y</button></div></div><div class="prop-field"><label>Style</label><div><button id="dynB" class="btn-icon" style="${l.bold?'background:#2e7ea3;color:white':''}"><b>B</b></button><button id="dynI" class="btn-icon" style="${l.italic?'background:#2e7ea3;color:white':''}"><i>I</i></button><button id="dynU" class="btn-icon" style="${l.underline?'background:#2e7ea3;color:white':''}"><u>U</u></button></div></div><div class="prop-field"><label><input type="checkbox" id="dynShadow" ${l.shadow?'checked':''}> Bayangan</label><label><input type="checkbox" id="dynStroke" ${l.stroke?'checked':''}> Outline</label></div>${l.dynamicType==='coord'?`<div class="prop-field"><label>Lat/Lon</label><input id="coordLat" value="${userLat}" size="6"><input id="coordLon" value="${userLon}" size="6"><button id="updateCoord" class="btn-icon">Set</button><button id="gpsBtn" class="btn-icon gps-btn"><i class="fas fa-map-marker-alt"></i> GPS</button></div>`:''}`; }
-  function imagePropHTML(l) {
-    return `<div class="prop-field"><label>Skala</label><input type="range" id="imgScale" min="3" max="35" step="0.5" value="${l.scalePercent}"><span>${l.scalePercent}%</span></div>
-            <div class="prop-field"><label>Stretch X</label><input type="range" id="imgStretchX" min="20" max="300" step="5" value="${l.stretchX||100}"><span>${l.stretchX||100}%</span></div>
-            <div class="prop-field"><label>Stretch Y</label><input type="range" id="imgStretchY" min="20" max="300" step="5" value="${l.stretchY||100}"><span>${l.stretchY||100}%</span></div>
-            <div class="prop-field"><label>Opacity</label><input type="range" id="imgOp" min="0" max="100" step="1" value="${l.opacity*100}"><span>${Math.round(l.opacity*100)}%</span></div>
-            <div class="prop-field"><label>Rotasi</label><input type="range" id="imgRot" min="-180" max="180" value="${l.rotation}"></div>
-            <div class="prop-field"><label>Flip</label><div><button id="imgFlipXBtn" class="btn-icon" style="${l.flipX?'background:#2e7ea3;color:white':''}"><i class="fas fa-arrows-alt-h"></i> X</button><button id="imgFlipYBtn" class="btn-icon" style="${l.flipY?'background:#2e7ea3;color:white':''}"><i class="fas fa-arrows-alt-v"></i> Y</button></div></div>
-            <div class="prop-field"><label>Blend</label><select id="imgBlend"><option ${l.blendMode==='normal'?'selected':''}>normal</option><option ${l.blendMode==='multiply'?'selected':''}>multiply</option><option ${l.blendMode==='screen'?'selected':''}>screen</option></select></div>
-            <div class="prop-field"><button id="replaceLogoBtn" class="btn-icon">Ganti Logo</button></div>
-            <div class="prop-field" style="grid-column: span 2;"><label>Efek Gambar</label></div>
-            <div class="prop-field"><label><input type="checkbox" id="imgShadowChk" ${l.imgShadow?'checked':''}> Bayangan</label></div>
-            <div class="prop-field" id="imgShadowColorField" style="${l.imgShadow?'':'display:none'}"><label>Warna Shadow</label><input type="color" id="imgShadowColor" value="${l.imgShadowColor||'#000000'}"></div>
-            <div class="prop-field" id="imgShadowBlurField" style="${l.imgShadow?'':'display:none'}"><label>Blur</label><input type="range" id="imgShadowBlur" min="0" max="20" step="1" value="${l.imgShadowBlur||8}"><span>${l.imgShadowBlur||8}px</span></div>
-            <div class="prop-field" id="imgShadowOffsetXField" style="${l.imgShadow?'':'display:none'}"><label>Offset X</label><input type="range" id="imgShadowOffsetX" min="-20" max="20" step="1" value="${l.imgShadowOffsetX||4}"><span>${l.imgShadowOffsetX||4}px</span></div>
-            <div class="prop-field" id="imgShadowOffsetYField" style="${l.imgShadow?'':'display:none'}"><label>Offset Y</label><input type="range" id="imgShadowOffsetY" min="-20" max="20" step="1" value="${l.imgShadowOffsetY||4}"><span>${l.imgShadowOffsetY||4}px</span></div>
-            <div class="prop-field"><label><input type="checkbox" id="imgStrokeChk" ${l.imgStroke?'checked':''}> Outline</label></div>
-            <div class="prop-field" id="imgStrokeColorField" style="${l.imgStroke?'':'display:none'}"><label>Warna Outline</label><input type="color" id="imgStrokeColor" value="${l.imgStrokeColor||'#FFFFFF'}"></div>
-            <div class="prop-field" id="imgStrokeWidthField" style="${l.imgStroke?'':'display:none'}"><label>Lebar</label><input type="range" id="imgStrokeWidth" min="1" max="15" step="1" value="${l.imgStrokeWidth||4}"><span>${l.imgStrokeWidth||4}px</span></div>`;
-  }
-
-  // ========== EVENT ATTACHERS ==========
-  function attachTextEvents(layer){
-    let update = () => { renderFullPreview(); updateUI(); };
-    let txtText = document.getElementById('txtText'), txtSize = document.getElementById('txtSize'), txtStretchX = document.getElementById('txtStretchX'), txtStretchY = document.getElementById('txtStretchY'), txtOp = document.getElementById('txtOp'), txtRot = document.getElementById('txtRot'), txtFont = document.getElementById('txtFont'), txtShadow = document.getElementById('txtShadow'), txtStroke = document.getElementById('txtStroke'), btnB = document.getElementById('btnB'), btnI = document.getElementById('btnI'), btnU = document.getElementById('btnU'), flipXBtn = document.getElementById('flipXBtn'), flipYBtn = document.getElementById('flipYBtn'), gradChk = document.getElementById('txtGrad'), gradType = document.getElementById('txtGradType'), gradAngle = document.getElementById('txtGradAngle'), radialShape = document.getElementById('txtRadialShape'), gradColor1 = document.getElementById('txtGradColor1'), gradColor2 = document.getElementById('txtGradColor2'), gradOpacity1 = document.getElementById('txtGradOpacity1'), gradOpacity2 = document.getElementById('txtGradOpacity2'), solidColor = document.getElementById('txtColor'), solidField = document.getElementById('solidColorField'), gradTypeField = document.getElementById('gradTypeField'), gradAngleField = document.getElementById('gradAngleField'), radialShapeField = document.getElementById('radialShapeField'), gradColor1Field = document.getElementById('gradColor1Field'), gradColor2Field = document.getElementById('gradColor2Field');
-    if(txtText) txtText.oninput = e => { layer.text = e.target.value; update(); };
-    if(txtSize) txtSize.oninput = e => { layer.fontSizePercent = parseFloat(e.target.value); txtSize.nextElementSibling.innerText = layer.fontSizePercent+'%'; update(); };
-    if(txtStretchX) txtStretchX.oninput = e => { layer.stretchX = parseFloat(e.target.value); txtStretchX.nextElementSibling.innerText = layer.stretchX+'%'; update(); };
-    if(txtStretchY) txtStretchY.oninput = e => { layer.stretchY = parseFloat(e.target.value); txtStretchY.nextElementSibling.innerText = layer.stretchY+'%'; update(); };
-    if(txtOp) txtOp.oninput = e => { layer.opacity = parseFloat(e.target.value)/100; txtOp.nextElementSibling.innerText = Math.round(layer.opacity*100)+'%'; update(); };
-    if(txtRot) txtRot.oninput = e => { layer.rotation = parseFloat(e.target.value); update(); };
-    if(txtFont) txtFont.onchange = e => { layer.fontFamily = e.target.value; update(); };
-    if(txtShadow) txtShadow.onchange = e => { layer.shadow = e.target.checked; update(); };
-    if(txtStroke) txtStroke.onchange = e => { layer.stroke = e.target.checked; update(); };
-    if(btnB) btnB.onclick = () => { layer.bold = !layer.bold; loadProps(layer); update(); };
-    if(btnI) btnI.onclick = () => { layer.italic = !layer.italic; loadProps(layer); update(); };
-    if(btnU) btnU.onclick = () => { layer.underline = !layer.underline; loadProps(layer); update(); };
-    if(flipXBtn) flipXBtn.onclick = () => { layer.flipX = !layer.flipX; loadProps(layer); update(); };
-    if(flipYBtn) flipYBtn.onclick = () => { layer.flipY = !layer.flipY; loadProps(layer); update(); };
-    if(gradChk) gradChk.onchange = e => { layer.gradient = e.target.checked; if(layer.gradient){ if(solidField) solidField.style.display='none'; if(gradTypeField) gradTypeField.style.display='flex'; if(gradColor1Field) gradColor1Field.style.display='flex'; if(gradColor2Field) gradColor2Field.style.display='flex'; if(gradType && gradType.value === 'linear') { if(gradAngleField) gradAngleField.style.display='flex'; if(radialShapeField) radialShapeField.style.display='none'; } else { if(gradAngleField) gradAngleField.style.display='none'; if(radialShapeField) radialShapeField.style.display='flex'; } } else { if(solidField) solidField.style.display='flex'; if(gradTypeField) gradTypeField.style.display='none'; if(gradColor1Field) gradColor1Field.style.display='none'; if(gradColor2Field) gradColor2Field.style.display='none'; if(gradAngleField) gradAngleField.style.display='none'; if(radialShapeField) radialShapeField.style.display='none'; } update(); };
-    if(gradType) gradType.onchange = e => { layer.gradientType = e.target.value; if(layer.gradientType === 'linear') { if(gradAngleField) gradAngleField.style.display='flex'; if(radialShapeField) radialShapeField.style.display='none'; } else { if(gradAngleField) gradAngleField.style.display='none'; if(radialShapeField) radialShapeField.style.display='flex'; } update(); };
-    if(gradAngle) gradAngle.oninput = e => { layer.gradientAngle = parseFloat(e.target.value); gradAngle.nextElementSibling.innerText = layer.gradientAngle+'°'; update(); };
-    if(radialShape) radialShape.onchange = e => { layer.radialShape = e.target.value; update(); };
-    if(gradColor1) gradColor1.oninput = e => { layer.gradientColor1 = e.target.value; update(); };
-    if(gradColor2) gradColor2.oninput = e => { layer.gradientColor2 = e.target.value; update(); };
-    if(gradOpacity1) gradOpacity1.oninput = e => { layer.gradientOpacity1 = parseFloat(e.target.value)/100; gradOpacity1.nextElementSibling.innerText = Math.round(layer.gradientOpacity1*100)+'%'; update(); };
-    if(gradOpacity2) gradOpacity2.oninput = e => { layer.gradientOpacity2 = parseFloat(e.target.value)/100; gradOpacity2.nextElementSibling.innerText = Math.round(layer.gradientOpacity2*100)+'%'; update(); };
-    if(solidColor) solidColor.oninput = e => { layer.color = e.target.value; update(); };
-  }
-  function attachShapeEvents(layer){
-    let update = () => { renderFullPreview(); updateUI(); };
-    let shapeType=document.getElementById('shapeType'), shapeSize=document.getElementById('shapeSize'), shapeStretchX=document.getElementById('shapeStretchX'), shapeStretchY=document.getElementById('shapeStretchY'), shapeOp=document.getElementById('shapeOp'), shapeRot=document.getElementById('shapeRot'), shapeShadow=document.getElementById('shapeShadow'), shapeStroke=document.getElementById('shapeStroke'), flipXBtn=document.getElementById('shapeFlipXBtn'), flipYBtn=document.getElementById('shapeFlipYBtn'), gradChk=document.getElementById('shapeGrad'), gradType=document.getElementById('shapeGradType'), gradAngle=document.getElementById('shapeGradAngle'), radialShape=document.getElementById('shapeRadialShape'), gradColor1=document.getElementById('shapeGradColor1'), gradColor2=document.getElementById('shapeGradColor2'), gradOpacity1=document.getElementById('shapeGradOpacity1'), gradOpacity2=document.getElementById('shapeGradOpacity2'), solidColor=document.getElementById('shapeColor'), solidField=document.getElementById('shapeSolidColorField'), gradTypeField=document.getElementById('shapeGradTypeField'), gradAngleField=document.getElementById('shapeGradAngleField'), radialShapeField=document.getElementById('shapeRadialShapeField'), gradColor1Field=document.getElementById('shapeGradColor1Field'), gradColor2Field=document.getElementById('shapeGradColor2Field');
-    if(shapeType) shapeType.onchange=e=>{ layer.shapeType=e.target.value; update(); };
-    if(shapeSize) shapeSize.oninput=e=>{ layer.shapeSize=parseFloat(e.target.value); shapeSize.nextElementSibling.innerText=layer.shapeSize+'%'; update(); };
-    if(shapeStretchX) shapeStretchX.oninput=e=>{ layer.stretchX=parseFloat(e.target.value); shapeStretchX.nextElementSibling.innerText=layer.stretchX+'%'; update(); };
-    if(shapeStretchY) shapeStretchY.oninput=e=>{ layer.stretchY=parseFloat(e.target.value); shapeStretchY.nextElementSibling.innerText=layer.stretchY+'%'; update(); };
-    if(shapeOp) shapeOp.oninput=e=>{ layer.opacity=parseFloat(e.target.value)/100; shapeOp.nextElementSibling.innerText=Math.round(layer.opacity*100)+'%'; update(); };
-    if(shapeRot) shapeRot.oninput=e=>{ layer.rotation=parseFloat(e.target.value); update(); };
-    if(shapeShadow) shapeShadow.onchange=e=>{ layer.shadow=e.target.checked; update(); };
-    if(shapeStroke) shapeStroke.onchange=e=>{ layer.stroke=e.target.checked; update(); };
-    if(flipXBtn) flipXBtn.onclick=()=>{ layer.flipX=!layer.flipX; loadProps(layer); update(); };
-    if(flipYBtn) flipYBtn.onclick=()=>{ layer.flipY=!layer.flipY; loadProps(layer); update(); };
-    if(gradChk) gradChk.onchange=e=>{ layer.gradient=e.target.checked; if(layer.gradient){ if(solidField) solidField.style.display='none'; if(gradTypeField) gradTypeField.style.display='flex'; if(gradColor1Field) gradColor1Field.style.display='flex'; if(gradColor2Field) gradColor2Field.style.display='flex'; if(gradType && gradType.value==='linear'){ if(gradAngleField) gradAngleField.style.display='flex'; if(radialShapeField) radialShapeField.style.display='none'; } else { if(gradAngleField) gradAngleField.style.display='none'; if(radialShapeField) radialShapeField.style.display='flex'; } } else { if(solidField) solidField.style.display='flex'; if(gradTypeField) gradTypeField.style.display='none'; if(gradColor1Field) gradColor1Field.style.display='none'; if(gradColor2Field) gradColor2Field.style.display='none'; if(gradAngleField) gradAngleField.style.display='none'; if(radialShapeField) radialShapeField.style.display='none'; } update(); };
-    if(gradType) gradType.onchange=e=>{ layer.gradientType=e.target.value; if(layer.gradientType==='linear'){ if(gradAngleField) gradAngleField.style.display='flex'; if(radialShapeField) radialShapeField.style.display='none'; } else { if(gradAngleField) gradAngleField.style.display='none'; if(radialShapeField) radialShapeField.style.display='flex'; } update(); };
-    if(gradAngle) gradAngle.oninput=e=>{ layer.gradientAngle=parseFloat(e.target.value); gradAngle.nextElementSibling.innerText=layer.gradientAngle+'°'; update(); };
-    if(radialShape) radialShape.onchange=e=>{ layer.radialShape=e.target.value; update(); };
-    if(gradColor1) gradColor1.oninput=e=>{ layer.gradientColor1=e.target.value; update(); };
-    if(gradColor2) gradColor2.oninput=e=>{ layer.gradientColor2=e.target.value; update(); };
-    if(gradOpacity1) gradOpacity1.oninput=e=>{ layer.gradientOpacity1=parseFloat(e.target.value)/100; gradOpacity1.nextElementSibling.innerText=Math.round(layer.gradientOpacity1*100)+'%'; update(); };
-    if(gradOpacity2) gradOpacity2.oninput=e=>{ layer.gradientOpacity2=parseFloat(e.target.value)/100; gradOpacity2.nextElementSibling.innerText=Math.round(layer.gradientOpacity2*100)+'%'; update(); };
-    if(solidColor) solidColor.oninput=e=>{ layer.shapeColor=e.target.value; update(); };
-  }
-  function attachDynamicEvents(layer){
-    let update = () => { renderFullPreview(); updateUI(); };
-    let dynType=document.getElementById('dynType'), dynSize=document.getElementById('dynSize'), dynStretchX=document.getElementById('dynStretchX'), dynStretchY=document.getElementById('dynStretchY'), dynOp=document.getElementById('dynOp'), dynColor=document.getElementById('dynColor'), dynRot=document.getElementById('dynRot'), dynFont=document.getElementById('dynFont'), dynShadow=document.getElementById('dynShadow'), dynStroke=document.getElementById('dynStroke'), dynB=document.getElementById('dynB'), dynI=document.getElementById('dynI'), dynU=document.getElementById('dynU'), flipXBtn=document.getElementById('dynFlipXBtn'), flipYBtn=document.getElementById('dynFlipYBtn');
-    if(dynType) dynType.onchange=e=>{ layer.dynamicType=e.target.value; if(layer.dynamicType==='coord') loadProps(layer); update(); };
-    if(dynSize) dynSize.oninput=e=>{ layer.fontSizePercent=parseFloat(e.target.value); update(); };
-    if(dynStretchX) dynStretchX.oninput=e=>{ layer.stretchX=parseFloat(e.target.value); dynStretchX.nextElementSibling.innerText=layer.stretchX+'%'; update(); };
-    if(dynStretchY) dynStretchY.oninput=e=>{ layer.stretchY=parseFloat(e.target.value); dynStretchY.nextElementSibling.innerText=layer.stretchY+'%'; update(); };
-    if(dynOp) dynOp.oninput=e=>{ layer.opacity=parseFloat(e.target.value)/100; dynOp.nextElementSibling.innerText=Math.round(layer.opacity*100)+'%'; update(); };
-    if(dynColor) dynColor.oninput=e=>{ layer.color=e.target.value; update(); };
-    if(dynRot) dynRot.oninput=e=>{ layer.rotation=parseFloat(e.target.value); update(); };
-    if(dynFont) dynFont.onchange=e=>{ layer.fontFamily=e.target.value; update(); };
-    if(dynShadow) dynShadow.onchange=e=>{ layer.shadow=e.target.checked; update(); };
-    if(dynStroke) dynStroke.onchange=e=>{ layer.stroke=e.target.checked; update(); };
-    if(dynB) dynB.onclick=()=>{ layer.bold=!layer.bold; loadProps(layer); update(); };
-    if(dynI) dynI.onclick=()=>{ layer.italic=!layer.italic; loadProps(layer); update(); };
-    if(dynU) dynU.onclick=()=>{ layer.underline=!layer.underline; loadProps(layer); update(); };
-    if(flipXBtn) flipXBtn.onclick=()=>{ layer.flipX=!layer.flipX; loadProps(layer); update(); };
-    if(flipYBtn) flipYBtn.onclick=()=>{ layer.flipY=!layer.flipY; loadProps(layer); update(); };
-    if(layer.dynamicType === 'coord'){
-      let updateCoord = document.getElementById('updateCoord'), gpsBtn = document.getElementById('gpsBtn');
-      if(updateCoord) updateCoord.onclick=()=>{ let lat=parseFloat(document.getElementById('coordLat').value), lon=parseFloat(document.getElementById('coordLon').value); if(!isNaN(lat)&&!isNaN(lon)){ userLat=lat; userLon=lon; update(); } };
-      if(gpsBtn) gpsBtn.onclick=()=>{ if(navigator.geolocation) navigator.geolocation.getCurrentPosition(p=>{ userLat=p.coords.latitude; userLon=p.coords.longitude; document.getElementById('coordLat').value=userLat; document.getElementById('coordLon').value=userLon; update(); },()=>alert("Gagal")); else alert("GPS tidak didukung"); };
-    }
-  }
-  function attachImageEvents(layer){
-    let update = () => { renderFullPreview(); updateUI(); };
-    let imgScale=document.getElementById('imgScale'), imgStretchX=document.getElementById('imgStretchX'), imgStretchY=document.getElementById('imgStretchY'), imgOp=document.getElementById('imgOp'), imgRot=document.getElementById('imgRot'), imgBlend=document.getElementById('imgBlend'), replaceBtn=document.getElementById('replaceLogoBtn'), flipXBtn=document.getElementById('imgFlipXBtn'), flipYBtn=document.getElementById('imgFlipYBtn');
-    let shadowChk = document.getElementById('imgShadowChk');
-    let shadowColor = document.getElementById('imgShadowColor');
-    let shadowBlur = document.getElementById('imgShadowBlur');
-    let shadowOffsetX = document.getElementById('imgShadowOffsetX');
-    let shadowOffsetY = document.getElementById('imgShadowOffsetY');
-    let strokeChk = document.getElementById('imgStrokeChk');
-    let strokeColor = document.getElementById('imgStrokeColor');
-    let strokeWidth = document.getElementById('imgStrokeWidth');
-    let shadowColorField = document.getElementById('imgShadowColorField');
-    let shadowBlurField = document.getElementById('imgShadowBlurField');
-    let shadowOffsetXField = document.getElementById('imgShadowOffsetXField');
-    let shadowOffsetYField = document.getElementById('imgShadowOffsetYField');
-    let strokeColorField = document.getElementById('imgStrokeColorField');
-    let strokeWidthField = document.getElementById('imgStrokeWidthField');
-    if(imgScale) imgScale.oninput=e=>{ layer.scalePercent=parseFloat(e.target.value); update(); };
-    if(imgStretchX) imgStretchX.oninput=e=>{ layer.stretchX=parseFloat(e.target.value); imgStretchX.nextElementSibling.innerText=layer.stretchX+'%'; update(); };
-    if(imgStretchY) imgStretchY.oninput=e=>{ layer.stretchY=parseFloat(e.target.value); imgStretchY.nextElementSibling.innerText=layer.stretchY+'%'; update(); };
-    if(imgOp) imgOp.oninput=e=>{ layer.opacity=parseFloat(e.target.value)/100; imgOp.nextElementSibling.innerText=Math.round(layer.opacity*100)+'%'; update(); };
-    if(imgRot) imgRot.oninput=e=>{ layer.rotation=parseFloat(e.target.value); update(); };
-    if(imgBlend) imgBlend.onchange=e=>{ layer.blendMode=e.target.value; update(); };
-    if(replaceBtn) replaceBtn.onclick=()=>{ let inp=document.createElement('input'); inp.type='file'; inp.accept='image/*'; inp.onchange=e=>{ if(e.target.files.length) loadLogo(layer.id, e.target.files[0]); }; inp.click(); };
-    if(flipXBtn) flipXBtn.onclick=()=>{ layer.flipX=!layer.flipX; loadProps(layer); update(); };
-    if(flipYBtn) flipYBtn.onclick=()=>{ layer.flipY=!layer.flipY; loadProps(layer); update(); };
-    if(shadowChk) shadowChk.onchange=e=>{
-      layer.imgShadow = e.target.checked;
-      if(layer.imgShadow){
-        shadowColorField.style.display='flex';
-        shadowBlurField.style.display='flex';
-        shadowOffsetXField.style.display='flex';
-        shadowOffsetYField.style.display='flex';
-      } else {
-        shadowColorField.style.display='none';
-        shadowBlurField.style.display='none';
-        shadowOffsetXField.style.display='none';
-        shadowOffsetYField.style.display='none';
-      }
-      update();
-    };
-    if(shadowColor) shadowColor.oninput=e=>{ layer.imgShadowColor = e.target.value; update(); };
-    if(shadowBlur) shadowBlur.oninput=e=>{ layer.imgShadowBlur = parseFloat(e.target.value); shadowBlur.nextElementSibling.innerText = layer.imgShadowBlur+'px'; update(); };
-    if(shadowOffsetX) shadowOffsetX.oninput=e=>{ layer.imgShadowOffsetX = parseFloat(e.target.value); shadowOffsetX.nextElementSibling.innerText = layer.imgShadowOffsetX+'px'; update(); };
-    if(shadowOffsetY) shadowOffsetY.oninput=e=>{ layer.imgShadowOffsetY = parseFloat(e.target.value); shadowOffsetY.nextElementSibling.innerText = layer.imgShadowOffsetY+'px'; update(); };
-    if(strokeChk) strokeChk.onchange=e=>{
-      layer.imgStroke = e.target.checked;
-      if(layer.imgStroke){
-        strokeColorField.style.display='flex';
-        strokeWidthField.style.display='flex';
-      } else {
-        strokeColorField.style.display='none';
-        strokeWidthField.style.display='none';
-      }
-      update();
-    };
-    if(strokeColor) strokeColor.oninput=e=>{ layer.imgStrokeColor = e.target.value; update(); };
-    if(strokeWidth) strokeWidth.oninput=e=>{ layer.imgStrokeWidth = parseFloat(e.target.value); strokeWidth.nextElementSibling.innerText = layer.imgStrokeWidth+'px'; update(); };
-  }
-
-  function loadProps(layer){
-    let cont = document.getElementById('propContent');
-    if(layer.type === 'text') { cont.innerHTML = `<div class="prop-grid">${textPropHTML(layer)}</div>`; attachTextEvents(layer); }
-    else if(layer.type === 'shape') { cont.innerHTML = `<div class="prop-grid">${shapePropHTML(layer)}</div>`; attachShapeEvents(layer); }
-    else if(layer.type === 'dynamic') { cont.innerHTML = `<div class="prop-grid">${dynamicPropHTML(layer)}</div>`; attachDynamicEvents(layer); }
-    else if(layer.type === 'image') { cont.innerHTML = `<div class="prop-grid">${imagePropHTML(layer)}</div>`; attachImageEvents(layer); }
-  }
-
-  // ========== DRAG & DROP MULTI ==========
-  const canvas = document.getElementById('previewCanvas');
-  canvas.addEventListener('pointerdown', (e) => {
-    let dragLayers = [];
-    for (let id of selectedLayerIds) { let l = layers.find(l=>l.id===id); if(l && !l.locked) dragLayers.push(l); }
-    if (dragLayers.length === 0) return;
-    e.preventDefault();
-    dragActive = true;
-    draggingLayerIds = dragLayers.map(l=>l.id);
-    const rect = canvas.getBoundingClientRect();
-    const sx = currentPreviewW / rect.width, sy = currentPreviewH / rect.height;
-    let clientX, clientY;
-    if (e.touches) { clientX = e.touches[0].clientX; clientY = e.touches[0].clientY; }
-    else { clientX = e.clientX; clientY = e.clientY; }
-    dragStartCanvasX = (clientX - rect.left) * sx;
-    dragStartCanvasY = (clientY - rect.top) * sy;
-    dragStartCanvasX = Math.min(Math.max(0, dragStartCanvasX), currentPreviewW);
-    dragStartCanvasY = Math.min(Math.max(0, dragStartCanvasY), currentPreviewH);
-    canvas.setPointerCapture(e.pointerId);
-  });
-  canvas.addEventListener('pointermove', (e) => {
-    if (!dragActive || draggingLayerIds.length === 0) return;
-    const rect = canvas.getBoundingClientRect();
-    const sx = currentPreviewW / rect.width, sy = currentPreviewH / rect.height;
-    let clientX, clientY;
-    if (e.touches) { clientX = e.touches[0].clientX; clientY = e.touches[0].clientY; }
-    else { clientX = e.clientX; clientY = e.clientY; }
-    let canvasX = (clientX - rect.left) * sx;
-    let canvasY = (clientY - rect.top) * sy;
-    canvasX = Math.min(Math.max(0, canvasX), currentPreviewW);
-    canvasY = Math.min(Math.max(0, canvasY), currentPreviewH);
-    const deltaX = canvasX - dragStartCanvasX;
-    const deltaY = canvasY - dragStartCanvasY;
-    const deltaPercentX = (deltaX / currentPreviewW) * 100;
-    const deltaPercentY = (deltaY / currentPreviewH) * 100;
-    for (let id of draggingLayerIds) {
-      let l = layers.find(l=>l.id===id);
-      if (l && !l.locked) {
-        let newX = l.xPercent + deltaPercentX;
-        let newY = l.yPercent + deltaPercentY;
-        l.xPercent = Math.min(100, Math.max(0, newX));
-        l.yPercent = Math.min(100, Math.max(0, newY));
-      }
-    }
-    dragStartCanvasX = canvasX;
-    dragStartCanvasY = canvasY;
-    renderFullPreview();
-    updateUI();
-  });
-  canvas.addEventListener('pointerup', (e) => { dragActive = false; draggingLayerIds = []; canvas.releasePointerCapture(e.pointerId); });
-  canvas.addEventListener('touchmove', (e) => { if (dragActive) e.preventDefault(); }, { passive: false });
-
-  // ========== EKSPOR ==========
-  function exportHD(){
-    let ec = document.createElement('canvas');
-    let exportW, exportH;
-    if (hasImage && originalImage) {
-      exportW = originalW;
-      exportH = originalH;
-    } else {
-      exportW = 1200;
-      exportH = 900;
-    }
-    ec.width = exportW; ec.height = exportH;
-    let ctx = ec.getContext('2d');
-    if (hasImage && originalImage) {
-      ctx.drawImage(originalImage, 0, 0, exportW, exportH);
-    } else {
-      ctx.fillStyle = bgColor;
-      ctx.fillRect(0, 0, exportW, exportH);
-    }
-    for(let l of layers){
-      if(l.type==='text') drawText(ctx,l,exportW,exportH);
-      else if(l.type==='shape') drawShape(ctx,l,exportW,exportH);
-      else if(l.type==='dynamic'){
-        let c = l.dynamicType==='time'? getCurrentTimeString() : l.dynamicType==='date'? getCurrentDateString() : l.dynamicType==='day'? getCurrentDayString() : getCoordText();
-        drawDynamicText(ctx,l,c,exportW,exportH);
-      } else if(l.type==='image' && l.imageObj) drawImageLayer(ctx,l,exportW,exportH);
-    }
-    let a=document.createElement('a'); a.download=`watermark_${Date.now()}.png`; a.href=ec.toDataURL('image/png'); a.click();
-  }
-
-  // ========== FITUR KAMERA LIVE (FIX) ==========
-  async function startCamera(facingMode = 'environment') {
-    if (cameraStream) {
-      cameraStream.getTracks().forEach(track => track.stop());
-      cameraStream = null;
-    }
-    try {
-      const constraints = { video: { facingMode: { exact: facingMode } } };
-      cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
-      videoElem.srcObject = cameraStream;
-      videoElem.play();
-      cameraActive = true;
-    } catch (err) {
-      try {
-        const constraints = { video: { facingMode: facingMode } };
-        cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
-        videoElem.srcObject = cameraStream;
-        videoElem.play();
-        cameraActive = true;
-      } catch (e) {
-        alert("Tidak dapat mengakses kamera. Periksa izin.");
-      }
-    }
-  }
-
-  document.getElementById('openCameraBtn').addEventListener('click', async () => {
-    cameraModalElem.style.display = 'flex';
-    await startCamera(currentFacingMode);
-  });
-
-  document.getElementById('closeCameraModal').addEventListener('click', () => {
-    cameraModalElem.style.display = 'none';
-    if (cameraStream) {
-      cameraStream.getTracks().forEach(track => track.stop());
-      cameraStream = null;
-    }
-  });
-
-  captureBtn.addEventListener('click', () => {
-    if (!cameraActive || !videoElem.videoWidth) return;
-    const width = videoElem.videoWidth;
-    const height = videoElem.videoHeight;
-    cameraCanvas.width = width;
-    cameraCanvas.height = height;
-    const ctx = cameraCanvas.getContext('2d');
-    ctx.drawImage(videoElem, 0, 0, width, height);
-    cameraCanvas.toBlob(blob => {
-      const url = URL.createObjectURL(blob);
-      const img = new Image();
-      img.onload = () => {
-        setBackgroundImage(img);
-        URL.revokeObjectURL(url);
-        cameraModalElem.style.display = 'none';
-        if (cameraStream) {
-          cameraStream.getTracks().forEach(track => track.stop());
-          cameraStream = null;
+        function updateFirebaseStatus(connected, message) {
+            const statusEl = document.getElementById('firebaseStatus');
+            if (statusEl) {
+                if (connected) {
+                    statusEl.innerHTML = `<i class="fas fa-check-circle text-green-600"></i> ${message}`;
+                    statusEl.classList.remove('bg-red-100', 'text-red-700');
+                    statusEl.classList.add('bg-green-100', 'text-green-700');
+                } else {
+                    statusEl.innerHTML = `<i class="fas fa-exclamation-triangle text-amber-600"></i> ${message}`;
+                    statusEl.classList.remove('bg-green-100', 'text-green-700');
+                    statusEl.classList.add('bg-red-100', 'text-red-700');
+                }
+            }
         }
-      };
-      img.src = url;
-    }, 'image/jpeg', 0.9);
-  });
 
-  switchCameraBtn.addEventListener('click', () => {
-    currentFacingMode = currentFacingMode === 'environment' ? 'user' : 'environment';
-    startCamera(currentFacingMode);
-  });
-
-  // ========== FITUR GALERI & BACKGROUND ==========
-  document.getElementById('uploadBtn').addEventListener('click', () => { document.getElementById('imageUpload').click(); });
-  document.getElementById('imageUpload').addEventListener('change', (e) => {
-    if (e.target.files.length) {
-      const file = e.target.files[0];
-      const reader = new FileReader();
-      reader.onload = ev => {
-        const img = new Image();
-        img.onload = () => { setBackgroundImage(img); };
-        img.src = ev.target.result;
-      };
-      reader.readAsDataURL(file);
-    }
-  });
-  document.getElementById('setBgColorBtn').addEventListener('click', () => {
-    bgColor = document.getElementById('bgColorPicker').value;
-    resetBackground();
-  });
-  document.getElementById('resetBgBtn').addEventListener('click', () => {
-    resetBackground();
-  });
-
-  // ========== FITUR PRESET ==========
-  function savePreset() {
-    const presetData = { version: "1.0", timestamp: Date.now(), layers: layers.map(l => { const copy = { ...l }; if(copy.type === 'image' && copy.imageDataUrl) { copy.imageDataUrl = copy.imageDataUrl; delete copy.imageObj; } else { delete copy.imageObj; } return copy; }) };
-    const jsonStr = JSON.stringify(presetData, null, 2);
-    const blob = new Blob([jsonStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `aquamark_preset_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }
-
-  // Fungsi untuk memuat preset dari URL (dengan error handling)
-  function loadPresetFromURL(url) {
-    fetch(url)
-      .then(res => {
-        if (!res.ok) throw new Error('HTTP ' + res.status + ' - File tidak ditemukan');
-        return res.json();
-      })
-      .then(preset => {
-        if (!preset.layers || !Array.isArray(preset.layers)) throw new Error("Format preset salah");
-        layers = [];
-        selectedLayerIds.clear();
-        selectedLayerId = null;
-        for (let l of preset.layers) {
-          const newLayer = { ...l, id: genId() };
-          if (newLayer.type === 'image' && newLayer.imageDataUrl) {
-            const img = new Image();
-            img.src = newLayer.imageDataUrl;
-            newLayer.imageObj = img;
-          }
-          layers.push(newLayer);
+        async function enablePersistence() {
+            if (!window.db) return false;
+            try {
+                if (window.db.enablePersistence) await window.db.enablePersistence();
+                else if (window.firebase?.database) await window.firebase.database().enablePersistence();
+                console.log("Firebase persistence aktif");
+                return true;
+            } catch (err) { console.warn(err); return false; }
         }
-        setTimeout(() => {
-          updateUI();
-          renderFullPreview();
-          if (layers.length) {
-            selectedLayerId = layers[0].id;
-            selectedLayerIds.add(selectedLayerId);
-            loadProps(layers[0]);
-            updateUI();
-          } else {
-            document.getElementById('propContent').innerHTML = '<p style="text-align:center;">Tidak ada layer</p>';
-          }
-        }, 100);
-      })
-      .catch(err => alert('Gagal memuat preset dari URL "' + url + '": ' + err.message));
-  }
 
-  function loadPreset(file) {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const preset = JSON.parse(e.target.result);
-        if (!preset.layers || !Array.isArray(preset.layers)) throw new Error("Format preset salah");
-        layers = [];
-        selectedLayerIds.clear();
-        selectedLayerId = null;
-        for (let l of preset.layers) {
-          const newLayer = { ...l, id: genId() };
-          if (newLayer.type === 'image' && newLayer.imageDataUrl) {
-            const img = new Image();
-            img.src = newLayer.imageDataUrl;
-            newLayer.imageObj = img;
-          }
-          layers.push(newLayer);
+        async function setEntriesToFirebase(entriesArray) {
+            if (!isFirebaseReady || !window.db) return false;
+            try {
+                const entriesObj = {};
+                entriesArray.forEach(entry => { entriesObj[entry.id] = entry; });
+                await window.db.ref(DB_PATH).set(entriesObj);
+                updateFirebaseStatus(true, "Tersinkron");
+                return true;
+            } catch (err) {
+                console.error(err);
+                updateFirebaseStatus(false, "Gagal simpan");
+                return false;
+            }
         }
-        setTimeout(() => {
-          updateUI();
-          renderFullPreview();
-          if (layers.length) { selectedLayerId = layers[0].id; selectedLayerIds.add(selectedLayerId); loadProps(layers[0]); updateUI(); }
-          else document.getElementById('propContent').innerHTML = '<p style="text-align:center;">Tidak ada layer</p>';
-        }, 100);
-      } catch (err) { alert("Gagal memuat preset: " + err.message); }
-    };
-    reader.readAsText(file);
-  }
 
-  // ========== FITUR ICON ==========
-  const emojiList = ['😀','😂','😍','😎','😭','😡','❤️','💙','💚','💛','🧡','💜','⭐','🌟','🔥','✨','☀️','🌈','⚡','❄️','🎉','👍','👎','🙏','💯','📍','📌','🔔','💎','🐱','🐶','🐼','🌸','🍕','⚽'];
-  const emojiModal = document.getElementById('emojiModal');
-  document.getElementById('addIconBtn').addEventListener('click',()=>{
-    document.getElementById('emojiGrid').innerHTML = emojiList.map(e=>`<div class="emoji-item">${e}</div>`).join('');
-    emojiModal.style.display='flex';
-    document.querySelectorAll('.emoji-item').forEach(el=>{ el.addEventListener('click',()=>{ addLayer(createIconLayer(el.innerText)); emojiModal.style.display='none'; }); });
-  });
-  document.getElementById('closeEmojiModal').addEventListener('click',()=>emojiModal.style.display='none');
-  window.addEventListener('click',(e)=>{ if(e.target===emojiModal) emojiModal.style.display='none'; });
+        function normalizeEntry(entry) {
+            if (!entry.fotoList && entry.fotoBase64) {
+                entry.fotoList = [{
+                    base64: entry.fotoBase64,
+                    jamFoto: entry.jamFoto || "-",
+                    lat: entry.lat || null,
+                    lng: entry.lng || null
+                }];
+                delete entry.fotoBase64;
+                delete entry.jamFoto;
+                delete entry.lat;
+                delete entry.lng;
+            } else if (!entry.fotoList) {
+                entry.fotoList = [];
+            }
+            return entry;
+        }
 
-  // ========== FITUR PETA SATELIT ==========
-  const mapModalElem = document.getElementById('mapModal');
-  let isCapturing = false;
-  document.getElementById('addMapBtn').addEventListener('click', () => {
-    if (isCapturing) return;
-    isCapturing = true;
-    mapModalElem.style.display = 'flex';
-    const statusDiv = document.getElementById('mapStatus');
-    statusDiv.innerHTML = 'Mendapatkan lokasi GPS...';
-    const initAndCapture = (lat, lng) => {
-      userLat = lat; userLon = lng;
-      statusDiv.innerHTML = `Lokasi: ${lat.toFixed(4)}°, ${lng.toFixed(4)}° - Memuat peta satelit...`;
-      if (mapInstance) { mapInstance.remove(); mapInstance = null; }
-      mapInstance = L.map('map').setView([lat, lng], 16);
-      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Tiles &copy; Esri', maxZoom: 18 }).addTo(mapInstance);
-      if (currentMapMarker) mapInstance.removeLayer(currentMapMarker);
-      currentMapMarker = L.marker([lat, lng]).addTo(mapInstance);
-      setTimeout(() => {
-        statusDiv.innerHTML = 'Mengambil screenshot peta...';
-        html2canvas(document.getElementById('map'), { scale: 2, useCORS: true, logging: false, backgroundColor: null }).then(canvasMap => {
-          const imgDataUrl = canvasMap.toDataURL('image/png');
-          const img = new Image();
-          img.onload = () => {
-            const newLayer = { id: genId(), type: 'image', imageObj: img, imageDataUrl: imgDataUrl, scalePercent: 20, opacity: 0.9, rotation: 0, xPercent: 50, yPercent: 50, blendMode: 'normal', locked: false, flipX: false, flipY: false, stretchX: 100, stretchY: 100, imgShadow:false, imgStroke:false };
-            addLayer(newLayer);
-            mapModalElem.style.display = 'none';
-            if (mapInstance) { mapInstance.remove(); mapInstance = null; currentMapMarker = null; }
-            statusDiv.innerHTML = 'Peta berhasil ditambahkan!';
-            isCapturing = false;
-          };
-          img.src = imgDataUrl;
-        }).catch(err => { alert('Gagal screenshot: ' + err); mapModalElem.style.display = 'none'; isCapturing = false; });
-      }, 1000);
-    };
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => initAndCapture(position.coords.latitude, position.coords.longitude),
-        (error) => { statusDiv.innerHTML = 'Gagal dapat lokasi, gunakan default.'; initAndCapture(userLat, userLon); }
-      );
-    } else { statusDiv.innerHTML = 'GPS tidak didukung, gunakan default.'; initAndCapture(userLat, userLon); }
-  });
-  document.getElementById('closeMapModal').addEventListener('click', () => {
-    mapModalElem.style.display = 'none';
-    if (mapInstance) { mapInstance.remove(); mapInstance = null; currentMapMarker = null; }
-    isCapturing = false;
-  });
+        function attachRealtimeListener() {
+            if (!isFirebaseReady || !window.db) return;
+            if (listenerRef) listenerRef.off();
+            const ref = window.db.ref(DB_PATH);
+            listenerRef = ref.on('value', (snapshot) => {
+                if (isInternalUpdate) return;
+                const data = snapshot.val();
+                if (data && typeof data === 'object') {
+                    let entriesArray = Object.values(data);
+                    entriesArray = entriesArray.map(e => normalizeEntry(e));
+                    entriesArray.sort((a,b) => (a.id || 0) - (b.id || 0));
+                    dataEntries = entriesArray;
+                } else dataEntries = [];
+                renderTable();
+                updateNomorOtomatis();
+                updateFirebaseStatus(true, `Realtime (${dataEntries.length} data)`);
+            }, (error) => {
+                console.error("Listener error:", error);
+                updateFirebaseStatus(false, "Error listener");
+            });
+        }
 
-  // ========== TOMBOL PRESET (termasuk vertical & horizontal otomatis) ==========
-  document.getElementById('savePresetBtn').addEventListener('click', savePreset);
-  document.getElementById('loadPresetBtn').addEventListener('click', () => { document.getElementById('loadPresetFile').click(); });
-  document.getElementById('loadPresetFile').addEventListener('change', (e) => { if (e.target.files.length) loadPreset(e.target.files[0]); e.target.value = ''; });
+        function getNextId() { return dataEntries.length ? Math.max(...dataEntries.map(e=>e.id)) + 1 : 1; }
+        function updateNomorOtomatis() { document.getElementById("nomorOtomatis").value = getNextId(); }
 
-  // Tombol Preset Vertical & Horizontal - langsung muat file lokal
-  document.getElementById('presetVerticalBtn').addEventListener('click', () => {
-    loadPresetFromURL('preset-vertical.json');
-  });
-  document.getElementById('presetHorizontalBtn').addEventListener('click', () => {
-    loadPresetFromURL('preset-horizontal.json');
-  });
+        async function addEntry(newEntry) {
+            const updated = [...dataEntries, newEntry];
+            updated.sort((a,b) => a.id - b.id);
+            isInternalUpdate = true;
+            await setEntriesToFirebase(updated);
+            isInternalUpdate = false;
+            if (typeof window.logActivity === 'function') {
+                window.logActivity('TAMBAH DATA', `Menambahkan data suhu ID ${newEntry.id} - Suhu: ${newEntry.suhu}°C, Tanggal: ${newEntry.tanggal}`, 'Monitoring Suhu');
+            }
+        }
 
-  document.getElementById('resetAllLayersBtn').addEventListener('click', () => {
-    if (confirm('Hapus semua layer?')) { layers = []; selectedLayerIds.clear(); selectedLayerId = null; updateUI(); renderFullPreview(); document.getElementById('propContent').innerHTML = '<p style="text-align:center;">Klik layer untuk edit</p>'; }
-  });
+        async function deleteEntryById(id) {
+            const updated = dataEntries.filter(e => e.id !== id);
+            isInternalUpdate = true;
+            await setEntriesToFirebase(updated);
+            isInternalUpdate = false;
+            if (typeof window.logActivity === 'function') {
+                window.logActivity('HAPUS DATA', `Menghapus data suhu ID ${id}`, 'Monitoring Suhu');
+            }
+        }
 
-  // ========== INIT ==========
-  document.getElementById('addTextBtn').addEventListener('click',()=>addLayer(createTextLayer()));
-  document.getElementById('addShapeBtn').addEventListener('click',()=>addLayer(createShapeLayer()));
-  document.getElementById('addDateTimeBtn').addEventListener('click',()=>{ let t=prompt("time / date / day","time"); if(t && ['time','date','day'].includes(t)) addLayer(createDynamicLayer(t)); else alert("Tipe salah"); });
-  document.getElementById('addCoordBtn').addEventListener('click',()=>addLayer(createDynamicLayer('coord')));
-  document.getElementById('addImageBtn').addEventListener('click',()=>addLayer(createImageLayer()));
-  document.getElementById('clearLayersBtn').addEventListener('click',()=>{ layers=[]; selectedLayerIds.clear(); selectedLayerId=null; updateUI(); renderFullPreview(); document.getElementById('propContent').innerHTML='<p style="text-align:center;">Klik layer</p>'; });
-  document.getElementById('exportBtn').addEventListener('click',exportHD);
-  function escapeHtml(str){ return str.replace(/[&<>]/g,m=>m==='&'?'&amp;':m==='<'?'&lt;':'&gt;'); }
-  let anim=null; (function loop(){ if(layers.some(l=>l.type==='dynamic' && l.dynamicType==='time')) renderFullPreview(); anim=requestAnimationFrame(loop); })();
-  renderFullPreview();
-</script>
+        async function clearAllEntries() {
+            const count = dataEntries.length;
+            isInternalUpdate = true;
+            await setEntriesToFirebase([]);
+            isInternalUpdate = false;
+            if (typeof window.logActivity === 'function') {
+                window.logActivity('HAPUS SEMUA', `Menghapus semua data suhu (${count} entries)`, 'Monitoring Suhu');
+            }
+        }
+
+        // ========== INTEGRASI WATERMARK STUDIO ==========
+        let currentFotoList = [];
+        const fotoPreviewDiv = document.getElementById('fotoPreviewList');
+        const fotoCounterSpan = document.getElementById('fotoCounter');
+        const fotoDataArrayHidden = document.getElementById('fotoDataArray');
+        let studioWindow = null;
+
+        // Fungsi untuk menambahkan foto dari studio (langsung, tanpa watermark ulang)
+        function addFotoFromStudio(base64DataUrl) {
+            const petugas = document.getElementById('petugas').value.trim();
+            if (!petugas) {
+                alert("Isi nama petugas terlebih dahulu sebelum mengambil foto.");
+                return false;
+            }
+            if (currentFotoList.length >= 5) {
+                alert("Maksimal 5 foto.");
+                return false;
+            }
+            const now = new Date();
+            const waktuStr = now.toLocaleString('id-ID', { hour12: false, day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit', second:'2-digit' });
+            const fotoObj = {
+                base64: base64DataUrl,
+                jamFoto: waktuStr,
+                lat: null,
+                lng: null
+            };
+            currentFotoList.push(fotoObj);
+            updatePreviewUI();
+            updateHiddenArray();
+            return true;
+        }
+
+        // Fungsi untuk menambahkan screenshot (export PNG) ke daftar foto
+        function addScreenshotToFoto(dataUrl) {
+            if (currentFotoList.length >= 5) {
+                alert("Maksimal 5 foto. Hapus salah satu terlebih dahulu.");
+                return false;
+            }
+            const now = new Date();
+            const waktuStr = now.toLocaleString('id-ID', { hour12: false, day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit', second:'2-digit' });
+            const fotoObj = {
+                base64: dataUrl,
+                jamFoto: waktuStr + " (Screenshot)",
+                lat: null,
+                lng: null,
+                isScreenshot: true
+            };
+            currentFotoList.push(fotoObj);
+            updatePreviewUI();
+            updateHiddenArray();
+            return true;
+        }
+
+        function updatePreviewUI() {
+            fotoPreviewDiv.innerHTML = '';
+            currentFotoList.forEach((foto, idx) => {
+                const card = document.createElement('div');
+                card.className = 'preview-card';
+                card.innerHTML = `<img src="${foto.base64}"><div class="remove-btn" data-idx="${idx}"><i class="fas fa-times"></i></div>`;
+                fotoPreviewDiv.appendChild(card);
+            });
+            document.querySelectorAll('.remove-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const idx = parseInt(btn.dataset.idx);
+                    currentFotoList.splice(idx, 1);
+                    updatePreviewUI();
+                    updateHiddenArray();
+                });
+            });
+            fotoCounterSpan.innerText = `${currentFotoList.length} dari 5 foto`;
+        }
+
+        function updateHiddenArray() {
+            fotoDataArrayHidden.value = JSON.stringify(currentFotoList.map(f => ({ base64: f.base64, jamFoto: f.jamFoto, lat: f.lat, lng: f.lng })));
+        }
+
+        // Membuka popup Watermark Studio
+        function openWatermarkStudio() {
+            const petugas = document.getElementById('petugas').value.trim();
+            if (!petugas) {
+                alert("Isi nama petugas terlebih dahulu sebelum membuka kamera.");
+                return;
+            }
+            const width = 1100, height = 800;
+            const left = (screen.width - width) / 2;
+            const top = (screen.height - height) / 2;
+            studioWindow = window.open('watermark_studio.html', 'WatermarkStudio', `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`);
+            if (!studioWindow) {
+                alert("Popup terblokir. Izinkan popup untuk website ini.");
+            }
+        }
+
+        // Menerima pesan dari Watermark Studio
+        window.addEventListener('message', (event) => {
+            if (event.source === studioWindow && event.data && event.data.type === 'watermarkedFoto') {
+                const base64 = event.data.data;
+                if (base64) {
+                    addFotoFromStudio(base64);
+                    if (studioWindow && !studioWindow.closed) {
+                        studioWindow.close();
+                        studioWindow = null;
+                    }
+                }
+            }
+        });
+
+        document.getElementById('btnBukaStudio').addEventListener('click', openWatermarkStudio);
+
+        // ========== FUNGSI EDIT UNTUK ADMIN ==========
+        async function updateEntryInFirebase(updatedEntry) {
+            const index = dataEntries.findIndex(e => e.id == updatedEntry.id);
+            if (index !== -1) {
+                dataEntries[index] = updatedEntry;
+                isInternalUpdate = true;
+                await setEntriesToFirebase(dataEntries);
+                isInternalUpdate = false;
+                renderTable();
+                updateNomorOtomatis();
+            }
+        }
+
+        window.editEntry = async (id) => {
+            const entry = dataEntries.find(e => e.id == id);
+            if (!entry) return;
+            const newTanggal = prompt("Edit tanggal (YYYY-MM-DD):", entry.tanggal);
+            if (newTanggal && newTanggal !== entry.tanggal) {
+                entry.tanggal = newTanggal;
+                await updateEntryInFirebase(entry);
+                alert("Tanggal berhasil diubah.");
+                if (typeof window.logActivity === 'function') {
+                    window.logActivity('EDIT DATA', `Mengedit data suhu ID ${id} - Tanggal menjadi ${newTanggal}`, 'Monitoring Suhu');
+                }
+            }
+        };
+
+        // ========== RENDER TABEL ==========
+        window.viewAllFoto = (fotoList, startIdx) => {
+            if(!fotoList?.length) return;
+            let current = startIdx || 0;
+            const modal = document.createElement('div'); modal.className = "modal-img";
+            modal.innerHTML = `<img src="${fotoList[current].base64}"><div class="modal-caption">Foto ${current+1} dari ${fotoList.length}<br>${fotoList[current].jamFoto||''}</div><div style="position:absolute; bottom:10px; left:0; right:0; display:flex; justify-content:center; gap:20px;"><button id="prevFoto" class="bg-black/60 px-3 py-1 rounded-full text-white">◀ Prev</button><button id="nextFoto" class="bg-black/60 px-3 py-1 rounded-full text-white">Next ▶</button></div>`;
+            document.body.appendChild(modal);
+            const update = (newIdx) => {
+                if(newIdx>=0 && newIdx<fotoList.length){
+                    current = newIdx;
+                    modal.querySelector('img').src = fotoList[current].base64;
+                    modal.querySelector('.modal-caption').innerHTML = `Foto ${current+1} dari ${fotoList.length}<br>${fotoList[current].jamFoto||''}`;
+                }
+            };
+            modal.querySelector('#prevFoto').onclick = (e) => { e.stopPropagation(); update(current-1); };
+            modal.querySelector('#nextFoto').onclick = (e) => { e.stopPropagation(); update(current+1); };
+            modal.onclick = (e) => { if(e.target===modal) modal.remove(); };
+        };
+
+        function renderTable() {
+            const tbody = document.getElementById("tabelBody");
+            if(!dataEntries.length){ tbody.innerHTML=`<tr><td colspan="7" class="text-center py-6 text-gray-400">📭 Kosong</td></tr>`; return; }
+            let html = "";
+            dataEntries.forEach(entry => {
+                const fotoCount = entry.fotoList?.length || 0;
+                let thumbs = "";
+                if(fotoCount>0){
+                    thumbs = `<div class="foto-thumb-list">${entry.fotoList.slice(0,2).map((f,i)=>`<div class="thumb-item" onclick="viewAllFoto(entry.fotoList, ${i})"><img src="${f.base64}"></div>`).join('')}${fotoCount>2?`<span class="text-[10px] bg-gray-200 px-1 rounded-full">+${fotoCount-2}</span>`:''}</div>`;
+                }
+                const fotoCell = `<div class="flex flex-col items-center gap-1"><div class="flex justify-center">${thumbs}</div><button type="button" onclick="viewAllFoto(entry.fotoList, 0)" class="text-primary text-[10px] md:text-xs hover:underline"><i class="fas fa-images"></i> ${fotoCount} foto</button></div>`;
+                let editButtonHtml = '';
+                if (userRole === 'admin') {
+                    editButtonHtml = `<button onclick="editEntry(${entry.id})" class="bg-blue-100 text-blue-600 px-2 py-1 rounded-full text-[10px] mr-1"><i class="fas fa-edit"></i> Edit</button>`;
+                }
+                html += `<tr class="border-b hover:bg-slate-50">
+                    <td class="py-2 px-1 font-mono">${entry.id}</td>
+                    <td class="py-2 px-1">${entry.tanggal}</td>
+                    <td class="py-2 px-1 font-semibold">${entry.suhu} °C</td>
+                    <td class="py-2 px-1 text-center">${fotoCell}</td>
+                    <td class="py-2 px-1">${escapeHtml(entry.petugas)}</td>
+                    <td class="py-2 px-1 max-w-[120px] truncate">${escapeHtml(entry.keterangan||'-')}</td>
+                    <td class="py-2 px-1">
+                        ${editButtonHtml}
+                        <button onclick="deleteEntry(${entry.id})" class="bg-red-100 text-red-600 px-2 py-1 rounded-full text-[10px]"><i class="fas fa-trash-can"></i> Hapus</button>
+                    </td>
+                </tr>`;
+            });
+            tbody.innerHTML = html;
+            window.entryData = dataEntries;
+        }
+        window.deleteEntry = async (id) => { if(confirm("Hapus data suhu ini?")) await deleteEntryById(id); };
+        function escapeHtml(s) { if(!s) return ''; return s.replace(/[&<>]/g, m=>m==='&'?'&amp;':m==='<'?'&lt;':'&gt;'); }
+
+        // ========== FORM SUBMIT ==========
+        const form = document.getElementById('formSuhu');
+        const tanggalInput = document.getElementById('tanggal');
+        const suhuInput = document.getElementById('suhu');
+        const petugasInput = document.getElementById('petugas');
+        const keteranganInput = document.getElementById('keterangan');
+        const resetBtn = document.getElementById('btnResetForm');
+        tanggalInput.value = new Date().toISOString().split('T')[0];
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (userRole === 'guest') {
+                alert("Anda tidak memiliki izin untuk menyimpan data. Silakan login.");
+                return;
+            }
+            const tanggal = tanggalInput.value.trim();
+            const suhu = parseFloat(suhuInput.value);
+            const petugas = petugasInput.value.trim();
+            if(!tanggal || isNaN(suhu)) return alert("Lengkapi tanggal dan suhu!");
+            if(!petugas) return alert("Isi nama petugas!");
+            if(currentFotoList.length === 0) return alert("Minimal 1 foto dokumentasi!");
+            const newId = getNextId();
+            const newEntry = {
+                id: newId,
+                tanggal: tanggal,
+                suhu: suhu.toFixed(1),
+                petugas: petugas,
+                keterangan: keteranganInput.value.trim(),
+                fotoList: [...currentFotoList]
+            };
+            await addEntry(newEntry);
+            resetFormInput();
+            alert(`✅ Tersimpan dengan ${currentFotoList.length} foto. Firebase tersinkron.`);
+        });
+
+        function resetFormInput() {
+            tanggalInput.value = new Date().toISOString().split('T')[0];
+            suhuInput.value = '';
+            petugasInput.value = '';
+            keteranganInput.value = '';
+            currentFotoList = [];
+            updatePreviewUI();
+            updateHiddenArray();
+            updateNomorOtomatis();
+            if (studioWindow && !studioWindow.closed) studioWindow.close();
+        }
+        resetBtn.addEventListener('click', () => { if(confirm("Reset form?")) resetFormInput(); });
+        document.getElementById('btnHapusSemua').addEventListener('click', async () => { 
+            if (userRole !== 'admin') { alert("Hanya admin yang dapat menghapus semua data."); return; }
+            if(confirm("Hapus SEMUA data suhu?")){ 
+                await clearAllEntries(); 
+                resetFormInput(); 
+                alert("Semua data dihapus dari Firebase.");
+            } 
+        });
+
+        // ========== EXPORT PNG (SCREENSHOT + OTOMATIS TAMBAH KE FOTO) ==========
+        document.getElementById('btnExportPNG').addEventListener('click', async function() {
+            // Ambil elemen yang akan di-screenshot (container utama, bisa juga seluruh body)
+            const element = document.querySelector('.container') || document.body;
+            try {
+                // Tampilkan indikator loading sebentar (opsional)
+                this.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Memproses...';
+                this.disabled = true;
+
+                const canvas = await html2canvas(element, {
+                    scale: 1.5,
+                    useCORS: true,
+                    backgroundColor: '#ffffff',
+                    allowTaint: false,
+                    logging: false
+                });
+                const dataUrl = canvas.toDataURL('image/png');
+
+                // Tambahkan screenshot ke daftar foto
+                const success = addScreenshotToFoto(dataUrl);
+                if (success) {
+                    alert('✅ Screenshot berhasil ditambahkan ke daftar foto dokumentasi.');
+                } else {
+                    alert('⚠️ Gagal menambahkan screenshot (mungkin sudah mencapai batas 5 foto).');
+                }
+            } catch(err) {
+                alert('❌ Gagal mengambil screenshot: ' + err.message);
+            } finally {
+                this.innerHTML = '<i class="fas fa-file-image mr-1"></i> Export PNG';
+                this.disabled = false;
+            }
+        });
+
+        // ======================== MULTI-ROLE HANDLER ========================
+        window.addEventListener('roleChanged', (e) => {
+            userRole = e.detail.role;
+            const roleDisplaySpan = document.getElementById('userRoleDisplay');
+            if (roleDisplaySpan) {
+                if (userRole === 'admin') roleDisplaySpan.innerHTML = '<i class="fas fa-user-shield"></i> Admin';
+                else if (userRole === 'user') roleDisplaySpan.innerHTML = '<i class="fas fa-user"></i> User';
+                else roleDisplaySpan.innerHTML = '<i class="fas fa-user-friends"></i> Tamu';
+            }
+            const formInputs = document.querySelectorAll('#formSuhu input, #formSuhu select, #formSuhu textarea, #formSuhu button[type="submit"]');
+            formInputs.forEach(inp => {
+                if (userRole === 'guest') inp.disabled = true;
+                else inp.disabled = false;
+            });
+            const hapusSemuaBtn = document.getElementById('btnHapusSemua');
+            if (hapusSemuaBtn) {
+                if (userRole !== 'admin') hapusSemuaBtn.style.display = 'none';
+                else hapusSemuaBtn.style.display = 'inline-flex';
+            }
+            renderTable();
+        });
+
+        // ======================== INISIALISASI FIREBASE ========================
+        async function initFirebase() {
+            if (!window.db) { setTimeout(initFirebase, 300); return; }
+            isFirebaseReady = true;
+            await enablePersistence();
+            attachRealtimeListener();
+            updateFirebaseStatus(true, "Terhubung (realtime)");
+            updateNomorOtomatis();
+        }
+        initFirebase();
+
+        // ========== TOMBOL NAVIGASI ==========
+        document.getElementById('backToDashboardBtn').addEventListener('click', () => window.location.href = 'index.html');
+        document.getElementById('refreshPageBtn').addEventListener('click', () => window.location.reload());
+    </script>
 </body>
 </html>
