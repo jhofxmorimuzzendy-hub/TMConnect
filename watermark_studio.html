@@ -3,23 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Watermark Studio - Kirim ke Monitoring</title>
-    <link href="https://cdn.tailwindcss.com" rel="stylesheet">
+    <title>Watermark Studio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         body { background: #f0f4f8; font-family: 'Inter', sans-serif; }
         .preview-container { position: relative; display: inline-block; }
-        #resultCanvas { border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); max-width: 100%; }
+        #resultCanvas { border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); max-width: 100%; background: #e2e8f0; }
         .control-group { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
         .btn-primary { background: #1e6f5c; color: white; transition: 0.2s; }
         .btn-primary:hover { background: #0e5a48; transform: translateY(-2px); }
         .btn-secondary { background: #e2e8f0; color: #1e293b; }
         .btn-secondary:hover { background: #cbd5e1; }
+        .btn-success { background: #0b7e4d; color: white; }
+        .btn-success:hover { background: #08633d; transform: translateY(-2px); }
         video { border-radius: 16px; background: #000; max-width: 100%; }
     </style>
 </head>
 <body>
     <div class="max-w-6xl mx-auto px-4 py-6">
+        <!-- Header -->
         <div class="flex items-center justify-between mb-6">
             <h1 class="text-2xl font-bold text-slate-800"><i class="fas fa-palette text-primary mr-2"></i> Watermark Studio</h1>
             <button onclick="window.close()" class="text-gray-500 hover:text-red-500"><i class="fas fa-times-circle text-2xl"></i></button>
@@ -93,11 +97,13 @@
                 <div class="bg-white rounded-2xl p-4 shadow text-center">
                     <h2 class="font-semibold mb-2"><i class="fas fa-image mr-2 text-primary"></i> Hasil Akhir</h2>
                     <div class="preview-container">
-                        <canvas id="resultCanvas" width="400" height="300" class="border border-gray-200 rounded-xl bg-gray-100"></canvas>
+                        <canvas id="resultCanvas" width="400" height="300"></canvas>
                     </div>
                     <div class="mt-4 flex flex-col gap-3">
-                        <button id="sendToMonitoringBtn" class="btn-primary px-5 py-3 rounded-xl text-lg font-semibold"><i class="fas fa-paper-plane mr-2"></i> Kirim ke Monitoring</button>
-                        <button id="downloadBtn" class="btn-secondary px-5 py-3 rounded-xl text-lg font-semibold"><i class="fas fa-download mr-2"></i> Download PNG</button>
+                        <!-- Tombol Export PNG (yang sudah ada) -->
+                        <button id="exportPngBtn" class="btn-secondary px-5 py-3 rounded-xl text-lg font-semibold"><i class="fas fa-download mr-2"></i> Download PNG</button>
+                        <!-- Tombol Kirim ke Monitoring (baru) -->
+                        <button id="sendToMonitoringBtn" class="btn-success px-5 py-3 rounded-xl text-lg font-semibold"><i class="fas fa-paper-plane mr-2"></i> Kirim ke Monitoring</button>
                     </div>
                     <p class="text-xs text-gray-400 mt-2"><i class="fas fa-info-circle"></i> Klik "Kirim ke Monitoring" untuk langsung menambahkan foto ke form monitoring</p>
                 </div>
@@ -116,8 +122,8 @@
         const captureBtn = document.getElementById('captureBtn');
         const uploadInput = document.getElementById('uploadInput');
         const applyBtn = document.getElementById('applyWatermarkBtn');
+        const exportBtn = document.getElementById('exportPngBtn');
         const sendBtn = document.getElementById('sendToMonitoringBtn');
-        const downloadBtn = document.getElementById('downloadBtn');
 
         const watermarkText = document.getElementById('watermarkText');
         const watermarkPosition = document.getElementById('watermarkPosition');
@@ -127,7 +133,7 @@
         const opacityValue = document.getElementById('opacityValue');
         const watermarkShape = document.getElementById('watermarkShape');
 
-        let currentImageData = null; // ImageData atau canvas sumber
+        let currentImageData = null; // canvas sumber
 
         // ========== KAMERA ==========
         let stream = null;
@@ -149,7 +155,7 @@
                         video.srcObject = null;
                         captureBtn.disabled = true;
                         startCameraBtn.innerHTML = '<i class="fas fa-play mr-2"></i> Buka Kamera';
-                        startCameraBtn.onclick = arguments.callee; // reset handler
+                        startCameraBtn.onclick = arguments.callee; // reset
                     }
                 };
             } catch (err) {
@@ -164,12 +170,10 @@
             canvas.height = video.videoHeight;
             const ctx2 = canvas.getContext('2d');
             ctx2.drawImage(video, 0, 0);
-            // Simpan sebagai sumber
             currentImageData = canvas;
             // Tampilkan di result sementara
             ctx.clearRect(0, 0, resultCanvas.width, resultCanvas.height);
             ctx.drawImage(canvas, 0, 0, resultCanvas.width, resultCanvas.height);
-            // Terapkan watermark otomatis
             applyWatermark();
         });
 
@@ -197,9 +201,22 @@
 
         // ========== WATERMARK ==========
         function applyWatermark() {
-            if (!currentImageData) return alert('Ambil foto atau unggah gambar dulu.');
+            if (!currentImageData) {
+                // Default placeholder
+                const temp = document.createElement('canvas');
+                temp.width = 400;
+                temp.height = 300;
+                const tctx = temp.getContext('2d');
+                tctx.fillStyle = '#e2e8f0';
+                tctx.fillRect(0,0,400,300);
+                tctx.fillStyle = '#1e6f5c';
+                tctx.font = '20px Inter';
+                tctx.textAlign = 'center';
+                tctx.fillText('Ambil foto atau unggah', 200, 150);
+                currentImageData = temp;
+            }
             const srcCanvas = currentImageData;
-            // Atur ukuran resultCanvas mengikuti rasio
+            // Atur ukuran resultCanvas
             const maxW = 600, maxH = 450;
             let w = srcCanvas.width, h = srcCanvas.height;
             if (w > maxW) { h = h * maxW / w; w = maxW; }
@@ -210,7 +227,7 @@
             ctx.clearRect(0, 0, w, h);
             ctx.drawImage(srcCanvas, 0, 0, w, h);
 
-            // Parameter
+            // Parameter watermark
             const text = watermarkText.value || '© Watermark';
             const pos = watermarkPosition.value;
             const size = parseInt(watermarkSize.value) || 32;
@@ -226,8 +243,6 @@
             const metrics = ctx.measureText(text);
             const tw = metrics.width;
             const th = size * 1.2;
-
-            // Tentukan posisi
             let x, y;
             const pad = 20;
             switch(pos) {
@@ -238,8 +253,7 @@
                 case 'center': x = w/2; y = h/2; break;
                 default: x = w - pad - tw/2; y = pad + th/2;
             }
-
-            // Gambar shape di belakang teks
+            // Shape
             if (shape !== 'none') {
                 const rectW = tw + 20;
                 const rectH = th + 12;
@@ -256,19 +270,17 @@
                     ctx.fill();
                 }
             }
-
-            // Gambar teks
+            // Teks
             ctx.fillStyle = color;
             ctx.shadowColor = 'rgba(0,0,0,0.5)';
             ctx.shadowBlur = 6;
             ctx.fillText(text, x, y);
             ctx.restore();
 
-            // Update opacity display
             opacityValue.textContent = opacity.toFixed(2);
         }
 
-        // roundRect polyfill jika tidak didukung
+        // Polyfill roundRect
         if (!CanvasRenderingContext2D.prototype.roundRect) {
             CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
                 if (r > w/2) r = w/2;
@@ -284,32 +296,13 @@
 
         applyBtn.addEventListener('click', applyWatermark);
 
-        // Event listener untuk perubahan realtime (opsional)
+        // Event perubahan realtime
         [watermarkText, watermarkPosition, watermarkSize, watermarkColor, watermarkOpacity, watermarkShape].forEach(el => {
             el.addEventListener('input', applyWatermark);
         });
 
-        // ========== KIRIM KE MONITORING ==========
-        sendBtn.addEventListener('click', () => {
-            if (!currentImageData) return alert('Tidak ada gambar untuk dikirim.');
-            // Ambil data URL dari resultCanvas (sudah ada watermark)
-            const dataUrl = resultCanvas.toDataURL('image/png');
-            // Kirim ke parent window
-            if (window.opener) {
-                window.opener.postMessage({
-                    type: 'watermarkedFoto',
-                    data: dataUrl
-                }, '*');
-                // Tutup popup setelah sukses
-                alert('✅ Foto berhasil dikirim ke Monitoring!');
-                window.close();
-            } else {
-                alert('Gagal: tidak ada parent window. Pastikan halaman ini dibuka sebagai popup.');
-            }
-        });
-
-        // ========== DOWNLOAD PNG ==========
-        downloadBtn.addEventListener('click', () => {
+        // ========== EKSPORT PNG (tombol yang sudah ada) ==========
+        exportBtn.addEventListener('click', () => {
             if (!currentImageData) return alert('Tidak ada gambar.');
             const link = document.createElement('a');
             link.download = `watermark_${Date.now()}.png`;
@@ -317,21 +310,38 @@
             link.click();
         });
 
-        // Inisialisasi dengan contoh watermark
+        // ========== KIRIM KE MONITORING (tombol baru) ==========
+        sendBtn.addEventListener('click', () => {
+            if (!currentImageData) return alert('Tidak ada gambar untuk dikirim.');
+            const dataUrl = resultCanvas.toDataURL('image/png');
+            if (window.opener) {
+                window.opener.postMessage({
+                    type: 'watermarkedFoto',
+                    data: dataUrl
+                }, '*');
+                alert('✅ Foto berhasil dikirim ke Monitoring!');
+                // Opsional: tutup popup
+                // window.close();
+            } else {
+                alert('Gagal: tidak ada parent window. Pastikan halaman ini dibuka sebagai popup.');
+            }
+        });
+
+        // ========== INISIALISASI ==========
+        // Tampilkan placeholder awal
         setTimeout(() => {
-            // buat kanvas default jika belum ada
             if (!currentImageData) {
-                const tempCanvas = document.createElement('canvas');
-                tempCanvas.width = 400;
-                tempCanvas.height = 300;
-                const tctx = tempCanvas.getContext('2d');
+                const temp = document.createElement('canvas');
+                temp.width = 400;
+                temp.height = 300;
+                const tctx = temp.getContext('2d');
                 tctx.fillStyle = '#e2e8f0';
                 tctx.fillRect(0,0,400,300);
                 tctx.fillStyle = '#1e6f5c';
                 tctx.font = '20px Inter';
                 tctx.textAlign = 'center';
                 tctx.fillText('Ambil foto atau unggah', 200, 150);
-                currentImageData = tempCanvas;
+                currentImageData = temp;
                 applyWatermark();
             }
         }, 200);
