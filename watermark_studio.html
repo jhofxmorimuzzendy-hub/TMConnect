@@ -18,9 +18,13 @@
         .btn-secondary:hover { background: #cbd5e1; }
         .btn-success { background: #0b7e4d; color: white; }
         .btn-success:hover { background: #08633d; transform: translateY(-2px); }
+        .btn-preset { background: #8b5cf6; color: white; }
+        .btn-preset:hover { background: #7c3aed; transform: translateY(-2px); }
         video { border-radius: 16px; background: #000; max-width: 100%; }
         .orient-btn { padding: 6px 14px; border-radius: 20px; border: 2px solid #ccc; cursor: pointer; transition: 0.2s; }
         .orient-btn.active { border-color: #1e6f5c; background: #1e6f5c; color: white; }
+        .preset-file-label { background: #e0e7ff; padding: 6px 14px; border-radius: 20px; cursor: pointer; }
+        .preset-file-label:hover { background: #c7d2fe; }
     </style>
 </head>
 <body>
@@ -89,13 +93,24 @@
                                 <option value="circle">Lingkaran</option>
                             </select>
                         </div>
-                        <!-- ORIENTASI : VERTICAL / HORIZONTAL -->
+                        <!-- ORIENTASI -->
                         <div class="sm:col-span-2">
                             <label class="text-sm font-medium mr-4">Orientasi Teks</label>
                             <div class="inline-flex gap-2">
                                 <button id="orientHorizontal" class="orient-btn active">Horizontal</button>
                                 <button id="orientVertical" class="orient-btn">Vertikal</button>
                             </div>
+                        </div>
+                        <!-- PRESET DARI FILE JSON -->
+                        <div class="sm:col-span-2 flex flex-wrap items-center gap-3 border-t pt-3 mt-2">
+                            <span class="text-sm font-medium">Preset dari JSON:</span>
+                            <label class="preset-file-label text-sm">
+                                <i class="fas fa-file-upload mr-1"></i> Pilih File JSON
+                                <input type="file" id="presetFileInput" accept=".json" class="hidden">
+                            </label>
+                            <button id="presetVerticalBtn" class="btn-preset px-4 py-1.5 rounded-full text-sm"><i class="fas fa-arrow-up mr-1"></i> Vertikal</button>
+                            <button id="presetHorizontalBtn" class="btn-preset px-4 py-1.5 rounded-full text-sm"><i class="fas fa-arrow-right mr-1"></i> Horizontal</button>
+                            <span id="presetStatus" class="text-xs text-gray-500">Belum ada file</span>
                         </div>
                     </div>
                     <button id="applyWatermarkBtn" class="mt-3 bg-primary text-white px-5 py-2 rounded-xl hover:bg-accent transition"><i class="fas fa-check mr-2"></i> Terapkan Watermark</button>
@@ -142,9 +157,14 @@
         const watermarkShape = document.getElementById('watermarkShape');
         const orientHorizontal = document.getElementById('orientHorizontal');
         const orientVertical = document.getElementById('orientVertical');
+        const presetFileInput = document.getElementById('presetFileInput');
+        const presetVerticalBtn = document.getElementById('presetVerticalBtn');
+        const presetHorizontalBtn = document.getElementById('presetHorizontalBtn');
+        const presetStatus = document.getElementById('presetStatus');
 
         let currentImageData = null;
         let orientation = 'horizontal'; // 'horizontal' atau 'vertical'
+        let presetData = null; // objek dari file JSON
 
         // ========== ORIENTASI TOGGLE ==========
         orientHorizontal.addEventListener('click', () => {
@@ -223,6 +243,64 @@
             reader.readAsDataURL(file);
         });
 
+        // ========== PRESET DARI FILE JSON ==========
+        presetFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                try {
+                    const json = JSON.parse(ev.target.result);
+                    // Validasi struktur sederhana
+                    if (json.vertical && json.horizontal) {
+                        presetData = json;
+                        presetStatus.textContent = `✅ File loaded: ${file.name}`;
+                        presetStatus.style.color = 'green';
+                        alert('File preset berhasil dimuat. Gunakan tombol "Vertikal" atau "Horizontal" untuk menerapkan.');
+                    } else {
+                        alert('Format JSON salah. Harus memiliki properti "vertical" dan "horizontal".');
+                    }
+                } catch (err) {
+                    alert('Gagal parsing JSON: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
+        });
+
+        function applyPreset(presetKey) {
+            if (!presetData) {
+                alert('Silakan pilih file JSON preset terlebih dahulu.');
+                return;
+            }
+            const preset = presetData[presetKey];
+            if (!preset) {
+                alert(`Preset "${presetKey}" tidak ditemukan dalam file.`);
+                return;
+            }
+            // Terapkan ke kontrol
+            if (preset.text) watermarkText.value = preset.text;
+            if (preset.position) watermarkPosition.value = preset.position;
+            if (preset.size) watermarkSize.value = preset.size;
+            if (preset.color) watermarkColor.value = preset.color;
+            if (preset.opacity) {
+                watermarkOpacity.value = preset.opacity;
+                opacityValue.textContent = preset.opacity.toFixed(2);
+            }
+            if (preset.shape) watermarkShape.value = preset.shape;
+            if (preset.orientation) {
+                orientation = preset.orientation;
+                if (orientation === 'vertical') {
+                    orientVertical.click();
+                } else {
+                    orientHorizontal.click();
+                }
+            }
+            applyWatermark();
+        }
+
+        presetVerticalBtn.addEventListener('click', () => applyPreset('vertical'));
+        presetHorizontalBtn.addEventListener('click', () => applyPreset('horizontal'));
+
         // ========== WATERMARK ==========
         function applyWatermark() {
             if (!currentImageData) {
@@ -265,7 +343,6 @@
 
             let tw, th;
             if (isVertical) {
-                // Teks vertikal: ukuran lebar = ukuran font, tinggi = jumlah karakter * ukuran font * 1.2
                 const chars = text.split('');
                 const lineHeight = size * 1.2;
                 tw = size;
@@ -287,7 +364,7 @@
                 default: x = w - pad - (isVertical ? tw/2 : tw/2); y = pad + th/2;
             }
 
-            // Shape (background)
+            // Shape
             if (shape !== 'none') {
                 let rectW, rectH;
                 if (isVertical) {
@@ -370,7 +447,7 @@
                     data: dataUrl
                 }, '*');
                 alert('✅ Foto berhasil dikirim ke Monitoring!');
-                // window.close(); // opsional
+                // window.close();
             } else {
                 alert('Gagal: tidak ada parent window. Pastikan halaman ini dibuka sebagai popup.');
             }
