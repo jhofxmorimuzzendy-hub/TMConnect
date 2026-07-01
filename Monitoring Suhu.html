@@ -106,6 +106,82 @@
             align-items: center;
             gap: 6px;
         }
+        /* Modal edit */
+        .edit-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 3000;
+            padding: 1rem;
+        }
+        .edit-modal-box {
+            background: white;
+            border-radius: 28px;
+            max-width: 440px;
+            width: 100%;
+            padding: 1.5rem;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .edit-modal-box h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1e6f5c;
+            margin-bottom: 1rem;
+        }
+        .edit-modal-box label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 0.2rem;
+        }
+        .edit-modal-box input {
+            width: 100%;
+            border: 1px solid #d1d5db;
+            border-radius: 16px;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.95rem;
+            margin-bottom: 0.75rem;
+        }
+        .edit-modal-box input:focus {
+            outline: 2px solid #1e6f5c;
+            border-color: transparent;
+        }
+        .edit-modal-box .btn-row {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 0.5rem;
+        }
+        .edit-modal-box .btn-row button {
+            flex: 1;
+            padding: 0.6rem;
+            border-radius: 40px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: 0.15s;
+        }
+        .edit-modal-box .btn-save {
+            background: #1e6f5c;
+            color: white;
+        }
+        .edit-modal-box .btn-save:hover {
+            background: #0e5a48;
+        }
+        .edit-modal-box .btn-cancel {
+            background: #e5e7eb;
+            color: #1f2937;
+        }
+        .edit-modal-box .btn-cancel:hover {
+            background: #d1d5db;
+        }
+        .edit-modal-box .readonly-hari {
+            background: #f3f4f6;
+            color: #4b5563;
+        }
     </style>
 </head>
 <body>
@@ -140,11 +216,15 @@
                     <div class="grid grid-cols-1 xs:grid-cols-3 gap-3 md:gap-5">
                         <div><label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Nomor</label><input type="text" id="nomorOtomatis" readonly class="w-full bg-gray-100 border border-gray-300 rounded-xl px-3 py-2 md:py-2.5 text-gray-600 font-mono text-sm"></div>
                         <div><label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Tanggal <span class="text-red-500">*</span></label><input type="date" id="tanggal" required class="w-full border border-gray-300 rounded-xl px-3 py-2 md:py-2.5 text-sm focus:ring-2 focus:ring-primary focus:border-primary"></div>
-                        <div><label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Petugas <span class="text-red-500">*</span></label><input type="text" id="petugas" required placeholder="Nama petugas" class="w-full border border-gray-300 rounded-xl px-3 py-2 md:py-2.5 text-sm focus:ring-2 focus:ring-primary"></div>
+                        <div><label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Waktu <span class="text-red-500">*</span></label><input type="time" id="waktu" required class="w-full border border-gray-300 rounded-xl px-3 py-2 md:py-2.5 text-sm focus:ring-2 focus:ring-primary focus:border-primary"></div>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-5">
                         <div><label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Suhu (°C) <span class="text-red-500">*</span></label><input type="number" step="0.1" id="suhu" required placeholder="Contoh: 24.5" class="w-full border border-gray-300 rounded-xl px-3 py-2 md:py-2.5 text-sm focus:ring-2 focus:ring-primary"></div>
-                        <div><label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Keterangan</label><textarea id="keterangan" rows="1" placeholder="Catatan tambahan" class="w-full border border-gray-300 rounded-xl px-3 py-2 md:py-2.5 text-sm focus:ring-2 focus:ring-primary"></textarea></div>
+                        <div><label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Petugas <span class="text-red-500">*</span></label><input type="text" id="petugas" required placeholder="Nama petugas" class="w-full border border-gray-300 rounded-xl px-3 py-2 md:py-2.5 text-sm focus:ring-2 focus:ring-primary"></div>
+                    </div>
+                    <div>
+                        <label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Keterangan</label>
+                        <textarea id="keterangan" rows="1" placeholder="Catatan tambahan" class="w-full border border-gray-300 rounded-xl px-3 py-2 md:py-2.5 text-sm focus:ring-2 focus:ring-primary"></textarea>
                     </div>
                     
                     <!-- Dokumentasi Foto Multi dengan integrasi Watermark Studio -->
@@ -179,11 +259,21 @@
                 </div>
             </div>
             <div class="table-wrapper p-2 md:p-4">
-                <table class="min-w-[800px] md:min-w-full bg-white border border-gray-200 rounded-xl text-xs md:text-sm">
+                <table class="min-w-[900px] md:min-w-full bg-white border border-gray-200 rounded-xl text-xs md:text-sm">
                     <thead class="bg-gray-100">
-                        <tr><th class="py-2 px-1">No</th><th>Tgl</th><th>Suhu</th><th>Foto</th><th>Petugas</th><th>Keterangan</th><th>Aksi</th></tr>
+                        <tr>
+                            <th class="py-2 px-1">No</th>
+                            <th class="py-2 px-1">Tanggal</th>
+                            <th class="py-2 px-1">Waktu</th>
+                            <th class="py-2 px-1">Hari</th>
+                            <th class="py-2 px-1">Suhu</th>
+                            <th class="py-2 px-1">Foto</th>
+                            <th class="py-2 px-1">Petugas</th>
+                            <th class="py-2 px-1">Keterangan</th>
+                            <th class="py-2 px-1">Aksi</th>
+                        </tr>
                     </thead>
-                    <tbody id="tabelBody"><tr><td colspan="7" class="text-center py-6 text-gray-400">🌡️ Memuat data...</td</tr</tbody>
+                    <tbody id="tabelBody"><tr><td colspan="9" class="text-center py-6 text-gray-400">🌡️ Memuat data...</td></tr></tbody>
                 </table>
             </div>
         </div>
@@ -239,6 +329,8 @@
         }
 
         function normalizeEntry(entry) {
+            // Pastikan ada field waktu
+            if (!entry.waktu) entry.waktu = null;
             if (!entry.fotoList && entry.fotoBase64) {
                 entry.fotoList = [{
                     base64: entry.fotoBase64,
@@ -319,7 +411,6 @@
         const fotoDataArrayHidden = document.getElementById('fotoDataArray');
         let studioWindow = null;
 
-        // Fungsi untuk menambahkan foto dari studio (langsung, tanpa watermark ulang)
         function addFotoFromStudio(base64DataUrl) {
             const petugas = document.getElementById('petugas').value.trim();
             if (!petugas) {
@@ -330,7 +421,6 @@
                 alert("Maksimal 5 foto.");
                 return false;
             }
-            // Buat objek foto dengan timestamp sekarang (tanpa watermark tambahan)
             const now = new Date();
             const waktuStr = now.toLocaleString('id-ID', { hour12: false, day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit', second:'2-digit' });
             const fotoObj = {
@@ -368,14 +458,12 @@
             fotoDataArrayHidden.value = JSON.stringify(currentFotoList.map(f => ({ base64: f.base64, jamFoto: f.jamFoto, lat: f.lat, lng: f.lng })));
         }
 
-        // Membuka popup Watermark Studio
         function openWatermarkStudio() {
             const petugas = document.getElementById('petugas').value.trim();
             if (!petugas) {
                 alert("Isi nama petugas terlebih dahulu sebelum membuka kamera.");
                 return;
             }
-            // Buka halaman watermark studio dalam popup
             const width = 1100, height = 800;
             const left = (screen.width - width) / 2;
             const top = (screen.height - height) / 2;
@@ -385,14 +473,11 @@
             }
         }
 
-        // Menerima pesan dari Watermark Studio
         window.addEventListener('message', (event) => {
-            // Pastikan pesan berasal dari popup studio
             if (event.source === studioWindow && event.data && event.data.type === 'watermarkedFoto') {
                 const base64 = event.data.data;
                 if (base64) {
                     addFotoFromStudio(base64);
-                    // Tutup popup setelah foto diterima (opsional)
                     if (studioWindow && !studioWindow.closed) {
                         studioWindow.close();
                         studioWindow = null;
@@ -401,10 +486,9 @@
             }
         });
 
-        // Tombol buka studio
         document.getElementById('btnBukaStudio').addEventListener('click', openWatermarkStudio);
 
-        // ========== FUNGSI EDIT UNTUK ADMIN ==========
+        // ========== FUNGSI EDIT UNTUK ADMIN (dengan modal lengkap) ==========
         async function updateEntryInFirebase(updatedEntry) {
             const index = dataEntries.findIndex(e => e.id == updatedEntry.id);
             if (index !== -1) {
@@ -420,15 +504,81 @@
         window.editEntry = async (id) => {
             const entry = dataEntries.find(e => e.id == id);
             if (!entry) return;
-            const newTanggal = prompt("Edit tanggal (YYYY-MM-DD):", entry.tanggal);
-            if (newTanggal && newTanggal !== entry.tanggal) {
-                entry.tanggal = newTanggal;
-                await updateEntryInFirebase(entry);
-                alert("Tanggal berhasil diubah.");
-                if (typeof window.logActivity === 'function') {
-                    window.logActivity('EDIT DATA', `Mengedit data suhu ID ${id} - Tanggal menjadi ${newTanggal}`, 'Monitoring Suhu');
+
+            // Buat modal
+            const overlay = document.createElement('div');
+            overlay.className = 'edit-modal-overlay';
+            overlay.id = 'editModalOverlay';
+
+            const tanggalAwal = entry.tanggal || '';
+            const waktuAwal = entry.waktu || '';
+            const petugasAwal = entry.petugas || '';
+            const hariAwal = tanggalAwal ? new Date(tanggalAwal + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long' }) : '';
+
+            overlay.innerHTML = `
+                <div class="edit-modal-box">
+                    <h3><i class="fas fa-pen text-primary mr-2"></i> Edit Data #${id}</h3>
+                    <div>
+                        <label>Tanggal</label>
+                        <input type="date" id="editTanggal" value="${tanggalAwal}">
+                    </div>
+                    <div>
+                        <label>Waktu</label>
+                        <input type="time" id="editWaktu" value="${waktuAwal}">
+                    </div>
+                    <div>
+                        <label>Hari</label>
+                        <input type="text" id="editHari" class="readonly-hari" readonly value="${hariAwal}">
+                    </div>
+                    <div>
+                        <label>Petugas</label>
+                        <input type="text" id="editPetugas" value="${petugasAwal}" placeholder="Nama petugas">
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn-save" id="saveEditBtn"><i class="fas fa-save mr-1"></i> Simpan</button>
+                        <button class="btn-cancel" id="cancelEditBtn">Batal</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+
+            // Update hari otomatis saat tanggal berubah
+            const tanggalInput = document.getElementById('editTanggal');
+            const hariInput = document.getElementById('editHari');
+            tanggalInput.addEventListener('change', function() {
+                if (this.value) {
+                    const date = new Date(this.value + 'T00:00:00');
+                    hariInput.value = date.toLocaleDateString('id-ID', { weekday: 'long' });
+                } else {
+                    hariInput.value = '';
                 }
-            }
+            });
+
+            // Tombol batal
+            document.getElementById('cancelEditBtn').addEventListener('click', () => overlay.remove());
+
+            // Tombol simpan
+            document.getElementById('saveEditBtn').addEventListener('click', async () => {
+                const newTanggal = document.getElementById('editTanggal').value;
+                const newWaktu = document.getElementById('editWaktu').value;
+                const newPetugas = document.getElementById('editPetugas').value.trim();
+
+                if (!newTanggal || !newPetugas) {
+                    alert('Tanggal dan petugas harus diisi.');
+                    return;
+                }
+
+                entry.tanggal = newTanggal;
+                entry.waktu = newWaktu || null;
+                entry.petugas = newPetugas;
+
+                await updateEntryInFirebase(entry);
+                overlay.remove();
+                alert('✅ Data berhasil diperbarui.');
+                if (typeof window.logActivity === 'function') {
+                    window.logActivity('EDIT DATA', `Mengedit data suhu ID ${id}`, 'Monitoring Suhu');
+                }
+            });
         };
 
         // ========== RENDER TABEL ==========
@@ -452,7 +602,10 @@
 
         function renderTable() {
             const tbody = document.getElementById("tabelBody");
-            if(!dataEntries.length){ tbody.innerHTML=`<tr><td colspan="7" class="text-center py-6 text-gray-400">📭 Kosong</td</tr`; return; }
+            if(!dataEntries.length){ 
+                tbody.innerHTML=`<tr><td colspan="9" class="text-center py-6 text-gray-400">📭 Kosong</td></tr>`; 
+                return; 
+            }
             let html = "";
             dataEntries.forEach(entry => {
                 const fotoCount = entry.fotoList?.length || 0;
@@ -461,13 +614,20 @@
                     thumbs = `<div class="foto-thumb-list">${entry.fotoList.slice(0,2).map((f,i)=>`<div class="thumb-item" onclick="viewAllFoto(entry.fotoList, ${i})"><img src="${f.base64}"></div>`).join('')}${fotoCount>2?`<span class="text-[10px] bg-gray-200 px-1 rounded-full">+${fotoCount-2}</span>`:''}</div>`;
                 }
                 const fotoCell = `<div class="flex flex-col items-center gap-1"><div class="flex justify-center">${thumbs}</div><button type="button" onclick="viewAllFoto(entry.fotoList, 0)" class="text-primary text-[10px] md:text-xs hover:underline"><i class="fas fa-images"></i> ${fotoCount} foto</button></div>`;
+                
+                const hari = entry.tanggal ? new Date(entry.tanggal + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long' }) : '-';
+                const waktu = entry.waktu || '-';
+
                 let editButtonHtml = '';
                 if (userRole === 'admin') {
                     editButtonHtml = `<button onclick="editEntry(${entry.id})" class="bg-blue-100 text-blue-600 px-2 py-1 rounded-full text-[10px] mr-1"><i class="fas fa-edit"></i> Edit</button>`;
                 }
+
                 html += `<tr class="border-b hover:bg-slate-50">
                     <td class="py-2 px-1 font-mono">${entry.id}</td>
                     <td class="py-2 px-1">${entry.tanggal}</td>
+                    <td class="py-2 px-1">${waktu}</td>
+                    <td class="py-2 px-1">${hari}</td>
                     <td class="py-2 px-1 font-semibold">${entry.suhu} °C</td>
                     <td class="py-2 px-1 text-center">${fotoCell}</td>
                     <td class="py-2 px-1">${escapeHtml(entry.petugas)}</td>
@@ -476,7 +636,7 @@
                         ${editButtonHtml}
                         <button onclick="deleteEntry(${entry.id})" class="bg-red-100 text-red-600 px-2 py-1 rounded-full text-[10px]"><i class="fas fa-trash-can"></i> Hapus</button>
                     </td>
-                </table>`;
+                </tr>`;
             });
             tbody.innerHTML = html;
             window.entryData = dataEntries;
@@ -487,11 +647,18 @@
         // ========== FORM SUBMIT ==========
         const form = document.getElementById('formSuhu');
         const tanggalInput = document.getElementById('tanggal');
+        const waktuInput = document.getElementById('waktu');
         const suhuInput = document.getElementById('suhu');
         const petugasInput = document.getElementById('petugas');
         const keteranganInput = document.getElementById('keterangan');
         const resetBtn = document.getElementById('btnResetForm');
-        tanggalInput.value = new Date().toISOString().split('T')[0];
+
+        // Set default tanggal dan waktu
+        const now = new Date();
+        tanggalInput.value = now.toISOString().split('T')[0];
+        const jam = String(now.getHours()).padStart(2, '0');
+        const menit = String(now.getMinutes()).padStart(2, '0');
+        waktuInput.value = `${jam}:${menit}`;
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -500,15 +667,18 @@
                 return;
             }
             const tanggal = tanggalInput.value.trim();
+            const waktu = waktuInput.value.trim();
             const suhu = parseFloat(suhuInput.value);
             const petugas = petugasInput.value.trim();
             if(!tanggal || isNaN(suhu)) return alert("Lengkapi tanggal dan suhu!");
             if(!petugas) return alert("Isi nama petugas!");
+            if(!waktu) return alert("Isi waktu!");
             if(currentFotoList.length === 0) return alert("Minimal 1 foto dokumentasi!");
             const newId = getNextId();
             const newEntry = {
                 id: newId,
                 tanggal: tanggal,
+                waktu: waktu,
                 suhu: suhu.toFixed(1),
                 petugas: petugas,
                 keterangan: keteranganInput.value.trim(),
@@ -520,7 +690,11 @@
         });
 
         function resetFormInput() {
-            tanggalInput.value = new Date().toISOString().split('T')[0];
+            const now = new Date();
+            tanggalInput.value = now.toISOString().split('T')[0];
+            const jam = String(now.getHours()).padStart(2, '0');
+            const menit = String(now.getMinutes()).padStart(2, '0');
+            waktuInput.value = `${jam}:${menit}`;
             suhuInput.value = '';
             petugasInput.value = '';
             keteranganInput.value = '';
@@ -543,10 +717,11 @@
         // ========== EXPORT HTML ==========
         document.getElementById('btnExportHTML').addEventListener('click', () => {
             if(!dataEntries.length) return alert("Tidak ada data");
-            let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Laporan Suhu - Transmisi Tanah Merah</title><style>body{font-family:Inter,sans-serif;margin:20px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #aaa;padding:8px;vertical-align:top}th{background:#1e6f5c;color:white}.foto-grid{display:flex;gap:6px;flex-wrap:wrap}img{width:60px;height:60px;object-fit:cover;border-radius:8px}</style></head><body><h2>Monitoring Suhu - Transmisi Tanah Merah Ch44 (658)</h2><p>Export: ${new Date().toLocaleString()}</p><table border="1"><thead><tr><th>No</th><th>Tanggal</th><th>Suhu (°C)</th><th>Foto</th><th>Petugas</th><th>Keterangan</th></tr></thead><tbody>`;
+            let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Laporan Suhu - Transmisi Tanah Merah</title><style>body{font-family:Inter,sans-serif;margin:20px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #aaa;padding:8px;vertical-align:top}th{background:#1e6f5c;color:white}.foto-grid{display:flex;gap:6px;flex-wrap:wrap}img{width:60px;height:60px;object-fit:cover;border-radius:8px}</style></head><body><h2>Monitoring Suhu - Transmisi Tanah Merah Ch44 (658)</h2><p>Export: ${new Date().toLocaleString()}</p><table border="1"><thead><tr><th>No</th><th>Tanggal</th><th>Waktu</th><th>Hari</th><th>Suhu (°C)</th><th>Foto</th><th>Petugas</th><th>Keterangan</th></tr></thead><tbody>`;
             dataEntries.forEach((e,idx) => {
+                const hari = e.tanggal ? new Date(e.tanggal + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long' }) : '-';
                 let fotoHtml = `<div class="foto-grid">${(e.fotoList||[]).map(f=>`<img src="${f.base64}" title="${f.jamFoto}">`).join('')}</div>`;
-                html += `<tr><td>${idx+1}</td><td>${e.tanggal}</td><td>${e.suhu} °C</td><td>${fotoHtml}</td><td>${escapeHtml(e.petugas)}</td><td>${escapeHtml(e.keterangan||'-')}</td></tr>`;
+                html += `<tr><td>${idx+1}</td><td>${e.tanggal}</td><td>${e.waktu||'-'}</td><td>${hari}</td><td>${e.suhu} °C</td><td>${fotoHtml}</td><td>${escapeHtml(e.petugas)}</td><td>${escapeHtml(e.keterangan||'-')}</td></tr>`;
             });
             html += `</tbody></table><p><em>Watermark menggunakan Watermark Studio.</em></p></body></html>`;
             const blob = new Blob([html], {type:"text/html"}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`laporan_suhu_${Date.now()}.html`; a.click(); URL.revokeObjectURL(blob);
