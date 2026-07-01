@@ -183,18 +183,6 @@
         .edit-modal-box .btn-cancel:hover {
             background: #d1d5db;
         }
-        .edit-modal-box .checkbox-row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 0.75rem;
-            font-size: 0.9rem;
-        }
-        .edit-modal-box .checkbox-row input {
-            width: 18px;
-            height: 18px;
-            margin: 0;
-        }
     </style>
 </head>
 <body>
@@ -500,7 +488,7 @@
 
         document.getElementById('btnBukaStudio').addEventListener('click', openWatermarkStudio);
 
-        // ========== FUNGSI EDIT DENGAN UPDATE JAM FOTO (OTOMATIS) ==========
+        // ========== FUNGSI EDIT DENGAN UPDATE JAM FOTO OTOMATIS ==========
         async function updateEntryInFirebase(updatedEntry) {
             const index = dataEntries.findIndex(e => e.id == updatedEntry.id);
             if (index !== -1) {
@@ -513,7 +501,7 @@
             }
         }
 
-        // Helper untuk membuat string jamFoto dari tanggal dan waktu (format: dd/mm/yyyy HH:MM:SS)
+        // Helper untuk membuat string jamFoto dari tanggal dan waktu (format: dd/mm/yyyy HH.mm.00)
         function buildJamFotoString(tanggal, waktu) {
             if (!tanggal || !waktu) return null;
             const parts = tanggal.split('-');
@@ -564,10 +552,6 @@
                         <label>Petugas</label>
                         <input type="text" id="editPetugas" value="${petugasAwal}" placeholder="Nama petugas">
                     </div>
-                    <div class="checkbox-row">
-                        <input type="checkbox" id="editUpdateFotoTime" checked>
-                        <label for="editUpdateFotoTime">Perbarui jam foto dengan waktu ini</label>
-                    </div>
                     <div class="btn-row">
                         <button class="btn-save" id="saveEditBtn"><i class="fas fa-save mr-1"></i> Simpan</button>
                         <button class="btn-cancel" id="cancelEditBtn">Batal</button>
@@ -594,7 +578,6 @@
                 const newTanggal = document.getElementById('editTanggal').value;
                 const newWaktu = document.getElementById('editWaktu').value;
                 const newPetugas = document.getElementById('editPetugas').value.trim();
-                const updateFotoTime = document.getElementById('editUpdateFotoTime').checked;
 
                 if (!newTanggal || !newPetugas) {
                     alert('Tanggal dan petugas harus diisi.');
@@ -606,8 +589,8 @@
                 entry.waktu = newWaktu || null;
                 entry.petugas = newPetugas;
 
-                // Jika dicentang (default true), perbarui jamFoto di setiap foto
-                if (updateFotoTime && newWaktu) {
+                // Otomatis perbarui jamFoto di semua foto dengan waktu baru
+                if (newWaktu) {
                     const newJamFoto = buildJamFotoString(newTanggal, newWaktu);
                     if (newJamFoto && entry.fotoList && entry.fotoList.length) {
                         entry.fotoList.forEach(f => {
@@ -618,7 +601,7 @@
 
                 await updateEntryInFirebase(entry);
                 overlay.remove();
-                alert('✅ Data berhasil diperbarui. Jam foto juga telah disesuaikan.');
+                alert('✅ Data berhasil diperbarui. Jam foto otomatis disesuaikan.');
                 if (typeof window.logActivity === 'function') {
                     window.logActivity('EDIT DATA', `Mengedit data suhu ID ${id} (jam foto diperbarui)`, 'Monitoring Suhu');
                 }
