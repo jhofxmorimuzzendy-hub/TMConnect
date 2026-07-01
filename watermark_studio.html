@@ -34,7 +34,7 @@
             border-radius: 24px;
             padding: 14px;
             margin-bottom: 14px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
             border: 1px solid #e2edf2;
         }
         .card-title {
@@ -249,7 +249,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(0,0,0,0.7);
             z-index: 1000;
             justify-content: center;
             align-items: center;
@@ -302,6 +302,14 @@
             border-radius: 20px;
             background: #000;
         }
+        .info-badge {
+            background: #e8f4f0;
+            color: #1e6b46;
+            border-radius: 30px;
+            padding: 4px 12px;
+            font-size: 0.7rem;
+            display: inline-block;
+        }
     </style>
 </head>
 <body>
@@ -309,6 +317,7 @@
         <div class="card" style="text-align:center; padding:10px;">
             <h1 style="font-size:1.4rem;"><i class="fas fa-arrows-alt"></i> AquaMark Pro</h1>
             <div class="hint" style="background:#eef2f7; color:#2a5a78;"><i class="fas fa-hand-pointer"></i> Centang beberapa layer → drag di foto | Kamera Live</div>
+            <div class="info-badge"><i class="fas fa-check-circle"></i> Mengirim foto asli + watermark</div>
         </div>
 
         <!-- Background / Foto latar -->
@@ -704,6 +713,21 @@
                         getCurrentDateString() : l.dynamicType === 'day' ? getCurrentDayString() : getCoordText();
                     drawDynamicText(ctx, l, c, exportW, exportH);
                 } else if (l.type === 'image' && l.imageObj) drawImageLayer(ctx, l, exportW, exportH);
+            }
+            return ec;
+        }
+
+        // ========== RENDER ORIGINAL (tanpa layer) ==========
+        function renderOriginalCanvas(exportW, exportH) {
+            const ec = document.createElement('canvas');
+            ec.width = exportW;
+            ec.height = exportH;
+            const ctx = ec.getContext('2d');
+            if (hasImage && originalImage) {
+                ctx.drawImage(originalImage, 0, 0, exportW, exportH);
+            } else {
+                ctx.fillStyle = bgColor;
+                ctx.fillRect(0, 0, exportW, exportH);
             }
             return ec;
         }
@@ -1318,28 +1342,31 @@
             a.click();
         }
 
-        // ========== KIRIM KE MONITORING (seperti watermark studio) ==========
+        // ========== KIRIM KE MONITORING (dengan original) ==========
         function sendToMonitoring() {
-            // Cek apakah ada gambar atau layer apapun
             if (!hasImage && !originalImage && layers.length === 0) {
                 alert('Tidak ada gambar atau layer untuk dikirim.');
                 return;
             }
-            // Gunakan dimensi yang sama dengan export (atau dimensi asli jika ada)
             let exportW, exportH;
-            if (hasImage && originalImage) { exportW = originalW;
-                exportH = originalH; } else { exportW = 1200;
-                exportH = 900; }
+            if (hasImage && originalImage) { exportW = originalW; exportH = originalH; } 
+            else { exportW = 1200; exportH = 900; }
+            
+            // Render dengan watermark (semua layer)
             const ec = renderFullCanvas(exportW, exportH);
-            const dataUrl = ec.toDataURL('image/png');
-
+            const watermarkedDataUrl = ec.toDataURL('image/png');
+            
+            // Render original (tanpa layer) - hanya background
+            const oc = renderOriginalCanvas(exportW, exportH);
+            const originalDataUrl = oc.toDataURL('image/png');
+            
             if (window.opener) {
                 window.opener.postMessage({
                     type: 'watermarkedFoto',
-                    data: dataUrl
+                    data: watermarkedDataUrl,
+                    original: originalDataUrl
                 }, '*');
-                alert('✅ Foto berhasil dikirim ke Monitoring!');
-                // window.close(); // opsional
+                alert('✅ Foto berhasil dikirim ke Monitoring! (termasuk versi asli)');
             } else {
                 alert('Gagal: tidak ada parent window. Pastikan halaman ini dibuka sebagai popup dari Monitoring.');
             }
@@ -1606,7 +1633,7 @@
             isCapturing = false;
         });
 
-        // ========== TOMBOL PRESET (termasuk vertical & horizontal otomatis) ==========
+        // ========== TOMBOL PRESET ==========
         document.getElementById('savePresetBtn').addEventListener('click', savePreset);
         document.getElementById('loadPresetBtn').addEventListener('click', () => { document.getElementById(
             'loadPresetFile').click(); });
