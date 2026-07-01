@@ -2,474 +2,1659 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Watermark Studio</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>AquaMark Pro · Kamera Fix</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js">
+    </script>
     <style>
-        body { background: #f0f4f8; font-family: 'Inter', sans-serif; }
-        .preview-container { position: relative; display: inline-block; }
-        #resultCanvas { border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); max-width: 100%; background: #e2e8f0; }
-        .control-group { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        .btn-primary { background: #1e6f5c; color: white; transition: 0.2s; }
-        .btn-primary:hover { background: #0e5a48; transform: translateY(-2px); }
-        .btn-secondary { background: #e2e8f0; color: #1e293b; }
-        .btn-secondary:hover { background: #cbd5e1; }
-        .btn-success { background: #0b7e4d; color: white; }
-        .btn-success:hover { background: #08633d; transform: translateY(-2px); }
-        .btn-preset { background: #8b5cf6; color: white; }
-        .btn-preset:hover { background: #7c3aed; transform: translateY(-2px); }
-        video { border-radius: 16px; background: #000; max-width: 100%; }
-        .orient-btn { padding: 6px 14px; border-radius: 20px; border: 2px solid #ccc; cursor: pointer; transition: 0.2s; }
-        .orient-btn.active { border-color: #1e6f5c; background: #1e6f5c; color: white; }
-        .preset-file-label { background: #e0e7ff; padding: 6px 14px; border-radius: 20px; cursor: pointer; }
-        .preset-file-label:hover { background: #c7d2fe; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        body {
+            background: #eef2f8;
+            font-family: 'Inter', sans-serif;
+            padding: 12px;
+            color: #1e2f3a;
+        }
+        .app {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.96);
+            border-radius: 24px;
+            padding: 14px;
+            margin-bottom: 14px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            border: 1px solid #e2edf2;
+        }
+        .card-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #2a5a78;
+            border-left: 3px solid #2e7ea3;
+            padding-left: 10px;
+        }
+        .upload-zone {
+            background: #f4f9fe;
+            border: 1.5px dashed #9bc0d8;
+            border-radius: 20px;
+            text-align: center;
+            padding: 12px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+        .preview-container {
+            background: #111a22;
+            border-radius: 20px;
+            margin-top: 10px;
+            display: flex;
+            justify-content: center;
+            background-color: #1e2c38;
+        }
+        canvas {
+            max-width: 100%;
+            height: auto;
+            border-radius: 16px;
+            cursor: grab;
+            touch-action: none;
+            display: block;
+            margin: 0 auto;
+        }
+        canvas:active {
+            cursor: grabbing;
+        }
+        .hint {
+            background: #2e7ea3;
+            color: white;
+            border-radius: 40px;
+            padding: 6px 12px;
+            font-size: 0.7rem;
+            display: inline-block;
+            margin-top: 8px;
+            width: auto;
+            text-align: center;
+        }
+        .layer-list {
+            max-height: 260px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-top: 10px;
+        }
+        .layer-item {
+            background: white;
+            border-radius: 20px;
+            padding: 6px 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border: 1px solid #e0ecf3;
+            cursor: pointer;
+        }
+        .layer-item.active {
+            border: 2px solid #2e7ea3;
+            background: #f0f7fc;
+        }
+        .layer-item.locked {
+            opacity: 0.6;
+            background: #f5f5f5;
+        }
+        .layer-check {
+            margin-right: 8px;
+            pointer-events: auto;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        .layer-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            flex: 1;
+            pointer-events: none;
+        }
+        .layer-actions {
+            display: flex;
+            gap: 4px;
+            pointer-events: auto;
+        }
+        .btn-icon {
+            background: #eef2f7;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .flex-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 10px;
+            justify-content: center;
+        }
+        .prop-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px 12px;
+        }
+        .prop-field {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .prop-field label {
+            font-size: 0.65rem;
+            font-weight: 500;
+            width: 55px;
+            color: #2a5a78;
+        }
+        input,
+        select {
+            background: white;
+            border: 1px solid #cbdde9;
+            border-radius: 30px;
+            padding: 6px 8px;
+            font-size: 0.7rem;
+            flex: 1;
+        }
+        input[type="range"] {
+            padding: 0;
+        }
+        input[type="color"] {
+            width: 32px;
+            height: 32px;
+            padding: 2px;
+        }
+        .download-btn {
+            background: #1e6b46;
+            color: white;
+            border: none;
+            border-radius: 60px;
+            padding: 12px;
+            font-weight: bold;
+            width: 100%;
+            margin-top: 6px;
+            cursor: pointer;
+        }
+        .send-btn {
+            background: #0b7e4d;
+            color: white;
+            border: none;
+            border-radius: 60px;
+            padding: 12px;
+            font-weight: bold;
+            width: 100%;
+            margin-top: 6px;
+            cursor: pointer;
+        }
+        .send-btn:hover {
+            background: #08633d;
+        }
+        .btn-row {
+            display: flex;
+            gap: 8px;
+        }
+        .btn-row .download-btn,
+        .btn-row .send-btn {
+            flex: 1;
+            width: auto;
+        }
+        footer {
+            text-align: center;
+            font-size: 0.6rem;
+            margin-top: 16px;
+            opacity: 0.6;
+        }
+        .selected-badge {
+            background: #2e7ea3;
+            color: white;
+            border-radius: 20px;
+            padding: 2px 6px;
+            font-size: 0.6rem;
+            margin-left: 6px;
+        }
+        .gps-btn {
+            background: #1e6b46;
+            color: white;
+        }
+        button:active {
+            transform: scale(0.96);
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 28px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80%;
+            overflow: auto;
+            padding: 16px;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .emoji-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 10px;
+        }
+        .emoji-item {
+            font-size: 2rem;
+            text-align: center;
+            cursor: pointer;
+            padding: 8px;
+            background: #f0f5fc;
+            border-radius: 20px;
+        }
+        .emoji-item:active {
+            transform: scale(0.9);
+        }
+        #map {
+            height: 300px;
+            width: 100%;
+            border-radius: 20px;
+            margin-bottom: 12px;
+        }
+        .status-text {
+            font-size: 0.7rem;
+            color: #2e7ea3;
+            text-align: center;
+            margin-top: 8px;
+        }
+        video {
+            width: 100%;
+            border-radius: 20px;
+            background: #000;
+        }
     </style>
 </head>
 <body>
-    <div class="max-w-6xl mx-auto px-4 py-6">
-        <!-- Header -->
-        <div class="flex items-center justify-between mb-6">
-            <h1 class="text-2xl font-bold text-slate-800"><i class="fas fa-palette text-primary mr-2"></i> Watermark Studio</h1>
-            <button onclick="window.close()" class="text-gray-500 hover:text-red-500"><i class="fas fa-times-circle text-2xl"></i></button>
+    <div class="app">
+        <div class="card" style="text-align:center; padding:10px;">
+            <h1 style="font-size:1.4rem;"><i class="fas fa-arrows-alt"></i> AquaMark Pro</h1>
+            <div class="hint" style="background:#eef2f7; color:#2a5a78;"><i class="fas fa-hand-pointer"></i> Centang beberapa layer → drag di foto | Kamera Live</div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <!-- Kolom Kiri: Kamera / Upload -->
-            <div class="lg:col-span-2 space-y-4">
-                <div class="bg-white rounded-2xl p-4 shadow">
-                    <h2 class="font-semibold mb-2"><i class="fas fa-camera mr-2 text-primary"></i> Ambil Foto</h2>
-                    <div class="flex flex-wrap gap-3">
-                        <button id="startCameraBtn" class="btn-primary px-4 py-2 rounded-xl"><i class="fas fa-play mr-2"></i> Buka Kamera</button>
-                        <button id="captureBtn" class="btn-primary px-4 py-2 rounded-xl" disabled><i class="fas fa-camera mr-2"></i> Jepret</button>
-                        <label class="btn-secondary px-4 py-2 rounded-xl cursor-pointer">
-                            <i class="fas fa-upload mr-2"></i> Unggah Gambar
-                            <input type="file" id="uploadInput" accept="image/*" class="hidden">
-                        </label>
-                    </div>
-                    <div class="mt-3 relative">
-                        <video id="video" autoplay playsinline class="w-full max-h-[360px] object-cover"></video>
-                        <canvas id="captureCanvas" class="hidden"></canvas>
-                    </div>
-                </div>
-
-                <!-- Kontrol Watermark -->
-                <div class="control-group">
-                    <h2 class="font-semibold mb-3"><i class="fas fa-pen-fancy mr-2 text-primary"></i> Pengaturan Watermark</h2>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                            <label class="text-sm font-medium">Teks Watermark</label>
-                            <input type="text" id="watermarkText" value="© Tanah Merah 2026" class="w-full border rounded-lg px-3 py-2 text-sm">
-                        </div>
-                        <div>
-                            <label class="text-sm font-medium">Posisi</label>
-                            <select id="watermarkPosition" class="w-full border rounded-lg px-3 py-2 text-sm">
-                                <option value="top-left">Kiri Atas</option>
-                                <option value="top-right" selected>Kanan Atas</option>
-                                <option value="bottom-left">Kiri Bawah</option>
-                                <option value="bottom-right">Kanan Bawah</option>
-                                <option value="center">Tengah</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="text-sm font-medium">Ukuran (px)</label>
-                            <input type="number" id="watermarkSize" value="32" min="12" max="80" class="w-full border rounded-lg px-3 py-2 text-sm">
-                        </div>
-                        <div>
-                            <label class="text-sm font-medium">Warna</label>
-                            <input type="color" id="watermarkColor" value="#ffffff" class="w-full h-10 border rounded-lg p-1">
-                        </div>
-                        <div>
-                            <label class="text-sm font-medium">Opacity</label>
-                            <input type="range" id="watermarkOpacity" min="0.1" max="1" step="0.05" value="0.7" class="w-full">
-                            <span id="opacityValue" class="text-xs">0.70</span>
-                        </div>
-                        <div>
-                            <label class="text-sm font-medium">Background Shape</label>
-                            <select id="watermarkShape" class="w-full border rounded-lg px-3 py-2 text-sm">
-                                <option value="none">Tanpa</option>
-                                <option value="rect">Persegi</option>
-                                <option value="circle">Lingkaran</option>
-                            </select>
-                        </div>
-                        <!-- ORIENTASI -->
-                        <div class="sm:col-span-2">
-                            <label class="text-sm font-medium mr-4">Orientasi Teks</label>
-                            <div class="inline-flex gap-2">
-                                <button id="orientHorizontal" class="orient-btn active">Horizontal</button>
-                                <button id="orientVertical" class="orient-btn">Vertikal</button>
-                            </div>
-                        </div>
-                        <!-- PRESET DARI FILE JSON -->
-                        <div class="sm:col-span-2 flex flex-wrap items-center gap-3 border-t pt-3 mt-2">
-                            <span class="text-sm font-medium">Preset dari JSON:</span>
-                            <label class="preset-file-label text-sm">
-                                <i class="fas fa-file-upload mr-1"></i> Pilih File JSON
-                                <input type="file" id="presetFileInput" accept=".json" class="hidden">
-                            </label>
-                            <button id="presetVerticalBtn" class="btn-preset px-4 py-1.5 rounded-full text-sm"><i class="fas fa-arrow-up mr-1"></i> Vertikal</button>
-                            <button id="presetHorizontalBtn" class="btn-preset px-4 py-1.5 rounded-full text-sm"><i class="fas fa-arrow-right mr-1"></i> Horizontal</button>
-                            <span id="presetStatus" class="text-xs text-gray-500">Belum ada file</span>
-                        </div>
-                    </div>
-                    <button id="applyWatermarkBtn" class="mt-3 bg-primary text-white px-5 py-2 rounded-xl hover:bg-accent transition"><i class="fas fa-check mr-2"></i> Terapkan Watermark</button>
-                </div>
+        <!-- Background / Foto latar -->
+        <div class="card">
+            <div class="card-title"><i class="fas fa-camera"></i> Latar Canvas</div>
+            <div class="flex-row">
+                <button id="openCameraBtn" class="btn-icon" style="background:#2c7cb6; color:white;"><i class="fas fa-camera"></i> Buka Kamera</button>
+                <button id="uploadBtn" class="btn-icon"><i class="fas fa-cloud-upload-alt"></i> Pilih dari Galeri</button>
+                <input type="file" id="imageUpload" accept="image/*" style="display:none">
             </div>
-
-            <!-- Kolom Kanan: Hasil & Aksi -->
-            <div class="space-y-4">
-                <div class="bg-white rounded-2xl p-4 shadow text-center">
-                    <h2 class="font-semibold mb-2"><i class="fas fa-image mr-2 text-primary"></i> Hasil Akhir</h2>
-                    <div class="preview-container">
-                        <canvas id="resultCanvas" width="400" height="300"></canvas>
-                    </div>
-                    <div class="mt-4 flex flex-col gap-3">
-                        <button id="exportPngBtn" class="btn-secondary px-5 py-3 rounded-xl text-lg font-semibold"><i class="fas fa-download mr-2"></i> Download PNG</button>
-                        <button id="sendToMonitoringBtn" class="btn-success px-5 py-3 rounded-xl text-lg font-semibold"><i class="fas fa-paper-plane mr-2"></i> Kirim ke Monitoring</button>
-                    </div>
-                    <p class="text-xs text-gray-400 mt-2"><i class="fas fa-info-circle"></i> Klik "Kirim ke Monitoring" untuk langsung menambahkan foto ke form monitoring</p>
-                </div>
+            <div class="flex-row" style="margin-top: 8px;">
+                <div class="prop-field" style="width:100%; justify-content:center;"><label>Background Solid</label><input type="color" id="bgColorPicker" value="#1e2c38"><button id="setBgColorBtn" class="btn-icon">Terapkan</button><button id="resetBgBtn" class="btn-icon">Hapus Foto & Reset</button></div>
             </div>
+            <div class="preview-container">
+                <canvas id="previewCanvas" width="600" height="400"></canvas>
+            </div>
+            <div class="drag-hint" style="text-align:center; margin-top:6px;"><i class="fas fa-hand-peace"></i> Pilih layer → lalu seret langsung pada gambar</div>
+        </div>
+
+        <div class="card">
+            <div class="card-title"><i class="fas fa-layer-group"></i> Layer (centang untuk multi-select)</div>
+            <div class="flex-row">
+                <button id="addTextBtn" class="btn-icon"><i class="fas fa-font"></i> Teks</button>
+                <button id="addShapeBtn" class="btn-icon"><i class="fas fa-shapes"></i> Shape</button>
+                <button id="addDateTimeBtn" class="btn-icon"><i class="fas fa-clock"></i> Jam/Tgl</button>
+                <button id="addCoordBtn" class="btn-icon"><i class="fas fa-map-marker-alt"></i> Koordinat</button>
+                <button id="addImageBtn" class="btn-icon"><i class="fas fa-image"></i> Logo</button>
+                <button id="addIconBtn" class="btn-icon"><i class="fas fa-smile"></i> Icon</button>
+                <button id="addMapBtn" class="btn-icon"><i class="fas fa-map"></i> Peta Satelit</button>
+                <button id="clearLayersBtn" class="btn-icon"><i class="fas fa-trash"></i> Hapus</button>
+            </div>
+            <div id="layerListContainer" class="layer-list"><div style="text-align:center; padding:12px;">➕ Tambah layer</div></div>
+        </div>
+
+        <div class="card" id="propertiesPanel">
+            <div class="card-title"><i class="fas fa-sliders-h"></i> Edit properti (layer terpilih tunggal)</div>
+            <div id="propContent"><p style="text-align:center; font-size:0.75rem;">Klik layer untuk edit tunggal</p></div>
+        </div>
+
+        <div class="flex-row" style="justify-content: center; gap: 12px; margin-bottom: 12px;">
+            <button id="savePresetBtn" class="btn-icon" style="background:#2c7cb6; color:white;"><i class="fas fa-save"></i> Simpan Preset</button>
+            <button id="loadPresetBtn" class="btn-icon" style="background:#2c7cb6; color:white;"><i class="fas fa-folder-open"></i> Muat Preset</button>
+            <input type="file" id="loadPresetFile" accept=".json" style="display:none">
+            <button id="presetVerticalBtn" class="btn-icon" style="background:#2e7ea3; color:white;"><i class="fas fa-arrow-up"></i> Preset Vertical</button>
+            <button id="presetHorizontalBtn" class="btn-icon" style="background:#2e7ea3; color:white;"><i class="fas fa-arrow-right"></i> Preset Horizontal</button>
+            <button id="resetAllLayersBtn" class="btn-icon" style="background:#c0392b; color:white;"><i class="fas fa-trash-alt"></i> Reset Layer</button>
+        </div>
+
+        <!-- Tombol Export + Kirim ke Monitoring -->
+        <div class="btn-row">
+            <button id="exportBtn" class="download-btn"><i class="fas fa-download"></i> Export PNG</button>
+            <button id="sendToMonitoringBtn" class="send-btn"><i class="fas fa-paper-plane"></i> Kirim ke Monitoring</button>
+        </div>
+
+        <footer>Multi-drag • Stretch X/Y • Gradient • Flip • Icon • Peta Satelit • Image Shadow & Outline • Kamera Live & Background</footer>
+    </div>
+
+    <!-- Modal Emoji -->
+    <div id="emojiModal" class="modal">
+        <div class="modal-content"><div class="modal-header"><h3>Pilih Icon</h3><button id="closeEmojiModal" class="btn-icon">✖</button></div><div class="emoji-grid" id="emojiGrid"></div></div>
+    </div>
+
+    <!-- Modal Peta -->
+    <div id="mapModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h3>Peta Satelit - Otomatis Capture</h3><button id="closeMapModal" class="btn-icon">✖</button></div>
+            <div id="map"></div>
+            <div id="mapStatus" class="status-text">Mendapatkan lokasi...</div>
+        </div>
+    </div>
+
+    <!-- Modal Kamera -->
+    <div id="cameraModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h3>Ambil Foto</h3><button id="closeCameraModal" class="btn-icon">✖</button></div>
+            <video id="cameraVideo" autoplay playsinline style="width:100%; border-radius:20px;"></video>
+            <div style="display: flex; gap: 12px; margin-top: 12px; justify-content: center;">
+                <button id="capturePhotoBtn" class="btn-icon" style="background:#2c7cb6; color:white;"><i class="fas fa-camera"></i> Jepret</button>
+                <button id="switchCameraBtn" class="btn-icon"><i class="fas fa-sync-alt"></i> Ganti Kamera</button>
+            </div>
+            <canvas id="cameraCanvas" style="display:none;"></canvas>
         </div>
     </div>
 
     <script>
-        // ========== ELEMEN ==========
-        const video = document.getElementById('video');
-        const canvas = document.getElementById('captureCanvas');
-        const resultCanvas = document.getElementById('resultCanvas');
-        const ctx = resultCanvas.getContext('2d');
+        // ========== STATE ==========
+        let originalImage = null,
+            originalW = 0,
+            originalH = 0,
+            hasImage = false;
+        let bgColor = "#1e2c38";
+        let layers = [],
+            selectedLayerId = null,
+            nextId = 100;
+        let currentPreviewW = 0,
+            currentPreviewH = 0;
+        let dragActive = false,
+            dragStartCanvasX = 0,
+            dragStartCanvasY = 0;
+        let draggingLayerIds = [];
+        let selectedLayerIds = new Set();
+        let userLat = -6.2088,
+            userLon = 106.8456;
+        let mapInstance = null;
+        let currentMapMarker = null;
 
-        const startCameraBtn = document.getElementById('startCameraBtn');
-        const captureBtn = document.getElementById('captureBtn');
-        const uploadInput = document.getElementById('uploadInput');
-        const applyBtn = document.getElementById('applyWatermarkBtn');
-        const exportBtn = document.getElementById('exportPngBtn');
-        const sendBtn = document.getElementById('sendToMonitoringBtn');
+        // Kamera
+        let cameraStream = null;
+        let currentFacingMode = 'environment';
+        let cameraModalElem = document.getElementById('cameraModal');
+        let videoElem = document.getElementById('cameraVideo');
+        let captureBtn = document.getElementById('capturePhotoBtn');
+        let switchCameraBtn = document.getElementById('switchCameraBtn');
+        let cameraCanvas = document.getElementById('cameraCanvas');
+        let cameraActive = false;
 
-        const watermarkText = document.getElementById('watermarkText');
-        const watermarkPosition = document.getElementById('watermarkPosition');
-        const watermarkSize = document.getElementById('watermarkSize');
-        const watermarkColor = document.getElementById('watermarkColor');
-        const watermarkOpacity = document.getElementById('watermarkOpacity');
-        const opacityValue = document.getElementById('opacityValue');
-        const watermarkShape = document.getElementById('watermarkShape');
-        const orientHorizontal = document.getElementById('orientHorizontal');
-        const orientVertical = document.getElementById('orientVertical');
-        const presetFileInput = document.getElementById('presetFileInput');
-        const presetVerticalBtn = document.getElementById('presetVerticalBtn');
-        const presetHorizontalBtn = document.getElementById('presetHorizontalBtn');
-        const presetStatus = document.getElementById('presetStatus');
+        function genId() { return Date.now() + '-' + (Math.random() * 10000 | 0) + nextId++; }
 
-        let currentImageData = null;
-        let orientation = 'horizontal'; // 'horizontal' atau 'vertical'
-        let presetData = null; // objek dari file JSON
+        function getCurrentTimeString() { return new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }); }
 
-        // ========== ORIENTASI TOGGLE ==========
-        orientHorizontal.addEventListener('click', () => {
-            orientation = 'horizontal';
-            orientHorizontal.classList.add('active');
-            orientVertical.classList.remove('active');
-            applyWatermark();
-        });
-        orientVertical.addEventListener('click', () => {
-            orientation = 'vertical';
-            orientVertical.classList.add('active');
-            orientHorizontal.classList.remove('active');
-            applyWatermark();
-        });
+        function getCurrentDateString() { return new Date().toLocaleDateString('id-ID'); }
 
-        // ========== KAMERA ==========
-        let stream = null;
-        startCameraBtn.addEventListener('click', async () => {
-            try {
-                if (stream) {
-                    stream.getTracks().forEach(t => t.stop());
-                    stream = null;
-                }
-                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-                video.srcObject = stream;
-                await video.play();
-                captureBtn.disabled = false;
-                startCameraBtn.innerHTML = '<i class="fas fa-stop mr-2"></i> Matikan Kamera';
-                startCameraBtn.onclick = () => {
-                    if (stream) {
-                        stream.getTracks().forEach(t => t.stop());
-                        stream = null;
-                        video.srcObject = null;
-                        captureBtn.disabled = true;
-                        startCameraBtn.innerHTML = '<i class="fas fa-play mr-2"></i> Buka Kamera';
-                        startCameraBtn.onclick = arguments.callee;
-                    }
-                };
-            } catch (err) {
-                alert('Gagal mengakses kamera: ' + err.message);
-            }
-        });
+        function getCurrentDayString() { const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']; return days[
+                new Date().getDay()]; }
 
-        // ========== CAPTURE ==========
-        captureBtn.addEventListener('click', () => {
-            if (!video.srcObject) return alert('Kamera belum aktif.');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            const ctx2 = canvas.getContext('2d');
-            ctx2.drawImage(video, 0, 0);
-            currentImageData = canvas;
-            ctx.clearRect(0, 0, resultCanvas.width, resultCanvas.height);
-            ctx.drawImage(canvas, 0, 0, resultCanvas.width, resultCanvas.height);
-            applyWatermark();
-        });
+        function getCoordText() { let latDir = userLat >= 0 ? 'LS' : 'LU',
+                lonDir = userLon >= 0 ? 'BT' : 'BB'; return `${Math.abs(userLat).toFixed(4)}° ${latDir} | ${Math.abs(userLon).toFixed(4)}° ${lonDir}`; }
 
-        // ========== UPLOAD GAMBAR ==========
-        uploadInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                const img = new Image();
-                img.onload = () => {
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    const ctx2 = canvas.getContext('2d');
-                    ctx2.drawImage(img, 0, 0);
-                    currentImageData = canvas;
-                    ctx.clearRect(0, 0, resultCanvas.width, resultCanvas.height);
-                    ctx.drawImage(canvas, 0, 0, resultCanvas.width, resultCanvas.height);
-                    applyWatermark();
-                };
-                img.src = ev.target.result;
-            };
-            reader.readAsDataURL(file);
-        });
+        function hexToRgba(hex, alpha) { let r = parseInt(hex.slice(1, 3), 16),
+                g = parseInt(hex.slice(3, 5), 16),
+                b = parseInt(hex.slice(5, 7), 16); return `rgba(${r}, ${g}, ${b}, ${alpha})`; }
 
-        // ========== PRESET DARI FILE JSON ==========
-        presetFileInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                try {
-                    const json = JSON.parse(ev.target.result);
-                    // Validasi struktur sederhana
-                    if (json.vertical && json.horizontal) {
-                        presetData = json;
-                        presetStatus.textContent = `✅ File loaded: ${file.name}`;
-                        presetStatus.style.color = 'green';
-                        alert('File preset berhasil dimuat. Gunakan tombol "Vertikal" atau "Horizontal" untuk menerapkan.');
-                    } else {
-                        alert('Format JSON salah. Harus memiliki properti "vertical" dan "horizontal".');
-                    }
-                } catch (err) {
-                    alert('Gagal parsing JSON: ' + err.message);
-                }
-            };
-            reader.readAsText(file);
-        });
-
-        function applyPreset(presetKey) {
-            if (!presetData) {
-                alert('Silakan pilih file JSON preset terlebih dahulu.');
-                return;
-            }
-            const preset = presetData[presetKey];
-            if (!preset) {
-                alert(`Preset "${presetKey}" tidak ditemukan dalam file.`);
-                return;
-            }
-            // Terapkan ke kontrol
-            if (preset.text) watermarkText.value = preset.text;
-            if (preset.position) watermarkPosition.value = preset.position;
-            if (preset.size) watermarkSize.value = preset.size;
-            if (preset.color) watermarkColor.value = preset.color;
-            if (preset.opacity) {
-                watermarkOpacity.value = preset.opacity;
-                opacityValue.textContent = preset.opacity.toFixed(2);
-            }
-            if (preset.shape) watermarkShape.value = preset.shape;
-            if (preset.orientation) {
-                orientation = preset.orientation;
-                if (orientation === 'vertical') {
-                    orientVertical.click();
-                } else {
-                    orientHorizontal.click();
-                }
-            }
-            applyWatermark();
+        function createGradient(ctx, x, y, w, h, type, angle, c1, c2, o1, o2, radialShape) {
+            let grad,
+                rgba1 = hexToRgba(c1, o1),
+                rgba2 = hexToRgba(c2, o2);
+            if (type === 'linear') {
+                let rad = angle * Math.PI / 180,
+                    dx = Math.cos(rad),
+                    dy = Math.sin(rad);
+                let startX = x - (w / 2) * dx,
+                    startY = y - (h / 2) * dy,
+                    endX = x + (w / 2) * dx,
+                    endY = y + (h / 2) * dy;
+                grad = ctx.createLinearGradient(startX, startY, endX, endY);
+            } else { let radius = Math.max(w, h) / 2;
+                grad = ctx.createRadialGradient(x, y, 0, x, y, radius); }
+            grad.addColorStop(0, rgba1);
+            grad.addColorStop(1, rgba2);
+            return grad;
         }
 
-        presetVerticalBtn.addEventListener('click', () => applyPreset('vertical'));
-        presetHorizontalBtn.addEventListener('click', () => applyPreset('horizontal'));
+        function applyFlipAndStretch(ctx, l) { let sx = (l.stretchX || 100) / 100,
+                sy = (l.stretchY || 100) / 100;
+            ctx.scale(sx, sy); if (l.flipX) ctx.scale(-1, 1); if (l.flipY) ctx.scale(1, -1); }
 
-        // ========== WATERMARK ==========
-        function applyWatermark() {
-            if (!currentImageData) {
-                const temp = document.createElement('canvas');
-                temp.width = 400;
-                temp.height = 300;
-                const tctx = temp.getContext('2d');
-                tctx.fillStyle = '#e2e8f0';
-                tctx.fillRect(0,0,400,300);
-                tctx.fillStyle = '#1e6f5c';
-                tctx.font = '20px Inter';
-                tctx.textAlign = 'center';
-                tctx.fillText('Ambil foto atau unggah', 200, 150);
-                currentImageData = temp;
-            }
-            const srcCanvas = currentImageData;
-            const maxW = 600, maxH = 450;
-            let w = srcCanvas.width, h = srcCanvas.height;
-            if (w > maxW) { h = h * maxW / w; w = maxW; }
-            if (h > maxH) { w = w * maxH / h; h = maxH; }
-            resultCanvas.width = w;
-            resultCanvas.height = h;
-
-            ctx.clearRect(0, 0, w, h);
-            ctx.drawImage(srcCanvas, 0, 0, w, h);
-
-            const text = watermarkText.value || '© Watermark';
-            const pos = watermarkPosition.value;
-            const size = parseInt(watermarkSize.value) || 32;
-            const color = watermarkColor.value;
-            const opacity = parseFloat(watermarkOpacity.value) || 0.7;
-            const shape = watermarkShape.value;
-            const isVertical = (orientation === 'vertical');
-
+        // ========== RENDER FUNCTIONS ==========
+        function drawText(ctx, l, w, h) {
+            let fontSizeBase = (l.fontSizePercent / 100) * w,
+                fontSize = fontSizeBase * ((l.stretchY || 100) / 100);
+            if (fontSize < 6) return;
+            let x = (l.xPercent / 100) * w,
+                y = (l.yPercent / 100) * h;
             ctx.save();
-            ctx.globalAlpha = opacity;
-            ctx.font = `${size}px "Inter", sans-serif`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
+            ctx.globalAlpha = l.opacity;
+            ctx.translate(x, y);
+            ctx.rotate(l.rotation * Math.PI / 180);
+            applyFlipAndStretch(ctx, l);
+            let style = '';
+            if (l.bold) style += 'bold ';
+            if (l.italic) style += 'italic ';
+            ctx.font = `${style}${fontSize}px ${l.fontFamily}, system-ui`;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            if (l.shadow) { ctx.shadowColor = "rgba(0,0,0,0.5)";
+                ctx.shadowBlur = 5;
+                ctx.shadowOffsetX = 1.5;
+                ctx.shadowOffsetY = 1.5; } else ctx.shadowColor = "transparent";
+            if (l.stroke) { ctx.strokeStyle = "#000";
+                ctx.lineWidth = Math.max(2, fontSize / 14);
+                ctx.strokeText(l.text, 0, 0); }
+            if (l.gradient && l.gradientColor1 && l.gradientColor2) {
+                let tw = ctx.measureText(l.text).width;
+                let grad = createGradient(ctx, 0, 0, tw, fontSize, l.gradientType, l.gradientAngle || 0, l.gradientColor1,
+                    l.gradientColor2, l.gradientOpacity1 !== undefined ? l.gradientOpacity1 : 1, l.gradientOpacity2 !==
+                    undefined ? l.gradientOpacity2 : 1, l.radialShape || 'circle');
+                ctx.fillStyle = grad;
+            } else { ctx.fillStyle = l.color; }
+            ctx.fillText(l.text, 0, 0);
+            if (l.underline) { let wm = ctx.measureText(l.text).width;
+                ctx.beginPath();
+                ctx.moveTo(-wm / 2, fontSize * 0.15);
+                ctx.lineTo(wm / 2, fontSize * 0.15);
+                ctx.lineWidth = fontSize / 12;
+                ctx.strokeStyle = l.color;
+                ctx.stroke(); }
+            ctx.restore();
+        }
 
-            let tw, th;
-            if (isVertical) {
-                const chars = text.split('');
-                const lineHeight = size * 1.2;
-                tw = size;
-                th = chars.length * lineHeight;
-            } else {
-                const metrics = ctx.measureText(text);
-                tw = metrics.width;
-                th = size * 1.2;
-            }
+        function drawDynamicText(ctx, l, content, w, h) {
+            let fontSizeBase = (l.fontSizePercent / 100) * w,
+                fontSize = fontSizeBase * ((l.stretchY || 100) / 100);
+            if (fontSize < 6) return;
+            let x = (l.xPercent / 100) * w,
+                y = (l.yPercent / 100) * h;
+            ctx.save();
+            ctx.globalAlpha = l.opacity;
+            ctx.translate(x, y);
+            ctx.rotate(l.rotation * Math.PI / 180);
+            applyFlipAndStretch(ctx, l);
+            let style = '';
+            if (l.bold) style += 'bold ';
+            if (l.italic) style += 'italic ';
+            let fontFamily = l.fontFamily || 'Inter, sans-serif';
+            ctx.font = `${style}${fontSize}px ${fontFamily}, system-ui`;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            if (l.shadow) { ctx.shadowColor = "rgba(0,0,0,0.5)";
+                ctx.shadowBlur = 5;
+                ctx.shadowOffsetX = 1.5;
+                ctx.shadowOffsetY = 1.5; } else ctx.shadowColor = "transparent";
+            if (l.stroke) { ctx.strokeStyle = "#000";
+                ctx.lineWidth = Math.max(2, fontSize / 14);
+                ctx.strokeText(content, 0, 0); }
+            ctx.fillStyle = l.color;
+            ctx.fillText(content, 0, 0);
+            if (l.underline) { let wm = ctx.measureText(content).width;
+                ctx.beginPath();
+                ctx.moveTo(-wm / 2, fontSize * 0.15);
+                ctx.lineTo(wm / 2, fontSize * 0.15);
+                ctx.lineWidth = fontSize / 12;
+                ctx.strokeStyle = l.color;
+                ctx.stroke(); }
+            ctx.restore();
+        }
 
-            let x, y;
-            const pad = 20;
-            switch(pos) {
-                case 'top-left': x = pad + (isVertical ? tw/2 : tw/2); y = pad + th/2; break;
-                case 'top-right': x = w - pad - (isVertical ? tw/2 : tw/2); y = pad + th/2; break;
-                case 'bottom-left': x = pad + (isVertical ? tw/2 : tw/2); y = h - pad - th/2; break;
-                case 'bottom-right': x = w - pad - (isVertical ? tw/2 : tw/2); y = h - pad - th/2; break;
-                case 'center': x = w/2; y = h/2; break;
-                default: x = w - pad - (isVertical ? tw/2 : tw/2); y = pad + th/2;
-            }
+        function drawShape(ctx, l, w, h) {
+            let sizeBase = (l.shapeSize / 100) * Math.min(w, h);
+            let sw = sizeBase * ((l.stretchX || 100) / 100),
+                sh = sizeBase * ((l.stretchY || 100) / 100);
+            if (sw < 2 || sh < 2) return;
+            let x = (l.xPercent / 100) * w,
+                y = (l.yPercent / 100) * h;
+            ctx.save();
+            ctx.globalAlpha = l.opacity;
+            ctx.translate(x, y);
+            ctx.rotate(l.rotation * Math.PI / 180);
+            applyFlipAndStretch(ctx, l);
+            if (l.shadow) { ctx.shadowColor = "rgba(0,0,0,0.4)";
+                ctx.shadowBlur = 4; } else ctx.shadowColor = "transparent";
+            let fillStyle;
+            if (l.gradient && l.gradientColor1 && l.gradientColor2) {
+                fillStyle = createGradient(ctx, 0, 0, sw, sh, l.gradientType, l.gradientAngle || 0, l.gradientColor1,
+                    l.gradientColor2, l.gradientOpacity1 !== undefined ? l.gradientOpacity1 : 1, l.gradientOpacity2 !==
+                    undefined ? l.gradientOpacity2 : 1, l.radialShape || 'circle');
+            } else { fillStyle = l.shapeColor; }
+            ctx.fillStyle = fillStyle;
+            if (l.shapeType === 'circle') { ctx.beginPath();
+                ctx.ellipse(0, 0, sw / 2, sh / 2, 0, 0, 2 * Math.PI);
+                ctx.fill(); if (l.stroke) { ctx.strokeStyle = "#fff";
+                    ctx.lineWidth = 2;
+                    ctx.stroke(); } } else if (l.shapeType === 'square') { ctx.fillRect(-sw / 2, -sh / 2, sw, sh); if (l
+                    .stroke) { ctx.strokeStyle = "#fff";
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(-sw / 2, -sh / 2, sw, sh); } } else if (l.shapeType === 'rounded-square') { let r = Math
+                    .min(sw, sh) * 0.2;
+                ctx.beginPath();
+                ctx.moveTo(-sw / 2 + r, -sh / 2);
+                ctx.lineTo(sw / 2 - r, -sh / 2);
+                ctx.quadraticCurveTo(sw / 2, -sh / 2, sw / 2, -sh / 2 + r);
+                ctx.lineTo(sw / 2, sh / 2 - r);
+                ctx.quadraticCurveTo(sw / 2, sh / 2, sw / 2 - r, sh / 2);
+                ctx.lineTo(-sw / 2 + r, sh / 2);
+                ctx.quadraticCurveTo(-sw / 2, sh / 2, -sw / 2, sh / 2 - r);
+                ctx.lineTo(-sw / 2, -sh / 2 + r);
+                ctx.quadraticCurveTo(-sw / 2, -sh / 2, -sw / 2 + r, -sh / 2);
+                ctx.closePath();
+                ctx.fill(); if (l.stroke) ctx.stroke(); } else if (l.shapeType === 'triangle') { ctx.beginPath();
+                ctx.moveTo(0, -sh / 2);
+                ctx.lineTo(sw / 2, sh / 2);
+                ctx.lineTo(-sw / 2, sh / 2);
+                ctx.closePath();
+                ctx.fill(); if (l.stroke) ctx.stroke(); } else if (l.shapeType === 'star') { let spikes = 5,
+                    outerR = Math.min(sw, sh) / 2,
+                    innerR = outerR * 0.5,
+                    rot = Math.PI / 2 * 3,
+                    step = Math.PI / spikes;
+                ctx.beginPath(); for (let i = 0; i < spikes; i++) { let x1 = Math.cos(rot) * outerR,
+                        y1 = Math.sin(rot) * outerR;
+                    ctx.lineTo(x1, y1);
+                    rot += step; let x2 = Math.cos(rot) * innerR,
+                        y2 = Math.sin(rot) * innerR;
+                    ctx.lineTo(x2, y2);
+                    rot += step; }
+                ctx.closePath();
+                ctx.fill(); if (l.stroke) ctx.stroke(); } else if (l.shapeType === 'line') { ctx.beginPath();
+                ctx.moveTo(-sw / 2, 0);
+                ctx.lineTo(sw / 2, 0);
+                ctx.lineWidth = Math.min(sw, sh) * 0.15;
+                ctx.strokeStyle = fillStyle;
+                ctx.stroke(); }
+            ctx.restore();
+        }
 
-            // Shape
-            if (shape !== 'none') {
-                let rectW, rectH;
-                if (isVertical) {
-                    rectW = tw + 12;
-                    rectH = th + 12;
-                } else {
-                    rectW = tw + 20;
-                    rectH = th + 12;
-                }
-                const rx = x - rectW/2;
-                const ry = y - rectH/2;
-                ctx.fillStyle = 'rgba(0,0,0,0.4)';
-                if (shape === 'rect') {
-                    ctx.beginPath();
-                    ctx.roundRect(rx, ry, rectW, rectH, 8);
-                    ctx.fill();
-                } else if (shape === 'circle') {
-                    ctx.beginPath();
-                    ctx.arc(x, y, Math.max(rectW, rectH)/2 * 0.7, 0, Math.PI*2);
-                    ctx.fill();
-                }
-            }
-
-            // Teks
-            ctx.fillStyle = color;
-            ctx.shadowColor = 'rgba(0,0,0,0.5)';
-            ctx.shadowBlur = 6;
-            if (isVertical) {
-                const chars = text.split('');
-                const lineHeight = size * 1.2;
-                const startY = y - (chars.length - 1) * lineHeight / 2;
-                chars.forEach((ch, i) => {
-                    ctx.fillText(ch, x, startY + i * lineHeight);
-                });
-            } else {
-                ctx.fillText(text, x, y);
+        function drawImageLayer(ctx, l, w, h) {
+            if (!l.imageObj) return;
+            let baseW = (l.scalePercent / 100) * w,
+                baseH = baseW * (l.imageObj.height / l.imageObj.width);
+            let tw = baseW * ((l.stretchX || 100) / 100),
+                th = baseH * ((l.stretchY || 100) / 100);
+            let x = (l.xPercent / 100) * w,
+                y = (l.yPercent / 100) * h;
+            ctx.save();
+            ctx.globalAlpha = l.opacity;
+            if (l.imgShadow) {
+                ctx.shadowColor = l.imgShadowColor || "rgba(0,0,0,0.5)";
+                ctx.shadowBlur = l.imgShadowBlur !== undefined ? l.imgShadowBlur : 8;
+                ctx.shadowOffsetX = l.imgShadowOffsetX !== undefined ? l.imgShadowOffsetX : 4;
+                ctx.shadowOffsetY = l.imgShadowOffsetY !== undefined ? l.imgShadowOffsetY : 4;
+            } else { ctx.shadowColor = "transparent"; }
+            ctx.translate(x, y);
+            ctx.rotate(l.rotation * Math.PI / 180);
+            let scaleX = 1,
+                scaleY = 1;
+            if (l.flipX) scaleX = -1;
+            if (l.flipY) scaleY = -1;
+            let stretchX = (l.stretchX || 100) / 100;
+            let stretchY = (l.stretchY || 100) / 100;
+            ctx.scale(scaleX * stretchX, scaleY * stretchY);
+            ctx.drawImage(l.imageObj, -tw / 2, -th / 2, tw, th);
+            if (l.imgStroke) {
+                ctx.save();
+                ctx.globalCompositeOperation = "source-over";
+                ctx.shadowColor = "transparent";
+                ctx.strokeStyle = l.imgStrokeColor || "#FFFFFF";
+                ctx.lineWidth = l.imgStrokeWidth !== undefined ? l.imgStrokeWidth : 4;
+                ctx.strokeRect(-tw / 2, -th / 2, tw, th);
+                ctx.restore();
             }
             ctx.restore();
-
-            opacityValue.textContent = opacity.toFixed(2);
         }
 
-        // Polyfill roundRect
-        if (!CanvasRenderingContext2D.prototype.roundRect) {
-            CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
-                if (r > w/2) r = w/2;
-                if (r > h/2) r = h/2;
-                this.moveTo(x + r, y);
-                this.arcTo(x + w, y, x + w, y + h, r);
-                this.arcTo(x + w, y + h, x, y + h, r);
-                this.arcTo(x, y + h, x, y, r);
-                this.arcTo(x, y, x + w, y, r);
-                return this;
+        function renderFullPreview() {
+            const container = previewCanvas.parentElement;
+            const maxW = Math.min(container.clientWidth - 20, 600);
+            let pw = maxW,
+                ph = pw * 0.75;
+            if (hasImage && originalImage) {
+                const ratio = originalW / originalH;
+                ph = pw / ratio;
+                if (ph > 500) { ph = 500;
+                    pw = ph * ratio; }
+            }
+            previewCanvas.width = pw;
+            previewCanvas.height = ph;
+            currentPreviewW = pw;
+            currentPreviewH = ph;
+            const ctx = previewCanvas.getContext('2d');
+            if (hasImage && originalImage) {
+                ctx.drawImage(originalImage, 0, 0, pw, ph);
+            } else {
+                ctx.fillStyle = bgColor;
+                ctx.fillRect(0, 0, pw, ph);
+            }
+            for (let l of layers) {
+                if (l.type === 'text') drawText(ctx, l, pw, ph);
+                else if (l.type === 'shape') drawShape(ctx, l, pw, ph);
+                else if (l.type === 'dynamic') {
+                    let c = l.dynamicType === 'time' ? getCurrentTimeString() : l.dynamicType === 'date' ?
+                        getCurrentDateString() : l.dynamicType === 'day' ? getCurrentDayString() : getCoordText();
+                    drawDynamicText(ctx, l, c, pw, ph);
+                } else if (l.type === 'image' && l.imageObj) drawImageLayer(ctx, l, pw, ph);
+            }
+        }
+
+        // ========== RENDER UNTUK EKSPOR & KIRIM (ukuran penuh) ==========
+        function renderFullCanvas(exportW, exportH) {
+            const ec = document.createElement('canvas');
+            ec.width = exportW;
+            ec.height = exportH;
+            const ctx = ec.getContext('2d');
+            if (hasImage && originalImage) {
+                ctx.drawImage(originalImage, 0, 0, exportW, exportH);
+            } else {
+                ctx.fillStyle = bgColor;
+                ctx.fillRect(0, 0, exportW, exportH);
+            }
+            for (let l of layers) {
+                if (l.type === 'text') drawText(ctx, l, exportW, exportH);
+                else if (l.type === 'shape') drawShape(ctx, l, exportW, exportH);
+                else if (l.type === 'dynamic') {
+                    let c = l.dynamicType === 'time' ? getCurrentTimeString() : l.dynamicType === 'date' ?
+                        getCurrentDateString() : l.dynamicType === 'day' ? getCurrentDayString() : getCoordText();
+                    drawDynamicText(ctx, l, c, exportW, exportH);
+                } else if (l.type === 'image' && l.imageObj) drawImageLayer(ctx, l, exportW, exportH);
+            }
+            return ec;
+        }
+
+        function setBackgroundImage(img) {
+            originalImage = img;
+            originalW = img.width;
+            originalH = img.height;
+            hasImage = true;
+            renderFullPreview();
+        }
+
+        function resetBackground() {
+            originalImage = null;
+            hasImage = false;
+            renderFullPreview();
+        }
+
+        // ========== LAYER MANAGEMENT ==========
+        function createTextLayer() { return { id: genId(), type: 'text', text: 'Teks', fontFamily: 'Inter, sans-serif',
+                fontSizePercent: 6, color: '#FFFFFF', opacity: 0.9, rotation: 0, xPercent: 50, yPercent: 50, shadow: true,
+                stroke: false, bold: false, italic: false, underline: false, locked: false, gradient: false,
+                gradientType: 'linear', gradientAngle: 45, gradientColor1: '#FF0000', gradientColor2: '#FFFF00',
+                gradientOpacity1: 1, gradientOpacity2: 1, radialShape: 'circle', flipX: false, flipY: false, stretchX: 100,
+                stretchY: 100 }; }
+
+        function createShapeLayer() { return { id: genId(), type: 'shape', shapeType: 'circle', shapeSize: 8,
+                shapeColor: '#FFD966', opacity: 0.8, rotation: 0, xPercent: 50, yPercent: 50, shadow: false, stroke: false,
+                locked: false, gradient: false, gradientType: 'linear', gradientAngle: 45, gradientColor1: '#FF0000',
+                gradientColor2: '#FFFF00', gradientOpacity1: 1, gradientOpacity2: 1, radialShape: 'circle', flipX: false,
+                flipY: false, stretchX: 100, stretchY: 100 }; }
+
+        function createDynamicLayer(dt) { return { id: genId(), type: 'dynamic', dynamicType: dt, fontSizePercent: 5,
+                color: '#FFFFFF', opacity: 0.9, rotation: 0, xPercent: 50, yPercent: 50, shadow: true, stroke: false,
+                fontFamily: 'Inter, sans-serif', bold: false, italic: false, underline: false, locked: false, flipX: false,
+                flipY: false, stretchX: 100, stretchY: 100 }; }
+
+        function createImageLayer() { return { id: genId(), type: 'image', imageObj: null, imageDataUrl: null,
+                scalePercent: 12, opacity: 0.85, rotation: 0, xPercent: 50, yPercent: 50, blendMode: 'normal', locked: false,
+                flipX: false, flipY: false, stretchX: 100, stretchY: 100, imgShadow: false,
+                imgShadowColor: "rgba(0,0,0,0.5)", imgShadowBlur: 8, imgShadowOffsetX: 4, imgShadowOffsetY: 4,
+                imgStroke: false, imgStrokeColor: "#FFFFFF", imgStrokeWidth: 4 }; }
+
+        function createIconLayer(emoji) { return { id: genId(), type: 'text', text: emoji,
+                fontFamily: '"Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", system-ui', fontSizePercent: 8,
+                color: '#FFFFFF', opacity: 0.9, rotation: 0, xPercent: 50, yPercent: 50, shadow: true, stroke: false,
+                bold: false, italic: false, underline: false, locked: false, gradient: false, gradientType: 'linear',
+                gradientAngle: 45, gradientColor1: '#FF0000', gradientColor2: '#FFFF00', gradientOpacity1: 1,
+                gradientOpacity2: 1, radialShape: 'circle', flipX: false, flipY: false, stretchX: 100, stretchY: 100 }; }
+
+        function addLayer(layer) { layers.push(layer);
+            selectedLayerId = layer.id;
+            selectedLayerIds.clear();
+            selectedLayerIds.add(layer.id);
+            updateUI();
+            renderFullPreview();
+            loadProps(layer); if (layer.type === 'image') setTimeout(() => { let inp = document.createElement('input');
+                inp.type = 'file';
+                inp.accept = 'image/*';
+                inp.onchange = e => { if (e.target.files.length) loadLogo(layer.id, e.target.files[0]); };
+                inp.click(); }, 50); }
+
+        function loadLogo(id, file) { let r = new FileReader();
+            r.onload = e => { let img = new Image();
+                img.onload = () => { let l = layers.find(l => l.id === id); if (l && l.type === 'image') { l.imageObj = img;
+                        l.imageDataUrl = e.target.result;
+                        renderFullPreview();
+                        updateUI(); if (selectedLayerId === id) loadProps(l); } };
+                img.src = e.target.result; };
+            r.readAsDataURL(file); }
+
+        function deleteLayer(id) { layers = layers.filter(l => l.id !== id);
+            selectedLayerIds.delete(id); if (selectedLayerId === id) { selectedLayerId = layers.length ? layers[0].id : null; if (
+                    selectedLayerId) loadProps(layers.find(l => l.id === selectedLayerId));
+                else document.getElementById('propContent').innerHTML = '<p style="text-align:center;">Klik layer</p>'; }
+            updateUI();
+            renderFullPreview(); }
+
+        function duplicateLayer(id) { let orig = layers.find(l => l.id === id); if (!orig) return; let clone = JSON.parse(
+                JSON.stringify(orig));
+            clone.id = genId(); if (clone.type === 'image' && orig.imageDataUrl) { let img = new Image();
+                img.src = orig.imageDataUrl;
+                clone.imageObj = img; }
+            layers.push(clone);
+            selectedLayerId = clone.id;
+            selectedLayerIds.clear();
+            selectedLayerIds.add(clone.id);
+            updateUI();
+            renderFullPreview();
+            loadProps(clone); }
+
+        function moveLayer(id, dir) { let idx = layers.findIndex(l => l.id === id); if (idx === -1) return; if (dir === 'up' &&
+                idx > 0) { [layers[idx - 1], layers[idx]] = [layers[idx], layers[idx - 1]]; } else if (dir === 'down' && idx <
+                layers.length - 1) { [layers[idx], layers[idx + 1]] = [layers[idx + 1], layers[idx]]; }
+            updateUI();
+            renderFullPreview(); }
+
+        function toggleLock(id) { let l = layers.find(l => l.id === id); if (l) l.locked = !l.locked;
+            updateUI();
+            renderFullPreview(); }
+
+        function selectLayer(id) { selectedLayerId = id;
+            selectedLayerIds.clear();
+            selectedLayerIds.add(id); let l = layers.find(l => l.id === id); if (l) loadProps(l);
+            updateUI();
+            renderFullPreview(); }
+
+        function toggleSelectLayer(id, checked) { if (checked) selectedLayerIds.add(id);
+            else selectedLayerIds.delete(id); if (selectedLayerIds.size === 0) { selectedLayerId = null;
+                document.getElementById('propContent').innerHTML = '<p style="text-align:center;">Tidak ada layer terpilih</p>'; } else if (
+                selectedLayerIds.size === 1) { selectedLayerId = Array.from(selectedLayerIds)[0]; let l = layers.find(l => l
+                    .id === selectedLayerId); if (l) loadProps(l); } else { selectedLayerId = null;
+                document.getElementById('propContent').innerHTML =
+                    '<p style="text-align:center;">Multi-layer terpilih, drag untuk geser bersama</p>'; }
+            updateUI();
+            renderFullPreview(); }
+
+        function updateUI() {
+            let container = document.getElementById('layerListContainer');
+            if (!layers.length) { container.innerHTML = '<div style="text-align:center; padding:12px;">➕ Tambah layer</div>'; return; }
+            container.innerHTML = layers.map((l, idx) =>
+                    `<div class="layer-item ${selectedLayerId===l.id?'active':''} ${l.locked?'locked':''}" data-id="${l.id}"><input type="checkbox" class="layer-check" ${selectedLayerIds.has(l.id)?'checked':''} ${l.locked?'disabled':''}><div class="layer-info"><i class="fas ${l.type==='text'?'fa-font':l.type==='shape'?'fa-shapes':l.type==='dynamic'?'fa-clock':'fa-image'}"></i><span>${l.type==='text'?l.text.slice(0,8):l.type==='shape'?l.shapeType:l.type==='dynamic'?l.dynamicType:'Logo'}</span><span style="font-size:0.6rem;">${Math.round(l.xPercent)}%</span>${selectedLayerId===l.id?'<span class="selected-badge">✓</span>':''}</div><div class="layer-actions"><button class="btn-icon" data-action="lock"><i class="fas ${l.locked?'fa-lock':'fa-lock-open'}"></i></button><button class="btn-icon" data-action="up" ${idx===0?'disabled style="opacity:0.4"':''}><i class="fas fa-arrow-up"></i></button><button class="btn-icon" data-action="down" ${idx===layers.length-1?'disabled style="opacity:0.4"':''}><i class="fas fa-arrow-down"></i></button><button class="btn-icon" data-action="copy"><i class="fas fa-copy"></i></button><button class="btn-icon" data-action="del"><i class="fas fa-trash"></i></button></div></div>`
+                ).join('');
+            document.querySelectorAll('.layer-item').forEach(el => { let id = el.getAttribute('data-id'); let chk = el
+                    .querySelector('.layer-check'); if (chk) chk.addEventListener('change', (e) => { e.stopPropagation();
+                        toggleSelectLayer(id, chk.checked); });
+                el.addEventListener('click', (e) => { if (!e.target.closest('.layer-actions') && e.target !== chk) {
+                        selectedLayerIds.clear();
+                        selectedLayerIds.add(id);
+                        selectLayer(id); } });
+                el.querySelectorAll('[data-action]').forEach(btn => { btn.addEventListener('click', (e) => {
+                        e.stopPropagation(); let act = btn.getAttribute('data-action'); if (act === 'lock')
+                            toggleLock(id); else if (act === 'up') moveLayer(id, 'up'); else if (act === 'down')
+                            moveLayer(id, 'down'); else if (act === 'copy') duplicateLayer(id); else if (act ===
+                            'del') deleteLayer(id); }); }); });
+        }
+
+        // ========== PROPERTIES HTML (diringkas) ==========
+        function textPropHTML(l) { return `<div class="prop-field"><label>Teks</label><input type="text" id="txtText" value="${escapeHtml(l.text)}"></div><div class="prop-field"><label>Skala</label><input type="range" id="txtSize" min="2" max="20" step="0.5" value="${l.fontSizePercent}"><span>${l.fontSizePercent}%</span></div><div class="prop-field"><label>Stretch X</label><input type="range" id="txtStretchX" min="20" max="300" step="5" value="${l.stretchX||100}"><span>${l.stretchX||100}%</span></div><div class="prop-field"><label>Stretch Y</label><input type="range" id="txtStretchY" min="20" max="300" step="5" value="${l.stretchY||100}"><span>${l.stretchY||100}%</span></div><div class="prop-field"><label>Opacity</label><input type="range" id="txtOp" min="0" max="100" step="1" value="${l.opacity*100}"><span>${Math.round(l.opacity*100)}%</span></div><div class="prop-field"><label>Rotasi</label><input type="range" id="txtRot" min="-180" max="180" value="${l.rotation}"></div><div class="prop-field"><label>Font</label><select id="txtFont"><option ${l.fontFamily==='Inter, sans-serif'?'selected':''}>Inter, sans-serif</option><option ${l.fontFamily==='Arial'?'selected':''}>Arial</option><option ${l.fontFamily==="'Segoe UI'"?'selected':''}>'Segoe UI'</option></select></div><div class="prop-field"><label>Style</label><div><button id="btnB" class="btn-icon" style="${l.bold?'background:#2e7ea3;color:white':''}"><b>B</b></button><button id="btnI" class="btn-icon" style="${l.italic?'background:#2e7ea3;color:white':''}"><i>I</i></button><button id="btnU" class="btn-icon" style="${l.underline?'background:#2e7ea3;color:white':''}"><u>U</u></button></div></div><div class="prop-field"><label>Flip</label><div><button id="flipXBtn" class="btn-icon" style="${l.flipX?'background:#2e7ea3;color:white':''}"><i class="fas fa-arrows-alt-h"></i> X</button><button id="flipYBtn" class="btn-icon" style="${l.flipY?'background:#2e7ea3;color:white':''}"><i class="fas fa-arrows-alt-v"></i> Y</button></div></div><div class="prop-field"><label>Efek</label><label><input type="checkbox" id="txtShadow" ${l.shadow?'checked':''}> Bayangan</label><label><input type="checkbox" id="txtStroke" ${l.stroke?'checked':''}> Outline</label></div><div class="prop-field" style="grid-column: span 2;"><label>Gradient</label><label><input type="checkbox" id="txtGrad" ${l.gradient?'checked':''}> Aktifkan</label></div><div class="prop-field" id="gradTypeField" style="${l.gradient?'':'display:none'}"><label>Tipe</label><select id="txtGradType"><option ${l.gradientType==='linear'?'selected':''}>linear</option><option ${l.gradientType==='radial'?'selected':''}>radial</option></select></div><div class="prop-field" id="gradAngleField" style="${l.gradient && l.gradientType==='linear'?'':'display:none'}"><label>Sudut</label><input type="range" id="txtGradAngle" min="0" max="360" step="1" value="${l.gradientAngle||0}"><span>${l.gradientAngle||0}°</span></div><div class="prop-field" id="radialShapeField" style="${l.gradient && l.gradientType==='radial'?'':'display:none'}"><label>Bentuk</label><select id="txtRadialShape"><option ${(l.radialShape||'circle')==='circle'?'selected':''}>circle</option><option ${(l.radialShape||'circle')==='ellipse'?'selected':''}>ellipse</option></select></div><div class="prop-field" id="gradColor1Field" style="${l.gradient?'':'display:none'}"><label>Warna1</label><input type="color" id="txtGradColor1" value="${l.gradientColor1}"><input type="range" id="txtGradOpacity1" min="0" max="100" step="1" value="${(l.gradientOpacity1 !== undefined ? l.gradientOpacity1 : 1)*100}"><span>${Math.round((l.gradientOpacity1 !== undefined ? l.gradientOpacity1 : 1)*100)}%</span></div><div class="prop-field" id="gradColor2Field" style="${l.gradient?'':'display:none'}"><label>Warna2</label><input type="color" id="txtGradColor2" value="${l.gradientColor2}"><input type="range" id="txtGradOpacity2" min="0" max="100" step="1" value="${(l.gradientOpacity2 !== undefined ? l.gradientOpacity2 : 1)*100}"><span>${Math.round((l.gradientOpacity2 !== undefined ? l.gradientOpacity2 : 1)*100)}%</span></div><div class="prop-field" id="solidColorField" style="${l.gradient?'display:none':''}"><label>Warna</label><input type="color" id="txtColor" value="${l.color}"></div>`; }
+
+        function shapePropHTML(l) { return `<div class="prop-field"><label>Bentuk</label><select id="shapeType"><option ${l.shapeType==='circle'?'selected':''}>circle</option><option ${l.shapeType==='square'?'selected':''}>square</option><option ${l.shapeType==='rounded-square'?'selected':''}>rounded-square</option><option ${l.shapeType==='triangle'?'selected':''}>triangle</option><option ${l.shapeType==='star'?'selected':''}>star</option><option ${l.shapeType==='line'?'selected':''}>line</option></select></div><div class="prop-field"><label>Ukuran</label><input type="range" id="shapeSize" min="3" max="25" step="0.5" value="${l.shapeSize}"><span>${l.shapeSize}%</span></div><div class="prop-field"><label>Stretch X</label><input type="range" id="shapeStretchX" min="20" max="300" step="5" value="${l.stretchX||100}"><span>${l.stretchX||100}%</span></div><div class="prop-field"><label>Stretch Y</label><input type="range" id="shapeStretchY" min="20" max="300" step="5" value="${l.stretchY||100}"><span>${l.stretchY||100}%</span></div><div class="prop-field"><label>Opacity</label><input type="range" id="shapeOp" min="0" max="100" step="1" value="${l.opacity*100}"><span>${Math.round(l.opacity*100)}%</span></div><div class="prop-field"><label>Rotasi</label><input type="range" id="shapeRot" min="-180" max="180" value="${l.rotation}"></div><div class="prop-field"><label>Flip</label><div><button id="shapeFlipXBtn" class="btn-icon" style="${l.flipX?'background:#2e7ea3;color:white':''}"><i class="fas fa-arrows-alt-h"></i> X</button><button id="shapeFlipYBtn" class="btn-icon" style="${l.flipY?'background:#2e7ea3;color:white':''}"><i class="fas fa-arrows-alt-v"></i> Y</button></div></div><div class="prop-field"><label>Efek</label><label><input type="checkbox" id="shapeShadow" ${l.shadow?'checked':''}> Bayangan</label><label><input type="checkbox" id="shapeStroke" ${l.stroke?'checked':''}> Outline</label></div><div class="prop-field" style="grid-column: span 2;"><label>Gradient</label><label><input type="checkbox" id="shapeGrad" ${l.gradient?'checked':''}> Aktifkan</label></div><div class="prop-field" id="shapeGradTypeField" style="${l.gradient?'':'display:none'}"><label>Tipe</label><select id="shapeGradType"><option ${l.gradientType==='linear'?'selected':''}>linear</option><option ${l.gradientType==='radial'?'selected':''}>radial</option></select></div><div class="prop-field" id="shapeGradAngleField" style="${l.gradient && l.gradientType==='linear'?'':'display:none'}"><label>Sudut</label><input type="range" id="shapeGradAngle" min="0" max="360" step="1" value="${l.gradientAngle||0}"><span>${l.gradientAngle||0}°</span></div><div class="prop-field" id="shapeRadialShapeField" style="${l.gradient && l.gradientType==='radial'?'':'display:none'}"><label>Bentuk</label><select id="shapeRadialShape"><option ${(l.radialShape||'circle')==='circle'?'selected':''}>circle</option><option ${(l.radialShape||'circle')==='ellipse'?'selected':''}>ellipse</option></select></div><div class="prop-field" id="shapeGradColor1Field" style="${l.gradient?'':'display:none'}"><label>Warna1</label><input type="color" id="shapeGradColor1" value="${l.gradientColor1}"><input type="range" id="shapeGradOpacity1" min="0" max="100" step="1" value="${(l.gradientOpacity1 !== undefined ? l.gradientOpacity1 : 1)*100}"><span>${Math.round((l.gradientOpacity1 !== undefined ? l.gradientOpacity1 : 1)*100)}%</span></div><div class="prop-field" id="shapeGradColor2Field" style="${l.gradient?'':'display:none'}"><label>Warna2</label><input type="color" id="shapeGradColor2" value="${l.gradientColor2}"><input type="range" id="shapeGradOpacity2" min="0" max="100" step="1" value="${(l.gradientOpacity2 !== undefined ? l.gradientOpacity2 : 1)*100}"><span>${Math.round((l.gradientOpacity2 !== undefined ? l.gradientOpacity2 : 1)*100)}%</span></div><div class="prop-field" id="shapeSolidColorField" style="${l.gradient?'display:none':''}"><label>Warna</label><input type="color" id="shapeColor" value="${l.shapeColor}"></div>`; }
+
+        function dynamicPropHTML(l) { return `<div class="prop-field"><label>Tipe</label><select id="dynType"><option ${l.dynamicType==='time'?'selected':''}>time</option><option ${l.dynamicType==='date'?'selected':''}>date</option><option ${l.dynamicType==='day'?'selected':''}>day</option><option ${l.dynamicType==='coord'?'selected':''}>coord</option></select></div><div class="prop-field"><label>Skala</label><input type="range" id="dynSize" min="2" max="18" step="0.5" value="${l.fontSizePercent}"><span>${l.fontSizePercent}%</span></div><div class="prop-field"><label>Stretch X</label><input type="range" id="dynStretchX" min="20" max="300" step="5" value="${l.stretchX||100}"><span>${l.stretchX||100}%</span></div><div class="prop-field"><label>Stretch Y</label><input type="range" id="dynStretchY" min="20" max="300" step="5" value="${l.stretchY||100}"><span>${l.stretchY||100}%</span></div><div class="prop-field"><label>Opacity</label><input type="range" id="dynOp" min="0" max="100" step="1" value="${l.opacity*100}"><span>${Math.round(l.opacity*100)}%</span></div><div class="prop-field"><label>Warna</label><input type="color" id="dynColor" value="${l.color}"></div><div class="prop-field"><label>Rotasi</label><input type="range" id="dynRot" min="-180" max="180" value="${l.rotation}"></div><div class="prop-field"><label>Font</label><select id="dynFont"><option ${l.fontFamily==='Inter, sans-serif'?'selected':''}>Inter, sans-serif</option><option ${l.fontFamily==='Arial'?'selected':''}>Arial</option><option ${l.fontFamily==="'Segoe UI'"?'selected':''}>'Segoe UI'</option></select></div><div class="prop-field"><label>Flip</label><div><button id="dynFlipXBtn" class="btn-icon" style="${l.flipX?'background:#2e7ea3;color:white':''}"><i class="fas fa-arrows-alt-h"></i> X</button><button id="dynFlipYBtn" class="btn-icon" style="${l.flipY?'background:#2e7ea3;color:white':''}"><i class="fas fa-arrows-alt-v"></i> Y</button></div></div><div class="prop-field"><label>Style</label><div><button id="dynB" class="btn-icon" style="${l.bold?'background:#2e7ea3;color:white':''}"><b>B</b></button><button id="dynI" class="btn-icon" style="${l.italic?'background:#2e7ea3;color:white':''}"><i>I</i></button><button id="dynU" class="btn-icon" style="${l.underline?'background:#2e7ea3;color:white':''}"><u>U</u></button></div></div><div class="prop-field"><label><input type="checkbox" id="dynShadow" ${l.shadow?'checked':''}> Bayangan</label><label><input type="checkbox" id="dynStroke" ${l.stroke?'checked':''}> Outline</label></div>${l.dynamicType==='coord'?`<div class="prop-field"><label>Lat/Lon</label><input id="coordLat" value="${userLat}" size="6"><input id="coordLon" value="${userLon}" size="6"><button id="updateCoord" class="btn-icon">Set</button><button id="gpsBtn" class="btn-icon gps-btn"><i class="fas fa-map-marker-alt"></i> GPS</button></div>`:''}`; }
+
+        function imagePropHTML(l) {
+            return `<div class="prop-field"><label>Skala</label><input type="range" id="imgScale" min="3" max="35" step="0.5" value="${l.scalePercent}"><span>${l.scalePercent}%</span></div>
+                        <div class="prop-field"><label>Stretch X</label><input type="range" id="imgStretchX" min="20" max="300" step="5" value="${l.stretchX||100}"><span>${l.stretchX||100}%</span></div>
+                        <div class="prop-field"><label>Stretch Y</label><input type="range" id="imgStretchY" min="20" max="300" step="5" value="${l.stretchY||100}"><span>${l.stretchY||100}%</span></div>
+                        <div class="prop-field"><label>Opacity</label><input type="range" id="imgOp" min="0" max="100" step="1" value="${l.opacity*100}"><span>${Math.round(l.opacity*100)}%</span></div>
+                        <div class="prop-field"><label>Rotasi</label><input type="range" id="imgRot" min="-180" max="180" value="${l.rotation}"></div>
+                        <div class="prop-field"><label>Flip</label><div><button id="imgFlipXBtn" class="btn-icon" style="${l.flipX?'background:#2e7ea3;color:white':''}"><i class="fas fa-arrows-alt-h"></i> X</button><button id="imgFlipYBtn" class="btn-icon" style="${l.flipY?'background:#2e7ea3;color:white':''}"><i class="fas fa-arrows-alt-v"></i> Y</button></div></div>
+                        <div class="prop-field"><label>Blend</label><select id="imgBlend"><option ${l.blendMode==='normal'?'selected':''}>normal</option><option ${l.blendMode==='multiply'?'selected':''}>multiply</option><option ${l.blendMode==='screen'?'selected':''}>screen</option></select></div>
+                        <div class="prop-field"><button id="replaceLogoBtn" class="btn-icon">Ganti Logo</button></div>
+                        <div class="prop-field" style="grid-column: span 2;"><label>Efek Gambar</label></div>
+                        <div class="prop-field"><label><input type="checkbox" id="imgShadowChk" ${l.imgShadow?'checked':''}> Bayangan</label></div>
+                        <div class="prop-field" id="imgShadowColorField" style="${l.imgShadow?'':'display:none'}"><label>Warna Shadow</label><input type="color" id="imgShadowColor" value="${l.imgShadowColor||'#000000'}"></div>
+                        <div class="prop-field" id="imgShadowBlurField" style="${l.imgShadow?'':'display:none'}"><label>Blur</label><input type="range" id="imgShadowBlur" min="0" max="20" step="1" value="${l.imgShadowBlur||8}"><span>${l.imgShadowBlur||8}px</span></div>
+                        <div class="prop-field" id="imgShadowOffsetXField" style="${l.imgShadow?'':'display:none'}"><label>Offset X</label><input type="range" id="imgShadowOffsetX" min="-20" max="20" step="1" value="${l.imgShadowOffsetX||4}"><span>${l.imgShadowOffsetX||4}px</span></div>
+                        <div class="prop-field" id="imgShadowOffsetYField" style="${l.imgShadow?'':'display:none'}"><label>Offset Y</label><input type="range" id="imgShadowOffsetY" min="-20" max="20" step="1" value="${l.imgShadowOffsetY||4}"><span>${l.imgShadowOffsetY||4}px</span></div>
+                        <div class="prop-field"><label><input type="checkbox" id="imgStrokeChk" ${l.imgStroke?'checked':''}> Outline</label></div>
+                        <div class="prop-field" id="imgStrokeColorField" style="${l.imgStroke?'':'display:none'}"><label>Warna Outline</label><input type="color" id="imgStrokeColor" value="${l.imgStrokeColor||'#FFFFFF'}"></div>
+                        <div class="prop-field" id="imgStrokeWidthField" style="${l.imgStroke?'':'display:none'}"><label>Lebar</label><input type="range" id="imgStrokeWidth" min="1" max="15" step="1" value="${l.imgStrokeWidth||4}"><span>${l.imgStrokeWidth||4}px</span></div>`;
+        }
+
+        // ========== EVENT ATTACHERS ==========
+        function attachTextEvents(layer) {
+            let update = () => { renderFullPreview();
+                updateUI(); };
+            let txtText = document.getElementById('txtText'),
+                txtSize = document.getElementById('txtSize'),
+                txtStretchX = document.getElementById('txtStretchX'),
+                txtStretchY = document.getElementById('txtStretchY'),
+                txtOp = document.getElementById('txtOp'),
+                txtRot = document.getElementById('txtRot'),
+                txtFont = document.getElementById('txtFont'),
+                txtShadow = document.getElementById('txtShadow'),
+                txtStroke = document.getElementById('txtStroke'),
+                btnB = document.getElementById('btnB'),
+                btnI = document.getElementById('btnI'),
+                btnU = document.getElementById('btnU'),
+                flipXBtn = document.getElementById('flipXBtn'),
+                flipYBtn = document.getElementById('flipYBtn'),
+                gradChk = document.getElementById('txtGrad'),
+                gradType = document.getElementById('txtGradType'),
+                gradAngle = document.getElementById('txtGradAngle'),
+                radialShape = document.getElementById('txtRadialShape'),
+                gradColor1 = document.getElementById('txtGradColor1'),
+                gradColor2 = document.getElementById('txtGradColor2'),
+                gradOpacity1 = document.getElementById('txtGradOpacity1'),
+                gradOpacity2 = document.getElementById('txtGradOpacity2'),
+                solidColor = document.getElementById('txtColor'),
+                solidField = document.getElementById('solidColorField'),
+                gradTypeField = document.getElementById('gradTypeField'),
+                gradAngleField = document.getElementById('gradAngleField'),
+                radialShapeField = document.getElementById('radialShapeField'),
+                gradColor1Field = document.getElementById('gradColor1Field'),
+                gradColor2Field = document.getElementById('gradColor2Field');
+            if (txtText) txtText.oninput = e => { layer.text = e.target.value;
+                update(); };
+            if (txtSize) txtSize.oninput = e => { layer.fontSizePercent = parseFloat(e.target.value);
+                txtSize.nextElementSibling.innerText = layer.fontSizePercent + '%';
+                update(); };
+            if (txtStretchX) txtStretchX.oninput = e => { layer.stretchX = parseFloat(e.target.value);
+                txtStretchX.nextElementSibling.innerText = layer.stretchX + '%';
+                update(); };
+            if (txtStretchY) txtStretchY.oninput = e => { layer.stretchY = parseFloat(e.target.value);
+                txtStretchY.nextElementSibling.innerText = layer.stretchY + '%';
+                update(); };
+            if (txtOp) txtOp.oninput = e => { layer.opacity = parseFloat(e.target.value) / 100;
+                txtOp.nextElementSibling.innerText = Math.round(layer.opacity * 100) + '%';
+                update(); };
+            if (txtRot) txtRot.oninput = e => { layer.rotation = parseFloat(e.target.value);
+                update(); };
+            if (txtFont) txtFont.onchange = e => { layer.fontFamily = e.target.value;
+                update(); };
+            if (txtShadow) txtShadow.onchange = e => { layer.shadow = e.target.checked;
+                update(); };
+            if (txtStroke) txtStroke.onchange = e => { layer.stroke = e.target.checked;
+                update(); };
+            if (btnB) btnB.onclick = () => { layer.bold = !layer.bold;
+                loadProps(layer);
+                update(); };
+            if (btnI) btnI.onclick = () => { layer.italic = !layer.italic;
+                loadProps(layer);
+                update(); };
+            if (btnU) btnU.onclick = () => { layer.underline = !layer.underline;
+                loadProps(layer);
+                update(); };
+            if (flipXBtn) flipXBtn.onclick = () => { layer.flipX = !layer.flipX;
+                loadProps(layer);
+                update(); };
+            if (flipYBtn) flipYBtn.onclick = () => { layer.flipY = !layer.flipY;
+                loadProps(layer);
+                update(); };
+            if (gradChk) gradChk.onchange = e => { layer.gradient = e.target.checked; if (layer.gradient) { if (solidField)
+                        solidField.style.display = 'none'; if (gradTypeField) gradTypeField.style.display = 'flex'; if (
+                        gradColor1Field) gradColor1Field.style.display = 'flex'; if (gradColor2Field) gradColor2Field.style
+                        .display = 'flex'; if (gradType && gradType.value === 'linear') { if (gradAngleField) gradAngleField
+                            .style.display = 'flex'; if (radialShapeField) radialShapeField.style.display = 'none'; } else { if (
+                            gradAngleField) gradAngleField.style.display = 'none'; if (radialShapeField) radialShapeField
+                            .style.display = 'flex'; } } else { if (solidField) solidField.style.display = 'flex'; if (
+                        gradTypeField) gradTypeField.style.display = 'none'; if (gradColor1Field) gradColor1Field.style
+                        .display = 'none'; if (gradColor2Field) gradColor2Field.style.display = 'none'; if (gradAngleField)
+                        gradAngleField.style.display = 'none'; if (radialShapeField) radialShapeField.style.display = 'none'; }
+                update(); };
+            if (gradType) gradType.onchange = e => { layer.gradientType = e.target.value; if (layer.gradientType ===
+                    'linear') { if (gradAngleField) gradAngleField.style.display = 'flex'; if (radialShapeField)
+                        radialShapeField.style.display = 'none'; } else { if (gradAngleField) gradAngleField.style.display =
+                        'none'; if (radialShapeField) radialShapeField.style.display = 'flex'; }
+                update(); };
+            if (gradAngle) gradAngle.oninput = e => { layer.gradientAngle = parseFloat(e.target.value);
+                gradAngle.nextElementSibling.innerText = layer.gradientAngle + '°';
+                update(); };
+            if (radialShape) radialShape.onchange = e => { layer.radialShape = e.target.value;
+                update(); };
+            if (gradColor1) gradColor1.oninput = e => { layer.gradientColor1 = e.target.value;
+                update(); };
+            if (gradColor2) gradColor2.oninput = e => { layer.gradientColor2 = e.target.value;
+                update(); };
+            if (gradOpacity1) gradOpacity1.oninput = e => { layer.gradientOpacity1 = parseFloat(e.target.value) / 100;
+                gradOpacity1.nextElementSibling.innerText = Math.round(layer.gradientOpacity1 * 100) + '%';
+                update(); };
+            if (gradOpacity2) gradOpacity2.oninput = e => { layer.gradientOpacity2 = parseFloat(e.target.value) / 100;
+                gradOpacity2.nextElementSibling.innerText = Math.round(layer.gradientOpacity2 * 100) + '%';
+                update(); };
+            if (solidColor) solidColor.oninput = e => { layer.color = e.target.value;
+                update(); };
+        }
+
+        function attachShapeEvents(layer) {
+            let update = () => { renderFullPreview();
+                updateUI(); };
+            let shapeType = document.getElementById('shapeType'),
+                shapeSize = document.getElementById('shapeSize'),
+                shapeStretchX = document.getElementById('shapeStretchX'),
+                shapeStretchY = document.getElementById('shapeStretchY'),
+                shapeOp = document.getElementById('shapeOp'),
+                shapeRot = document.getElementById('shapeRot'),
+                shapeShadow = document.getElementById('shapeShadow'),
+                shapeStroke = document.getElementById('shapeStroke'),
+                flipXBtn = document.getElementById('shapeFlipXBtn'),
+                flipYBtn = document.getElementById('shapeFlipYBtn'),
+                gradChk = document.getElementById('shapeGrad'),
+                gradType = document.getElementById('shapeGradType'),
+                gradAngle = document.getElementById('shapeGradAngle'),
+                radialShape = document.getElementById('shapeRadialShape'),
+                gradColor1 = document.getElementById('shapeGradColor1'),
+                gradColor2 = document.getElementById('shapeGradColor2'),
+                gradOpacity1 = document.getElementById('shapeGradOpacity1'),
+                gradOpacity2 = document.getElementById('shapeGradOpacity2'),
+                solidColor = document.getElementById('shapeColor'),
+                solidField = document.getElementById('shapeSolidColorField'),
+                gradTypeField = document.getElementById('shapeGradTypeField'),
+                gradAngleField = document.getElementById('shapeGradAngleField'),
+                radialShapeField = document.getElementById('shapeRadialShapeField'),
+                gradColor1Field = document.getElementById('shapeGradColor1Field'),
+                gradColor2Field = document.getElementById('shapeGradColor2Field');
+            if (shapeType) shapeType.onchange = e => { layer.shapeType = e.target.value;
+                update(); };
+            if (shapeSize) shapeSize.oninput = e => { layer.shapeSize = parseFloat(e.target.value);
+                shapeSize.nextElementSibling.innerText = layer.shapeSize + '%';
+                update(); };
+            if (shapeStretchX) shapeStretchX.oninput = e => { layer.stretchX = parseFloat(e.target.value);
+                shapeStretchX.nextElementSibling.innerText = layer.stretchX + '%';
+                update(); };
+            if (shapeStretchY) shapeStretchY.oninput = e => { layer.stretchY = parseFloat(e.target.value);
+                shapeStretchY.nextElementSibling.innerText = layer.stretchY + '%';
+                update(); };
+            if (shapeOp) shapeOp.oninput = e => { layer.opacity = parseFloat(e.target.value) / 100;
+                shapeOp.nextElementSibling.innerText = Math.round(layer.opacity * 100) + '%';
+                update(); };
+            if (shapeRot) shapeRot.oninput = e => { layer.rotation = parseFloat(e.target.value);
+                update(); };
+            if (shapeShadow) shapeShadow.onchange = e => { layer.shadow = e.target.checked;
+                update(); };
+            if (shapeStroke) shapeStroke.onchange = e => { layer.stroke = e.target.checked;
+                update(); };
+            if (flipXBtn) flipXBtn.onclick = () => { layer.flipX = !layer.flipX;
+                loadProps(layer);
+                update(); };
+            if (flipYBtn) flipYBtn.onclick = () => { layer.flipY = !layer.flipY;
+                loadProps(layer);
+                update(); };
+            if (gradChk) gradChk.onchange = e => { layer.gradient = e.target.checked; if (layer.gradient) { if (solidField)
+                        solidField.style.display = 'none'; if (gradTypeField) gradTypeField.style.display = 'flex'; if (
+                        gradColor1Field) gradColor1Field.style.display = 'flex'; if (gradColor2Field) gradColor2Field.style
+                        .display = 'flex'; if (gradType && gradType.value === 'linear') { if (gradAngleField) gradAngleField
+                            .style.display = 'flex'; if (radialShapeField) radialShapeField.style.display = 'none'; } else { if (
+                            gradAngleField) gradAngleField.style.display = 'none'; if (radialShapeField) radialShapeField
+                            .style.display = 'flex'; } } else { if (solidField) solidField.style.display = 'flex'; if (
+                        gradTypeField) gradTypeField.style.display = 'none'; if (gradColor1Field) gradColor1Field.style
+                        .display = 'none'; if (gradColor2Field) gradColor2Field.style.display = 'none'; if (gradAngleField)
+                        gradAngleField.style.display = 'none'; if (radialShapeField) radialShapeField.style.display = 'none'; }
+                update(); };
+            if (gradType) gradType.onchange = e => { layer.gradientType = e.target.value; if (layer.gradientType ===
+                    'linear') { if (gradAngleField) gradAngleField.style.display = 'flex'; if (radialShapeField)
+                        radialShapeField.style.display = 'none'; } else { if (gradAngleField) gradAngleField.style.display =
+                        'none'; if (radialShapeField) radialShapeField.style.display = 'flex'; }
+                update(); };
+            if (gradAngle) gradAngle.oninput = e => { layer.gradientAngle = parseFloat(e.target.value);
+                gradAngle.nextElementSibling.innerText = layer.gradientAngle + '°';
+                update(); };
+            if (radialShape) radialShape.onchange = e => { layer.radialShape = e.target.value;
+                update(); };
+            if (gradColor1) gradColor1.oninput = e => { layer.gradientColor1 = e.target.value;
+                update(); };
+            if (gradColor2) gradColor2.oninput = e => { layer.gradientColor2 = e.target.value;
+                update(); };
+            if (gradOpacity1) gradOpacity1.oninput = e => { layer.gradientOpacity1 = parseFloat(e.target.value) / 100;
+                gradOpacity1.nextElementSibling.innerText = Math.round(layer.gradientOpacity1 * 100) + '%';
+                update(); };
+            if (gradOpacity2) gradOpacity2.oninput = e => { layer.gradientOpacity2 = parseFloat(e.target.value) / 100;
+                gradOpacity2.nextElementSibling.innerText = Math.round(layer.gradientOpacity2 * 100) + '%';
+                update(); };
+            if (solidColor) solidColor.oninput = e => { layer.shapeColor = e.target.value;
+                update(); };
+        }
+
+        function attachDynamicEvents(layer) {
+            let update = () => { renderFullPreview();
+                updateUI(); };
+            let dynType = document.getElementById('dynType'),
+                dynSize = document.getElementById('dynSize'),
+                dynStretchX = document.getElementById('dynStretchX'),
+                dynStretchY = document.getElementById('dynStretchY'),
+                dynOp = document.getElementById('dynOp'),
+                dynColor = document.getElementById('dynColor'),
+                dynRot = document.getElementById('dynRot'),
+                dynFont = document.getElementById('dynFont'),
+                dynShadow = document.getElementById('dynShadow'),
+                dynStroke = document.getElementById('dynStroke'),
+                dynB = document.getElementById('dynB'),
+                dynI = document.getElementById('dynI'),
+                dynU = document.getElementById('dynU'),
+                flipXBtn = document.getElementById('dynFlipXBtn'),
+                flipYBtn = document.getElementById('dynFlipYBtn');
+            if (dynType) dynType.onchange = e => { layer.dynamicType = e.target.value; if (layer.dynamicType === 'coord')
+                    loadProps(layer);
+                update(); };
+            if (dynSize) dynSize.oninput = e => { layer.fontSizePercent = parseFloat(e.target.value);
+                update(); };
+            if (dynStretchX) dynStretchX.oninput = e => { layer.stretchX = parseFloat(e.target.value);
+                dynStretchX.nextElementSibling.innerText = layer.stretchX + '%';
+                update(); };
+            if (dynStretchY) dynStretchY.oninput = e => { layer.stretchY = parseFloat(e.target.value);
+                dynStretchY.nextElementSibling.innerText = layer.stretchY + '%';
+                update(); };
+            if (dynOp) dynOp.oninput = e => { layer.opacity = parseFloat(e.target.value) / 100;
+                dynOp.nextElementSibling.innerText = Math.round(layer.opacity * 100) + '%';
+                update(); };
+            if (dynColor) dynColor.oninput = e => { layer.color = e.target.value;
+                update(); };
+            if (dynRot) dynRot.oninput = e => { layer.rotation = parseFloat(e.target.value);
+                update(); };
+            if (dynFont) dynFont.onchange = e => { layer.fontFamily = e.target.value;
+                update(); };
+            if (dynShadow) dynShadow.onchange = e => { layer.shadow = e.target.checked;
+                update(); };
+            if (dynStroke) dynStroke.onchange = e => { layer.stroke = e.target.checked;
+                update(); };
+            if (dynB) dynB.onclick = () => { layer.bold = !layer.bold;
+                loadProps(layer);
+                update(); };
+            if (dynI) dynI.onclick = () => { layer.italic = !layer.italic;
+                loadProps(layer);
+                update(); };
+            if (dynU) dynU.onclick = () => { layer.underline = !layer.underline;
+                loadProps(layer);
+                update(); };
+            if (flipXBtn) flipXBtn.onclick = () => { layer.flipX = !layer.flipX;
+                loadProps(layer);
+                update(); };
+            if (flipYBtn) flipYBtn.onclick = () => { layer.flipY = !layer.flipY;
+                loadProps(layer);
+                update(); };
+            if (layer.dynamicType === 'coord') {
+                let updateCoord = document.getElementById('updateCoord'),
+                    gpsBtn = document.getElementById('gpsBtn');
+                if (updateCoord) updateCoord.onclick = () => { let lat = parseFloat(document.getElementById('coordLat')
+                        .value),
+                        lon = parseFloat(document.getElementById('coordLon').value); if (!isNaN(lat) && !isNaN(lon)) {
+                        userLat = lat;
+                        userLon = lon;
+                        update(); } };
+                if (gpsBtn) gpsBtn.onclick = () => { if (navigator.geolocation) navigator.geolocation.getCurrentPosition(
+                        p => { userLat = p.coords.latitude;
+                            userLon = p.coords.longitude;
+                            document.getElementById('coordLat').value = userLat;
+                            document.getElementById('coordLon').value = userLon;
+                            update(); }, () => alert("Gagal"));
+                    else alert("GPS tidak didukung"); };
+            }
+        }
+
+        function attachImageEvents(layer) {
+            let update = () => { renderFullPreview();
+                updateUI(); };
+            let imgScale = document.getElementById('imgScale'),
+                imgStretchX = document.getElementById('imgStretchX'),
+                imgStretchY = document.getElementById('imgStretchY'),
+                imgOp = document.getElementById('imgOp'),
+                imgRot = document.getElementById('imgRot'),
+                imgBlend = document.getElementById('imgBlend'),
+                replaceBtn = document.getElementById('replaceLogoBtn'),
+                flipXBtn = document.getElementById('imgFlipXBtn'),
+                flipYBtn = document.getElementById('imgFlipYBtn');
+            let shadowChk = document.getElementById('imgShadowChk');
+            let shadowColor = document.getElementById('imgShadowColor');
+            let shadowBlur = document.getElementById('imgShadowBlur');
+            let shadowOffsetX = document.getElementById('imgShadowOffsetX');
+            let shadowOffsetY = document.getElementById('imgShadowOffsetY');
+            let strokeChk = document.getElementById('imgStrokeChk');
+            let strokeColor = document.getElementById('imgStrokeColor');
+            let strokeWidth = document.getElementById('imgStrokeWidth');
+            let shadowColorField = document.getElementById('imgShadowColorField');
+            let shadowBlurField = document.getElementById('imgShadowBlurField');
+            let shadowOffsetXField = document.getElementById('imgShadowOffsetXField');
+            let shadowOffsetYField = document.getElementById('imgShadowOffsetYField');
+            let strokeColorField = document.getElementById('imgStrokeColorField');
+            let strokeWidthField = document.getElementById('imgStrokeWidthField');
+            if (imgScale) imgScale.oninput = e => { layer.scalePercent = parseFloat(e.target.value);
+                update(); };
+            if (imgStretchX) imgStretchX.oninput = e => { layer.stretchX = parseFloat(e.target.value);
+                imgStretchX.nextElementSibling.innerText = layer.stretchX + '%';
+                update(); };
+            if (imgStretchY) imgStretchY.oninput = e => { layer.stretchY = parseFloat(e.target.value);
+                imgStretchY.nextElementSibling.innerText = layer.stretchY + '%';
+                update(); };
+            if (imgOp) imgOp.oninput = e => { layer.opacity = parseFloat(e.target.value) / 100;
+                imgOp.nextElementSibling.innerText = Math.round(layer.opacity * 100) + '%';
+                update(); };
+            if (imgRot) imgRot.oninput = e => { layer.rotation = parseFloat(e.target.value);
+                update(); };
+            if (imgBlend) imgBlend.onchange = e => { layer.blendMode = e.target.value;
+                update(); };
+            if (replaceBtn) replaceBtn.onclick = () => { let inp = document.createElement('input');
+                inp.type = 'file';
+                inp.accept = 'image/*';
+                inp.onchange = e => { if (e.target.files.length) loadLogo(layer.id, e.target.files[0]); };
+                inp.click(); };
+            if (flipXBtn) flipXBtn.onclick = () => { layer.flipX = !layer.flipX;
+                loadProps(layer);
+                update(); };
+            if (flipYBtn) flipYBtn.onclick = () => { layer.flipY = !layer.flipY;
+                loadProps(layer);
+                update(); };
+            if (shadowChk) shadowChk.onchange = e => {
+                layer.imgShadow = e.target.checked;
+                if (layer.imgShadow) {
+                    shadowColorField.style.display = 'flex';
+                    shadowBlurField.style.display = 'flex';
+                    shadowOffsetXField.style.display = 'flex';
+                    shadowOffsetYField.style.display = 'flex';
+                } else {
+                    shadowColorField.style.display = 'none';
+                    shadowBlurField.style.display = 'none';
+                    shadowOffsetXField.style.display = 'none';
+                    shadowOffsetYField.style.display = 'none';
+                }
+                update();
             };
+            if (shadowColor) shadowColor.oninput = e => { layer.imgShadowColor = e.target.value;
+                update(); };
+            if (shadowBlur) shadowBlur.oninput = e => { layer.imgShadowBlur = parseFloat(e.target.value);
+                shadowBlur.nextElementSibling.innerText = layer.imgShadowBlur + 'px';
+                update(); };
+            if (shadowOffsetX) shadowOffsetX.oninput = e => { layer.imgShadowOffsetX = parseFloat(e.target.value);
+                shadowOffsetX.nextElementSibling.innerText = layer.imgShadowOffsetX + 'px';
+                update(); };
+            if (shadowOffsetY) shadowOffsetY.oninput = e => { layer.imgShadowOffsetY = parseFloat(e.target.value);
+                shadowOffsetY.nextElementSibling.innerText = layer.imgShadowOffsetY + 'px';
+                update(); };
+            if (strokeChk) strokeChk.onchange = e => {
+                layer.imgStroke = e.target.checked;
+                if (layer.imgStroke) {
+                    strokeColorField.style.display = 'flex';
+                    strokeWidthField.style.display = 'flex';
+                } else {
+                    strokeColorField.style.display = 'none';
+                    strokeWidthField.style.display = 'none';
+                }
+                update();
+            };
+            if (strokeColor) strokeColor.oninput = e => { layer.imgStrokeColor = e.target.value;
+                update(); };
+            if (strokeWidth) strokeWidth.oninput = e => { layer.imgStrokeWidth = parseFloat(e.target.value);
+                strokeWidth.nextElementSibling.innerText = layer.imgStrokeWidth + 'px';
+                update(); };
         }
 
-        applyBtn.addEventListener('click', applyWatermark);
+        function loadProps(layer) {
+            let cont = document.getElementById('propContent');
+            if (layer.type === 'text') { cont.innerHTML =
+                `<div class="prop-grid">${textPropHTML(layer)}</div>`; attachTextEvents(layer); } else if (layer.type ===
+                'shape') { cont.innerHTML =
+                `<div class="prop-grid">${shapePropHTML(layer)}</div>`; attachShapeEvents(layer); } else if (layer.type ===
+                'dynamic') { cont.innerHTML =
+                `<div class="prop-grid">${dynamicPropHTML(layer)}</div>`; attachDynamicEvents(layer); } else if (layer.type ===
+                'image') { cont.innerHTML =
+                `<div class="prop-grid">${imagePropHTML(layer)}</div>`; attachImageEvents(layer); }
+        }
 
-        // Event perubahan realtime
-        [watermarkText, watermarkPosition, watermarkSize, watermarkColor, watermarkOpacity, watermarkShape].forEach(el => {
-            el.addEventListener('input', applyWatermark);
+        // ========== DRAG & DROP MULTI ==========
+        const canvasEl = document.getElementById('previewCanvas');
+        canvasEl.addEventListener('pointerdown', (e) => {
+            let dragLayers = [];
+            for (let id of selectedLayerIds) { let l = layers.find(l => l.id === id); if (l && !l.locked) dragLayers.push(
+                l); }
+            if (dragLayers.length === 0) return;
+            e.preventDefault();
+            dragActive = true;
+            draggingLayerIds = dragLayers.map(l => l.id);
+            const rect = canvasEl.getBoundingClientRect();
+            const sx = currentPreviewW / rect.width,
+                sy = currentPreviewH / rect.height;
+            let clientX, clientY;
+            if (e.touches) { clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY; } else { clientX = e.clientX;
+                clientY = e.clientY; }
+            dragStartCanvasX = (clientX - rect.left) * sx;
+            dragStartCanvasY = (clientY - rect.top) * sy;
+            dragStartCanvasX = Math.min(Math.max(0, dragStartCanvasX), currentPreviewW);
+            dragStartCanvasY = Math.min(Math.max(0, dragStartCanvasY), currentPreviewH);
+            canvasEl.setPointerCapture(e.pointerId);
         });
-
-        // ========== EKSPORT PNG ==========
-        exportBtn.addEventListener('click', () => {
-            if (!currentImageData) return alert('Tidak ada gambar.');
-            const link = document.createElement('a');
-            link.download = `watermark_${Date.now()}.png`;
-            link.href = resultCanvas.toDataURL('image/png');
-            link.click();
+        canvasEl.addEventListener('pointermove', (e) => {
+            if (!dragActive || draggingLayerIds.length === 0) return;
+            const rect = canvasEl.getBoundingClientRect();
+            const sx = currentPreviewW / rect.width,
+                sy = currentPreviewH / rect.height;
+            let clientX, clientY;
+            if (e.touches) { clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY; } else { clientX = e.clientX;
+                clientY = e.clientY; }
+            let canvasX = (clientX - rect.left) * sx;
+            let canvasY = (clientY - rect.top) * sy;
+            canvasX = Math.min(Math.max(0, canvasX), currentPreviewW);
+            canvasY = Math.min(Math.max(0, canvasY), currentPreviewH);
+            const deltaX = canvasX - dragStartCanvasX;
+            const deltaY = canvasY - dragStartCanvasY;
+            const deltaPercentX = (deltaX / currentPreviewW) * 100;
+            const deltaPercentY = (deltaY / currentPreviewH) * 100;
+            for (let id of draggingLayerIds) {
+                let l = layers.find(l => l.id === id);
+                if (l && !l.locked) {
+                    let newX = l.xPercent + deltaPercentX;
+                    let newY = l.yPercent + deltaPercentY;
+                    l.xPercent = Math.min(100, Math.max(0, newX));
+                    l.yPercent = Math.min(100, Math.max(0, newY));
+                }
+            }
+            dragStartCanvasX = canvasX;
+            dragStartCanvasY = canvasY;
+            renderFullPreview();
+            updateUI();
         });
+        canvasEl.addEventListener('pointerup', (e) => { dragActive = false;
+            draggingLayerIds = [];
+            canvasEl.releasePointerCapture(e.pointerId); });
+        canvasEl.addEventListener('touchmove', (e) => { if (dragActive) e.preventDefault(); }, { passive: false });
 
-        // ========== KIRIM KE MONITORING ==========
-        sendBtn.addEventListener('click', () => {
-            if (!currentImageData) return alert('Tidak ada gambar untuk dikirim.');
-            const dataUrl = resultCanvas.toDataURL('image/png');
+        // ========== EKSPOR ==========
+        function exportHD() {
+            let exportW, exportH;
+            if (hasImage && originalImage) { exportW = originalW;
+                exportH = originalH; } else { exportW = 1200;
+                exportH = 900; }
+            const ec = renderFullCanvas(exportW, exportH);
+            let a = document.createElement('a');
+            a.download = `watermark_${Date.now()}.png`;
+            a.href = ec.toDataURL('image/png');
+            a.click();
+        }
+
+        // ========== KIRIM KE MONITORING (seperti watermark studio) ==========
+        function sendToMonitoring() {
+            // Cek apakah ada gambar atau layer apapun
+            if (!hasImage && !originalImage && layers.length === 0) {
+                alert('Tidak ada gambar atau layer untuk dikirim.');
+                return;
+            }
+            // Gunakan dimensi yang sama dengan export (atau dimensi asli jika ada)
+            let exportW, exportH;
+            if (hasImage && originalImage) { exportW = originalW;
+                exportH = originalH; } else { exportW = 1200;
+                exportH = 900; }
+            const ec = renderFullCanvas(exportW, exportH);
+            const dataUrl = ec.toDataURL('image/png');
+
             if (window.opener) {
                 window.opener.postMessage({
                     type: 'watermarkedFoto',
                     data: dataUrl
                 }, '*');
                 alert('✅ Foto berhasil dikirim ke Monitoring!');
-                // window.close();
+                // window.close(); // opsional
             } else {
-                alert('Gagal: tidak ada parent window. Pastikan halaman ini dibuka sebagai popup.');
+                alert('Gagal: tidak ada parent window. Pastikan halaman ini dibuka sebagai popup dari Monitoring.');
+            }
+        }
+
+        // ========== FITUR KAMERA LIVE (FIX) ==========
+        async function startCamera(facingMode = 'environment') {
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+                cameraStream = null;
+            }
+            try {
+                const constraints = { video: { facingMode: { exact: facingMode } } };
+                cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
+                videoElem.srcObject = cameraStream;
+                videoElem.play();
+                cameraActive = true;
+            } catch (err) {
+                try {
+                    const constraints = { video: { facingMode: facingMode } };
+                    cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
+                    videoElem.srcObject = cameraStream;
+                    videoElem.play();
+                    cameraActive = true;
+                } catch (e) {
+                    alert("Tidak dapat mengakses kamera. Periksa izin.");
+                }
+            }
+        }
+
+        document.getElementById('openCameraBtn').addEventListener('click', async () => {
+            cameraModalElem.style.display = 'flex';
+            await startCamera(currentFacingMode);
+        });
+
+        document.getElementById('closeCameraModal').addEventListener('click', () => {
+            cameraModalElem.style.display = 'none';
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+                cameraStream = null;
             }
         });
 
-        // ========== INISIALISASI ==========
-        setTimeout(() => {
-            if (!currentImageData) {
-                const temp = document.createElement('canvas');
-                temp.width = 400;
-                temp.height = 300;
-                const tctx = temp.getContext('2d');
-                tctx.fillStyle = '#e2e8f0';
-                tctx.fillRect(0,0,400,300);
-                tctx.fillStyle = '#1e6f5c';
-                tctx.font = '20px Inter';
-                tctx.textAlign = 'center';
-                tctx.fillText('Ambil foto atau unggah', 200, 150);
-                currentImageData = temp;
-                applyWatermark();
+        captureBtn.addEventListener('click', () => {
+            if (!cameraActive || !videoElem.videoWidth) return;
+            const width = videoElem.videoWidth;
+            const height = videoElem.videoHeight;
+            cameraCanvas.width = width;
+            cameraCanvas.height = height;
+            const ctx = cameraCanvas.getContext('2d');
+            ctx.drawImage(videoElem, 0, 0, width, height);
+            cameraCanvas.toBlob(blob => {
+                const url = URL.createObjectURL(blob);
+                const img = new Image();
+                img.onload = () => {
+                    setBackgroundImage(img);
+                    URL.revokeObjectURL(url);
+                    cameraModalElem.style.display = 'none';
+                    if (cameraStream) {
+                        cameraStream.getTracks().forEach(track => track.stop());
+                        cameraStream = null;
+                    }
+                };
+                img.src = url;
+            }, 'image/jpeg', 0.9);
+        });
+
+        switchCameraBtn.addEventListener('click', () => {
+            currentFacingMode = currentFacingMode === 'environment' ? 'user' : 'environment';
+            startCamera(currentFacingMode);
+        });
+
+        // ========== FITUR GALERI & BACKGROUND ==========
+        document.getElementById('uploadBtn').addEventListener('click', () => { document.getElementById('imageUpload')
+            .click(); });
+        document.getElementById('imageUpload').addEventListener('change', (e) => {
+            if (e.target.files.length) {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                reader.onload = ev => {
+                    const img = new Image();
+                    img.onload = () => { setBackgroundImage(img); };
+                    img.src = ev.target.result;
+                };
+                reader.readAsDataURL(file);
             }
-        }, 200);
+        });
+        document.getElementById('setBgColorBtn').addEventListener('click', () => {
+            bgColor = document.getElementById('bgColorPicker').value;
+            resetBackground();
+        });
+        document.getElementById('resetBgBtn').addEventListener('click', () => {
+            resetBackground();
+        });
+
+        // ========== FITUR PRESET ==========
+        function savePreset() {
+            const presetData = { version: "1.0", timestamp: Date.now(), layers: layers.map(l => { const copy = { ...l }; if (
+                    copy.type === 'image' && copy.imageDataUrl) { copy.imageDataUrl = copy.imageDataUrl;
+                    delete copy.imageObj; } else { delete copy.imageObj; } return copy; }) };
+            const jsonStr = JSON.stringify(presetData, null, 2);
+            const blob = new Blob([jsonStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `aquamark_preset_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function loadPresetFromURL(url) {
+            fetch(url)
+                .then(res => {
+                    if (!res.ok) throw new Error('HTTP ' + res.status + ' - File tidak ditemukan');
+                    return res.json();
+                })
+                .then(preset => {
+                    if (!preset.layers || !Array.isArray(preset.layers)) throw new Error("Format preset salah");
+                    layers = [];
+                    selectedLayerIds.clear();
+                    selectedLayerId = null;
+                    for (let l of preset.layers) {
+                        const newLayer = { ...l, id: genId() };
+                        if (newLayer.type === 'image' && newLayer.imageDataUrl) {
+                            const img = new Image();
+                            img.src = newLayer.imageDataUrl;
+                            newLayer.imageObj = img;
+                        }
+                        layers.push(newLayer);
+                    }
+                    setTimeout(() => {
+                        updateUI();
+                        renderFullPreview();
+                        if (layers.length) {
+                            selectedLayerId = layers[0].id;
+                            selectedLayerIds.add(selectedLayerId);
+                            loadProps(layers[0]);
+                            updateUI();
+                        } else {
+                            document.getElementById('propContent').innerHTML =
+                                '<p style="text-align:center;">Tidak ada layer</p>';
+                        }
+                    }, 100);
+                })
+                .catch(err => alert('Gagal memuat preset dari URL "' + url + '": ' + err.message));
+        }
+
+        function loadPreset(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const preset = JSON.parse(e.target.result);
+                    if (!preset.layers || !Array.isArray(preset.layers)) throw new Error("Format preset salah");
+                    layers = [];
+                    selectedLayerIds.clear();
+                    selectedLayerId = null;
+                    for (let l of preset.layers) {
+                        const newLayer = { ...l, id: genId() };
+                        if (newLayer.type === 'image' && newLayer.imageDataUrl) {
+                            const img = new Image();
+                            img.src = newLayer.imageDataUrl;
+                            newLayer.imageObj = img;
+                        }
+                        layers.push(newLayer);
+                    }
+                    setTimeout(() => {
+                        updateUI();
+                        renderFullPreview();
+                        if (layers.length) { selectedLayerId = layers[0].id;
+                            selectedLayerIds.add(selectedLayerId);
+                            loadProps(layers[0]);
+                            updateUI(); } else document.getElementById('propContent').innerHTML =
+                            '<p style="text-align:center;">Tidak ada layer</p>';
+                    }, 100);
+                } catch (err) { alert("Gagal memuat preset: " + err.message); }
+            };
+            reader.readAsText(file);
+        }
+
+        // ========== FITUR ICON ==========
+        const emojiList = ['😀', '😂', '😍', '😎', '😭', '😡', '❤️', '💙', '💚', '💛', '🧡', '💜', '⭐', '🌟', '🔥', '✨', '☀️', '🌈',
+            '⚡', '❄️', '🎉', '👍', '👎', '🙏', '💯', '📍', '📌', '🔔', '💎', '🐱', '🐶', '🐼', '🌸', '🍕', '⚽'
+        ];
+        const emojiModal = document.getElementById('emojiModal');
+        document.getElementById('addIconBtn').addEventListener('click', () => {
+            document.getElementById('emojiGrid').innerHTML = emojiList.map(e =>
+                `<div class="emoji-item">${e}</div>`).join('');
+            emojiModal.style.display = 'flex';
+            document.querySelectorAll('.emoji-item').forEach(el => { el.addEventListener('click', () => {
+                    addLayer(createIconLayer(el.innerText));
+                    emojiModal.style.display = 'none';
+                }); });
+        });
+        document.getElementById('closeEmojiModal').addEventListener('click', () => emojiModal.style.display = 'none');
+        window.addEventListener('click', (e) => { if (e.target === emojiModal) emojiModal.style.display = 'none'; });
+
+        // ========== FITUR PETA SATELIT ==========
+        const mapModalElem = document.getElementById('mapModal');
+        let isCapturing = false;
+        document.getElementById('addMapBtn').addEventListener('click', () => {
+            if (isCapturing) return;
+            isCapturing = true;
+            mapModalElem.style.display = 'flex';
+            const statusDiv = document.getElementById('mapStatus');
+            statusDiv.innerHTML = 'Mendapatkan lokasi GPS...';
+            const initAndCapture = (lat, lng) => {
+                userLat = lat;
+                userLon = lng;
+                statusDiv.innerHTML =
+                    `Lokasi: ${lat.toFixed(4)}°, ${lng.toFixed(4)}° - Memuat peta satelit...`;
+                if (mapInstance) { mapInstance.remove();
+                    mapInstance = null; }
+                mapInstance = L.map('map').setView([lat, lng], 16);
+                L.tileLayer(
+                    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                        attribution: 'Tiles &copy; Esri',
+                        maxZoom: 18
+                    }).addTo(mapInstance);
+                if (currentMapMarker) mapInstance.removeLayer(currentMapMarker);
+                currentMapMarker = L.marker([lat, lng]).addTo(mapInstance);
+                setTimeout(() => {
+                    statusDiv.innerHTML = 'Mengambil screenshot peta...';
+                    html2canvas(document.getElementById('map'), { scale: 2, useCORS: true,
+                            logging: false, backgroundColor: null }).then(canvasMap => {
+                            const imgDataUrl = canvasMap.toDataURL('image/png');
+                            const img = new Image();
+                            img.onload = () => {
+                                const newLayer = { id: genId(), type: 'image', imageObj: img,
+                                    imageDataUrl: imgDataUrl, scalePercent: 20, opacity: 0.9,
+                                    rotation: 0, xPercent: 50, yPercent: 50, blendMode: 'normal',
+                                    locked: false, flipX: false, flipY: false, stretchX: 100,
+                                    stretchY: 100, imgShadow: false, imgStroke: false };
+                                addLayer(newLayer);
+                                mapModalElem.style.display = 'none';
+                                if (mapInstance) { mapInstance.remove();
+                                    mapInstance = null;
+                                    currentMapMarker = null; }
+                                statusDiv.innerHTML = 'Peta berhasil ditambahkan!';
+                                isCapturing = false;
+                            };
+                            img.src = imgDataUrl;
+                        })
+                        .catch(err => { alert('Gagal screenshot: ' + err);
+                            mapModalElem.style.display = 'none';
+                            isCapturing = false; });
+                }, 1000);
+            };
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => initAndCapture(position.coords.latitude, position.coords.longitude),
+                    (error) => { statusDiv.innerHTML = 'Gagal dapat lokasi, gunakan default.';
+                        initAndCapture(userLat, userLon); }
+                );
+            } else { statusDiv.innerHTML = 'GPS tidak didukung, gunakan default.';
+                initAndCapture(userLat, userLon); }
+        });
+        document.getElementById('closeMapModal').addEventListener('click', () => {
+            mapModalElem.style.display = 'none';
+            if (mapInstance) { mapInstance.remove();
+                mapInstance = null;
+                currentMapMarker = null; }
+            isCapturing = false;
+        });
+
+        // ========== TOMBOL PRESET (termasuk vertical & horizontal otomatis) ==========
+        document.getElementById('savePresetBtn').addEventListener('click', savePreset);
+        document.getElementById('loadPresetBtn').addEventListener('click', () => { document.getElementById(
+            'loadPresetFile').click(); });
+        document.getElementById('loadPresetFile').addEventListener('change', (e) => { if (e.target.files.length) loadPreset(
+                e.target.files[0]);
+            e.target.value = ''; });
+
+        document.getElementById('presetVerticalBtn').addEventListener('click', () => {
+            loadPresetFromURL('preset-vertical.json');
+        });
+        document.getElementById('presetHorizontalBtn').addEventListener('click', () => {
+            loadPresetFromURL('preset-horizontal.json');
+        });
+
+        document.getElementById('resetAllLayersBtn').addEventListener('click', () => {
+            if (confirm('Hapus semua layer?')) { layers = [];
+                selectedLayerIds.clear();
+                selectedLayerId = null;
+                updateUI();
+                renderFullPreview();
+                document.getElementById('propContent').innerHTML =
+                '<p style="text-align:center;">Klik layer untuk edit</p>'; }
+        });
+
+        // ========== TOMBOL KIRIM KE MONITORING ==========
+        document.getElementById('sendToMonitoringBtn').addEventListener('click', sendToMonitoring);
+
+        // ========== INIT ==========
+        document.getElementById('addTextBtn').addEventListener('click', () => addLayer(createTextLayer()));
+        document.getElementById('addShapeBtn').addEventListener('click', () => addLayer(createShapeLayer()));
+        document.getElementById('addDateTimeBtn').addEventListener('click', () => { let t = prompt("time / date / day",
+                "time"); if (t && ['time', 'date', 'day'].includes(t)) addLayer(createDynamicLayer(t));
+            else alert("Tipe salah"); });
+        document.getElementById('addCoordBtn').addEventListener('click', () => addLayer(createDynamicLayer('coord')));
+        document.getElementById('addImageBtn').addEventListener('click', () => addLayer(createImageLayer()));
+        document.getElementById('clearLayersBtn').addEventListener('click', () => { layers = [];
+            selectedLayerIds.clear();
+            selectedLayerId = null;
+            updateUI();
+            renderFullPreview();
+            document.getElementById('propContent').innerHTML = '<p style="text-align:center;">Klik layer</p>'; });
+        document.getElementById('exportBtn').addEventListener('click', exportHD);
+
+        function escapeHtml(str) { return str.replace(/[&<>]/g, m => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;'); }
+        let anim = null;
+        (function loop() { if (layers.some(l => l.type === 'dynamic' && l.dynamicType === 'time')) renderFullPreview();
+            anim = requestAnimationFrame(loop); })();
+        renderFullPreview();
     </script>
 </body>
 </html>
