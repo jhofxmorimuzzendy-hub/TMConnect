@@ -187,6 +187,9 @@
             font-size: 0.75rem;
             color: #1e6f5c;
             margin-top: 4px;
+            background: #e8f5f0;
+            padding: 6px 10px;
+            border-radius: 12px;
         }
     </style>
 </head>
@@ -509,26 +512,8 @@
 
         document.getElementById('btnBukaStudio').addEventListener('click', openWatermarkStudio);
 
-        // ========== FUNGSI REGENERATE WATERMARK OTOMATIS ==========
-        function buildJamFotoString(tanggal, waktu) {
-            if (!tanggal || !waktu) return null;
-            const parts = tanggal.split('-');
-            const year = parts[0], month = parts[1], day = parts[2];
-            const timeParts = waktu.split(':');
-            const hour = timeParts[0], minute = timeParts[1];
-            const dateObj = new Date(`${year}-${month}-${day}T${hour}:${minute}:00`);
-            return dateObj.toLocaleString('id-ID', {
-                hour12: false,
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit'
-            });
-        }
-
-        function regenerateWatermarkOnImage(originalBase64, tanggal, waktu) {
+        // ========== FUNGSI DRAW WATERMARK TVRI (FORMAT SAMA DENGAN PRESET) ==========
+        function drawTVRIWatermark(originalBase64, tanggal, waktu) {
             return new Promise((resolve) => {
                 const img = new Image();
                 img.onload = function() {
@@ -536,66 +521,93 @@
                     canvas.width = img.width;
                     canvas.height = img.height;
                     const ctx = canvas.getContext('2d');
-                    // Gambar original
+                    
+                    // Gambar original (background)
                     ctx.drawImage(img, 0, 0);
                     
-                    // Tambahkan watermark teks (seperti TVRI)
-                    const hari = new Date(tanggal + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long' });
-                    const waktuStr = waktu;
-                    const teksWaktu = waktuStr;
-                    const teksTanggal = tanggal;
-                    const teksHari = hari;
+                    // ---------- WATERMARK LAYER (gaya TVRI) ----------
+                    const w = canvas.width;
+                    const h = canvas.height;
                     
-                    // Format seperti contoh: "22.02  1/7/2026  Rabu"
-                    const teksWatermark = `${teksWaktu}  ${teksTanggal}  ${teksHari}`;
+                    // Fungsi helper: teks dengan shadow
+                    function drawText(text, x, y, size, color, align = 'left', baseline = 'top', shadow = true) {
+                        ctx.save();
+                        ctx.font = `bold ${size}px Arial, sans-serif`;
+                        ctx.textAlign = align;
+                        ctx.textBaseline = baseline;
+                        if (shadow) {
+                            ctx.shadowColor = 'rgba(0,0,0,0.8)';
+                            ctx.shadowBlur = 6;
+                            ctx.shadowOffsetX = 2;
+                            ctx.shadowOffsetY = 2;
+                        } else {
+                            ctx.shadowColor = 'transparent';
+                        }
+                        ctx.fillStyle = color;
+                        ctx.fillText(text, x, y);
+                        ctx.restore();
+                    }
                     
-                    // Posisi di pojok kanan bawah
-                    const fontSize = Math.max(18, Math.min(36, canvas.width / 25));
-                    ctx.font = `bold ${fontSize}px Arial, sans-serif`;
-                    ctx.textAlign = 'right';
-                    ctx.textBaseline = 'bottom';
+                    // Ukuran font proporsional
+                    const baseSize = Math.max(18, Math.min(32, w / 30));
+                    const smallSize = Math.max(12, Math.min(20, w / 45));
                     
-                    // Efek bayangan
-                    ctx.shadowColor = 'rgba(0,0,0,0.8)';
-                    ctx.shadowBlur = 8;
-                    ctx.shadowOffsetX = 2;
-                    ctx.shadowOffsetY = 2;
+                    // Koordinat (margin 20px)
+                    const margin = Math.max(12, w * 0.02);
                     
-                    // Warna teks putih dengan transparansi
-                    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-                    ctx.fillText(teksWatermark, canvas.width - 20, canvas.height - 20);
+                    // ---------- KIRI ATAS ----------
+                    drawText('TV RI', margin, margin, baseSize * 1.1, 'rgba(255,255,255,0.95)');
+                    drawText('Transmisi Tanah Merah', margin, margin + baseSize * 1.2, baseSize * 0.7, 'rgba(255,255,255,0.85)');
                     
-                    // Opsional: tambahkan outline untuk keterbacaan
-                    ctx.shadowColor = 'transparent';
-                    ctx.strokeStyle = 'rgba(0,0,0,0.5)';
-                    ctx.lineWidth = 2;
-                    ctx.strokeText(teksWatermark, canvas.width - 20, canvas.height - 20);
+                    // ---------- KANAN ATAS: WAKTU ----------
+                    const jamMenit = waktu.substring(0, 5); // HH:MM
+                    drawText(jamMenit, w - margin, margin, baseSize * 1.1, 'rgba(255,255,255,0.95)', 'right');
+                    
+                    // Tanggal & Hari di bawah waktu
+                    const dateObj = new Date(tanggal + 'T00:00:00');
+                    const hari = dateObj.toLocaleDateString('id-ID', { weekday: 'long' });
+                    const dateFormatted = dateObj.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                    const dateHariText = `${dateFormatted}  ${hari}`;
+                    drawText(dateHariText, w - margin, margin + baseSize * 1.2, baseSize * 0.65, 'rgba(255,255,255,0.85)', 'right');
+                    
+                    // ---------- KANAN BAWAH: ALAMAT + KOORDINAT ----------
+                    const alamat = 'Persatuan, Kec. Mandobo, Kabupaten\nBoven Digoel, Papua Selatan 99663';
+                    const koordinat = 'Koordinat : 6.2088° LU | 106.8456° BT';
+                    
+                    // Alamat (multi-line)
+                    const alamatLines = alamat.split('\n');
+                    let yPos = h - margin - smallSize * 0.5;
+                    for (let i = alamatLines.length - 1; i >= 0; i--) {
+                        drawText(alamatLines[i], w - margin, yPos - (alamatLines.length - i - 1) * smallSize * 1.2, 
+                            smallSize * 0.8, 'rgba(255,255,255,0.8)', 'right', 'bottom', true);
+                    }
+                    // Koordinat di bawah alamat
+                    drawText(koordinat, w - margin, h - margin, smallSize * 0.7, 'rgba(255,255,255,0.7)', 'right', 'bottom', true);
                     
                     resolve(canvas.toDataURL('image/png'));
                 };
                 img.onerror = function() {
-                    // Fallback: gunakan original jika gagal
+                    // Fallback: gunakan original
                     resolve(originalBase64);
                 };
                 img.src = originalBase64;
             });
         }
 
+        // ========== FUNGSI UPDATE WATERMARK OTOMATIS ==========
         async function updateEntryWithNewWatermark(entry, newTanggal, newWaktu) {
             if (!entry.fotoList || entry.fotoList.length === 0) return;
             
-            // Update jamFoto
-            const newJamFoto = buildJamFotoString(newTanggal, newWaktu);
+            const newJamFoto = `${newWaktu}  ${newTanggal.replace(/-/g, '/')}  ${new Date(newTanggal + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long' })}`;
             
-            // Regenerate setiap foto
             const updatedFotoList = [];
             for (let foto of entry.fotoList) {
                 if (foto.originalBase64 && newWaktu) {
-                    const newWatermark = await regenerateWatermarkOnImage(foto.originalBase64, newTanggal, newWaktu);
+                    const newWatermark = await drawTVRIWatermark(foto.originalBase64, newTanggal, newWaktu);
                     updatedFotoList.push({
                         base64: newWatermark,
                         originalBase64: foto.originalBase64,
-                        jamFoto: newJamFoto || foto.jamFoto,
+                        jamFoto: newJamFoto,
                         lat: foto.lat || null,
                         lng: foto.lng || null
                     });
@@ -653,7 +665,7 @@
                         <input type="text" id="editPetugas" value="${petugasAwal}" placeholder="Nama petugas">
                     </div>
                     <div class="status-watermark">
-                        <i class="fas fa-sync-alt"></i> Watermark foto akan diperbarui otomatis sesuai tanggal/waktu baru.
+                        <i class="fas fa-sync-alt"></i> Watermark foto akan diperbarui otomatis dengan format TVRI (waktu, tanggal, hari)
                     </div>
                     <div class="btn-row">
                         <button class="btn-save" id="saveEditBtn"><i class="fas fa-save mr-1"></i> Simpan</button>
@@ -699,9 +711,9 @@
 
                 await updateEntryInFirebase(entry);
                 overlay.remove();
-                alert('✅ Data berhasil diperbarui. Watermark foto otomatis disesuaikan.');
+                alert('✅ Data berhasil diperbarui. Watermark TVRI otomatis disesuaikan.');
                 if (typeof window.logActivity === 'function') {
-                    window.logActivity('EDIT DATA', `Mengedit data suhu ID ${id} (watermark diperbarui otomatis)`, 'Monitoring Suhu');
+                    window.logActivity('EDIT DATA', `Mengedit data suhu ID ${id} (watermark TVRI diperbarui)`, 'Monitoring Suhu');
                 }
             });
         };
