@@ -106,7 +106,6 @@
             align-items: center;
             gap: 6px;
         }
-        /* Modal edit */
         .edit-modal-overlay {
             position: fixed;
             inset: 0;
@@ -138,7 +137,9 @@
             color: #374151;
             margin-bottom: 0.2rem;
         }
-        .edit-modal-box input {
+        .edit-modal-box input[type="text"],
+        .edit-modal-box input[type="date"],
+        .edit-modal-box input[type="time"] {
             width: 100%;
             border: 1px solid #d1d5db;
             border-radius: 16px;
@@ -149,6 +150,10 @@
         .edit-modal-box input:focus {
             outline: 2px solid #1e6f5c;
             border-color: transparent;
+        }
+        .edit-modal-box .readonly-hari {
+            background: #f3f4f6;
+            color: #4b5563;
         }
         .edit-modal-box .btn-row {
             display: flex;
@@ -178,9 +183,17 @@
         .edit-modal-box .btn-cancel:hover {
             background: #d1d5db;
         }
-        .edit-modal-box .readonly-hari {
-            background: #f3f4f6;
-            color: #4b5563;
+        .edit-modal-box .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 0.75rem;
+            font-size: 0.9rem;
+        }
+        .edit-modal-box .checkbox-row input {
+            width: 18px;
+            height: 18px;
+            margin: 0;
         }
     </style>
 </head>
@@ -329,7 +342,6 @@
         }
 
         function normalizeEntry(entry) {
-            // Pastikan ada field waktu
             if (!entry.waktu) entry.waktu = null;
             if (!entry.fotoList && entry.fotoBase64) {
                 entry.fotoList = [{
@@ -488,7 +500,7 @@
 
         document.getElementById('btnBukaStudio').addEventListener('click', openWatermarkStudio);
 
-        // ========== FUNGSI EDIT UNTUK ADMIN (dengan modal lengkap) ==========
+        // ========== FUNGSI EDIT DENGAN UPDATE JAM FOTO ==========
         async function updateEntryInFirebase(updatedEntry) {
             const index = dataEntries.findIndex(e => e.id == updatedEntry.id);
             if (index !== -1) {
@@ -501,11 +513,30 @@
             }
         }
 
+        // Helper untuk membuat string jamFoto dari tanggal dan waktu
+        function buildJamFotoString(tanggal, waktu) {
+            if (!tanggal || !waktu) return null;
+            const parts = tanggal.split('-');
+            const year = parts[0], month = parts[1], day = parts[2];
+            const timeParts = waktu.split(':');
+            const hour = timeParts[0], minute = timeParts[1];
+            // Buat Date object lalu format ke locale Indonesia
+            const dateObj = new Date(`${year}-${month}-${day}T${hour}:${minute}:00`);
+            return dateObj.toLocaleString('id-ID', {
+                hour12: false,
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+
         window.editEntry = async (id) => {
             const entry = dataEntries.find(e => e.id == id);
             if (!entry) return;
 
-            // Buat modal
             const overlay = document.createElement('div');
             overlay.className = 'edit-modal-overlay';
             overlay.id = 'editModalOverlay';
@@ -534,6 +565,10 @@
                         <label>Petugas</label>
                         <input type="text" id="editPetugas" value="${petugasAwal}" placeholder="Nama petugas">
                     </div>
+                    <div class="checkbox-row">
+                        <input type="checkbox" id="editUpdateFotoTime">
+                        <label for="editUpdateFotoTime">Perbarui jam foto dengan waktu ini</label>
+                    </div>
                     <div class="btn-row">
                         <button class="btn-save" id="saveEditBtn"><i class="fas fa-save mr-1"></i> Simpan</button>
                         <button class="btn-cancel" id="cancelEditBtn">Batal</button>
@@ -542,7 +577,7 @@
             `;
             document.body.appendChild(overlay);
 
-            // Update hari otomatis saat tanggal berubah
+            // Update hari otomatis
             const tanggalInput = document.getElementById('editTanggal');
             const hariInput = document.getElementById('editHari');
             tanggalInput.addEventListener('change', function() {
@@ -554,23 +589,33 @@
                 }
             });
 
-            // Tombol batal
             document.getElementById('cancelEditBtn').addEventListener('click', () => overlay.remove());
 
-            // Tombol simpan
             document.getElementById('saveEditBtn').addEventListener('click', async () => {
                 const newTanggal = document.getElementById('editTanggal').value;
                 const newWaktu = document.getElementById('editWaktu').value;
                 const newPetugas = document.getElementById('editPetugas').value.trim();
+                const updateFotoTime = document.getElementById('editUpdateFotoTime').checked;
 
                 if (!newTanggal || !newPetugas) {
                     alert('Tanggal dan petugas harus diisi.');
                     return;
                 }
 
+                // Update data entry
                 entry.tanggal = newTanggal;
                 entry.waktu = newWaktu || null;
                 entry.petugas = newPetugas;
+
+                // Jika dicentang, perbarui jamFoto di setiap foto
+                if (updateFotoTime && newWaktu) {
+                    const newJamFoto = buildJamFotoString(newTanggal, newWaktu);
+                    if (newJamFoto && entry.fotoList && entry.fotoList.length) {
+                        entry.fotoList.forEach(f => {
+                            f.jamFoto = newJamFoto;
+                        });
+                    }
+                }
 
                 await updateEntryInFirebase(entry);
                 overlay.remove();
@@ -653,7 +698,6 @@
         const keteranganInput = document.getElementById('keterangan');
         const resetBtn = document.getElementById('btnResetForm');
 
-        // Set default tanggal dan waktu
         const now = new Date();
         tanggalInput.value = now.toISOString().split('T')[0];
         const jam = String(now.getHours()).padStart(2, '0');
