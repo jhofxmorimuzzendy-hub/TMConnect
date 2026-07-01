@@ -183,6 +183,21 @@
         .edit-modal-box .btn-cancel:hover {
             background: #d1d5db;
         }
+        .edit-modal-box .btn-renew {
+            background: #2c7cb6;
+            color: white;
+            border: none;
+            border-radius: 40px;
+            padding: 8px;
+            width: 100%;
+            margin-top: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.15s;
+        }
+        .edit-modal-box .btn-renew:hover {
+            background: #1f5f8f;
+        }
     </style>
 </head>
 <body>
@@ -288,6 +303,7 @@
         let isInternalUpdate = false;
         const DB_PATH = 'monitoring/suhu/entries';
         let userRole = 'guest';
+        let editModalListener = null; // Untuk listener pesan dari studio
 
         function updateFirebaseStatus(connected, message) {
             const statusEl = document.getElementById('firebaseStatus');
@@ -473,7 +489,9 @@
             }
         }
 
+        // Listener global untuk pesan dari studio (untuk form utama)
         window.addEventListener('message', (event) => {
+            // Untuk form utama
             if (event.source === studioWindow && event.data && event.data.type === 'watermarkedFoto') {
                 const base64 = event.data.data;
                 if (base64) {
@@ -488,7 +506,7 @@
 
         document.getElementById('btnBukaStudio').addEventListener('click', openWatermarkStudio);
 
-        // ========== FUNGSI EDIT DENGAN UPDATE JAM FOTO OTOMATIS ==========
+        // ========== FUNGSI EDIT DENGAN FITUR AMBIL ULANG FOTO ==========
         async function updateEntryInFirebase(updatedEntry) {
             const index = dataEntries.findIndex(e => e.id == updatedEntry.id);
             if (index !== -1) {
@@ -501,7 +519,6 @@
             }
         }
 
-        // Helper untuk membuat string jamFoto dari tanggal dan waktu (format: dd/mm/yyyy HH.mm.00)
         function buildJamFotoString(tanggal, waktu) {
             if (!tanggal || !waktu) return null;
             const parts = tanggal.split('-');
@@ -523,6 +540,12 @@
         window.editEntry = async (id) => {
             const entry = dataEntries.find(e => e.id == id);
             if (!entry) return;
+
+            // Hapus listener lama jika ada
+            if (editModalListener) {
+                window.removeEventListener('message', editModalListener);
+                editModalListener = null;
+            }
 
             const overlay = document.createElement('div');
             overlay.className = 'edit-modal-overlay';
@@ -552,6 +575,7 @@
                         <label>Petugas</label>
                         <input type="text" id="editPetugas" value="${petugasAwal}" placeholder="Nama petugas">
                     </div>
+                    <button class="btn-renew" id="renewFotoBtn"><i class="fas fa-camera-retro mr-1"></i> Ambil Ulang Foto (Watermark Baru)</button>
                     <div class="btn-row">
                         <button class="btn-save" id="saveEditBtn"><i class="fas fa-save mr-1"></i> Simpan</button>
                         <button class="btn-cancel" id="cancelEditBtn">Batal</button>
@@ -572,8 +596,64 @@
                 }
             });
 
-            document.getElementById('cancelEditBtn').addEventListener('click', () => overlay.remove());
+            document.getElementById('cancelEditBtn').addEventListener('click', () => {
+                if (editModalListener) {
+                    window.removeEventListener('message', editModalListener);
+                    editModalListener = null;
+                }
+                overlay.remove();
+            });
 
+            // Tombol Ambil Ulang Foto
+            document.getElementById('renewFotoBtn').addEventListener('click', () => {
+                const petugas = document.getElementById('editPetugas').value.trim();
+                if (!petugas) {
+                    alert('Isi nama petugas terlebih dahulu.');
+                    return;
+                }
+                // Buka watermark studio
+                const width = 1100, height = 800;
+                const left = (screen.width - width) / 2;
+                const top = (screen.height - height) / 2;
+                const studioWin = window.open('watermark_studio.html', 'WatermarkStudio', `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`);
+                if (!studioWin) {
+                    alert("Popup terblokir. Izinkan popup untuk website ini.");
+                    return;
+                }
+
+                // Buat listener khusus untuk modal ini
+                if (editModalListener) {
+                    window.removeEventListener('message', editModalListener);
+                }
+                editModalListener = (event) => {
+                    if (event.source === studioWin && event.data && event.data.type === 'watermarkedFoto') {
+                        const base64 = event.data.data;
+                        if (base64) {
+                            // Ganti semua foto dengan foto baru
+                            const newTanggal = document.getElementById('editTanggal').value;
+                            const newWaktu = document.getElementById('editWaktu').value;
+                            const newJamFoto = buildJamFotoString(newTanggal, newWaktu) || 
+                                new Date().toLocaleString('id-ID', { hour12: false, day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit', second:'2-digit' });
+                            entry.fotoList = [{
+                                base64: base64,
+                                jamFoto: newJamFoto,
+                                lat: null,
+                                lng: null
+                            }];
+                            // Simpan ke Firebase
+                            updateEntryInFirebase(entry).then(() => {
+                                alert('✅ Foto berhasil diperbarui dengan watermark baru dan data tersimpan.');
+                            });
+                            if (studioWin && !studioWin.closed) studioWin.close();
+                        }
+                        window.removeEventListener('message', editModalListener);
+                        editModalListener = null;
+                    }
+                };
+                window.addEventListener('message', editModalListener);
+            });
+
+            // Tombol Simpan
             document.getElementById('saveEditBtn').addEventListener('click', async () => {
                 const newTanggal = document.getElementById('editTanggal').value;
                 const newWaktu = document.getElementById('editWaktu').value;
@@ -584,15 +664,14 @@
                     return;
                 }
 
-                // Update data entry
                 entry.tanggal = newTanggal;
                 entry.waktu = newWaktu || null;
                 entry.petugas = newPetugas;
 
-                // Otomatis perbarui jamFoto di semua foto dengan waktu baru
-                if (newWaktu) {
+                // Jika ada foto dan waktu diisi, update jamFoto foto yang ada
+                if (newWaktu && entry.fotoList && entry.fotoList.length) {
                     const newJamFoto = buildJamFotoString(newTanggal, newWaktu);
-                    if (newJamFoto && entry.fotoList && entry.fotoList.length) {
+                    if (newJamFoto) {
                         entry.fotoList.forEach(f => {
                             f.jamFoto = newJamFoto;
                         });
@@ -600,6 +679,10 @@
                 }
 
                 await updateEntryInFirebase(entry);
+                if (editModalListener) {
+                    window.removeEventListener('message', editModalListener);
+                    editModalListener = null;
+                }
                 overlay.remove();
                 alert('✅ Data berhasil diperbarui. Jam foto otomatis disesuaikan.');
                 if (typeof window.logActivity === 'function') {
