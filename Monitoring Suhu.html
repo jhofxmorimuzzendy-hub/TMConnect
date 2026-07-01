@@ -500,7 +500,7 @@
 
         document.getElementById('btnBukaStudio').addEventListener('click', openWatermarkStudio);
 
-        // ========== FUNGSI EDIT DENGAN UPDATE JAM FOTO ==========
+        // ========== FUNGSI EDIT DENGAN UPDATE JAM FOTO (OTOMATIS) ==========
         async function updateEntryInFirebase(updatedEntry) {
             const index = dataEntries.findIndex(e => e.id == updatedEntry.id);
             if (index !== -1) {
@@ -513,14 +513,13 @@
             }
         }
 
-        // Helper untuk membuat string jamFoto dari tanggal dan waktu
+        // Helper untuk membuat string jamFoto dari tanggal dan waktu (format: dd/mm/yyyy HH:MM:SS)
         function buildJamFotoString(tanggal, waktu) {
             if (!tanggal || !waktu) return null;
             const parts = tanggal.split('-');
             const year = parts[0], month = parts[1], day = parts[2];
             const timeParts = waktu.split(':');
             const hour = timeParts[0], minute = timeParts[1];
-            // Buat Date object lalu format ke locale Indonesia
             const dateObj = new Date(`${year}-${month}-${day}T${hour}:${minute}:00`);
             return dateObj.toLocaleString('id-ID', {
                 hour12: false,
@@ -566,7 +565,7 @@
                         <input type="text" id="editPetugas" value="${petugasAwal}" placeholder="Nama petugas">
                     </div>
                     <div class="checkbox-row">
-                        <input type="checkbox" id="editUpdateFotoTime">
+                        <input type="checkbox" id="editUpdateFotoTime" checked>
                         <label for="editUpdateFotoTime">Perbarui jam foto dengan waktu ini</label>
                     </div>
                     <div class="btn-row">
@@ -607,7 +606,7 @@
                 entry.waktu = newWaktu || null;
                 entry.petugas = newPetugas;
 
-                // Jika dicentang, perbarui jamFoto di setiap foto
+                // Jika dicentang (default true), perbarui jamFoto di setiap foto
                 if (updateFotoTime && newWaktu) {
                     const newJamFoto = buildJamFotoString(newTanggal, newWaktu);
                     if (newJamFoto && entry.fotoList && entry.fotoList.length) {
@@ -619,9 +618,9 @@
 
                 await updateEntryInFirebase(entry);
                 overlay.remove();
-                alert('✅ Data berhasil diperbarui.');
+                alert('✅ Data berhasil diperbarui. Jam foto juga telah disesuaikan.');
                 if (typeof window.logActivity === 'function') {
-                    window.logActivity('EDIT DATA', `Mengedit data suhu ID ${id}`, 'Monitoring Suhu');
+                    window.logActivity('EDIT DATA', `Mengedit data suhu ID ${id} (jam foto diperbarui)`, 'Monitoring Suhu');
                 }
             });
         };
